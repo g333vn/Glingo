@@ -37,8 +37,9 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
-      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl p-6 sm:p-8 md:p-10 max-w-md w-full border border-gray-100">
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
+      <div className="bg-gray-50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-lg sm:shadow-xl">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg p-6 sm:p-8 md:p-10 max-w-md w-full border border-gray-100">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="text-5xl sm:text-6xl mb-3 sm:mb-4">🔐</div>
@@ -125,6 +126,7 @@ function LoginPage() {
             <span>←</span>
             <span>Quay về trang chủ</span>
           </a>
+        </div>
         </div>
       </div>
     </div>
