@@ -33,8 +33,8 @@ const Clock = () => {
   const secondAngle = seconds * 6;
 
   return (
-    <div className="relative w-52 h-52 mx-auto">
-      <div className="absolute inset-0 bg-white rounded-full shadow-2xl border-8 border-gray-300">
+    <div className="relative w-40 h-40 sm:w-52 sm:h-52 mx-auto">
+      <div className="absolute inset-0 bg-white rounded-full shadow-2xl border-4 sm:border-8 border-gray-300">
         {[...Array(12)].map((_, i) => {
           const angle = i * 30;
           const isMainHour = i % 3 === 0;
@@ -79,7 +79,7 @@ const Clock = () => {
         />
       </div>
       
-      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-base font-mono text-gray-700 font-semibold">
+      <div className="absolute -bottom-8 sm:-bottom-10 left-1/2 -translate-x-1/2 text-sm sm:text-base font-mono text-gray-700 font-semibold">
         {formatTime()}
       </div>
     </div>
@@ -92,13 +92,13 @@ const ExamButton = ({ title, score, bgColor, disabled, onClick }) => {
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`relative ${bgColor} rounded-full px-8 py-6 shadow-xl border-4 border-red-600 
-        transition-all duration-300 min-w-[280px]
+      className={`relative ${bgColor} rounded-full px-4 sm:px-6 md:px-8 py-4 sm:py-5 md:py-6 shadow-xl border-2 sm:border-4 border-red-600 
+        transition-all duration-300 w-full sm:w-auto sm:min-w-[200px] md:min-w-[280px]
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 hover:shadow-2xl cursor-pointer'}`}
     >
       <div className="text-center">
-        <div className="text-2xl font-bold text-gray-900 mb-2">{title}</div>
-        <div className="text-3xl font-bold text-gray-900">
+        <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">{title}</div>
+        <div className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
           ({score}分)
         </div>
       </div>
@@ -190,7 +190,7 @@ function JLPTExamDetailPage() {
             
             <div className="flex-1 overflow-hidden px-6 py-4 flex flex-col items-center justify-center">
               
-              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-12 tracking-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-6 sm:mb-8 md:mb-12 tracking-tight px-4 text-center">
                 {currentExam.title}
               </h1>
               
@@ -198,7 +198,7 @@ function JLPTExamDetailPage() {
                 <Clock />
               </div>
               
-              <div className="flex flex-col md:flex-row gap-8 items-center justify-center mb-8">
+              <div className="flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 items-center justify-center mb-6 sm:mb-8 w-full px-4">
                 <ExamButton
                   title="言語、知識、読解"
                   score={110}

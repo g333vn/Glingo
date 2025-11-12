@@ -127,7 +127,7 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect 
       {sections.map((section) => (
         <div key={section.id} className="mb-6">
           <h4 className="font-semibold text-sm mb-2 text-gray-700">{section.title}</h4>
-          <div className="grid grid-cols-6 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
             {section.questions.map((q) => {
               const isAnswered = answers[q.id] !== undefined;
               const isCurrent = currentQuestion === q.id;
@@ -136,7 +136,7 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect 
                 <button
                   key={q.id}
                   onClick={() => onQuestionSelect(q.id)}
-                  className={`w-10 h-10 rounded border-2 font-semibold text-sm transition-all ${
+                  className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded border-2 font-semibold text-xs sm:text-sm transition-all ${
                     isCurrent
                       ? 'border-blue-500 bg-blue-500 text-white'
                       : isAnswered
@@ -318,15 +318,15 @@ function ExamKnowledgePage() {
       <div className="w-full pr-0 md:pr-4">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
           <div className="flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col w-full">
-            <div className="p-6 border-b border-gray-300">
+            <div className="p-4 sm:p-6 border-b border-gray-300">
               <Breadcrumbs paths={breadcrumbPaths} />
-              <div className="flex justify-between items-center mt-4">
-                <h1 className="text-2xl font-bold text-gray-800">{currentExam.title}</h1>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mt-4">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{currentExam.title}</h1>
                 <CountdownTimer initialTime={totalTime} onTimeUp={handleTimeUp} />
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               <div className="max-w-4xl mx-auto">
                 <QuestionDisplay
                   question={currentQuestion}
@@ -334,11 +334,11 @@ function ExamKnowledgePage() {
                   onSelectAnswer={handleSelectAnswer}
                 />
 
-                <div className="flex justify-between mt-6">
+                <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-6">
                   <button
                     onClick={handlePrevQuestion}
                     disabled={currentIndex === 0}
-                    className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-400 transition"
+                    className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gray-300 text-gray-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-400 transition text-sm sm:text-base"
                   >
                     ← 前へ
                   </button>
@@ -346,14 +346,14 @@ function ExamKnowledgePage() {
                   {currentIndex === allQuestions.length - 1 ? (
                     <button
                       onClick={handleSubmitClick}
-                      className="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition"
+                      className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition text-sm sm:text-base"
                     >
                       提出する
                     </button>
                   ) : (
                     <button
                       onClick={handleNextQuestion}
-                      className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition"
+                      className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition text-sm sm:text-base"
                     >
                       次へ →
                     </button>
@@ -363,7 +363,7 @@ function ExamKnowledgePage() {
             </div>
           </div>
 
-          <div className="w-full md:w-80 md:sticky md:top-4">
+          <div className="w-full md:w-80 md:sticky md:top-4 mt-4 md:mt-0">
             <NavigationPanel
               sections={sections}
               currentQuestion={currentQuestionId}
