@@ -626,7 +626,8 @@ class LocalStorageManager {
       series: {},
       chapters: {},
       quizzes: {},
-      exams: {}
+      exams: {},
+      levelConfigs: {}
     };
 
     if (!this.storageAvailable) return data;
@@ -657,6 +658,14 @@ class LocalStorageManager {
             const level = parts[0];
             const examId = parts.slice(1).join('_');
             data.exams[`${level}_${examId}`] = value;
+          } else if (key.startsWith('adminExams_')) {
+            const level = key.replace('adminExams_', '');
+            // Exams metadata is stored separately, but we'll include it in export
+            if (!data.exams) data.exams = {};
+            // Note: This is metadata only, full exam data is in adminExam_ keys
+          } else if (key.startsWith('adminLevelConfig_')) {
+            const level = key.replace('adminLevelConfig_', '');
+            data.levelConfigs[level] = value;
           }
         } catch (e) {
           console.warn(`Failed to parse ${key}:`, e);
@@ -690,6 +699,11 @@ class LocalStorageManager {
 
     // Merge exams
     Object.assign(indexedData.exams, localData.exams);
+
+    // Merge level configs
+    if (localData.levelConfigs) {
+      Object.assign(indexedData.levelConfigs || {}, localData.levelConfigs);
+    }
 
     return indexedData;
   }
@@ -770,6 +784,19 @@ class LocalStorageManager {
           imported++;
         } catch (e) {
           console.warn(`Failed to import exam ${key}:`, e);
+        }
+      }
+
+      // Import level configs
+      if (data.levelConfigs) {
+        for (const level in data.levelConfigs) {
+          const key = `adminLevelConfig_${level}`;
+          try {
+            localStorage.setItem(key, JSON.stringify(data.levelConfigs[level]));
+            imported++;
+          } catch (e) {
+            console.warn(`Failed to import level config for ${level}:`, e);
+          }
         }
       }
 

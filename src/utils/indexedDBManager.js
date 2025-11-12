@@ -402,7 +402,11 @@ class IndexedDBManager {
       const tx = this.db.transaction('exams', 'readonly');
       const store = tx.objectStore('exams');
       const result = await store.get([level, examId]);
-      return result || null;
+      if (!result) return null;
+      
+      // Remove level and examId from result (they're metadata, not part of exam data)
+      const { level: _, examId: __, ...examData } = result;
+      return examData;
     } catch (error) {
       console.error('Error getting exam:', error);
       return null;
@@ -458,7 +462,8 @@ class IndexedDBManager {
         series: {},
         chapters: {},
         quizzes: {},
-        exams: {}
+        exams: {},
+        levelConfigs: {}
       };
 
       // Export books
@@ -507,6 +512,14 @@ class IndexedDBManager {
         data.exams[key] = exam;
       }
 
+      // Export level configs
+      const configsTx = this.db.transaction('levelConfigs', 'readonly');
+      const configsStore = configsTx.objectStore('levelConfigs');
+      const allConfigs = await configsStore.getAll();
+      for (const config of allConfigs) {
+        data.levelConfigs[config.level] = config.config;
+      }
+
       return data;
     } catch (error) {
       console.error('Error exporting data:', error);
@@ -543,6 +556,13 @@ class IndexedDBManager {
       for (const key in data.exams) {
         const exam = data.exams[key];
         await this.saveExam(exam.level, exam.examId, exam);
+      }
+
+      // Import level configs
+      if (data.levelConfigs) {
+        for (const level in data.levelConfigs) {
+          await this.saveLevelConfig(level, data.levelConfigs[level]);
+        }
       }
 
       console.log('✅ Imported all data to IndexedDB');
@@ -587,6 +607,12 @@ class IndexedDBManager {
       const examsTx = this.db.transaction('exams', 'readwrite');
       const examsStore = examsTx.objectStore('exams');
       await examsStore.clear();
+      count++;
+
+      // Clear level configs
+      const configsTx = this.db.transaction('levelConfigs', 'readwrite');
+      const configsStore = configsTx.objectStore('levelConfigs');
+      await configsStore.clear();
       count++;
 
       console.log(`🗑️ Cleared all admin data from IndexedDB (${count} stores)`);
