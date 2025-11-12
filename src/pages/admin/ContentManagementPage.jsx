@@ -356,24 +356,24 @@ function ContentManagementPage() {
                         </span>
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
                           <button
                             onClick={() => handleAddChapter(book.id)}
-                            className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors duration-150 text-xs font-medium"
+                            className="px-2 sm:px-3 py-1.5 sm:py-1 bg-green-500 text-white rounded hover:bg-green-600 active:bg-green-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
                             title="Thêm chương"
                           >
                             ➕ Chương
                           </button>
                           <button
                             onClick={() => handleEditBook(book)}
-                            className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-150 text-xs font-medium"
+                            className="px-2 sm:px-3 py-1.5 sm:py-1 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
                             title="Sửa"
                           >
                             ✏️ Sửa
                           </button>
                           <button
                             onClick={() => handleDeleteBook(book.id)}
-                            className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors duration-150 text-xs font-medium"
+                            className="px-2 sm:px-3 py-1.5 sm:py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
                             title="Xóa"
                           >
                             🗑️ Xóa
