@@ -109,7 +109,12 @@ function Header({ onUserIconClick }) {
   };
 
   const handleNavigate = (path) => {
-    examNavigate(path);
+    // Sử dụng navigate thông thường cho các link không liên quan đến exam
+    if (path.startsWith('/level/') || path.startsWith('/jlpt/')) {
+      examNavigate(path); // Sử dụng examNavigate để check exam guard
+    } else {
+      navigate(path); // Sử dụng navigate thông thường
+    }
   };
 
   // Lock body scroll when mobile menu is open (prevents layout jumps/glitches)
