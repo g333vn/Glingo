@@ -515,7 +515,7 @@ function ContentManagementPage() {
                                   ✏️
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteBook(book.id)}
+                                  onClick={async () => await handleDeleteBook(book.id)}
                                   className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 transition-colors duration-150 text-xs font-medium"
                                   title="Xóa"
                                 >
@@ -904,7 +904,7 @@ function ContentManagementPage() {
                             ✏️ Sửa
                           </button>
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               if (confirm(`Bạn có chắc muốn xóa bộ sách "${s.name}"? Tất cả sách trong bộ này sẽ mất category!`)) {
                                 const updatedSeries = series.filter(ser => ser.id !== s.id);
                                 await saveSeries(updatedSeries);
@@ -1159,7 +1159,7 @@ function ContentManagementPage() {
         title={editingSeries ? '✏️ Sửa Bộ sách' : '➕ Thêm Bộ sách mới'}
         maxWidth="28rem"
       >
-        <form onSubmit={(e) => {
+        <form onSubmit={async (e) => {
               e.preventDefault();
               if (!seriesForm.name) {
                 alert('⚠️ Vui lòng điền tên bộ sách!');
@@ -1178,7 +1178,7 @@ function ContentManagementPage() {
                   const updatedBooks = books.map(b => 
                     b.category === oldName ? { ...b, category: seriesForm.name } : b
                   );
-                  saveBooks(updatedBooks);
+                  await saveBooks(updatedBooks);
                 }
               } else {
                 // Add new series
