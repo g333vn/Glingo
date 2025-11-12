@@ -235,7 +235,8 @@ function ExamListeningPage() {
   const { navigate, WarningModal, clearExamData } = useExamGuard();
 
   const currentExam = getExamById(levelId, examId);
-  const examData = getListeningQuestions(levelId, examId);
+  const [examData, setExamData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [currentQuestionKey, setCurrentQuestionKey] = useState('1-01');
   const [answers, setAnswers] = useState({});
@@ -246,6 +247,59 @@ function ExamListeningPage() {
   // ✅ Lock body scroll when any modal is open
   useBodyScrollLock(showSubmitModal || showIncompleteWarning);
 
+  // Load exam data from storage or static file
+  useEffect(() => {
+    const loadExamData = async () => {
+      setIsLoading(true);
+      try {
+        // 1. Try storage first (admin created exams)
+        const savedExam = await storageManager.getExam(levelId, examId);
+        if (savedExam && savedExam.listening && savedExam.listening.sections) {
+          // Transform to match expected format
+          const transformedData = {
+            sections: savedExam.listening.sections.map(section => ({
+              id: section.id,
+              title: section.title,
+              instruction: section.instruction || '',
+              timeLimit: section.timeLimit || 0,
+              questions: section.questions.map(q => ({
+                number: q.number || String(q.id).padStart(2, '0'),
+                subNumber: q.subNumber || q.id,
+                category: q.category || 'listening',
+                audioUrl: q.audioUrl || '',
+                options: q.options || [],
+                correctAnswer: q.correctAnswer,
+                explanation: q.explanation || ''
+              }))
+            }))
+          };
+          setExamData(transformedData);
+          console.log('✅ Loaded listening exam from storage');
+          setIsLoading(false);
+          return;
+        }
+
+        // 2. Fallback to static file
+        const staticData = getListeningQuestions(levelId, examId);
+        if (staticData) {
+          setExamData(staticData);
+          console.log('📁 Loaded listening exam from static file');
+        }
+      } catch (error) {
+        console.error('Error loading listening exam:', error);
+        // Fallback to static file
+        const staticData = getListeningQuestions(levelId, examId);
+        if (staticData) {
+          setExamData(staticData);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadExamData();
+  }, [levelId, examId]);
+
   // Load answers từ localStorage
   useEffect(() => {
     const savedAnswers = localStorage.getItem(`exam-${levelId}-${examId}-listening`);
@@ -253,6 +307,15 @@ function ExamListeningPage() {
       setAnswers(JSON.parse(savedAnswers));
     }
   }, [levelId, examId]);
+
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+        <p className="text-gray-600">Đang tải đề thi...</p>
+      </div>
+    );
+  }
 
   if (!currentExam || !examData) {
     return (

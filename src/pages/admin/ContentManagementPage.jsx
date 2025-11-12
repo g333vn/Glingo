@@ -10,7 +10,7 @@ import { n1Books } from '../../data/level/n1/books.js';
 
 function ContentManagementPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('books'); // 'books' | 'exams' | 'series'
+  const [activeTab, setActiveTab] = useState('books'); // 'books' | 'series'
   const [selectedLevel, setSelectedLevel] = useState('n1');
   
   // Books management states
@@ -442,23 +442,13 @@ function ContentManagementPage() {
         </button>
         <button
           onClick={() => setActiveTab('series')}
-          className={`flex-1 min-w-[calc(50%-0.375rem)] sm:min-w-0 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold transition-colors duration-200 text-xs sm:text-sm ${
+          className={`flex-1 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold transition-colors duration-200 text-xs sm:text-sm ${
             activeTab === 'series'
               ? 'bg-blue-500 text-white shadow-md'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
           <span className="hidden sm:inline">📦 </span>Bộ sách
-        </button>
-        <button
-          onClick={() => setActiveTab('exams')}
-          className={`flex-1 min-w-full sm:min-w-0 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold transition-colors duration-200 text-xs sm:text-sm ${
-            activeTab === 'exams'
-              ? 'bg-blue-500 text-white shadow-md'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          <span className="hidden sm:inline">📋 </span>Đề thi
         </button>
       </div>
 
@@ -1049,19 +1039,6 @@ function ContentManagementPage() {
               )}
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Exams Management - Coming Soon */}
-      {activeTab === 'exams' && (
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 text-center">
-          <div className="text-4xl sm:text-5xl md:text-6xl mb-3 sm:mb-4">🚧</div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2">
-            Quản lý Đề thi
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600">
-            Module này sẽ được phát triển trong tương lai
-          </p>
         </div>
       )}
 

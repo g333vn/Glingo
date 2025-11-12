@@ -295,7 +295,8 @@ function ExamManagementPage() {
       options: ['', '', '', ''],
       correctAnswer: 0,
       explanation: '',
-      audioUrl: ''
+      audioUrl: '',
+      audioFile: null
     });
     setShowQuestionForm(true);
   };
@@ -304,13 +305,14 @@ function ExamManagementPage() {
     setSelectedSection(section);
     setEditingQuestion(question);
     setQuestionForm({
-      id: question.id,
+      id: question.id || question.number || question.subNumber,
       category: question.category || selectedTestType,
       question: question.question || '',
       options: question.options || ['', '', '', ''],
       correctAnswer: question.correctAnswer !== undefined ? question.correctAnswer : 0,
       explanation: question.explanation || '',
-      audioUrl: question.audioUrl || ''
+      audioUrl: question.audioUrl || '',
+      audioFile: null
     });
     setShowQuestionForm(true);
   };
@@ -333,23 +335,43 @@ function ExamManagementPage() {
       if (section.id === selectedSection.id) {
         const questions = [...(section.questions || [])];
         
+        // Prepare question data with proper structure
+        const questionData = {
+          ...questionForm,
+          options: validOptions
+        };
+
+        // For listening, ensure proper structure matching ExamListeningPage
+        if (selectedTestType === 'listening') {
+          // Convert id to number format (01, 02, etc.) for listening
+          const numberStr = String(questionForm.id).padStart(2, '0');
+          questionData.number = numberStr;
+          questionData.subNumber = questionForm.id;
+          // Ensure section.id is string for key format `${section.id}-${q.number}`
+          if (typeof section.id !== 'string') {
+            section.id = String(section.id);
+          }
+        }
+        
         if (editingQuestion) {
-          const index = questions.findIndex(q => q.id === editingQuestion.id);
+          const index = questions.findIndex(q => 
+            q.id === editingQuestion.id || 
+            (selectedTestType === 'listening' && q.number === editingQuestion.number)
+          );
           if (index >= 0) {
-            questions[index] = {
-              ...questionForm,
-              options: validOptions
-            };
+            questions[index] = questionData;
           }
         } else {
-          if (questions.find(q => q.id === questionForm.id)) {
+          // Check for duplicate
+          const isDuplicate = questions.find(q => 
+            q.id === questionForm.id || 
+            (selectedTestType === 'listening' && q.number === questionData.number)
+          );
+          if (isDuplicate) {
             alert('⚠️ ID câu hỏi đã tồn tại!');
             return section;
           }
-          questions.push({
-            ...questionForm,
-            options: validOptions
-          });
+          questions.push(questionData);
         }
 
         // Sort questions by ID
@@ -754,13 +776,26 @@ function ExamManagementPage() {
                         <td className="px-3 py-3 text-sm font-medium text-gray-900">{exam.title}</td>
                         <td className="px-3 py-3 text-sm text-gray-700">{exam.date}</td>
                         <td className="px-3 py-3 text-sm">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            exam.status === 'Có sẵn' ? 'bg-green-100 text-green-800' :
-                            exam.status === 'Sắp diễn ra' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {exam.status}
-                          </span>
+                          <select
+                            value={exam.status}
+                            onChange={async (e) => {
+                              const newStatus = e.target.value;
+                              const updatedExams = exams.map(e => 
+                                e.id === exam.id ? { ...e, status: newStatus } : e
+                              );
+                              await storageManager.saveExams(selectedLevel, updatedExams);
+                              setExams(updatedExams);
+                            }}
+                            className={`px-2 py-1 rounded-full text-xs font-semibold border-0 cursor-pointer ${
+                              exam.status === 'Có sẵn' ? 'bg-green-100 text-green-800' :
+                              exam.status === 'Sắp diễn ra' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            <option value="Có sẵn">Có sẵn</option>
+                            <option value="Sắp diễn ra">Sắp diễn ra</option>
+                            <option value="Đã kết thúc">Đã kết thúc</option>
+                          </select>
                         </td>
                         <td className="px-3 py-3 text-sm">
                           <div className="flex items-center gap-1">
@@ -1307,27 +1342,67 @@ function ExamManagementPage() {
           {selectedTestType === 'listening' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                URL File Audio *
+                File Audio *
               </label>
-              <input
-                type="text"
-                value={questionForm.audioUrl}
-                onChange={(e) => setQuestionForm({ ...questionForm, audioUrl: e.target.value })}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="/audio/n1/2024-12/listening-1.mp3"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Đường dẫn file audio từ thư mục public
-              </p>
-              {questionForm.audioUrl && (
-                <div className="mt-2">
-                  <audio controls className="w-full">
-                    <source src={questionForm.audioUrl} type="audio/mpeg" />
-                    Trình duyệt không hỗ trợ audio.
-                  </audio>
-                </div>
-              )}
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  accept="audio/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      // Validate file size (max 10MB)
+                      if (file.size > 10 * 1024 * 1024) {
+                        alert('⚠️ File quá lớn! Vui lòng chọn file nhỏ hơn 10MB.');
+                        e.target.value = '';
+                        return;
+                      }
+                      
+                      // Validate file type
+                      if (!file.type.startsWith('audio/')) {
+                        alert('⚠️ Vui lòng chọn file audio!');
+                        e.target.value = '';
+                        return;
+                      }
+
+                      // Create object URL for preview
+                      const audioUrl = URL.createObjectURL(file);
+                      setQuestionForm({ ...questionForm, audioUrl, audioFile: file });
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500">
+                  Chọn file audio (MP3, WAV, OGG) - Tối đa 10MB
+                </p>
+                {questionForm.audioUrl && (
+                  <div className="mt-2">
+                    <audio controls className="w-full">
+                      <source src={questionForm.audioUrl} type="audio/mpeg" />
+                      Trình duyệt không hỗ trợ audio.
+                    </audio>
+                    <p className="text-xs text-gray-600 mt-1">
+                      💡 File sẽ được lưu vào thư mục public/audio khi bạn lưu câu hỏi
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="mt-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Hoặc nhập URL Audio (nếu đã upload)
+                </label>
+                <input
+                  type="text"
+                  value={questionForm.audioUrl && !questionForm.audioUrl.startsWith('blob:') ? questionForm.audioUrl : ''}
+                  onChange={(e) => {
+                    if (!e.target.value.startsWith('blob:')) {
+                      setQuestionForm({ ...questionForm, audioUrl: e.target.value, audioFile: null });
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="/audio/n1/2024-12/listening-1.mp3"
+                />
+              </div>
             </div>
           )}
           <div>
