@@ -1,14 +1,19 @@
 // src/features/books/pages/QuizPage.jsx
 // ✅ UPDATED: Tách dữ liệu quiz ra file riêng ở src/data/level, giữ nguyên UI/logic
+// ✅ BƯỚC 2: Lazy loading quiz data từ JSON files
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import { bookData } from '../../../data/level/bookData.js';
 
 // ✅ NEW: Import dữ liệu từ thư mục data/level (đường dẫn tương tự bookData)
+// ✅ BƯỚC 2: Giữ backward compatibility với quizData cũ
 import { quizData } from '../../../data/level/quizData.js';
+
+// ✅ BƯỚC 2: Import helper để lazy load quiz từ JSON
+import { loadQuizData } from '../../../data/level/n1/shinkanzen-n1-bunpou/quizzes/quiz-loader.js';
 
 // ✅ NEW: Import dictionary components
 import { DictionaryButton, DictionaryPopup, useDictionaryDoubleClick } from '../../../components/api_translate/index.js';
@@ -20,14 +25,65 @@ function QuizPage() {
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [isQuizComplete, setIsQuizComplete] = useState(false);
+  const [currentQuiz, setCurrentQuiz] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // ✅ UPDATED: Ref cho TOÀN BỘ content container để tra từ bất cứ đâu
   const quizContentRef = useRef(null);
   useDictionaryDoubleClick(quizContentRef);
 
-  const currentQuiz = quizData[lessonId] || quizData.default;  // ✅ Sử dụng import data
-  const totalQuestions = currentQuiz.questions.length;
+  // ✅ BƯỚC 2: Lazy load quiz data từ JSON
+  useEffect(() => {
+    const loadQuiz = async () => {
+      setIsLoading(true);
+      try {
+        // Thử load từ JSON trước (cho shinkanzen-n1-bunpou)
+        if (bookId === 'skm-n1-bunpou') {
+          const quiz = await loadQuizData(lessonId);
+          if (quiz && quiz.questions && quiz.questions.length > 0) {
+            setCurrentQuiz(quiz);
+            setIsLoading(false);
+            return;
+          }
+        }
+        // Fallback về quizData cũ nếu không tìm thấy JSON
+        const fallbackQuiz = quizData[lessonId] || quizData.default;
+        setCurrentQuiz(fallbackQuiz);
+      } catch (error) {
+        console.error('Error loading quiz:', error);
+        // Fallback về quizData cũ
+        const fallbackQuiz = quizData[lessonId] || quizData.default;
+        setCurrentQuiz(fallbackQuiz);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadQuiz();
+  }, [bookId, lessonId]);
+
   const currentBook = bookData[bookId] || bookData.default;
+  
+  // Loading state
+  if (isLoading || !currentQuiz) {
+    return (
+      <div className="w-full pr-0 md:pr-4">
+        <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
+          <Sidebar />
+          <div className="flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col min-h-app">
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Đang tải quiz...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const totalQuestions = currentQuiz.questions.length;
   const currentQuestion = currentQuiz.questions[currentQuestionIndex];
 
   const breadcrumbPaths = [
