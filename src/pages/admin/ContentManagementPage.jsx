@@ -234,11 +234,18 @@ function ContentManagementPage() {
   };
 
   // Chapter CRUD operations
-  const handleAddChapter = (bookId) => {
-    const bookData = getBookData(bookId);
-    setSelectedBook(bookData);
+  const handleAddChapter = async (book) => {
+    setSelectedBook(book);
     setEditingChapter(null);
     setChapterForm({ id: '', title: '' });
+    
+    // Load existing chapters for this book to show in preview
+    const existingChapters = await storageManager.getChapters(book.id);
+    const bookData = getBookData(book.id);
+    const allChapters = existingChapters || bookData?.contents || [];
+    
+    // Store for preview
+    setSelectedBook({ ...book, existingChapters: allChapters });
     setShowChapterForm(true);
   };
 
@@ -1105,13 +1112,26 @@ function ContentManagementPage() {
                 <input
                   type="text"
                   value={chapterForm.id}
-                  onChange={(e) => setChapterForm({ ...chapterForm, id: e.target.value })}
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    setChapterForm({ ...chapterForm, id: newId });
+                  }}
                   required
                   disabled={!!editingChapter}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base ${
+                    chapterForm.id && selectedBook?.existingChapters?.some(ch => ch.id === chapterForm.id && (!editingChapter || ch.id !== editingChapter.id))
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-300'
+                  }`}
                   placeholder="bai-1"
                 />
                 <p className="text-xs text-gray-500 mt-1">ID dùng để tên file JSON (không có khoảng trắng)</p>
+                {chapterForm.id && selectedBook?.existingChapters?.some(ch => ch.id === chapterForm.id && (!editingChapter || ch.id !== editingChapter.id)) && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>ID này đã tồn tại! Vui lòng chọn ID khác.</span>
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1127,15 +1147,57 @@ function ContentManagementPage() {
                 />
               </div>
 
+              {/* ✅ NEW: Preview existing chapters and quizzes */}
+              {selectedBook && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mt-4">
+                  <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                    <span>📋</span>
+                    <span>Dữ liệu hiện có của sách "{selectedBook.title}"</span>
+                  </h4>
+                  
+                  {/* Existing Chapters */}
+                  <div className="mb-3">
+                    <p className="text-xs font-medium text-blue-800 mb-1.5">
+                      📚 Chapters đã có ({selectedBook.existingChapters?.length || 0}):
+                    </p>
+                    {selectedBook.existingChapters && selectedBook.existingChapters.length > 0 ? (
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {selectedBook.existingChapters.map((ch, idx) => (
+                          <div 
+                            key={idx}
+                            className={`text-xs px-2 py-1 rounded ${
+                              ch.id === chapterForm.id && !editingChapter
+                                ? 'bg-red-100 text-red-800 border border-red-300'
+                                : 'bg-white text-gray-700 border border-gray-200'
+                            }`}
+                          >
+                            <span className="font-mono font-semibold">{ch.id}</span>
+                            {ch.title && <span className="ml-2">- {ch.title}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-600 italic">Chưa có chapter nào</p>
+                    )}
+                  </div>
+
+                  {/* Existing Quizzes (if any) */}
+                  <div>
+                    <p className="text-xs font-medium text-blue-800 mb-1.5">
+                      ✏️ Quizzes đã có:
+                    </p>
+                    <p className="text-xs text-gray-600 italic">
+                      (Sẽ hiển thị khi có quiz cho các chapters này)
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
                 <p className="text-xs text-yellow-800">
-                  ⚠️ <strong>Lưu ý:</strong> Để lưu chapter vào hệ thống, bạn cần:
+                  💡 <strong>Lưu ý:</strong> Chapter sẽ được lưu vào IndexedDB/localStorage và hiển thị ngay!
                   <br />
-                  1. Cập nhật file: <code className="bg-yellow-100 px-1 rounded">src/data/level/{selectedLevel}/{selectedBook?.id || 'book-id'}.js</code>
-                  <br />
-                  2. Thêm chapter vào mảng <code className="bg-yellow-100 px-1 rounded">chapters</code>
-                  <br />
-                  3. Hoặc sử dụng Quiz Editor để tạo quiz cho chapter mới
+                  Sau khi thêm chapter, bạn có thể tạo quiz cho chapter đó bằng Quiz Editor.
                 </p>
               </div>
 
