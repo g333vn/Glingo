@@ -163,21 +163,21 @@ function Header({ onUserIconClick }) {
               `}
             />
             <span className={`
-              font-bold text-sm sm:text-base md:text-lg lg:text-xl text-white whitespace-nowrap
+              font-bold text-sm sm:text-base md:hidden lg:block lg:text-xl text-white whitespace-nowrap
               transition-all duration-500
               group-hover:text-yellow-300
-              ${isScrolled ? 'text-sm sm:text-base md:text-base lg:text-lg' : 'text-sm sm:text-base md:text-lg lg:text-xl'}
+              ${isScrolled ? 'text-sm sm:text-base lg:text-lg' : 'text-sm sm:text-base lg:text-xl'}
             `}>
               Learn Your Approach
             </span>
           </button>
 
           {/* Desktop Links với Enhanced Effects - Tablet: gap nhỏ hơn, Desktop: gap lớn */}
-          <div className="hidden md:flex items-center gap-3 lg:gap-8">
+          <div className="hidden md:flex items-center gap-2 md:gap-2.5 lg:gap-6 xl:gap-8">
             {/* Home */}
             <button
               onClick={() => handleNavigate('/')}
-              className={`${getLinkClass('/')} bg-transparent border-none cursor-pointer font-medium text-sm md:text-base`}
+              className={`${getLinkClass('/')} bg-transparent border-none cursor-pointer font-medium text-xs md:text-sm lg:text-base`}
             >
               HOME 
             </button>
@@ -190,7 +190,7 @@ function Header({ onUserIconClick }) {
             >
               <button
                 onClick={() => handleNavigate('/level')}
-                className={`${getLinkClass('/level')} flex items-center bg-transparent border-none cursor-pointer font-medium text-sm md:text-base`}
+                className={`${getLinkClass('/level')} flex items-center bg-transparent border-none cursor-pointer font-medium text-xs md:text-sm lg:text-base`}
               >
                 LEVEL
                 <svg 
@@ -234,7 +234,7 @@ function Header({ onUserIconClick }) {
             >
               <button
                 onClick={() => handleNavigate('/jlpt')}
-                className={`${getLinkClass('/jlpt')} flex items-center bg-transparent border-none cursor-pointer font-medium text-sm md:text-base`}
+                className={`${getLinkClass('/jlpt')} flex items-center bg-transparent border-none cursor-pointer font-medium text-xs md:text-sm lg:text-base`}
               >
                 JLPT
                 <svg 
@@ -270,34 +270,34 @@ function Header({ onUserIconClick }) {
               )}
             </div>
 
-            {/* About */}
+            {/* About - Ẩn trên tablet, hiện trên desktop */}
             <button
               onClick={() => handleNavigate('/about')}
-              className={`${getLinkClass('/about')} bg-transparent border-none cursor-pointer font-medium text-sm md:text-base`}
+              className={`${getLinkClass('/about')} bg-transparent border-none cursor-pointer font-medium text-sm md:text-base hidden lg:block`}
             >
               ABOUT ME
             </button>
 
             {/* User Info / Login */}
             {user ? (
-              <div className="flex items-center gap-1 md:gap-2 lg:gap-3">
-                {/* Admin Panel Button (chỉ hiển thị cho admin) */}
+              <div className="flex items-center gap-1 md:gap-1.5 lg:gap-2 xl:gap-3">
+                {/* Admin Panel Button (chỉ hiển thị cho admin) - Tablet: chỉ icon, Desktop: có text */}
                 {isAdmin() && (
                   <button
                     onClick={() => navigate('/admin')}
-                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-all font-semibold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                    className="px-2 md:px-3 lg:px-4 py-1.5 md:py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-all font-semibold text-xs md:text-sm shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-1 md:gap-2"
                     title="Admin Dashboard"
                   >
                     <span>⚙️</span>
-                    <span>Admin Panel</span>
+                    <span className="hidden lg:inline">Admin Panel</span>
                   </button>
                 )}
-                  <div className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 bg-yellow-400/10 rounded-lg border border-yellow-400/30">
-                    <span className="text-yellow-400 text-xs md:text-sm font-medium truncate max-w-[100px] md:max-w-none">
-                      👤 {user.name || user.username}
+                  <div className="flex items-center gap-1 md:gap-1.5 lg:gap-2 px-1.5 md:px-2 lg:px-3 py-1 md:py-1.5 bg-yellow-400/10 rounded-lg border border-yellow-400/30">
+                    <span className="text-yellow-400 text-xs md:text-xs lg:text-sm font-medium truncate max-w-[60px] md:max-w-[80px] lg:max-w-none">
+                      {user.name || user.username}
                     </span>
                     {isAdmin() && (
-                      <span className="text-xs bg-red-500 text-white px-1.5 md:px-2 py-0.5 rounded-full flex-shrink-0">
+                      <span className="text-[10px] md:text-xs bg-red-500 text-white px-1 md:px-1.5 lg:px-2 py-0.5 rounded-full flex-shrink-0">
                         Admin
                       </span>
                     )}
