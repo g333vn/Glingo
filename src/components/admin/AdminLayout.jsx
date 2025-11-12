@@ -96,15 +96,15 @@ function AdminLayout() {
             rounded-lg md:rounded-lg 
             flex flex-col overflow-hidden 
             z-50 md:z-10
-            transition-all duration-300 ease-in-out
+            transition-[width,transform] duration-300 ease-in-out
             md:translate-x-0
           `}>
             {/* Sidebar Header */}
             <div className="h-20 flex items-center justify-between px-4 border-b border-gray-200 flex-shrink-0">
               {isSidebarOpen && (
-                <div>
-                  <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
-                  <p className="text-xs text-gray-500">Quản trị hệ thống</p>
+                <div className="transition-opacity duration-300 min-w-0 flex-1">
+                  <h1 className="text-xl font-bold text-gray-800 truncate">Admin Panel</h1>
+                  <p className="text-xs text-gray-500 truncate">Quản trị hệ thống</p>
                 </div>
               )}
               {/* Desktop only: Toggle sidebar collapse */}
@@ -128,9 +128,9 @@ function AdminLayout() {
             {/* User Info */}
             <div className="px-4 py-4 border-b border-gray-200 flex-shrink-0">
               {isSidebarOpen ? (
-                <div>
+                <div className="transition-opacity duration-300">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                       {user?.name?.charAt(0) || user?.username?.charAt(0) || 'A'}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -147,7 +147,7 @@ function AdminLayout() {
                   </div>
                 </div>
               ) : (
-                <div className="flex justify-center">
+                <div className="flex justify-center transition-opacity duration-300">
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
                     {user?.name?.charAt(0) || user?.username?.charAt(0) || 'A'}
                   </div>
@@ -171,7 +171,7 @@ function AdminLayout() {
                         }
                       }}
                       disabled={item.comingSoon}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
                         isActive(item.path)
                           ? 'bg-blue-500 text-white shadow-lg'
                           : item.comingSoon
@@ -180,16 +180,16 @@ function AdminLayout() {
                       } ${!isSidebarOpen ? 'justify-center' : ''}`}
                       title={!isSidebarOpen ? item.label : ''}
                     >
-                      <span className="text-xl">{item.icon}</span>
+                      <span className="text-xl flex-shrink-0">{item.icon}</span>
                       {isSidebarOpen && (
-                        <>
-                          <span className="flex-1 text-left font-medium">{item.label}</span>
+                        <div className="flex-1 min-w-0 transition-opacity duration-300">
+                          <span className="block text-left font-medium truncate">{item.label}</span>
                           {item.comingSoon && (
                             <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">
                               Soon
                             </span>
                           )}
-                        </>
+                        </div>
                       )}
                     </button>
                   </li>
@@ -207,19 +207,21 @@ function AdminLayout() {
                     setIsMobileMenuOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-all ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors duration-200 ${
                   !isSidebarOpen ? 'justify-center' : ''
                 }`}
                 title={!isSidebarOpen ? 'Đăng xuất' : ''}
               >
-                <span className="text-xl">🚪</span>
-                {isSidebarOpen && <span className="font-medium">Đăng xuất</span>}
+                <span className="text-xl flex-shrink-0">🚪</span>
+                {isSidebarOpen && (
+                  <span className="font-medium transition-opacity duration-300">Đăng xuất</span>
+                )}
               </button>
             </div>
           </div>
 
-          {/* Main Content - Giống Level/JLPT layout */}
-          <div className="flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col min-h-app">
+          {/* Main Content - Giống Level/JLPT layout - Transition smooth khi sidebar thay đổi */}
+          <div className="flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col min-h-app transition-all duration-300 ease-in-out">
             <div className="p-4 sm:p-6">
               <Outlet />
             </div>
