@@ -1,53 +1,69 @@
-# 🔒 Cách Truy Cập Quiz Editor Tool (Protected)
+# 🔒 Cách Truy Cập Admin Dashboard và Quiz Editor
 
 ## ⚠️ Lưu ý quan trọng
 
-**Tool này được bảo vệ bằng password!** Chỉ quản trị viên mới có thể truy cập.
+**Admin Dashboard được bảo vệ!** Chỉ quản trị viên mới có thể truy cập.
 
 ---
 
 ## 📍 Cách truy cập
 
-### Bước 1: Truy cập URL
+### Bước 1: Đăng nhập
+
+1. Click nút **"Đăng nhập"** ở Header (góc phải)
+2. Hoặc truy cập: `/login`
+3. Nhập thông tin:
+   - **Username:** `admin`
+   - **Password:** `admin123`
+4. Click "Đăng nhập"
+
+### Bước 2: Truy cập Admin Dashboard
+
+**Sau khi đăng nhập:**
+- Truy cập: `/admin` → Vào Admin Dashboard
+- Hoặc truy cập: `/admin/quiz-editor` → Vào Quiz Editor trực tiếp
 
 **Development (Local):**
 ```
-http://localhost:5173/admin/quiz-editor
+http://localhost:5173/admin
 ```
 
 **Production:**
 ```
-https://your-domain.com/admin/quiz-editor
+https://your-domain.com/admin
 ```
 
-Hoặc gõ trực tiếp: `/admin/quiz-editor` vào thanh địa chỉ
+### Bước 3: Sử dụng Admin Dashboard
 
-### Bước 2: Nhập mật khẩu
+- **Dashboard:** Xem tổng quan và thống kê
+- **Quiz Editor:** Tạo và quản lý quiz (click vào sidebar)
+- **Các module khác:** Sẽ được thêm sau (Users, Content, Settings)
 
-- Màn hình đăng nhập sẽ hiển thị
-- Nhập mật khẩu admin (mặc định: `admin123`)
-- Click "Đăng nhập"
+### Bước 4: Đăng xuất
 
-### Bước 3: Sử dụng tool
-
-- Sau khi đăng nhập thành công, bạn có thể sử dụng tool
-- Session sẽ được lưu trong browser (hết hạn khi đóng browser)
-- Có thể đăng xuất bằng nút "Đăng xuất" ở cuối trang
+- Click nút **"Đăng xuất"** ở Header
+- Hoặc click "Đăng xuất" trong Admin Dashboard sidebar
 
 ---
 
 ## 🔐 Thay đổi mật khẩu
 
-Mật khẩu được lưu trong file `src/pages/QuizEditorPage.jsx`:
+Mật khẩu được lưu trong file `src/data/users.js`:
 
 ```javascript
-const ADMIN_PASSWORD = 'admin123'; // Thay đổi password này!
+{
+  id: 1,
+  username: 'admin',
+  password: 'admin123', // Thay đổi password này!
+  role: 'admin',
+  // ...
+}
 ```
 
 **Cách thay đổi:**
-1. Mở file `src/pages/QuizEditorPage.jsx`
-2. Tìm dòng: `const ADMIN_PASSWORD = 'admin123';`
-3. Thay đổi `'admin123'` thành mật khẩu mới
+1. Mở file `src/data/users.js`
+2. Tìm user `admin`
+3. Thay đổi `password: 'admin123'` thành mật khẩu mới
 4. Lưu file và rebuild app
 
 ---
