@@ -513,7 +513,7 @@ function ContentManagementPage() {
                             <td className="px-3 py-3 text-sm">
                               <div className="flex items-center gap-1 flex-wrap">
                                 <button
-                                  onClick={() => handleAddChapter(book.id)}
+                                  onClick={() => handleAddChapter(book)}
                                   className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 active:bg-green-700 transition-colors duration-150 text-xs font-medium"
                                   title="Thêm chương"
                                 >
@@ -1049,6 +1049,39 @@ function ContentManagementPage() {
                     className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     placeholder="新完全マスター 文法 N1"
                   />
+                </div>
+                
+                {/* ✅ NEW: Preview existing books */}
+                <div className="sm:col-span-2">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                    <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                      <span>📚</span>
+                      <span>Sách đã có trong Level {selectedLevel.toUpperCase()} ({books.length})</span>
+                    </h4>
+                    {books.length > 0 ? (
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {books.slice(0, 10).map((book) => (
+                          <div 
+                            key={book.id}
+                            className={`text-xs px-2 py-1 rounded ${
+                              book.id === bookForm.id && !editingBook
+                                ? 'bg-red-100 text-red-800 border border-red-300'
+                                : 'bg-white text-gray-700 border border-gray-200'
+                            }`}
+                          >
+                            <span className="font-mono font-semibold">{book.id}</span>
+                            {book.title && <span className="ml-2">- {book.title}</span>}
+                            {book.category && <span className="ml-2 text-blue-600">({book.category})</span>}
+                          </div>
+                        ))}
+                        {books.length > 10 && (
+                          <p className="text-xs text-gray-500 italic mt-1">... và {books.length - 10} sách khác</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-600 italic">Chưa có sách nào</p>
+                    )}
+                  </div>
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
