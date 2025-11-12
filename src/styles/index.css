@@ -39,10 +39,15 @@
 /* Modal animation utility classes */
 .modal-overlay-enter {
   animation: modalFadeIn 0.2s ease-out;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .modal-content-enter {
   animation: modalSlideUp 0.3s ease-out;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .modal-overlay-exit {

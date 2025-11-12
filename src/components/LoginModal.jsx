@@ -30,7 +30,7 @@ function LoginModal({ onClose }) {
     <div 
       id="modal-backdrop"
       onClick={handleBackdropClick}
-      className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 modal-overlay-enter" // Tăng độ mờ nền
+      className="fixed inset-0 bg-black bg-opacity-60 z-50 p-4 modal-overlay-enter" // Tăng độ mờ nền
     >
       {/* --- Hộp thoại Modal --- */}
       <div className="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-sm relative modal-content-enter"> {/* Giảm max-w một chút */}
