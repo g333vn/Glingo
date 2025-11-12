@@ -538,14 +538,17 @@ function ContentManagementPage() {
                                   className="w-10 h-14 object-cover rounded"
                                   loading="lazy"
                                   onError={(e) => {
-                                    e.target.src = '/book_card/placeholder.jpg';
+                                    e.target.style.display = 'none';
+                                    e.target.nextElementSibling.style.display = 'flex';
                                   }}
                                 />
-                              ) : (
-                                <div className="w-10 h-14 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-400">
-                                  No img
-                                </div>
-                              )}
+                              ) : null}
+                              <div 
+                                className={`w-10 h-14 bg-gradient-to-br from-gray-200 to-gray-300 rounded flex items-center justify-center text-xs text-gray-500 border border-gray-400 ${book.imageUrl ? 'hidden' : ''}`}
+                                style={{ display: book.imageUrl ? 'none' : 'flex' }}
+                              >
+                                📚
+                              </div>
                             </td>
                             <td className="px-3 py-3 text-sm font-medium text-gray-900">
                               <div className="flex items-center gap-2 lg:gap-0">
@@ -556,14 +559,18 @@ function ContentManagementPage() {
                                     className="w-10 h-14 object-cover rounded lg:hidden flex-shrink-0"
                                     loading="lazy"
                                     onError={(e) => {
-                                      e.target.src = '/book_card/placeholder.jpg';
+                                      e.target.style.display = 'none';
+                                      const placeholder = e.target.nextElementSibling;
+                                      if (placeholder) placeholder.style.display = 'flex';
                                     }}
                                   />
-                                ) : (
-                                  <div className="w-10 h-14 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-400 lg:hidden flex-shrink-0">
-                                    No img
-                                  </div>
-                                )}
+                                ) : null}
+                                <div 
+                                  className={`w-10 h-14 bg-gradient-to-br from-gray-200 to-gray-300 rounded flex items-center justify-center text-xs text-gray-500 border border-gray-400 lg:hidden flex-shrink-0 ${book.imageUrl ? 'hidden' : ''}`}
+                                  style={{ display: book.imageUrl ? 'none' : 'flex' }}
+                                >
+                                  📚
+                                </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="truncate">{book.title}</div>
                                   {book.category && (
@@ -679,15 +686,25 @@ function ContentManagementPage() {
                   {paginatedBooks.map((book) => (
                     <div key={book.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                       <div className="flex gap-3 mb-3">
-                        <img
-                          src={book.imageUrl}
-                          alt={book.title}
-                          className="w-16 h-20 object-cover rounded flex-shrink-0"
-                          loading="lazy"
-                          onError={(e) => {
-                            e.target.src = '/book_card/placeholder.jpg';
-                          }}
-                        />
+                        {book.imageUrl ? (
+                          <img
+                            src={book.imageUrl}
+                            alt={book.title}
+                            className="w-16 h-20 object-cover rounded flex-shrink-0"
+                            loading="lazy"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              const placeholder = e.target.nextElementSibling;
+                              if (placeholder) placeholder.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className={`w-16 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded flex items-center justify-center text-lg text-gray-500 border border-gray-400 flex-shrink-0 ${book.imageUrl ? 'hidden' : ''}`}
+                          style={{ display: book.imageUrl ? 'none' : 'flex' }}
+                        >
+                          📚
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-xs text-gray-500 mb-1 font-mono truncate">{book.id}</div>
                           <div className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">{book.title}</div>
