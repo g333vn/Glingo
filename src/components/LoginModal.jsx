@@ -30,17 +30,7 @@ function LoginModal({ onClose }) {
     <div 
       id="modal-backdrop"
       onClick={handleBackdropClick}
-      className="modal-overlay-enter"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        zIndex: 50,
-        padding: '1rem',
-      }}
+      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 modal-overlay-enter"
     >
       {/* --- Hộp thoại Modal --- */}
       <div className="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-sm relative modal-content-enter"> {/* Giảm max-w một chút */}

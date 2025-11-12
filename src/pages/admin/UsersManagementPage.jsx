@@ -392,17 +392,7 @@ function UsersManagementPage() {
       {/* Change Password Modal */}
       {showChangePasswordModal && changePasswordUser && (
         <div 
-          className="modal-overlay-enter"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 50,
-            padding: '1rem',
-          }}
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-overlay-enter"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowChangePasswordModal(false);
