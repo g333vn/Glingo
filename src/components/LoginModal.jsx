@@ -30,10 +30,10 @@ function LoginModal({ onClose }) {
     <div 
       id="modal-backdrop"
       onClick={handleBackdropClick}
-      className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" // Tăng độ mờ nền
+      className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 animate-[modalFadeIn_0.2s_ease-out]" // Tăng độ mờ nền
     >
       {/* --- Hộp thoại Modal --- */}
-      <div className="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-sm relative"> {/* Giảm max-w một chút */}
+      <div className="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-sm relative animate-[modalSlideUp_0.3s_ease-out]"> {/* Giảm max-w một chút */}
         
         {/* Nút Đóng (X) */}
         <button 

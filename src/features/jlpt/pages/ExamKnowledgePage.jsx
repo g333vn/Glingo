@@ -412,14 +412,14 @@ function ExamKnowledgePage() {
         {/* Modal xác nhận submit cuối cùng */}
         {showSubmitModal && (
           <div 
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-[modalFadeIn_0.2s_ease-out]"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowSubmitModal(false);
               }
             }}
           >
-            <div className="bg-white rounded-lg p-8 max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto">
+            <div className="bg-white rounded-lg p-8 max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto animate-[modalSlideUp_0.3s_ease-out]">
               <h2 className="text-xl font-bold mb-4">確認</h2>
               <p className="mb-6">本当に提出しますか？提出後は変更できません。</p>
               <div className="flex justify-end gap-4">
