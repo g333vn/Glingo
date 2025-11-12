@@ -29,8 +29,7 @@ function AdminLayout() {
       id: 'users',
       label: '👥 Quản lý Users',
       path: '/admin/users',
-      icon: '👥',
-      comingSoon: true
+      icon: '👥'
     },
     {
       id: 'content',

@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 import AdminLayout from './components/admin/AdminLayout.jsx';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
 import QuizEditorPage from './pages/admin/QuizEditorPage.jsx';
+import UsersManagementPage from './pages/admin/UsersManagementPage.jsx';
 import LevelPage from './features/books/pages/LevelPage.jsx';
 import LevelN1Page from './features/books/pages/LevelN1Page.jsx';
 
@@ -168,6 +169,10 @@ const router = createBrowserRouter([
           {
             path: 'quiz-editor',
             element: <QuizEditorPage />
+          },
+          {
+            path: 'users',
+            element: <UsersManagementPage />
           }
         ]
       },

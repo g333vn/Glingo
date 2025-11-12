@@ -52,9 +52,25 @@ export function hasPermission(userRole, permission) {
   return role.permissions.includes(permission);
 }
 
+// Helper function để get users (check localStorage trước)
+export function getUsers() {
+  try {
+    const savedUsers = localStorage.getItem('adminUsers');
+    if (savedUsers) {
+      return JSON.parse(savedUsers);
+    }
+  } catch (error) {
+    console.error('Error loading users from localStorage:', error);
+  }
+  return users; // Fallback về users mặc định
+}
+
 // Helper function để login
 export function login(username, password) {
-  const user = users.find(
+  // Lấy users từ localStorage nếu có, không thì dùng users mặc định
+  const allUsers = getUsers();
+  
+  const user = allUsers.find(
     u => u.username === username && u.password === password
   );
   
