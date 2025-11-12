@@ -6,10 +6,10 @@ import App from './App.jsx';
 import HomePage from './pages/HomePage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
-import AdminLayout from './pages/admin/AdminLayout.jsx';
-import AdminDashboard from './pages/admin/AdminDashboard.jsx';
-import QuizEditorPage from './pages/admin/QuizEditorPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import AdminLayout from './components/admin/AdminLayout.jsx';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
+import QuizEditorPage from './pages/admin/QuizEditorPage.jsx';
 import LevelPage from './features/books/pages/LevelPage.jsx';
 import LevelN1Page from './features/books/pages/LevelN1Page.jsx';
 
@@ -163,7 +163,7 @@ const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <AdminDashboard />
+            element: <AdminDashboardPage />
           },
           {
             path: 'quiz-editor',
