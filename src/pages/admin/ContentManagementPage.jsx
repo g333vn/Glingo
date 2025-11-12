@@ -1072,7 +1072,7 @@ function ContentManagementPage() {
               {editingChapter ? '✏️ Sửa Chương' : '➕ Thêm Chương mới'}
             </h2>
             <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-              Sách: <strong>{selectedBook.title || 'N/A'}</strong>
+              Sách: <strong>{selectedBook?.title || 'N/A'}</strong>
             </p>
             
             <form onSubmit={handleSaveChapter} className="space-y-3 sm:space-y-4">
