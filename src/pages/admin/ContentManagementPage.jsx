@@ -109,8 +109,17 @@ function ContentManagementPage() {
   };
 
   const saveBooks = async (updatedBooks) => {
-    setBooks(updatedBooks);
-    await storageManager.saveBooks(selectedLevel, updatedBooks);
+    // ✅ Sắp xếp books theo category, sau đó theo title
+    const sortedBooks = [...updatedBooks].sort((a, b) => {
+      const categoryA = a.category || '';
+      const categoryB = b.category || '';
+      if (categoryA !== categoryB) {
+        return categoryA.localeCompare(categoryB);
+      }
+      return (a.title || '').localeCompare(b.title || '');
+    });
+    setBooks(sortedBooks);
+    await storageManager.saveBooks(selectedLevel, sortedBooks);
   };
 
   // State for chapters data (async loading)
