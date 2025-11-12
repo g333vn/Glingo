@@ -39,16 +39,18 @@
 /* Modal animation utility classes */
 .modal-overlay-enter {
   animation: modalFadeIn 0.2s ease-out;
-  /* Ensure modal is always centered */
+  /* Ensure modal is always centered - override any parent styles */
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  text-align: left !important; /* Override #root text-align: center */
 }
 
 .modal-content-enter {
   animation: modalSlideUp 0.3s ease-out;
-  /* Ensure content doesn't stretch */
+  /* Ensure content doesn't stretch and is properly sized */
   flex-shrink: 0;
+  margin: 0 auto;
 }
 
 .modal-overlay-exit {
