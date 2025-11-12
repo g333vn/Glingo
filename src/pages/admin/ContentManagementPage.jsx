@@ -303,7 +303,7 @@ function ContentManagementPage() {
     // Note: Chapters are stored in bookData files, not localStorage
     // This is a UI for managing, but actual save would need to update the source files
     // For now, we'll show instructions
-    alert(`✅ Chapter đã được chuẩn bị!\n\nĐể lưu chapter, bạn cần:\n1. Cập nhật file: src/data/level/${selectedLevel}/${selectedBook.id || 'book-id'}.js\n2. Thêm chapter vào mảng 'chapters'\n\nHoặc sử dụng Quiz Editor để tạo quiz cho chapter mới.`);
+    alert(`✅ Chapter đã được chuẩn bị!\n\nĐể lưu chapter, bạn cần:\n1. Cập nhật file: src/data/level/${selectedLevel}/${selectedBook?.id || 'book-id'}.js\n2. Thêm chapter vào mảng 'chapters'\n\nHoặc sử dụng Quiz Editor để tạo quiz cho chapter mới.`);
     setShowChapterForm(false);
   };
 
@@ -1109,7 +1109,7 @@ function ContentManagementPage() {
                 <p className="text-xs text-yellow-800">
                   ⚠️ <strong>Lưu ý:</strong> Để lưu chapter vào hệ thống, bạn cần:
                   <br />
-                  1. Cập nhật file: <code className="bg-yellow-100 px-1 rounded">src/data/level/{selectedLevel}/{selectedBook.id || 'book-id'}.js</code>
+                  1. Cập nhật file: <code className="bg-yellow-100 px-1 rounded">src/data/level/{selectedLevel}/{selectedBook?.id || 'book-id'}.js</code>
                   <br />
                   2. Thêm chapter vào mảng <code className="bg-yellow-100 px-1 rounded">chapters</code>
                   <br />
