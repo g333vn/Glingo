@@ -1346,69 +1346,107 @@ function ExamManagementPage() {
               })}
             </select>
           </div>
+          {/* Audio Upload Section - Always visible for listening, hidden for others */}
           {selectedTestType === 'listening' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                File Audio *
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border-2 border-purple-200">
+              <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <span className="text-lg">🎧</span>
+                <span>File Audio * (Bắt buộc cho Listening)</span>
               </label>
-              <div className="space-y-2">
-                <input
-                  type="file"
-                  accept="audio/*"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      // Validate file size (max 10MB)
-                      if (file.size > 10 * 1024 * 1024) {
-                        alert('⚠️ File quá lớn! Vui lòng chọn file nhỏ hơn 10MB.');
-                        e.target.value = '';
-                        return;
-                      }
-                      
-                      // Validate file type
-                      if (!file.type.startsWith('audio/')) {
-                        alert('⚠️ Vui lòng chọn file audio!');
-                        e.target.value = '';
-                        return;
-                      }
+              
+              {/* File Upload */}
+              <div className="mb-4">
+                <div className="bg-white rounded-lg p-3 border-2 border-dashed border-purple-300">
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        // Validate file size (max 10MB)
+                        if (file.size > 10 * 1024 * 1024) {
+                          alert('⚠️ File quá lớn! Vui lòng chọn file nhỏ hơn 10MB.');
+                          e.target.value = '';
+                          return;
+                        }
+                        
+                        // Validate file type
+                        if (!file.type.startsWith('audio/')) {
+                          alert('⚠️ Vui lòng chọn file audio!');
+                          e.target.value = '';
+                          return;
+                        }
 
-                      // Create object URL for preview
-                      const audioUrl = URL.createObjectURL(file);
-                      setQuestionForm({ ...questionForm, audioUrl, audioFile: file });
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <p className="text-xs text-gray-500">
-                  Chọn file audio (MP3, WAV, OGG) - Tối đa 10MB
-                </p>
-                {questionForm.audioUrl && (
-                  <div className="mt-2">
-                    <audio controls className="w-full">
-                      <source src={questionForm.audioUrl} type="audio/mpeg" />
-                      Trình duyệt không hỗ trợ audio.
-                    </audio>
-                    <p className="text-xs text-gray-600 mt-1">
-                      💡 File sẽ được lưu vào thư mục public/audio khi bạn lưu câu hỏi
-                    </p>
-                  </div>
-                )}
+                        // Create object URL for preview
+                        const audioUrl = URL.createObjectURL(file);
+                        setQuestionForm({ ...questionForm, audioUrl, audioFile: file });
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white cursor-pointer"
+                  />
+                  <p className="text-xs text-gray-600 mt-2">
+                    📎 Chọn file audio (MP3, WAV, OGG) - Tối đa 10MB
+                  </p>
+                  {questionForm.audioFile && (
+                    <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
+                      <p className="text-xs text-green-700 font-semibold">
+                        ✅ Đã chọn: {questionForm.audioFile.name} ({(questionForm.audioFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="mt-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hoặc nhập URL Audio (nếu đã upload)
+
+              {/* Audio Preview */}
+              {questionForm.audioUrl && (
+                <div className="mb-4 bg-white rounded-lg p-4 border border-purple-200">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">🔊 Preview Audio:</p>
+                  <audio controls className="w-full">
+                    <source src={questionForm.audioUrl} type="audio/mpeg" />
+                    Trình duyệt không hỗ trợ audio.
+                  </audio>
+                  {questionForm.audioUrl.startsWith('blob:') && (
+                    <p className="text-xs text-orange-600 mt-2 font-semibold">
+                      ⚠️ File tạm thời (blob URL). Cần upload file vào thư mục public/audio và nhập URL cố định.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* URL Input (Alternative) */}
+              <div className="bg-white rounded-lg p-3 border border-purple-200">
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                  Hoặc nhập URL Audio (nếu đã upload sẵn vào public/audio)
                 </label>
-                <input
-                  type="text"
-                  value={questionForm.audioUrl && !questionForm.audioUrl.startsWith('blob:') ? questionForm.audioUrl : ''}
-                  onChange={(e) => {
-                    if (!e.target.value.startsWith('blob:')) {
-                      setQuestionForm({ ...questionForm, audioUrl: e.target.value, audioFile: null });
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="/audio/n1/2024-12/listening-1.mp3"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={questionForm.audioUrl && !questionForm.audioUrl.startsWith('blob:') ? questionForm.audioUrl : ''}
+                    onChange={(e) => {
+                      if (!e.target.value.startsWith('blob:')) {
+                        setQuestionForm({ ...questionForm, audioUrl: e.target.value, audioFile: null });
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                    placeholder="/audio/n1/2024-12/listening-1.mp3"
+                  />
+                  {questionForm.audioUrl && !questionForm.audioUrl.startsWith('blob:') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const audio = new Audio(questionForm.audioUrl);
+                        audio.play().catch(() => alert('⚠️ Không thể phát audio. Kiểm tra lại URL.'));
+                      }}
+                      className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-xs font-semibold"
+                      title="Test audio URL"
+                    >
+                      ▶️ Test
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  💡 Đường dẫn từ thư mục public (ví dụ: /audio/n1/2024-12/q1-01.mp3)
+                </p>
               </div>
             </div>
           )}
