@@ -48,9 +48,13 @@ function ExamManagementPage() {
 
   // ✅ Questions management states
   const [selectedTestType, setSelectedTestType] = useState('knowledge'); // 'knowledge' | 'reading' | 'listening'
+  const [examData, setExamData] = useState(null); // Full exam data with questions
+  const [sections, setSections] = useState([]); // Current sections for selected test type
   const [showQuestionForm, setShowQuestionForm] = useState(false);
+  const [showSectionForm, setShowSectionForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [editingSection, setEditingSection] = useState(null);
+  const [selectedSection, setSelectedSection] = useState(null);
   const [questionForm, setQuestionForm] = useState({
     id: '',
     category: '',
@@ -167,11 +171,238 @@ function ExamManagementPage() {
     }
   };
 
-  // Load exam questions
-  const loadExamQuestions = async (examId, testType) => {
-    const examData = await storageManager.getExam(selectedLevel, examId);
-    return examData?.[testType] || null;
+  // Load exam data when exam or test type changes
+  useEffect(() => {
+    if (selectedExam && selectedTestType) {
+      loadExamData();
+    }
+  }, [selectedExam, selectedTestType, selectedLevel]);
+
+  const loadExamData = async () => {
+    if (!selectedExam) return;
+    
+    const data = await storageManager.getExam(selectedLevel, selectedExam.id);
+    if (data) {
+      setExamData(data);
+      setSections(data[selectedTestType]?.sections || []);
+    } else {
+      // Initialize empty exam data
+      const emptyData = {
+        knowledge: { sections: [] },
+        reading: { sections: [] },
+        listening: { sections: [] }
+      };
+      setExamData(emptyData);
+      setSections([]);
+    }
   };
+
+  // Section CRUD
+  const handleAddSection = () => {
+    setEditingSection(null);
+    setSectionForm({
+      id: '',
+      title: '',
+      instruction: '',
+      timeLimit: null
+    });
+    setShowSectionForm(true);
+  };
+
+  const handleEditSection = (section) => {
+    setEditingSection(section);
+    setSectionForm({
+      id: section.id,
+      title: section.title,
+      instruction: section.instruction || '',
+      timeLimit: section.timeLimit || null
+    });
+    setShowSectionForm(true);
+  };
+
+  const handleSaveSection = async (e) => {
+    e.preventDefault();
+    if (!sectionForm.id || !sectionForm.title) {
+      alert('⚠️ Vui lòng điền đầy đủ ID và Tiêu đề section!');
+      return;
+    }
+
+    const updatedSections = [...sections];
+    if (editingSection) {
+      const index = updatedSections.findIndex(s => s.id === editingSection.id);
+      if (index >= 0) {
+        updatedSections[index] = {
+          ...editingSection,
+          ...sectionForm,
+          questions: editingSection.questions || []
+        };
+      }
+    } else {
+      if (updatedSections.find(s => s.id === sectionForm.id)) {
+        alert('⚠️ ID section đã tồn tại!');
+        return;
+      }
+      updatedSections.push({
+        ...sectionForm,
+        questions: []
+      });
+    }
+
+    // Sort sections by ID
+    updatedSections.sort((a, b) => {
+      const getNumber = (id) => {
+        const match = id.match(/(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+      };
+      return getNumber(a.id) - getNumber(b.id);
+    });
+
+    await saveSections(updatedSections);
+    setShowSectionForm(false);
+    alert('✅ Đã lưu section!');
+  };
+
+  const handleDeleteSection = async (sectionId) => {
+    if (confirm('⚠️ Xóa section này? Tất cả câu hỏi trong section sẽ bị xóa!')) {
+      const updatedSections = sections.filter(s => s.id !== sectionId);
+      await saveSections(updatedSections);
+      alert('✅ Đã xóa section!');
+    }
+  };
+
+  const saveSections = async (updatedSections) => {
+    setSections(updatedSections);
+    
+    const updatedExamData = {
+      ...examData,
+      [selectedTestType]: {
+        sections: updatedSections
+      }
+    };
+    setExamData(updatedExamData);
+    
+    await storageManager.saveExam(selectedLevel, selectedExam.id, updatedExamData);
+  };
+
+  // Question CRUD
+  const handleAddQuestion = (section) => {
+    setSelectedSection(section);
+    setEditingQuestion(null);
+    setQuestionForm({
+      id: '',
+      category: selectedTestType,
+      question: '',
+      options: ['', '', '', ''],
+      correctAnswer: 0,
+      explanation: '',
+      audioUrl: ''
+    });
+    setShowQuestionForm(true);
+  };
+
+  const handleEditQuestion = (section, question) => {
+    setSelectedSection(section);
+    setEditingQuestion(question);
+    setQuestionForm({
+      id: question.id,
+      category: question.category || selectedTestType,
+      question: question.question || '',
+      options: question.options || ['', '', '', ''],
+      correctAnswer: question.correctAnswer !== undefined ? question.correctAnswer : 0,
+      explanation: question.explanation || '',
+      audioUrl: question.audioUrl || ''
+    });
+    setShowQuestionForm(true);
+  };
+
+  const handleSaveQuestion = async (e) => {
+    e.preventDefault();
+    if (!questionForm.question || !selectedSection) {
+      alert('⚠️ Vui lòng điền đầy đủ thông tin!');
+      return;
+    }
+
+    // Validate options
+    const validOptions = questionForm.options.filter(opt => opt.trim() !== '');
+    if (validOptions.length < 2) {
+      alert('⚠️ Cần ít nhất 2 lựa chọn!');
+      return;
+    }
+
+    const updatedSections = sections.map(section => {
+      if (section.id === selectedSection.id) {
+        const questions = [...(section.questions || [])];
+        
+        if (editingQuestion) {
+          const index = questions.findIndex(q => q.id === editingQuestion.id);
+          if (index >= 0) {
+            questions[index] = {
+              ...questionForm,
+              options: validOptions
+            };
+          }
+        } else {
+          if (questions.find(q => q.id === questionForm.id)) {
+            alert('⚠️ ID câu hỏi đã tồn tại!');
+            return section;
+          }
+          questions.push({
+            ...questionForm,
+            options: validOptions
+          });
+        }
+
+        // Sort questions by ID
+        questions.sort((a, b) => {
+          const idA = typeof a.id === 'number' ? a.id : parseInt(a.id) || 0;
+          const idB = typeof b.id === 'number' ? b.id : parseInt(b.id) || 0;
+          return idA - idB;
+        });
+
+        return { ...section, questions };
+      }
+      return section;
+    });
+
+    await saveSections(updatedSections);
+    setShowQuestionForm(false);
+    alert('✅ Đã lưu câu hỏi!');
+  };
+
+  const handleDeleteQuestion = async (section, question) => {
+    if (confirm('⚠️ Xóa câu hỏi này?')) {
+      const updatedSections = sections.map(s => {
+        if (s.id === section.id) {
+          return {
+            ...s,
+            questions: (s.questions || []).filter(q => q.id !== question.id)
+          };
+        }
+        return s;
+      });
+      await saveSections(updatedSections);
+      alert('✅ Đã xóa câu hỏi!');
+    }
+  };
+
+  // Statistics
+  const examStats = useMemo(() => {
+    if (!examData) return null;
+    
+    const knowledgeCount = examData.knowledge?.sections?.reduce((sum, s) => sum + (s.questions?.length || 0), 0) || 0;
+    const readingCount = examData.reading?.sections?.reduce((sum, s) => sum + (s.questions?.length || 0), 0) || 0;
+    const listeningCount = examData.listening?.sections?.reduce((sum, s) => sum + (s.questions?.length || 0), 0) || 0;
+    
+    const knowledgeTime = examData.knowledge?.sections?.reduce((sum, s) => sum + (s.timeLimit || 0), 0) || 0;
+    const listeningTime = examData.listening?.sections?.reduce((sum, s) => sum + (s.timeLimit || 0), 0) || 0;
+    
+    return {
+      knowledge: { count: knowledgeCount, time: knowledgeTime },
+      reading: { count: readingCount },
+      listening: { count: listeningCount, time: listeningTime },
+      total: knowledgeCount + readingCount + listeningCount
+    };
+  }, [examData]);
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 pb-4 sm:pb-6">
@@ -569,18 +800,238 @@ function ExamManagementPage() {
         </div>
       )}
 
-      {/* Questions Tab - Placeholder */}
+      {/* Questions Tab - Full Implementation */}
       {activeSubTab === 'questions' && (
-        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 text-center">
-          <div className="text-4xl mb-4">🚧</div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">
-            Nhập Câu hỏi
-          </h2>
-          <p className="text-sm text-gray-600">
-            {selectedExam 
-              ? `Đang phát triển module nhập câu hỏi cho đề thi: ${selectedExam.title}`
-              : 'Vui lòng chọn một đề thi từ danh sách để nhập câu hỏi'}
-          </p>
+        <div className="space-y-4 sm:space-y-6">
+          {!selectedExam ? (
+            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 text-center">
+              <div className="text-4xl mb-4">📋</div>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">
+                Chọn Đề thi
+              </h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Vui lòng chọn một đề thi từ danh sách để nhập câu hỏi
+              </p>
+              <button
+                onClick={() => setActiveSubTab('exams')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+              >
+                Đi đến Danh sách Đề thi
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Exam Info & Test Type Selection */}
+              <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-1">
+                      {selectedExam.title}
+                    </h2>
+                    <p className="text-sm text-gray-600">
+                      Level: {selectedLevel.toUpperCase()} | ID: {selectedExam.id}
+                    </p>
+                  </div>
+                  
+                  {/* Test Type Tabs */}
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => setSelectedTestType('knowledge')}
+                      className={`px-3 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                        selectedTestType === 'knowledge'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      📚 Kiến thức
+                    </button>
+                    <button
+                      onClick={() => setSelectedTestType('reading')}
+                      className={`px-3 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                        selectedTestType === 'reading'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      📖 Đọc hiểu
+                    </button>
+                    <button
+                      onClick={() => setSelectedTestType('listening')}
+                      className={`px-3 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                        selectedTestType === 'listening'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      🎧 Nghe hiểu
+                    </button>
+                  </div>
+                </div>
+
+                {/* Statistics */}
+                {examStats && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-blue-50 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-xs text-gray-600 mb-1">Kiến thức</div>
+                      <div className="text-lg font-bold text-blue-700">{examStats.knowledge.count} câu</div>
+                      {examStats.knowledge.time > 0 && (
+                        <div className="text-xs text-gray-500">{examStats.knowledge.time} phút</div>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-600 mb-1">Đọc hiểu</div>
+                      <div className="text-lg font-bold text-blue-700">{examStats.reading.count} câu</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-600 mb-1">Nghe hiểu</div>
+                      <div className="text-lg font-bold text-blue-700">{examStats.listening.count} câu</div>
+                      {examStats.listening.time > 0 && (
+                        <div className="text-xs text-gray-500">{examStats.listening.time} phút</div>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-600 mb-1">Tổng cộng</div>
+                      <div className="text-lg font-bold text-blue-700">{examStats.total} câu</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Sections List */}
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="p-3 sm:p-4 md:p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-800">
+                    Sections ({sections.length})
+                  </h3>
+                  <button
+                    onClick={handleAddSection}
+                    className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-sm flex items-center justify-center gap-2"
+                  >
+                    <span>➕</span>
+                    <span>Thêm Section</span>
+                  </button>
+                </div>
+
+                {sections.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <div className="text-4xl mb-3">📝</div>
+                    <p className="mb-4">Chưa có section nào</p>
+                    <button
+                      onClick={handleAddSection}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                    >
+                      ➕ Thêm Section đầu tiên
+                    </button>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-200">
+                    {sections.map((section) => (
+                      <div key={section.id} className="p-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="text-base font-semibold text-gray-800">
+                                {section.title}
+                              </h4>
+                              <span className="text-xs text-gray-500">({section.id})</span>
+                            </div>
+                            {section.instruction && (
+                              <p className="text-sm text-gray-600 mb-1">{section.instruction}</p>
+                            )}
+                            <div className="flex flex-wrap gap-2 text-xs">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                                {section.questions?.length || 0} câu hỏi
+                              </span>
+                              {section.timeLimit && (
+                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
+                                  {section.timeLimit} phút
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleAddQuestion(section)}
+                              className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs"
+                              title="Thêm câu hỏi"
+                            >
+                              ➕
+                            </button>
+                            <button
+                              onClick={() => handleEditSection(section)}
+                              className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-xs"
+                              title="Sửa section"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSection(section.id)}
+                              className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                              title="Xóa section"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Questions List */}
+                        {section.questions && section.questions.length > 0 ? (
+                          <div className="ml-4 space-y-2 border-l-2 border-gray-200 pl-4">
+                            {section.questions.map((question, idx) => (
+                              <div key={question.id || idx} className="bg-gray-50 rounded p-3">
+                                <div className="flex justify-between items-start gap-2 mb-2">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-xs font-mono text-gray-500">#{question.id}</span>
+                                      <span className="text-sm font-medium text-gray-800 line-clamp-2">
+                                        {question.question}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-600 mb-1">
+                                      Đáp án: <span className="font-semibold">
+                                        {typeof question.correctAnswer === 'number' 
+                                          ? String.fromCharCode(65 + question.correctAnswer)
+                                          : question.correctAnswer}
+                                      </span>
+                                    </div>
+                                    {question.audioUrl && (
+                                      <div className="text-xs text-blue-600 mb-1">
+                                        🎧 Audio: {question.audioUrl}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <button
+                                      onClick={() => handleEditQuestion(section, question)}
+                                      className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                                      title="Sửa"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteQuestion(section, question)}
+                                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                                      title="Xóa"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="ml-4 text-sm text-gray-500 italic">
+                            Chưa có câu hỏi nào. Nhấn ➕ để thêm.
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 
