@@ -946,44 +946,11 @@ function ContentManagementPage() {
       )}
 
       {/* Book Form Modal - Responsive */}
-      {showBookForm && (
-        <div 
-          className="modal-overlay-enter"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowBookForm(false);
-            }
-          }}
-        >
-          <div 
-            className="modal-content-enter"
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '0.75rem',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              padding: '1.5rem',
-              maxWidth: '42rem',
-              width: '100%',
-              maxHeight: 'calc(100vh - 4rem)',
-              overflowY: 'auto',
-            }}
-          >
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
-              {editingBook ? '✏️ Sửa Sách' : '➕ Thêm Sách mới'}
-            </h2>
+      <Modal isOpen={showBookForm} onClose={() => setShowBookForm(false)} maxWidth="42rem">
+        <div>
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
+            {editingBook ? '✏️ Sửa Sách' : '➕ Thêm Sách mới'}
+          </h2>
             
             <form onSubmit={handleSaveBook} className="space-y-3 sm:space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -1095,9 +1062,8 @@ function ContentManagementPage() {
                 </button>
               </div>
             </form>
-          </div>
         </div>
-      )}
+      </Modal>
 
       {/* Chapter Form Modal - Responsive */}
       <Modal isOpen={showChapterForm && !!selectedBook} onClose={() => setShowChapterForm(false)} maxWidth="28rem">
@@ -1167,9 +1133,8 @@ function ContentManagementPage() {
                 </button>
               </div>
             </form>
-          </div>
         </div>
-      )}
+      </Modal>
 
       {/* ✅ NEW: Series Form Modal - Responsive */}
       <Modal isOpen={showSeriesForm} onClose={() => setShowSeriesForm(false)} maxWidth="28rem">
