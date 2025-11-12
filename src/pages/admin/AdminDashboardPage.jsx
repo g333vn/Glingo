@@ -11,6 +11,11 @@ function AdminDashboardPage() {
   const navigate = useNavigate();
   const [storageInfo, setStorageInfo] = useState(null);
 
+  // Load storage info on mount
+  useEffect(() => {
+    setStorageInfo(storageManager.getStorageInfo());
+  }, []);
+
   const stats = [
     {
       title: 'Tổng số Quiz',
@@ -97,6 +102,120 @@ function AdminDashboardPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Storage Monitoring */}
+      <div className="mb-6">
+        <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            💾 LocalStorage Status
+          </h2>
+          
+          {storageInfo && (
+            <>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Total Size</p>
+                  <p className="text-2xl font-bold text-blue-700">{storageInfo.totalSize}</p>
+                </div>
+                <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Items</p>
+                  <p className="text-2xl font-bold text-green-700">{storageInfo.itemCount}</p>
+                </div>
+                <div className={`bg-gradient-to-br p-4 rounded-lg ${
+                  storageInfo.percentUsed > 80 ? 'from-red-50 to-red-100' :
+                  storageInfo.percentUsed > 50 ? 'from-yellow-50 to-yellow-100' :
+                  'from-green-50 to-green-100'
+                }`}>
+                  <p className="text-sm text-gray-600 mb-1">Usage</p>
+                  <p className={`text-2xl font-bold ${
+                    storageInfo.percentUsed > 80 ? 'text-red-700' :
+                    storageInfo.percentUsed > 50 ? 'text-yellow-700' :
+                    'text-green-700'
+                  }`}>
+                    {storageInfo.percentUsed}%
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Limit</p>
+                  <p className="text-xs font-semibold text-purple-700 mt-2">{storageInfo.limit}</p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mb-6">
+                <div className="flex justify-between text-sm text-gray-600 mb-2">
+                  <span>Storage Usage</span>
+                  <span>{storageInfo.totalSize} / ~5-10 MB</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden shadow-inner">
+                  <div 
+                    className={`h-6 rounded-full transition-all duration-500 flex items-center justify-center text-xs font-bold text-white ${
+                      storageInfo.percentUsed > 80 ? 'bg-gradient-to-r from-red-500 to-red-600' : 
+                      storageInfo.percentUsed > 50 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : 
+                      'bg-gradient-to-r from-green-500 to-green-600'
+                    }`}
+                    style={{ width: `${Math.min(storageInfo.percentUsed, 100)}%` }}
+                  >
+                    {storageInfo.percentUsed > 10 && `${storageInfo.percentUsed}%`}
+                  </div>
+                </div>
+                {storageInfo.percentUsed > 80 && (
+                  <p className="text-xs text-red-600 mt-2">
+                    ⚠️ Cảnh báo: Dung lượng sắp đầy! Hãy export dữ liệu hoặc xóa bớt.
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-3">
+                <button 
+                  onClick={() => {
+                    const data = storageManager.exportAll();
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `elearning-backup-${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    alert('✅ Đã export toàn bộ dữ liệu!');
+                  }}
+                  className="flex-1 min-w-[200px] px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 active:bg-blue-700 transition-all shadow-md font-semibold flex items-center justify-center gap-2"
+                >
+                  <span>📥</span>
+                  <span>Export All Data</span>
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    if (confirm('⚠️ Xóa TẤT CẢ dữ liệu admin?\n\n- Books\n- Chapters\n- Quizzes\n- Series\n\nHành động này không thể hoàn tác!\nBạn nên export dữ liệu trước.')) {
+                      const count = storageManager.clearAllAdminData();
+                      alert(`✅ Đã xóa ${count} items!`);
+                      setStorageInfo(storageManager.getStorageInfo());
+                    }
+                  }}
+                  className="flex-1 min-w-[200px] px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 active:bg-red-700 transition-all shadow-md font-semibold flex items-center justify-center gap-2"
+                >
+                  <span>🗑️</span>
+                  <span>Clear All Admin Data</span>
+                </button>
+
+                <button 
+                  onClick={() => {
+                    setStorageInfo(storageManager.getStorageInfo());
+                    alert('✅ Đã refresh thông tin storage!');
+                  }}
+                  className="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 active:bg-gray-700 transition-all shadow-md font-semibold flex items-center justify-center gap-2"
+                >
+                  <span>🔄</span>
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Quick Actions */}
