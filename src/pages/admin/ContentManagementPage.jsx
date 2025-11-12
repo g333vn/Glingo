@@ -1,7 +1,7 @@
 // src/pages/admin/ContentManagementPage.jsx
 // Module quản lý nội dung - Quản lý sách, chapters, và đề thi
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { n1BooksMetadata } from '../../data/level/n1/books-metadata.js';
 import { n1Books } from '../../data/level/n1/books.js';
@@ -66,13 +66,24 @@ function ContentManagementPage() {
     localStorage.setItem(`adminBooks_${selectedLevel}`, JSON.stringify(updatedBooks));
   };
 
-  // Get book data (with chapters)
-  const getBookData = (bookId) => {
+  // Get book data (with chapters) - Memoized để tránh re-compute
+  const getBookData = useCallback((bookId) => {
     switch(selectedLevel) {
       case 'n1': return n1Books[bookId];
       default: return null;
     }
-  };
+  }, [selectedLevel]);
+
+  // Memoize books với chapters data để tránh re-compute mỗi lần render
+  const booksWithChapters = useMemo(() => {
+    return books.map(book => {
+      const bookData = getBookData(book.id);
+      return {
+        ...book,
+        chapters: bookData?.contents || []
+      };
+    });
+  }, [books, getBookData]);
 
   // Book CRUD operations
   const handleAddBook = () => {
@@ -183,7 +194,7 @@ function ContentManagementPage() {
       <div className="mb-6 bg-white rounded-lg shadow-lg p-2 flex gap-2">
         <button
           onClick={() => setActiveTab('books')}
-          className={`flex-1 px-4 py-2 rounded-lg font-semibold transition-all ${
+          className={`flex-1 px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${
             activeTab === 'books'
               ? 'bg-blue-500 text-white shadow-md'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -193,7 +204,7 @@ function ContentManagementPage() {
         </button>
         <button
           onClick={() => setActiveTab('exams')}
-          className={`flex-1 px-4 py-2 rounded-lg font-semibold transition-all ${
+          className={`flex-1 px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${
             activeTab === 'exams'
               ? 'bg-blue-500 text-white shadow-md'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -240,74 +251,70 @@ function ContentManagementPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px]">
+              <table className="w-full min-w-[600px] table-fixed">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ảnh bìa</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">ID</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">Ảnh bìa</th>
                     <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên sách</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Category</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Chapters</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell w-[150px]">Category</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">Chapters</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[200px]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {books.map((book) => {
-                    const bookData = getBookData(book.id);
-                    const chapters = bookData?.contents || [];
-                    
-                    return (
-                      <tr key={book.id} className="hover:bg-gray-50">
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{book.id}</td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <img
-                            src={book.imageUrl}
-                            alt={book.title}
-                            className="w-12 h-16 object-cover rounded"
-                            onError={(e) => {
-                              e.target.src = '/book_card/placeholder.jpg';
-                            }}
-                          />
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900 max-w-xs">
-                          <div className="truncate">{book.title}</div>
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden md:table-cell">
-                          {book.category || '-'}
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                            {chapters.length} chương
-                          </span>
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
-                            <button
-                              onClick={() => handleAddChapter(book.id)}
-                              className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-xs font-medium"
-                              title="Thêm chương"
-                            >
-                              ➕ Chương
-                            </button>
-                            <button
-                              onClick={() => handleEditBook(book)}
-                              className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-xs font-medium"
-                              title="Sửa"
-                            >
-                              ✏️ Sửa
-                            </button>
-                            <button
-                              onClick={() => handleDeleteBook(book.id)}
-                              className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-xs font-medium"
-                              title="Xóa"
-                            >
-                              🗑️ Xóa
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {booksWithChapters.map((book) => (
+                    <tr key={book.id} className="hover:bg-gray-50 transition-colors duration-150">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{book.id}</td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <img
+                          src={book.imageUrl}
+                          alt={book.title}
+                          className="w-12 h-16 object-cover rounded"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.target.src = '/book_card/placeholder.jpg';
+                          }}
+                        />
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900 max-w-xs">
+                        <div className="truncate">{book.title}</div>
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden md:table-cell">
+                        {book.category || '-'}
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                          {book.chapters.length} chương
+                        </span>
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                          <button
+                            onClick={() => handleAddChapter(book.id)}
+                            className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors duration-150 text-xs font-medium"
+                            title="Thêm chương"
+                          >
+                            ➕ Chương
+                          </button>
+                          <button
+                            onClick={() => handleEditBook(book)}
+                            className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-150 text-xs font-medium"
+                            title="Sửa"
+                          >
+                            ✏️ Sửa
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBook(book.id)}
+                            className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors duration-150 text-xs font-medium"
+                            title="Xóa"
+                          >
+                            🗑️ Xóa
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
