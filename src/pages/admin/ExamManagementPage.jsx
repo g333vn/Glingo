@@ -1327,14 +1327,17 @@ function ExamManagementPage() {
               placeholder="彼の説明は（　　）で、誰にでも理解できる。"
             />
           </div>
+          {/* Options - Grid Layout like Quiz Editor */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Lựa chọn * (ít nhất 2 lựa chọn)
             </label>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {['A', 'B', 'C', 'D'].map((label, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <span className="w-8 text-sm font-semibold text-gray-700">{label}:</span>
+                <div key={idx}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {label}:
+                  </label>
                   <input
                     type="text"
                     value={questionForm.options[idx] || ''}
@@ -1343,16 +1346,20 @@ function ExamManagementPage() {
                       newOptions[idx] = e.target.value;
                       setQuestionForm({ ...questionForm, options: newOptions });
                     }}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder={`Lựa chọn ${label}`}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      questionForm.correctAnswer === idx ? 'border-green-500 bg-green-50' : 'border-gray-300'
+                    }`}
+                    placeholder={`Đáp án ${label}`}
                   />
                 </div>
               ))}
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Có thể để trống lựa chọn C và D nếu chỉ có 2 lựa chọn
+            <p className="text-xs text-gray-500 mt-2">
+              💡 Đáp án đúng sẽ được highlight màu xanh lá. Có thể để trống lựa chọn C và D nếu chỉ có 2 lựa chọn.
             </p>
           </div>
+
+          {/* Correct Answer Selection - Like Quiz Editor */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Đáp án đúng *
@@ -1370,23 +1377,38 @@ function ExamManagementPage() {
                 if (!opt.trim()) return null;
                 return (
                   <option key={idx} value={idx}>
-                    {String.fromCharCode(65 + idx)}: {opt}
+                    Đáp án đúng: {String.fromCharCode(65 + idx)}
                   </option>
                 );
               })}
             </select>
+            {questionForm.options[questionForm.correctAnswer] && (
+              <p className="text-xs text-green-600 mt-1 font-semibold">
+                ✅ Đã chọn: {String.fromCharCode(65 + questionForm.correctAnswer)} - {questionForm.options[questionForm.correctAnswer]}
+              </p>
+            )}
           </div>
           {/* Audio Upload Section - Always visible for listening, hidden for others */}
           {selectedTestType === 'listening' && (
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border-2 border-purple-200">
-              <label className="block text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <span className="text-lg">🎧</span>
-                <span>File Audio * (Bắt buộc cho Listening)</span>
-              </label>
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 sm:p-6 border-2 border-purple-300 shadow-lg">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-2xl">🎧</span>
+                <div>
+                  <label className="block text-base font-bold text-gray-800">
+                    File Audio * (Bắt buộc cho Listening)
+                  </label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Upload file audio hoặc nhập URL cho câu hỏi nghe hiểu
+                  </p>
+                </div>
+              </div>
               
-              {/* File Upload */}
+              {/* File Upload - Prominent */}
               <div className="mb-4">
-                <div className="bg-white rounded-lg p-3 border-2 border-dashed border-purple-300">
+                <div className="bg-white rounded-lg p-4 border-2 border-dashed border-purple-400 hover:border-purple-500 transition-colors">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    📤 Upload File Audio
+                  </label>
                   <input
                     type="file"
                     accept="audio/*"
@@ -1412,41 +1434,53 @@ function ExamManagementPage() {
                         setQuestionForm({ ...questionForm, audioUrl, audioFile: file });
                       }
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white cursor-pointer"
+                    className="w-full px-3 py-2.5 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white cursor-pointer text-sm"
                   />
                   <p className="text-xs text-gray-600 mt-2">
                     📎 Chọn file audio (MP3, WAV, OGG) - Tối đa 10MB
                   </p>
                   {questionForm.audioFile && (
-                    <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
-                      <p className="text-xs text-green-700 font-semibold">
-                        ✅ Đã chọn: {questionForm.audioFile.name} ({(questionForm.audioFile.size / 1024 / 1024).toFixed(2)} MB)
+                    <div className="mt-3 p-3 bg-green-50 rounded-lg border-2 border-green-300">
+                      <p className="text-sm text-green-800 font-bold flex items-center gap-2">
+                        <span>✅</span>
+                        <span>Đã chọn: {questionForm.audioFile.name}</span>
+                      </p>
+                      <p className="text-xs text-green-600 mt-1">
+                        Kích thước: {(questionForm.audioFile.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Audio Preview */}
+              {/* Audio Preview - Always show if URL exists */}
               {questionForm.audioUrl && (
-                <div className="mb-4 bg-white rounded-lg p-4 border border-purple-200">
-                  <p className="text-xs font-semibold text-gray-700 mb-2">🔊 Preview Audio:</p>
-                  <audio controls className="w-full">
+                <div className="mb-4 bg-white rounded-lg p-4 border-2 border-purple-300 shadow-md">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">🔊</span>
+                    <p className="text-sm font-bold text-gray-800">Preview Audio</p>
+                  </div>
+                  <audio controls className="w-full h-10">
                     <source src={questionForm.audioUrl} type="audio/mpeg" />
                     Trình duyệt không hỗ trợ audio.
                   </audio>
                   {questionForm.audioUrl.startsWith('blob:') && (
-                    <p className="text-xs text-orange-600 mt-2 font-semibold">
-                      ⚠️ File tạm thời (blob URL). Cần upload file vào thư mục public/audio và nhập URL cố định.
-                    </p>
+                    <div className="mt-3 p-2 bg-orange-50 rounded border-2 border-orange-300">
+                      <p className="text-xs text-orange-800 font-semibold">
+                        ⚠️ File tạm thời (blob URL)
+                      </p>
+                      <p className="text-xs text-orange-600 mt-1">
+                        Cần upload file vào thư mục public/audio và nhập URL cố định để lưu vĩnh viễn.
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
 
-              {/* URL Input (Alternative) */}
-              <div className="bg-white rounded-lg p-3 border border-purple-200">
-                <label className="block text-xs font-semibold text-gray-700 mb-2">
-                  Hoặc nhập URL Audio (nếu đã upload sẵn vào public/audio)
+              {/* URL Input (Alternative) - More Prominent */}
+              <div className="bg-white rounded-lg p-4 border-2 border-purple-200">
+                <label className="block text-sm font-bold text-gray-800 mb-2">
+                  🔗 Hoặc nhập URL Audio (nếu đã upload sẵn)
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -1457,7 +1491,7 @@ function ExamManagementPage() {
                         setQuestionForm({ ...questionForm, audioUrl: e.target.value, audioFile: null });
                       }
                     }}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                    className="flex-1 px-3 py-2.5 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
                     placeholder="/audio/n1/2024-12/listening-1.mp3"
                   />
                   {questionForm.audioUrl && !questionForm.audioUrl.startsWith('blob:') && (
@@ -1467,15 +1501,16 @@ function ExamManagementPage() {
                         const audio = new Audio(questionForm.audioUrl);
                         audio.play().catch(() => alert('⚠️ Không thể phát audio. Kiểm tra lại URL.'));
                       }}
-                      className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-xs font-semibold"
+                      className="px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm shadow-md transition-colors"
                       title="Test audio URL"
                     >
                       ▶️ Test
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  💡 Đường dẫn từ thư mục public (ví dụ: /audio/n1/2024-12/q1-01.mp3)
+                <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+                  <span>💡</span>
+                  <span>Đường dẫn từ thư mục public (ví dụ: /audio/n1/2024-12/q1-01.mp3)</span>
                 </p>
               </div>
             </div>
