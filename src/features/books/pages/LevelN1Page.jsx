@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BookCard from '../components/BookCard.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import { n1BooksMetadata } from '../../../data/level/n1/index.js';
-
-// ✅ UPDATED: Import từ data file thay vì hardcode
-const n1Books = n1BooksMetadata;
 
 const booksPerPage = 10;
 
@@ -15,6 +12,24 @@ function LevelN1Page() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  // ✅ NEW: Load books from localStorage (admin added books) or default data
+  const [n1Books, setN1Books] = useState([]);
+
+  useEffect(() => {
+    // Load books from localStorage first, fallback to default
+    const savedBooks = localStorage.getItem('adminBooks_n1');
+    if (savedBooks) {
+      try {
+        setN1Books(JSON.parse(savedBooks));
+      } catch (error) {
+        console.error('Error loading books from localStorage:', error);
+        setN1Books(n1BooksMetadata);
+      }
+    } else {
+      setN1Books(n1BooksMetadata);
+    }
+  }, []);
 
   // Filter books based on category
   const filteredBooks = selectedCategory 
