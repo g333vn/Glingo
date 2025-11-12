@@ -296,7 +296,7 @@ function ContentManagementPage() {
               </h2>
               <button
                 onClick={handleAddBook}
-                className="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
+                className="w-full sm:w-auto px-3 sm:px-4 py-2 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:bg-green-800 transition-colors font-semibold flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base min-h-[44px] sm:min-h-0"
               >
                 <span>➕</span>
                 <span>Thêm Sách mới</span>
@@ -375,51 +375,59 @@ function ContentManagementPage() {
 
             {/* Mobile Card View */}
             <div className="md:hidden space-y-3 p-3">
-              {booksWithChapters.map((book) => (
-                <div key={book.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  <div className="flex gap-3 mb-3">
-                    <img
-                      src={book.imageUrl}
-                      alt={book.title}
-                      className="w-16 h-20 object-cover rounded flex-shrink-0"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.target.src = '/book_card/placeholder.jpg';
-                      }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-500 mb-1 font-mono truncate">{book.id}</div>
-                      <div className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">{book.title}</div>
-                      {book.category && (
-                        <div className="text-xs text-blue-600 mb-1">📚 {book.category}</div>
-                      )}
-                      <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                        {book.chapters.length} chương
-                      </span>
+              {booksWithChapters.length === 0 ? (
+                <div className="text-center py-8 px-4">
+                  <div className="text-4xl mb-3">📚</div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Chưa có sách nào</p>
+                  <p className="text-xs text-gray-500">Nhấn "Thêm Sách mới" để bắt đầu</p>
+                </div>
+              ) : (
+                booksWithChapters.map((book) => (
+                  <div key={book.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div className="flex gap-3 mb-3">
+                      <img
+                        src={book.imageUrl}
+                        alt={book.title}
+                        className="w-16 h-20 object-cover rounded flex-shrink-0"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.src = '/book_card/placeholder.jpg';
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-500 mb-1 font-mono truncate">{book.id}</div>
+                        <div className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">{book.title}</div>
+                        {book.category && (
+                          <div className="text-xs text-blue-600 mb-1">📚 {book.category}</div>
+                        )}
+                        <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                          {book.chapters.length} chương
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        onClick={() => handleAddChapter(book.id)}
+                        className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-2.5 bg-green-500 text-white rounded text-xs font-medium hover:bg-green-600 active:bg-green-700 transition-colors min-h-[44px] flex items-center justify-center"
+                      >
+                        ➕ Chương
+                      </button>
+                      <button
+                        onClick={() => handleEditBook(book)}
+                        className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-2.5 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600 active:bg-blue-700 transition-colors min-h-[44px] flex items-center justify-center"
+                      >
+                        ✏️ Sửa
+                      </button>
+                      <button
+                        onClick={() => handleDeleteBook(book.id)}
+                        className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-2.5 bg-red-500 text-white rounded text-xs font-medium hover:bg-red-600 active:bg-red-700 transition-colors min-h-[44px] flex items-center justify-center"
+                      >
+                        🗑️ Xóa
+                      </button>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    <button
-                      onClick={() => handleAddChapter(book.id)}
-                      className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-1.5 bg-green-500 text-white rounded text-xs font-medium hover:bg-green-600 transition-colors"
-                    >
-                      ➕ Chương
-                    </button>
-                    <button
-                      onClick={() => handleEditBook(book)}
-                      className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-1.5 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600 transition-colors"
-                    >
-                      ✏️ Sửa
-                    </button>
-                    <button
-                      onClick={() => handleDeleteBook(book.id)}
-                      className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-1.5 bg-red-500 text-white rounded text-xs font-medium hover:bg-red-600 transition-colors"
-                    >
-                      🗑️ Xóa
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -451,8 +459,8 @@ function ContentManagementPage() {
 
           {/* Series List */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+            <div className="p-3 sm:p-4 md:p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3">
+              <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-800">
                 Danh sách Bộ sách ({series.length})
               </h2>
               <button
@@ -461,7 +469,7 @@ function ContentManagementPage() {
                   setEditingSeries(null);
                   setShowSeriesForm(true);
                 }}
-                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-2 text-sm sm:text-base"
+                className="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base min-h-[44px] sm:min-h-0"
               >
                 <span>➕</span>
                 <span>Thêm Bộ sách mới</span>
@@ -543,55 +551,63 @@ function ContentManagementPage() {
 
             {/* Mobile Card View */}
             <div className="md:hidden space-y-3 p-3">
-              {series.map((s) => {
-                const booksInSeries = books.filter(b => b.category === s.name);
-                return (
-                  <div key={s.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <div className="mb-2">
-                      <div className="text-xs text-gray-500 mb-1 font-mono">{s.id}</div>
-                      <div className="text-sm font-semibold text-gray-900 mb-1">{s.name}</div>
-                      {s.description && (
-                        <div className="text-xs text-gray-600 mb-2">{s.description}</div>
-                      )}
-                      <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                        {booksInSeries.length} sách
-                      </span>
+              {series.length === 0 ? (
+                <div className="text-center py-8 px-4">
+                  <div className="text-4xl mb-3">📚</div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Chưa có bộ sách nào</p>
+                  <p className="text-xs text-gray-500">Nhấn "Thêm Bộ sách mới" để bắt đầu</p>
+                </div>
+              ) : (
+                series.map((s) => {
+                  const booksInSeries = books.filter(b => b.category === s.name);
+                  return (
+                    <div key={s.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <div className="mb-2">
+                        <div className="text-xs text-gray-500 mb-1 font-mono">{s.id}</div>
+                        <div className="text-sm font-semibold text-gray-900 mb-1">{s.name}</div>
+                        {s.description && (
+                          <div className="text-xs text-gray-600 mb-2">{s.description}</div>
+                        )}
+                        <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                          {booksInSeries.length} sách
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          onClick={() => {
+                            setEditingSeries(s);
+                            setSeriesForm({
+                              id: s.id,
+                              name: s.name,
+                              description: s.description || ''
+                            });
+                            setShowSeriesForm(true);
+                          }}
+                          className="flex-1 min-w-[calc(50%-0.375rem)] px-2 py-2.5 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600 active:bg-blue-700 transition-colors min-h-[44px] flex items-center justify-center"
+                        >
+                          ✏️ Sửa
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Bạn có chắc muốn xóa bộ sách "${s.name}"? Tất cả sách trong bộ này sẽ mất category!`)) {
+                              const updatedSeries = series.filter(ser => ser.id !== s.id);
+                              saveSeries(updatedSeries);
+                              const updatedBooks = books.map(b => 
+                                b.category === s.name ? { ...b, category: '' } : b
+                              );
+                              saveBooks(updatedBooks);
+                              alert('✅ Đã xóa bộ sách!');
+                            }
+                          }}
+                          className="flex-1 min-w-[calc(50%-0.375rem)] px-2 py-2.5 bg-red-500 text-white rounded text-xs font-medium hover:bg-red-600 active:bg-red-700 transition-colors min-h-[44px] flex items-center justify-center"
+                        >
+                          🗑️ Xóa
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      <button
-                        onClick={() => {
-                          setEditingSeries(s);
-                          setSeriesForm({
-                            id: s.id,
-                            name: s.name,
-                            description: s.description || ''
-                          });
-                          setShowSeriesForm(true);
-                        }}
-                        className="flex-1 min-w-[calc(50%-0.375rem)] px-2 py-1.5 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600 transition-colors"
-                      >
-                        ✏️ Sửa
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Bạn có chắc muốn xóa bộ sách "${s.name}"? Tất cả sách trong bộ này sẽ mất category!`)) {
-                            const updatedSeries = series.filter(ser => ser.id !== s.id);
-                            saveSeries(updatedSeries);
-                            const updatedBooks = books.map(b => 
-                              b.category === s.name ? { ...b, category: '' } : b
-                            );
-                            saveBooks(updatedBooks);
-                            alert('✅ Đã xóa bộ sách!');
-                          }
-                        }}
-                        className="flex-1 min-w-[calc(50%-0.375rem)] px-2 py-1.5 bg-red-500 text-white rounded text-xs font-medium hover:bg-red-600 transition-colors"
-                      >
-                        🗑️ Xóa
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -599,12 +615,12 @@ function ContentManagementPage() {
 
       {/* Exams Management - Coming Soon */}
       {activeTab === 'exams' && (
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="text-6xl mb-4">🚧</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 md:p-8 text-center">
+          <div className="text-4xl sm:text-5xl md:text-6xl mb-3 sm:mb-4">🚧</div>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2">
             Quản lý Đề thi
           </h2>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Module này sẽ được phát triển trong tương lai
           </p>
         </div>
@@ -630,7 +646,7 @@ function ContentManagementPage() {
                     onChange={(e) => setBookForm({ ...bookForm, id: e.target.value })}
                     required
                     disabled={!!editingBook}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
                     placeholder="skm-n1-bunpou"
                   />
                   <p className="text-xs text-gray-500 mt-1">ID dùng để định danh sách (không có khoảng trắng)</p>
@@ -643,7 +659,7 @@ function ContentManagementPage() {
                     <select
                       value={bookForm.category}
                       onChange={(e) => setBookForm({ ...bookForm, category: e.target.value })}
-                      className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white"
+                      className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white min-h-[44px] sm:min-h-0"
                       required
                     >
                       <option value="">-- Chọn bộ sách --</option>
@@ -660,7 +676,7 @@ function ContentManagementPage() {
                         setEditingSeries(null);
                         setShowSeriesForm(true);
                       }}
-                      className="w-full sm:w-auto px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold whitespace-nowrap"
+                      className="w-full sm:w-auto px-3 py-2.5 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 active:bg-green-700 transition-colors text-sm font-semibold whitespace-nowrap min-h-[44px] sm:min-h-0 flex items-center justify-center"
                       title="Tạo bộ sách mới"
                     >
                       ➕ Mới
@@ -679,7 +695,7 @@ function ContentManagementPage() {
                     value={bookForm.title}
                     onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     placeholder="新完全マスター 文法 N1"
                   />
                 </div>
@@ -693,7 +709,7 @@ function ContentManagementPage() {
                       value={bookForm.imageUrl}
                       onChange={(e) => setBookForm({ ...bookForm, imageUrl: e.target.value })}
                       required
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                      className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                       placeholder="/book_card/n1/shinkanzen/shinkanzen_n1_bunbo.jpg"
                     />
                     {bookForm.imageUrl && (
@@ -716,14 +732,14 @@ function ContentManagementPage() {
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
                 <button
                   type="submit"
-                  className="flex-1 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm sm:text-base"
+                  className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors font-semibold text-sm sm:text-base min-h-[44px] sm:min-h-0 flex items-center justify-center"
                 >
                   💾 {editingBook ? 'Lưu thay đổi' : 'Thêm Sách'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowBookForm(false)}
-                  className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-semibold text-sm sm:text-base"
+                  className="w-full sm:w-auto px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 active:bg-gray-700 transition-colors font-semibold text-sm sm:text-base min-h-[44px] sm:min-h-0 flex items-center justify-center"
                 >
                   Hủy
                 </button>
@@ -755,7 +771,7 @@ function ContentManagementPage() {
                   onChange={(e) => setChapterForm({ ...chapterForm, id: e.target.value })}
                   required
                   disabled={!!editingChapter}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
                   placeholder="bai-1"
                 />
                 <p className="text-xs text-gray-500 mt-1">ID dùng để tên file JSON (không có khoảng trắng)</p>
@@ -769,7 +785,7 @@ function ContentManagementPage() {
                   value={chapterForm.title}
                   onChange={(e) => setChapterForm({ ...chapterForm, title: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   placeholder="Bài 1: Phân biệt cấu trúc A và B"
                 />
               </div>
@@ -789,14 +805,14 @@ function ContentManagementPage() {
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
                 <button
                   type="submit"
-                  className="flex-1 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm sm:text-base"
+                  className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors font-semibold text-sm sm:text-base min-h-[44px] sm:min-h-0 flex items-center justify-center"
                 >
                   💾 {editingChapter ? 'Lưu thay đổi' : 'Thêm Chương'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowChapterForm(false)}
-                  className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-semibold text-sm sm:text-base"
+                  className="w-full sm:w-auto px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 active:bg-gray-700 transition-colors font-semibold text-sm sm:text-base min-h-[44px] sm:min-h-0 flex items-center justify-center"
                 >
                   Hủy
                 </button>
@@ -870,7 +886,7 @@ function ContentManagementPage() {
                   onChange={(e) => setSeriesForm({ ...seriesForm, name: e.target.value })}
                   required
                   disabled={!!editingSeries}
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
                   placeholder="新完全マスター"
                 />
                 <p className="text-xs text-gray-500 mt-1">Tên bộ sách (không thể thay đổi sau khi tạo)</p>
@@ -883,7 +899,7 @@ function ContentManagementPage() {
                   value={seriesForm.description}
                   onChange={(e) => setSeriesForm({ ...seriesForm, description: e.target.value })}
                   rows={3}
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base resize-y"
                   placeholder="Mô tả về bộ sách này..."
                 />
               </div>
@@ -891,14 +907,14 @@ function ContentManagementPage() {
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
                 <button
                   type="submit"
-                  className="flex-1 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm sm:text-base"
+                  className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors font-semibold text-sm sm:text-base min-h-[44px] sm:min-h-0 flex items-center justify-center"
                 >
                   💾 {editingSeries ? 'Lưu thay đổi' : 'Thêm Bộ sách'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowSeriesForm(false)}
-                  className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-semibold text-sm sm:text-base"
+                  className="w-full sm:w-auto px-3 sm:px-4 py-2.5 sm:py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 active:bg-gray-700 transition-colors font-semibold text-sm sm:text-base min-h-[44px] sm:min-h-0 flex items-center justify-center"
                 >
                   Hủy
                 </button>
