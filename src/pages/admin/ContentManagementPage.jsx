@@ -154,10 +154,8 @@ function ContentManagementPage() {
     setSeriesPage(1);
   }, [series.length, selectedLevel]);
 
-  // ✅ Lock body scroll when any modal is open
-  useBodyScrollLock(showBookForm || showChapterForm || showSeriesForm);
-
   // Book CRUD operations
+  // Note: Body scroll lock được xử lý bởi Modal component
   const handleAddBook = () => {
     setEditingBook(null);
     setBookForm({ id: '', title: '', imageUrl: '', category: '' });
