@@ -1293,19 +1293,35 @@ function ContentManagementPage() {
                     </p>
                     {selectedBook.existingChapters && selectedBook.existingChapters.length > 0 ? (
                       <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
-                        {selectedBook.existingChapters.map((ch, idx) => (
-                          <div 
-                            key={idx}
-                            className={`text-xs px-2 py-1 rounded ${
-                              ch.id === chapterForm.id && !editingChapter
-                                ? 'bg-red-100 text-red-800 border border-red-300'
-                                : 'bg-white text-gray-700 border border-gray-200'
-                            }`}
-                          >
-                            <span className="font-mono font-semibold">{ch.id}</span>
-                            {ch.title && <span className="ml-2">- {ch.title}</span>}
-                          </div>
-                        ))}
+                        {(() => {
+                          // ✅ Sắp xếp chapters theo ID trước khi hiển thị
+                          const sortedChapters = [...selectedBook.existingChapters].sort((a, b) => {
+                            const getNumber = (id) => {
+                              const match = id.match(/(\d+)/);
+                              return match ? parseInt(match[1], 10) : 0;
+                            };
+                            const numA = getNumber(a.id);
+                            const numB = getNumber(b.id);
+                            if (numA !== numB) {
+                              return numA - numB;
+                            }
+                            return a.id.localeCompare(b.id);
+                          });
+                          
+                          return sortedChapters.map((ch, idx) => (
+                            <div 
+                              key={idx}
+                              className={`text-xs px-2 py-1 rounded ${
+                                ch.id === chapterForm.id && !editingChapter
+                                  ? 'bg-red-100 text-red-800 border border-red-300'
+                                  : 'bg-white text-gray-700 border border-gray-200'
+                              }`}
+                            >
+                              <span className="font-mono font-semibold">{ch.id}</span>
+                              {ch.title && <span className="ml-2">- {ch.title}</span>}
+                            </div>
+                          ));
+                        })()}
                       </div>
                     ) : (
                       <p className="text-xs text-gray-600 italic">Chưa có chapter nào</p>
