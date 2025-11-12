@@ -94,6 +94,18 @@ function Footer() {
                     </span>
                   </a>
                 </li>
+                <li>
+                  <a 
+                    href="/admin/quiz-editor" 
+                    className="inline-flex items-center gap-2 text-gray-400 hover:text-purple-400 transition-all duration-300 text-sm hover:translate-x-1 group"
+                  >
+                    <span className="text-base group-hover:scale-110 transition-transform">✏️</span>
+                    <span className="relative">
+                      Quiz Editor
+                      <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-purple-400 group-hover:w-full transition-all duration-300"></span>
+                    </span>
+                  </a>
+                </li>
               </ul>
             </div>
 
