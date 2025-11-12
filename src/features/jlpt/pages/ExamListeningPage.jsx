@@ -442,7 +442,16 @@ function ExamListeningPage() {
         {/* Modal cảnh báo thiếu câu */}
         {showIncompleteWarning && (
           <div 
-            className="fixed inset-0 bg-black/50 z-50 modal-overlay-enter"
+            className="modal-overlay-enter"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 50,
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowIncompleteWarning(false);
@@ -485,7 +494,16 @@ function ExamListeningPage() {
         {/* Modal xác nhận submit */}
         {showSubmitModal && (
           <div 
-            className="fixed inset-0 bg-black/50 z-50 modal-overlay-enter"
+            className="modal-overlay-enter"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 50,
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowSubmitModal(false);
