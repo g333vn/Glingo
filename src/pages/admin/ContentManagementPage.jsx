@@ -7,9 +7,6 @@ import Modal from '../../components/Modal.jsx';
 import { n1BooksMetadata } from '../../data/level/n1/books-metadata.js';
 import { n1Books } from '../../data/level/n1/books.js';
 
-// Note: Modal component đã được extract thành component riêng
-// Import từ src/components/Modal.jsx
-
 function ContentManagementPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('books'); // 'books' | 'exams' | 'series'
