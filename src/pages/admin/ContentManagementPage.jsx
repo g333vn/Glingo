@@ -19,6 +19,11 @@ function ContentManagementPage() {
   const [editingBook, setEditingBook] = useState(null);
   const [editingChapter, setEditingChapter] = useState(null);
   
+  // ✅ NEW: Pagination states
+  const [booksPage, setBooksPage] = useState(1);
+  const [seriesPage, setSeriesPage] = useState(1);
+  const itemsPerPage = 10;
+  
   // ✅ NEW: Series/Category management states
   const [series, setSeries] = useState([]);
   const [showSeriesForm, setShowSeriesForm] = useState(false);
@@ -127,6 +132,26 @@ function ContentManagementPage() {
       };
     });
   }, [books, getBookData]);
+
+  // ✅ NEW: Pagination calculations
+  const booksTotalPages = Math.ceil(booksWithChapters.length / itemsPerPage);
+  const booksStartIndex = (booksPage - 1) * itemsPerPage;
+  const booksEndIndex = booksStartIndex + itemsPerPage;
+  const paginatedBooks = booksWithChapters.slice(booksStartIndex, booksEndIndex);
+
+  const seriesTotalPages = Math.ceil(series.length / itemsPerPage);
+  const seriesStartIndex = (seriesPage - 1) * itemsPerPage;
+  const seriesEndIndex = seriesStartIndex + itemsPerPage;
+  const paginatedSeries = series.slice(seriesStartIndex, seriesEndIndex);
+
+  // Reset pagination when data changes
+  useEffect(() => {
+    setBooksPage(1);
+  }, [books.length, selectedLevel]);
+
+  useEffect(() => {
+    setSeriesPage(1);
+  }, [series.length, selectedLevel]);
 
   // Book CRUD operations
   const handleAddBook = () => {
@@ -382,14 +407,69 @@ function ContentManagementPage() {
                       </td>
                     </tr>
                     ))}
-                  </tbody>
-                </table>
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  {/* Pagination Controls */}
+                  {booksTotalPages > 1 && (
+                    <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+                      <div className="text-sm text-gray-700">
+                        Hiển thị <span className="font-semibold">{booksStartIndex + 1}</span> - <span className="font-semibold">{Math.min(booksEndIndex, booksWithChapters.length)}</span> trong tổng số <span className="font-semibold">{booksWithChapters.length}</span> sách
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setBooksPage(p => Math.max(1, p - 1))}
+                          disabled={booksPage === 1}
+                          className="px-3 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                        >
+                          ← Trước
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, booksTotalPages) }, (_, i) => {
+                            let pageNum;
+                            if (booksTotalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (booksPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (booksPage >= booksTotalPages - 2) {
+                              pageNum = booksTotalPages - 4 + i;
+                            } else {
+                              pageNum = booksPage - 2 + i;
+                            }
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setBooksPage(pageNum)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                  booksPage === pageNum
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button
+                          onClick={() => setBooksPage(p => Math.min(booksTotalPages, p + 1))}
+                          disabled={booksPage === booksTotalPages}
+                          className="px-3 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                        >
+                          Sau →
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
             {/* Mobile Card View */}
-            <div className="md:hidden space-y-3 p-3">
+            <div className="md:hidden">
               {booksWithChapters.length === 0 ? (
+                <div className="text-center py-8 px-4">
                 <div className="text-center py-8 px-4">
                   <div className="text-4xl mb-3">📚</div>
                   <p className="text-sm font-medium text-gray-700 mb-1">Chưa có sách nào</p>
@@ -438,9 +518,32 @@ function ContentManagementPage() {
                       >
                         🗑️ Xóa
                       </button>
-                    </div>
                   </div>
+                </div>
                 ))
+              )}
+              
+              {/* Mobile Pagination */}
+              {booksTotalPages > 1 && (
+                <div className="px-3 py-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+                  <button
+                    onClick={() => setBooksPage(p => Math.max(1, p - 1))}
+                    disabled={booksPage === 1}
+                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium min-h-[44px]"
+                  >
+                    ← Trước
+                  </button>
+                  <div className="text-xs sm:text-sm text-gray-700 text-center">
+                    Trang <span className="font-semibold">{booksPage}</span> / <span className="font-semibold">{booksTotalPages}</span>
+                  </div>
+                  <button
+                    onClick={() => setBooksPage(p => Math.min(booksTotalPages, p + 1))}
+                    disabled={booksPage === booksTotalPages}
+                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium min-h-[44px]"
+                  >
+                    Sau →
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -491,7 +594,7 @@ function ContentManagementPage() {
             </div>
 
             {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden md:block">
               {series.length === 0 ? (
                 <div className="text-center py-12 px-4">
                   <div className="text-5xl mb-4">📚</div>
@@ -509,18 +612,20 @@ function ContentManagementPage() {
                   </button>
                 </div>
               ) : (
-                <table className="w-full min-w-[500px] table-fixed">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">ID</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên bộ sách</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mô tả</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">Số sách</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[200px]">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {series.map((s) => {
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full table-auto">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">ID</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[200px]">Tên bộ sách</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[250px]">Mô tả</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Số sách</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 bg-white">
+                        {paginatedSeries.map((s) => {
                     const booksInSeries = books.filter(b => b.category === s.name);
                     return (
                       <tr key={s.id} className="hover:bg-gray-50 transition-colors duration-150">
@@ -576,14 +681,69 @@ function ContentManagementPage() {
                       </tr>
                     );
                     })}
-                  </tbody>
-                </table>
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  {/* Pagination Controls */}
+                  {seriesTotalPages > 1 && (
+                    <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+                      <div className="text-sm text-gray-700">
+                        Hiển thị <span className="font-semibold">{seriesStartIndex + 1}</span> - <span className="font-semibold">{Math.min(seriesEndIndex, series.length)}</span> trong tổng số <span className="font-semibold">{series.length}</span> bộ sách
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSeriesPage(p => Math.max(1, p - 1))}
+                          disabled={seriesPage === 1}
+                          className="px-3 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                        >
+                          ← Trước
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, seriesTotalPages) }, (_, i) => {
+                            let pageNum;
+                            if (seriesTotalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (seriesPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (seriesPage >= seriesTotalPages - 2) {
+                              pageNum = seriesTotalPages - 4 + i;
+                            } else {
+                              pageNum = seriesPage - 2 + i;
+                            }
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setSeriesPage(pageNum)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                  seriesPage === pageNum
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button
+                          onClick={() => setSeriesPage(p => Math.min(seriesTotalPages, p + 1))}
+                          disabled={seriesPage === seriesTotalPages}
+                          className="px-3 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                        >
+                          Sau →
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
             {/* Mobile Card View */}
-            <div className="md:hidden space-y-3 p-3">
+            <div className="md:hidden">
               {series.length === 0 ? (
+                <div className="text-center py-8 px-4">
                 <div className="text-center py-8 px-4">
                   <div className="text-4xl mb-3">📚</div>
                   <p className="text-sm font-medium text-gray-700 mb-1">Chưa có bộ sách nào</p>
@@ -638,7 +798,31 @@ function ContentManagementPage() {
                       </div>
                     </div>
                   );
-                })
+                  })}
+                </div>
+              )}
+              
+              {/* Mobile Pagination */}
+              {seriesTotalPages > 1 && (
+                <div className="px-3 py-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+                  <button
+                    onClick={() => setSeriesPage(p => Math.max(1, p - 1))}
+                    disabled={seriesPage === 1}
+                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium min-h-[44px]"
+                  >
+                    ← Trước
+                  </button>
+                  <div className="text-xs sm:text-sm text-gray-700 text-center">
+                    Trang <span className="font-semibold">{seriesPage}</span> / <span className="font-semibold">{seriesTotalPages}</span>
+                  </div>
+                  <button
+                    onClick={() => setSeriesPage(p => Math.min(seriesTotalPages, p + 1))}
+                    disabled={seriesPage === seriesTotalPages}
+                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium min-h-[44px]"
+                  >
+                    Sau →
+                  </button>
+                </div>
               )}
             </div>
           </div>
