@@ -248,13 +248,20 @@ function ExamManagementPage() {
       });
     }
 
-    // Sort sections by ID
+    // Sort sections by ID and ensure ID is string for listening compatibility
     updatedSections.sort((a, b) => {
       const getNumber = (id) => {
-        const match = id.match(/(\d+)/);
+        const match = String(id).match(/(\d+)/);
         return match ? parseInt(match[1], 10) : 0;
       };
       return getNumber(a.id) - getNumber(b.id);
+    });
+    
+    // Ensure section IDs are strings for listening format compatibility
+    updatedSections.forEach(section => {
+      if (selectedTestType === 'listening' && typeof section.id !== 'string') {
+        section.id = String(section.id);
+      }
     });
 
     await saveSections(updatedSections);
