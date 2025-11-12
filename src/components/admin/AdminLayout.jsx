@@ -15,32 +15,32 @@ function AdminLayout() {
   const menuItems = [
     {
       id: 'dashboard',
-      label: '📊 Dashboard',
+      label: 'Dashboard',
       path: '/admin',
       icon: '📊'
     },
     {
       id: 'quiz-editor',
-      label: '✏️ Quiz Editor',
+      label: 'Quiz Editor',
       path: '/admin/quiz-editor',
       icon: '✏️'
     },
     {
       id: 'users',
-      label: '👥 Quản lý Users',
+      label: 'Quản lý Users',
       path: '/admin/users',
       icon: '👥'
     },
     {
       id: 'content',
-      label: '📚 Quản lý Nội dung',
+      label: 'Quản lý Nội dung',
       path: '/admin/content',
       icon: '📚',
       comingSoon: true
     },
     {
       id: 'settings',
-      label: '⚙️ Cài đặt',
+      label: 'Cài đặt',
       path: '/admin/settings',
       icon: '⚙️',
       comingSoon: true
