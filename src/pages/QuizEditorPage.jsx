@@ -1,9 +1,101 @@
 // src/pages/QuizEditorPage.jsx
 // Tool nhập liệu quiz - Dễ dàng tạo quiz mới và export ra JSON
+// ⚠️ PROTECTED: Yêu cầu password để truy cập
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+// ⚠️ Password để bảo vệ tool (có thể thay đổi)
+const ADMIN_PASSWORD = 'admin123'; // TODO: Thay đổi password này!
 
 function QuizEditorPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  // Check if already authenticated (from sessionStorage)
+  useEffect(() => {
+    const authStatus = sessionStorage.getItem('quizEditorAuth');
+    if (authStatus === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('quizEditorAuth', 'true');
+      setError('');
+    } else {
+      setError('❌ Mật khẩu không đúng!');
+      setPassword('');
+    }
+  };
+
+  // Login Screen
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center px-4">
+        <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full">
+          <div className="text-center mb-6">
+            <div className="text-5xl mb-4">🔒</div>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">
+              Quiz Editor - Protected
+            </h1>
+            <p className="text-gray-600 text-sm">
+              Tool này chỉ dành cho quản trị viên
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mật khẩu:
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError('');
+                }}
+                placeholder="Nhập mật khẩu..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+            >
+              Đăng nhập
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-xs text-gray-500">
+              ⚠️ Nếu bạn không phải quản trị viên, vui lòng quay lại
+            </p>
+            <a
+              href="/"
+              className="text-blue-600 hover:underline text-sm mt-2 inline-block"
+            >
+              ← Quay về trang chủ
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main Editor (only shown if authenticated)
   const [quizTitle, setQuizTitle] = useState('');
   const [questions, setQuestions] = useState([
     {
@@ -360,6 +452,25 @@ function QuizEditorPage() {
                 </pre>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Logout Button */}
+        <div className="mt-6 bg-red-50 border-2 border-red-200 rounded-lg shadow-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-red-800">🔒 Đang đăng nhập với quyền Admin</p>
+              <p className="text-xs text-red-600 mt-1">Session sẽ hết hạn khi đóng browser</p>
+            </div>
+            <button
+              onClick={() => {
+                sessionStorage.removeItem('quizEditorAuth');
+                setIsAuthenticated(false);
+              }}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-sm"
+            >
+              Đăng xuất
+            </button>
           </div>
         </div>
 
