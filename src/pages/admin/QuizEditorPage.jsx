@@ -86,13 +86,13 @@ function QuizEditorPage() {
 
   // ✅ NEW: Auto-fill quiz title from chapter
   useEffect(() => {
-    if (selectedChapter && availableChapters.length > 0) {
+    if (selectedChapter && availableChapters.length > 0 && !quizTitle) {
       const chapter = availableChapters.find(ch => ch.id === selectedChapter);
-      if (chapter && !quizTitle) {
-        setQuizTitle(chapter.title || '');
+      if (chapter?.title) {
+        setQuizTitle(chapter.title);
       }
     }
-  }, [selectedChapter, availableChapters]);
+  }, [selectedChapter, availableChapters, quizTitle]);
 
   // Update question
   const updateQuestion = (index, field, value) => {
