@@ -1210,16 +1210,24 @@ function ContentManagementPage() {
                       className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                       placeholder="/book_card/n1/shinkanzen/shinkanzen_n1_bunbo.jpg (tùy chọn)"
                     />
-                    {bookForm.imageUrl && (
+                    {bookForm.imageUrl ? (
                       <img
                         src={bookForm.imageUrl}
                         alt="Preview"
                         className="w-16 h-20 object-cover rounded border border-gray-300"
                         onError={(e) => {
-                          e.target.src = '/book_card/placeholder.jpg';
+                          e.target.style.display = 'none';
+                          const placeholder = e.target.nextElementSibling;
+                          if (placeholder) placeholder.style.display = 'flex';
                         }}
                       />
-                    )}
+                    ) : null}
+                    <div 
+                      className={`w-16 h-20 bg-gradient-to-br from-gray-200 to-gray-300 rounded flex items-center justify-center text-lg text-gray-500 border border-gray-400 ${bookForm.imageUrl ? 'hidden' : ''}`}
+                      style={{ display: bookForm.imageUrl ? 'none' : 'flex' }}
+                    >
+                      📚
+                    </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     💡 Đường dẫn ảnh từ thư mục public (ví dụ: /book_card/n1/...). Để trống nếu không có ảnh bìa.
