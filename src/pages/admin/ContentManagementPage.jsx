@@ -222,13 +222,13 @@ function ContentManagementPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-4">
+    <div className="max-w-7xl mx-auto px-2 sm:px-4 pb-4 sm:pb-6">
       {/* Header */}
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-1 sm:mb-2">
           📚 Quản lý Nội dung
         </h1>
-        <p className="text-sm sm:text-base text-gray-600">
+        <p className="text-xs sm:text-sm md:text-base text-gray-600">
           Quản lý sách, chapters (Level module) và đề thi (JLPT module)
         </p>
       </div>
@@ -269,16 +269,16 @@ function ContentManagementPage() {
 
       {/* Books Management */}
       {activeTab === 'books' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Level Selection */}
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4 md:p-6">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Chọn Cấp độ (Level)
             </label>
             <select
               value={selectedLevel}
               onChange={(e) => setSelectedLevel(e.target.value)}
-              className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white"
+              className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white"
             >
               <option value="n1">N1</option>
               <option value="n2">N2</option>
@@ -290,27 +290,28 @@ function ContentManagementPage() {
 
           {/* Books List */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+            <div className="p-3 sm:p-4 md:p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3">
+              <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-800">
                 Danh sách Sách ({books.length})
               </h2>
               <button
                 onClick={handleAddBook}
-                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-2 text-sm sm:text-base"
+                className="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
               >
                 <span>➕</span>
                 <span>Thêm Sách mới</span>
               </button>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full min-w-[600px] table-fixed">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">ID</th>
                     <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">Ảnh bìa</th>
                     <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên sách</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell w-[150px]">Category</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[150px]">Category</th>
                     <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">Chapters</th>
                     <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[200px]">Thao tác</th>
                   </tr>
@@ -333,7 +334,7 @@ function ContentManagementPage() {
                       <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900 max-w-xs">
                         <div className="truncate">{book.title}</div>
                       </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden md:table-cell">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {book.category || '-'}
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -370,6 +371,55 @@ function ContentManagementPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3 p-3">
+              {booksWithChapters.map((book) => (
+                <div key={book.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <div className="flex gap-3 mb-3">
+                    <img
+                      src={book.imageUrl}
+                      alt={book.title}
+                      className="w-16 h-20 object-cover rounded flex-shrink-0"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.src = '/book_card/placeholder.jpg';
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-500 mb-1 font-mono truncate">{book.id}</div>
+                      <div className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">{book.title}</div>
+                      {book.category && (
+                        <div className="text-xs text-blue-600 mb-1">📚 {book.category}</div>
+                      )}
+                      <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                        {book.chapters.length} chương
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => handleAddChapter(book.id)}
+                      className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-1.5 bg-green-500 text-white rounded text-xs font-medium hover:bg-green-600 transition-colors"
+                    >
+                      ➕ Chương
+                    </button>
+                    <button
+                      onClick={() => handleEditBook(book)}
+                      className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-1.5 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600 transition-colors"
+                    >
+                      ✏️ Sửa
+                    </button>
+                    <button
+                      onClick={() => handleDeleteBook(book.id)}
+                      className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-1.5 bg-red-500 text-white rounded text-xs font-medium hover:bg-red-600 transition-colors"
+                    >
+                      🗑️ Xóa
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
