@@ -215,15 +215,15 @@ function ContentManagementPage() {
       updatedBooks = [...books, { ...bookForm }];
     }
     
-    saveBooks(updatedBooks);
+    await saveBooks(updatedBooks);
     setShowBookForm(false);
     alert('✅ Đã lưu sách!');
   };
 
-  const handleDeleteBook = (bookId) => {
+  const handleDeleteBook = async (bookId) => {
     if (confirm('Bạn có chắc muốn xóa sách này? Tất cả chapters sẽ bị xóa!')) {
       const updatedBooks = books.filter(b => b.id !== bookId);
-      saveBooks(updatedBooks);
+      await saveBooks(updatedBooks);
       alert('✅ Đã xóa sách!');
     }
   };
@@ -907,11 +907,11 @@ function ContentManagementPage() {
                             onClick={() => {
                               if (confirm(`Bạn có chắc muốn xóa bộ sách "${s.name}"? Tất cả sách trong bộ này sẽ mất category!`)) {
                                 const updatedSeries = series.filter(ser => ser.id !== s.id);
-                                saveSeries(updatedSeries);
+                                await saveSeries(updatedSeries);
                                 const updatedBooks = books.map(b => 
                                   b.category === s.name ? { ...b, category: '' } : b
                                 );
-                                saveBooks(updatedBooks);
+                                await saveBooks(updatedBooks);
                                 alert('✅ Đã xóa bộ sách!');
                               }
                             }}
@@ -1188,10 +1188,10 @@ function ContentManagementPage() {
                 }
                 const newId = `series-${Date.now()}`;
                 updatedSeries = [...series, { ...seriesForm, id: newId }];
-              }
-              
-              saveSeries(updatedSeries);
-              setShowSeriesForm(false);
+            }
+            
+            await saveSeries(updatedSeries);
+            setShowSeriesForm(false);
               
               // ✅ Auto-select new series in book form if it was opened from book form
               if (!editingSeries && showBookForm && !bookForm.category) {
