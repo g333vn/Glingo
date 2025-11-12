@@ -38,6 +38,12 @@ function AdminLayout() {
       icon: '📚'
     },
     {
+      id: 'exams',
+      label: 'Quản lý Đề thi',
+      path: '/admin/exams',
+      icon: '📋'
+    },
+    {
       id: 'settings',
       label: 'Cài đặt',
       path: '/admin/settings',

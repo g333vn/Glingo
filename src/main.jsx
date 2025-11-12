@@ -12,6 +12,7 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
 import QuizEditorPage from './pages/admin/QuizEditorPage.jsx';
 import UsersManagementPage from './pages/admin/UsersManagementPage.jsx';
 import ContentManagementPage from './pages/admin/ContentManagementPage.jsx';
+import ExamManagementPage from './pages/admin/ExamManagementPage.jsx';
 import LevelPage from './features/books/pages/LevelPage.jsx';
 import LevelN1Page from './features/books/pages/LevelN1Page.jsx';
 

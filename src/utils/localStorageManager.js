@@ -405,6 +405,126 @@ class LocalStorageManager {
 
   // ==================== JLPT EXAMS ====================
   
+  async getExams(level) {
+    // Try IndexedDB first
+    if (this.useIndexedDB) {
+      const result = await indexedDBManager.getExams(level);
+      if (result) return result;
+    }
+
+    // Fallback to localStorage
+    if (this.storageAvailable) {
+      const key = `adminExams_${level}`;
+      const data = localStorage.getItem(key);
+      if (data) {
+        const exams = JSON.parse(data);
+        // Sync to IndexedDB
+        if (this.useIndexedDB) {
+          await indexedDBManager.saveExams(level, exams);
+        }
+        return exams;
+      }
+    }
+
+    return null;
+  }
+
+  async saveExams(level, exams) {
+    // Save to IndexedDB (primary)
+    if (this.useIndexedDB) {
+      const success = await indexedDBManager.saveExams(level, exams);
+      if (success) {
+        // Also save to localStorage if possible
+        if (this.storageAvailable) {
+          try {
+            const key = `adminExams_${level}`;
+            localStorage.setItem(key, JSON.stringify(exams));
+          } catch (e) {
+            console.warn('localStorage full, but exams saved to IndexedDB');
+          }
+        }
+        return true;
+      }
+    }
+
+    // Fallback to localStorage
+    if (this.storageAvailable) {
+      try {
+        const key = `adminExams_${level}`;
+        localStorage.setItem(key, JSON.stringify(exams));
+        console.log(`✅ Saved exams to localStorage (${key})`);
+        return true;
+      } catch (e) {
+        if (e.name === 'QuotaExceededError') {
+          console.error('❌ localStorage quota exceeded!');
+        }
+        return false;
+      }
+    }
+
+    return false;
+  }
+
+  async getLevelConfig(level) {
+    // Try IndexedDB first
+    if (this.useIndexedDB) {
+      const result = await indexedDBManager.getLevelConfig(level);
+      if (result) return result;
+    }
+
+    // Fallback to localStorage
+    if (this.storageAvailable) {
+      const key = `adminLevelConfig_${level}`;
+      const data = localStorage.getItem(key);
+      if (data) {
+        const config = JSON.parse(data);
+        // Sync to IndexedDB
+        if (this.useIndexedDB) {
+          await indexedDBManager.saveLevelConfig(level, config);
+        }
+        return config;
+      }
+    }
+
+    return null;
+  }
+
+  async saveLevelConfig(level, config) {
+    // Save to IndexedDB (primary)
+    if (this.useIndexedDB) {
+      const success = await indexedDBManager.saveLevelConfig(level, config);
+      if (success) {
+        // Also save to localStorage if possible
+        if (this.storageAvailable) {
+          try {
+            const key = `adminLevelConfig_${level}`;
+            localStorage.setItem(key, JSON.stringify(config));
+          } catch (e) {
+            console.warn('localStorage full, but config saved to IndexedDB');
+          }
+        }
+        return true;
+      }
+    }
+
+    // Fallback to localStorage
+    if (this.storageAvailable) {
+      try {
+        const key = `adminLevelConfig_${level}`;
+        localStorage.setItem(key, JSON.stringify(config));
+        console.log(`✅ Saved level config to localStorage (${key})`);
+        return true;
+      } catch (e) {
+        if (e.name === 'QuotaExceededError') {
+          console.error('❌ localStorage quota exceeded!');
+        }
+        return false;
+      }
+    }
+
+    return false;
+  }
+  
   async getExam(level, examId) {
     // Try IndexedDB first
     if (this.useIndexedDB) {

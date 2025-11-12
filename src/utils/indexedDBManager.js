@@ -49,6 +49,11 @@ class IndexedDBManager {
             const examsStore = db.createObjectStore('exams', { keyPath: ['level', 'examId'] });
             examsStore.createIndex('level', 'level');
           }
+
+          // Level Configs store: level as keyPath
+          if (!db.objectStoreNames.contains('levelConfigs')) {
+            db.createObjectStore('levelConfigs', { keyPath: 'level' });
+          }
         }
       });
 
@@ -303,6 +308,92 @@ class IndexedDBManager {
   }
 
   // ==================== EXAMS ====================
+
+  async getExams(level) {
+    if (!(await this.isAvailable())) return null;
+
+    try {
+      const tx = this.db.transaction('exams', 'readonly');
+      const store = tx.objectStore('exams');
+      const index = store.index('level');
+      const exams = await index.getAll(level);
+      return exams.length > 0 ? exams.map(e => ({
+        id: e.examId,
+        title: e.title,
+        date: e.date,
+        status: e.status,
+        imageUrl: e.imageUrl
+      })) : null;
+    } catch (error) {
+      console.error('Error getting exams:', error);
+      return null;
+    }
+  }
+
+  async saveExams(level, exams) {
+    if (!(await this.isAvailable())) return false;
+
+    try {
+      const tx = this.db.transaction('exams', 'readwrite');
+      const store = tx.objectStore('exams');
+
+      // Delete existing exams for this level
+      const index = store.index('level');
+      const existingExams = await index.getAll(level);
+      for (const exam of existingExams) {
+        await store.delete([level, exam.examId]);
+      }
+
+      // Save new exams (metadata only, questions stored separately)
+      for (const exam of exams) {
+        await store.put({
+          level,
+          examId: exam.id,
+          title: exam.title,
+          date: exam.date,
+          status: exam.status,
+          imageUrl: exam.imageUrl || ''
+        });
+      }
+
+      await tx.done;
+      console.log(`✅ Saved ${exams.length} exams to IndexedDB (level: ${level})`);
+      return true;
+    } catch (error) {
+      console.error('Error saving exams:', error);
+      return false;
+    }
+  }
+
+  async getLevelConfig(level) {
+    if (!(await this.isAvailable())) return null;
+
+    try {
+      const tx = this.db.transaction('levelConfigs', 'readonly');
+      const store = tx.objectStore('levelConfigs');
+      const result = await store.get(level);
+      return result ? result.config : null;
+    } catch (error) {
+      console.error('Error getting level config:', error);
+      return null;
+    }
+  }
+
+  async saveLevelConfig(level, config) {
+    if (!(await this.isAvailable())) return false;
+
+    try {
+      const tx = this.db.transaction('levelConfigs', 'readwrite');
+      const store = tx.objectStore('levelConfigs');
+      await store.put({ level, config });
+      await tx.done;
+      console.log(`✅ Saved level config to IndexedDB (level: ${level})`);
+      return true;
+    } catch (error) {
+      console.error('Error saving level config:', error);
+      return false;
+    }
+  }
 
   async getExam(level, examId) {
     if (!(await this.isAvailable())) return null;
