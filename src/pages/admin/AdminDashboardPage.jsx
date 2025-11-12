@@ -64,50 +64,50 @@ function AdminDashboardPage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto px-2 sm:px-4">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
           👋 Chào mừng, {user?.name || user?.username}!
         </h1>
-        <p className="text-gray-600">
+        <p className="text-sm sm:text-base text-gray-600">
           Đây là trang quản trị hệ thống. Chọn module bên sidebar để bắt đầu.
         </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {stats.map((stat, index) => (
           <div
             key={index}
             onClick={() => !stat.comingSoon && navigate(stat.path)}
-            className={`bg-gradient-to-br ${stat.color} rounded-xl shadow-lg p-6 text-white cursor-pointer transform hover:scale-105 transition-all ${
+            className={`bg-gradient-to-br ${stat.color} rounded-xl shadow-lg p-4 sm:p-6 text-white cursor-pointer transform hover:scale-105 transition-all ${
               stat.comingSoon ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm opacity-90 mb-1">{stat.title}</p>
-                <p className="text-3xl font-bold">{stat.value}</p>
+                <p className="text-xs sm:text-sm opacity-90 mb-1">{stat.title}</p>
+                <p className="text-2xl sm:text-3xl font-bold">{stat.value}</p>
               </div>
-              <div className="text-4xl">{stat.icon}</div>
+              <div className="text-3xl sm:text-4xl">{stat.icon}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">⚡ Thao tác nhanh</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">⚡ Thao tác nhanh</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {quickActions.map((action, index) => (
             <button
               key={index}
               onClick={() => !action.comingSoon && navigate(action.path)}
               disabled={action.comingSoon}
-              className={`${action.color} text-white rounded-lg p-4 flex items-center gap-3 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`${action.color} text-white rounded-lg p-3 sm:p-4 flex items-center gap-2 sm:gap-3 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base`}
             >
-              <span className="text-2xl">{action.icon}</span>
+              <span className="text-xl sm:text-2xl">{action.icon}</span>
               <span className="font-semibold">{action.label}</span>
               {action.comingSoon && (
                 <span className="ml-auto text-xs bg-white/20 px-2 py-1 rounded">

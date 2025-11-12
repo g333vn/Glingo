@@ -140,72 +140,72 @@ function QuizEditorPage() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
           📝 Quiz Editor
         </h1>
-        <p className="text-gray-600">
+        <p className="text-sm sm:text-base text-gray-600">
           Tạo quiz mới và export ra JSON format. Dễ dàng thêm vào project!
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Form Input - 2 columns */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Quiz Title */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                📚 Tên Quiz (Title)
-              </label>
-              <input
-                type="text"
-                value={quizTitle}
-                onChange={(e) => setQuizTitle(e.target.value)}
-                placeholder="Ví dụ: Bài 1: Phân biệt cấu trúc A và B"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Form Input - 2 columns */}
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          {/* Quiz Title */}
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              📚 Tên Quiz (Title)
+            </label>
+            <input
+              type="text"
+              value={quizTitle}
+              onChange={(e) => setQuizTitle(e.target.value)}
+              placeholder="Ví dụ: Bài 1: Phân biệt cấu trúc A và B"
+              className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+            />
+          </div>
 
-            {/* Questions */}
-            {questions.map((question, qIndex) => (
-              <div key={qIndex} className="bg-white rounded-lg shadow-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      Câu hỏi {question.id}
-                    </h3>
-                    <span className="text-sm text-gray-500">
-                      ({questions.length} câu hỏi)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={question.correct}
-                      onChange={(e) => updateQuestion(qIndex, 'correct', e.target.value)}
-                      className="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="A">Đáp án đúng: A</option>
-                      <option value="B">Đáp án đúng: B</option>
-                      <option value="C">Đáp án đúng: C</option>
-                      <option value="D">Đáp án đúng: D</option>
-                    </select>
-                    <button
-                      onClick={() => duplicateQuestion(qIndex)}
-                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
-                      title="Duplicate câu hỏi này"
-                    >
-                      📋 Copy
-                    </button>
-                    <button
-                      onClick={() => removeQuestion(qIndex)}
-                      className="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
-                      title="Xóa câu hỏi này"
-                      disabled={questions.length <= 1}
-                    >
-                      🗑️ Xóa
-                    </button>
+          {/* Questions */}
+          {questions.map((question, qIndex) => (
+            <div key={qIndex} className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+                    Câu hỏi {question.id}
+                  </h3>
+                  <span className="text-xs sm:text-sm text-gray-500">
+                    ({questions.length} câu hỏi)
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                  <select
+                    value={question.correct}
+                    onChange={(e) => updateQuestion(qIndex, 'correct', e.target.value)}
+                    className="px-2 sm:px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
+                  >
+                    <option value="A">Đáp án đúng: A</option>
+                    <option value="B">Đáp án đúng: B</option>
+                    <option value="C">Đáp án đúng: C</option>
+                    <option value="D">Đáp án đúng: D</option>
+                  </select>
+                  <button
+                    onClick={() => duplicateQuestion(qIndex)}
+                    className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-xs sm:text-sm font-medium"
+                    title="Duplicate câu hỏi này"
+                  >
+                    📋 <span className="hidden sm:inline">Copy</span>
+                  </button>
+                  <button
+                    onClick={() => removeQuestion(qIndex)}
+                    className="px-2 sm:px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-xs sm:text-sm font-medium"
+                    title="Xóa câu hỏi này"
+                    disabled={questions.length <= 1}
+                  >
+                    🗑️ <span className="hidden sm:inline">Xóa</span>
+                  </button>
                   </div>
                 </div>
 
@@ -223,8 +223,8 @@ function QuizEditorPage() {
                   />
                 </div>
 
-                {/* Options */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
+              {/* Options */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                   {question.options.map((option, optIndex) => (
                     <div key={optIndex}>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -259,25 +259,25 @@ function QuizEditorPage() {
               </div>
             ))}
 
-            {/* Add Question Button */}
-            <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-dashed border-gray-300">
-              <button
-                onClick={addQuestion}
-                className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-semibold text-lg flex items-center justify-center gap-2"
-              >
-                <span className="text-2xl">➕</span>
-                Thêm câu hỏi mới
-              </button>
-              <p className="text-center text-gray-500 text-sm mt-2">
-                Hiện tại có {questions.length} câu hỏi. Click để thêm câu hỏi mới.
-              </p>
-            </div>
+          {/* Add Question Button */}
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 border-2 border-dashed border-gray-300">
+            <button
+              onClick={addQuestion}
+              className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-semibold text-base sm:text-lg flex items-center justify-center gap-2"
+            >
+              <span className="text-xl sm:text-2xl">➕</span>
+              Thêm câu hỏi mới
+            </button>
+            <p className="text-center text-gray-500 text-xs sm:text-sm mt-2">
+              Hiện tại có {questions.length} câu hỏi. Click để thêm câu hỏi mới.
+            </p>
+          </div>
           </div>
 
-          {/* Sidebar - Preview & Export */}
-          <div className="space-y-6">
-            {/* Actions */}
-            <div className="bg-white rounded-lg shadow-lg p-6 sticky top-6">
+        {/* Sidebar - Preview & Export */}
+        <div className="space-y-4 sm:space-y-6">
+          {/* Actions */}
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 sticky top-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Actions</h2>
               
               <div className="space-y-3">
