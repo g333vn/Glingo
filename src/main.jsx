@@ -5,7 +5,9 @@ import { createBrowserRouter, RouterProvider, useParams } from 'react-router-dom
 import App from './App.jsx';
 import HomePage from './pages/HomePage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
 import QuizEditorPage from './pages/QuizEditorPage.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
 import LevelPage from './features/books/pages/LevelPage.jsx';
 import LevelN1Page from './features/books/pages/LevelN1Page.jsx';
 
@@ -143,10 +145,19 @@ const router = createBrowserRouter([
         path: 'about',
         element: <AboutPage />
       },
-      // ✅ NEW: Quiz Editor Tool
+      // ✅ NEW: Login Page
+      {
+        path: 'login',
+        element: <LoginPage />
+      },
+      // ✅ NEW: Quiz Editor Tool (Protected - Admin only)
       {
         path: 'admin/quiz-editor',
-        element: <QuizEditorPage />
+        element: (
+          <ProtectedRoute requiredRole="admin">
+            <QuizEditorPage />
+          </ProtectedRoute>
+        )
       },
       { 
         path: '*', 

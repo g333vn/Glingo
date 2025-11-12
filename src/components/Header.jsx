@@ -1,11 +1,14 @@
 // src/components/Header.jsx - ✨ GLASSMORPHISM VERSION với Scroll Effects
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useExamGuard } from '../hooks/useExamGuard.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
 function Header({ onUserIconClick }) {
   const location = useLocation();
-  const { navigate, WarningModal } = useExamGuard();
+  const navigate = useNavigate();
+  const { navigate: examNavigate, WarningModal } = useExamGuard();
+  const { user, logout, isAdmin } = useAuth();
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLevelDropdownOpen, setIsLevelDropdownOpen] = useState(false);
@@ -106,7 +109,7 @@ function Header({ onUserIconClick }) {
   };
 
   const handleNavigate = (path) => {
-    navigate(path);
+    examNavigate(path);
   };
 
   // Lock body scroll when mobile menu is open (prevents layout jumps/glitches)
@@ -269,6 +272,39 @@ function Header({ onUserIconClick }) {
             >
               ABOUT ME
             </button>
+
+            {/* User Info / Login */}
+            {user ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-400/10 rounded-lg border border-yellow-400/30">
+                  <span className="text-yellow-400 text-sm font-medium">
+                    👤 {user.name || user.username}
+                  </span>
+                  {isAdmin() && (
+                    <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
+                      Admin
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    logout();
+                    navigate('/');
+                  }}
+                  className="px-3 py-1.5 text-white hover:text-red-400 transition-colors text-sm font-medium"
+                  title="Đăng xuất"
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate('/login')}
+                className="px-4 py-2 bg-yellow-400/20 hover:bg-yellow-400/30 text-yellow-400 rounded-lg transition-all font-medium text-sm border border-yellow-400/30"
+              >
+                Đăng nhập
+              </button>
+            )}
           </div>
 
           {/* Mobile Menu Button với Enhanced Animation */}
@@ -354,6 +390,42 @@ function Header({ onUserIconClick }) {
               >
                 💫 ABOUT ME
               </button>
+            </div>
+
+            {/* Mobile User Info / Login */}
+            <div className="border-t border-gray-600/50 pt-2">
+              {user ? (
+                <>
+                  <div className="px-4 py-3 bg-yellow-400/10 rounded-lg mb-2 border border-yellow-400/30">
+                    <p className="text-yellow-400 text-sm font-medium">
+                      👤 {user.name || user.username}
+                    </p>
+                    {isAdmin() && (
+                      <p className="text-xs text-red-400 mt-1">Role: Admin</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      logout();
+                      navigate('/');
+                      handleMobileLinkClick();
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-lg text-red-400 hover:bg-red-400/10 transition-colors"
+                  >
+                    🚪 Đăng xuất
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => {
+                    navigate('/login');
+                    handleMobileLinkClick();
+                  }}
+                  className={getMobileLinkClass('/login')}
+                >
+                  🔐 Đăng nhập
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -8,6 +8,9 @@ import LoginModal from './components/LoginModal.jsx';
 // ✅ EXISTING: Import DictionaryProvider
 import { DictionaryProvider } from './components/api_translate/index.js';
 
+// ✅ NEW: Import AuthProvider
+import { AuthProvider } from './contexts/AuthContext.jsx';
+
 // ✅ NEW: Import JLPT Dictionary initialization
 import { initJLPTDictionary } from './services/api_translate/dictionaryService.js';
 
@@ -32,29 +35,32 @@ function App() {
   }, []); // Empty deps array = run once on mount
 
   return (
-    // ✅ EXISTING: Wrap với DictionaryProvider
-    <DictionaryProvider>
-      <div className="flex flex-col min-h-screen relative">
-        <div
-          className="absolute inset-0 w-full h-full bg-fixed bg-cover bg-center -z-10"
-          style={{ backgroundImage: `url(${backgroundImageUrl})` }}
-        />
-        
-        <Header onUserIconClick={handleOpenLoginModal} />
+    // ✅ NEW: Wrap với AuthProvider (outermost)
+    <AuthProvider>
+      {/* ✅ EXISTING: Wrap với DictionaryProvider */}
+      <DictionaryProvider>
+        <div className="flex flex-col min-h-screen relative">
+          <div
+            className="absolute inset-0 w-full h-full bg-fixed bg-cover bg-center -z-10"
+            style={{ backgroundImage: `url(${backgroundImageUrl})` }}
+          />
+          
+          <Header onUserIconClick={handleOpenLoginModal} />
 
-        <main className="flex-1 relative pt-6 pb-12">
-          <div className="relative z-0 flex justify-center items-start px-4">
-            <div className="w-full max-w-7xl mx-auto">
-              <Outlet />
+          <main className="flex-1 relative pt-6 pb-12">
+            <div className="relative z-0 flex justify-center items-start px-4">
+              <div className="w-full max-w-7xl mx-auto">
+                <Outlet />
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
 
-        <Footer />
+          <Footer />
 
-        {showLoginModal && <LoginModal onClose={handleCloseLoginModal} />}
-      </div>
-    </DictionaryProvider>
+          {showLoginModal && <LoginModal onClose={handleCloseLoginModal} />}
+        </div>
+      </DictionaryProvider>
+    </AuthProvider>
   );
 }
 
