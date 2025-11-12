@@ -13,7 +13,7 @@ function AdminDashboardPage() {
     {
       title: 'Tổng số Quiz',
       value: '3',
-      icon: '📝',
+      icon: '✏️',
       color: 'from-blue-500 to-blue-600',
       path: '/admin/quiz-editor'
     },
@@ -33,9 +33,9 @@ function AdminDashboardPage() {
       // ✅ REMOVED: comingSoon - Module đã hoàn thành
     },
     {
-      title: 'Tổng số Level',
-      value: '5',
-      icon: '📊',
+      title: 'Tổng số Đề thi',
+      value: '75',
+      icon: '📋',
       color: 'from-orange-500 to-orange-600',
       path: '/admin/content'
     }

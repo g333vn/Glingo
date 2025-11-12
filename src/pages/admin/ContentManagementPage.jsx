@@ -270,7 +270,7 @@ function ContentManagementPage() {
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          <span className="hidden sm:inline">📖 </span>Quản lý Sách
+          <span className="hidden sm:inline">📚 </span>Quản lý Sách
         </button>
         <button
           onClick={() => setActiveTab('series')}
@@ -280,7 +280,7 @@ function ContentManagementPage() {
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          <span className="hidden sm:inline">📚 </span>Bộ sách
+          <span className="hidden sm:inline">📦 </span>Bộ sách
         </button>
         <button
           onClick={() => setActiveTab('exams')}
@@ -290,7 +290,7 @@ function ContentManagementPage() {
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          <span className="hidden sm:inline">📝 </span>Đề thi
+          <span className="hidden sm:inline">📋 </span>Đề thi
         </button>
       </div>
 
