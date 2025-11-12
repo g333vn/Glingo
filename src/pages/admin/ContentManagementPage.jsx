@@ -335,6 +335,22 @@ function ContentManagementPage() {
       chapters = [...chapters, { ...chapterForm }];
     }
 
+    // ✅ Sắp xếp chapters theo ID (để đồng nhất với thứ tự)
+    chapters.sort((a, b) => {
+      // Extract numbers from IDs (e.g., "bai-1" -> 1, "unit-2" -> 2)
+      const getNumber = (id) => {
+        const match = id.match(/(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+      };
+      const numA = getNumber(a.id);
+      const numB = getNumber(b.id);
+      if (numA !== numB) {
+        return numA - numB;
+      }
+      // Nếu không có số, sắp xếp theo ID string
+      return a.id.localeCompare(b.id);
+    });
+
     // Save to IndexedDB (unlimited storage!) or localStorage
     const success = await storageManager.saveChapters(selectedBook.id, chapters);
     
