@@ -249,14 +249,21 @@ function ContentManagementPage() {
     setShowChapterForm(true);
   };
 
-  const handleEditChapter = (bookId, chapter) => {
-    const bookData = getBookData(bookId);
-    setSelectedBook(bookData);
+  const handleEditChapter = async (book, chapter) => {
+    setSelectedBook(book);
     setEditingChapter(chapter);
     setChapterForm({
       id: chapter.id,
       title: chapter.title || chapter.id
     });
+    
+    // Load existing chapters for preview
+    const existingChapters = await storageManager.getChapters(book.id);
+    const bookData = getBookData(book.id);
+    const allChapters = existingChapters || bookData?.contents || [];
+    
+    // Store for preview
+    setSelectedBook({ ...book, existingChapters: allChapters });
     setShowChapterForm(true);
   };
 
@@ -997,10 +1004,20 @@ function ContentManagementPage() {
                 onChange={(e) => setBookForm({ ...bookForm, id: e.target.value })}
                 required
                 disabled={!!editingBook}
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
+                className={`w-full px-3 sm:px-4 py-2.5 sm:py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base ${
+                  bookForm.id && books.some(b => b.id === bookForm.id && (!editingBook || b.id !== editingBook.id))
+                    ? 'border-red-500 bg-red-50'
+                    : 'border-gray-300'
+                }`}
                 placeholder="skm-n1-bunpou"
               />
               <p className="text-xs text-gray-500 mt-1">ID dùng để định danh sách (không có khoảng trắng)</p>
+              {bookForm.id && books.some(b => b.id === bookForm.id && (!editingBook || b.id !== editingBook.id)) && (
+                <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>ID này đã tồn tại! Vui lòng chọn ID khác.</span>
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
