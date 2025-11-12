@@ -361,27 +361,39 @@ function ContentManagementPage() {
                           <tr key={book.id} className="hover:bg-gray-50 transition-colors duration-150">
                             <td className="px-3 py-3 text-sm text-gray-900 font-mono text-xs">{book.id}</td>
                             <td className="px-3 py-3 hidden lg:table-cell">
-                              <img
-                                src={book.imageUrl}
-                                alt={book.title}
-                                className="w-10 h-14 object-cover rounded"
-                                loading="lazy"
-                                onError={(e) => {
-                                  e.target.src = '/book_card/placeholder.jpg';
-                                }}
-                              />
-                            </td>
-                            <td className="px-3 py-3 text-sm font-medium text-gray-900">
-                              <div className="flex items-center gap-2 lg:gap-0">
+                              {book.imageUrl ? (
                                 <img
                                   src={book.imageUrl}
                                   alt={book.title}
-                                  className="w-10 h-14 object-cover rounded lg:hidden flex-shrink-0"
+                                  className="w-10 h-14 object-cover rounded"
                                   loading="lazy"
                                   onError={(e) => {
                                     e.target.src = '/book_card/placeholder.jpg';
                                   }}
                                 />
+                              ) : (
+                                <div className="w-10 h-14 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-400">
+                                  No img
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-3 py-3 text-sm font-medium text-gray-900">
+                              <div className="flex items-center gap-2 lg:gap-0">
+                                {book.imageUrl ? (
+                                  <img
+                                    src={book.imageUrl}
+                                    alt={book.title}
+                                    className="w-10 h-14 object-cover rounded lg:hidden flex-shrink-0"
+                                    loading="lazy"
+                                    onError={(e) => {
+                                      e.target.src = '/book_card/placeholder.jpg';
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="w-10 h-14 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-400 lg:hidden flex-shrink-0">
+                                    No img
+                                  </div>
+                                )}
                                 <div className="min-w-0 flex-1">
                                   <div className="truncate">{book.title}</div>
                                   {book.category && (
@@ -941,16 +953,15 @@ function ContentManagementPage() {
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    URL Ảnh bìa *
+                    URL Ảnh bìa (tùy chọn)
                   </label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={bookForm.imageUrl}
                       onChange={(e) => setBookForm({ ...bookForm, imageUrl: e.target.value })}
-                      required
                       className="flex-1 px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                      placeholder="/book_card/n1/shinkanzen/shinkanzen_n1_bunbo.jpg"
+                      placeholder="/book_card/n1/shinkanzen/shinkanzen_n1_bunbo.jpg (tùy chọn)"
                     />
                     {bookForm.imageUrl && (
                       <img
@@ -964,7 +975,7 @@ function ContentManagementPage() {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    💡 Đường dẫn ảnh từ thư mục public (ví dụ: /book_card/n1/...)
+                    💡 Đường dẫn ảnh từ thư mục public (ví dụ: /book_card/n1/...). Để trống nếu không có ảnh bìa.
                   </p>
                 </div>
               </div>
