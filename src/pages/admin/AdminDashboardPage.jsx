@@ -51,8 +51,8 @@ function AdminDashboardPage() {
       label: 'Quản lý Users',
       icon: '👥',
       path: '/admin/users',
-      color: 'bg-green-500 hover:bg-green-600',
-      comingSoon: true
+      color: 'bg-green-500 hover:bg-green-600'
+      // ✅ REMOVED: comingSoon - Module đã hoàn thành
     },
     {
       label: 'Quản lý Nội dung',
