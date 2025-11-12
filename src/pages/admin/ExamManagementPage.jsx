@@ -431,8 +431,10 @@ function ExamManagementPage() {
         const questions = [...(section.questions || [])];
         
         // Prepare question data with proper structure
+        // Remove audioFile (File object cannot be serialized) - only save audioUrl
+        const { audioFile, ...questionDataWithoutFile } = questionForm;
         const questionData = {
-          ...questionForm,
+          ...questionDataWithoutFile,
           options: validOptions
         };
 
