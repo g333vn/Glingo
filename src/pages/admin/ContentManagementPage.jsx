@@ -1327,10 +1327,20 @@ function ContentManagementPage() {
                   onChange={(e) => setSeriesForm({ ...seriesForm, name: e.target.value })}
                   required
                   disabled={!!editingSeries}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base ${
+                    seriesForm.name && series.some(s => s.name === seriesForm.name && (!editingSeries || s.id !== editingSeries.id))
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-300'
+                  }`}
                   placeholder="新完全マスター"
                 />
                 <p className="text-xs text-gray-500 mt-1">Tên bộ sách (không thể thay đổi sau khi tạo)</p>
+                {seriesForm.name && series.some(s => s.name === seriesForm.name && (!editingSeries || s.id !== editingSeries.id)) && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>Tên bộ sách này đã tồn tại! Vui lòng chọn tên khác.</span>
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1343,6 +1353,38 @@ function ContentManagementPage() {
                   className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base resize-y"
                   placeholder="Mô tả về bộ sách này..."
                 />
+              </div>
+              
+              {/* ✅ NEW: Preview existing series */}
+              <div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                  <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                    <span>📦</span>
+                    <span>Bộ sách đã có trong Level {selectedLevel.toUpperCase()} ({series.length})</span>
+                  </h4>
+                  {series.length > 0 ? (
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {series.map((s) => (
+                        <div 
+                          key={s.id}
+                          className={`text-xs px-2 py-1 rounded ${
+                            s.name === seriesForm.name && !editingSeries
+                              ? 'bg-red-100 text-red-800 border border-red-300'
+                              : 'bg-white text-gray-700 border border-gray-200'
+                          }`}
+                        >
+                          <span className="font-semibold">{s.name}</span>
+                          {s.description && <span className="ml-2 text-gray-600">- {s.description}</span>}
+                          <span className="ml-2 text-blue-600">
+                            ({books.filter(b => b.category === s.name).length} sách)
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-600 italic">Chưa có bộ sách nào</p>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
