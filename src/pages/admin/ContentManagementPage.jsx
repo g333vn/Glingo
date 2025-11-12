@@ -894,10 +894,10 @@ function ContentManagementPage() {
       >
         <form onSubmit={handleSaveBook} className="space-y-3 sm:space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    ID Sách * (ví dụ: skm-n1-bunpou)
-                  </label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ID Sách * (ví dụ: skm-n1-bunpou)
+              </label>
                   <input
                     type="text"
                     value={bookForm.id}
@@ -1075,15 +1075,15 @@ function ContentManagementPage() {
                 </button>
               </div>
             </form>
-        </div>
       </Modal>
 
       {/* ✅ NEW: Series Form Modal - Responsive */}
-      <Modal isOpen={showSeriesForm} onClose={() => setShowSeriesForm(false)} maxWidth="28rem">
-        <div>
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
-              {editingSeries ? '✏️ Sửa Bộ sách' : '➕ Thêm Bộ sách mới'}
-            </h2>
+      <Modal 
+        isOpen={showSeriesForm} 
+        onClose={() => setShowSeriesForm(false)} 
+        title={editingSeries ? '✏️ Sửa Bộ sách' : '➕ Thêm Bộ sách mới'}
+        maxWidth="28rem"
+      >
             {!editingSeries && (
               <p className="text-xs text-gray-500 mb-3 sm:mb-4">
                 💡 Bộ sách này sẽ được tạo cho level: <strong className="uppercase">{selectedLevel}</strong>
@@ -1175,7 +1175,6 @@ function ContentManagementPage() {
                 </button>
               </div>
             </form>
-        </div>
       </Modal>
     </div>
   );
