@@ -344,22 +344,25 @@ function ContentManagementPage() {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto relative">
                     <table className="w-full table-auto">
-                      <thead className="bg-gray-50 sticky top-0 z-10">
+                      <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">ID</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Ảnh bìa</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[200px]">Tên sách</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap sticky left-0 z-20 bg-gray-50 min-w-[120px]">ID</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap sticky left-[120px] z-20 bg-gray-50 min-w-[200px]">Tên sách</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[80px]">Ảnh bìa</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[150px]">Category</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Chapters</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Thao tác</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[100px]">Chapters</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap sticky right-0 z-20 bg-gray-50 min-w-[200px]">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
                         {paginatedBooks.map((book) => (
                           <tr key={book.id} className="hover:bg-gray-50 transition-colors duration-150">
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{book.id}</td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 sticky left-0 z-10 bg-white hover:bg-gray-50 min-w-[120px]">{book.id}</td>
+                            <td className="px-4 py-4 text-sm font-medium text-gray-900 sticky left-[120px] z-10 bg-white hover:bg-gray-50 min-w-[200px]">
+                              <div className="truncate max-w-[200px]">{book.title}</div>
+                            </td>
                             <td className="px-4 py-4 whitespace-nowrap">
                               <img
                                 src={book.imageUrl}
@@ -371,18 +374,15 @@ function ContentManagementPage() {
                                 }}
                               />
                             </td>
-                            <td className="px-4 py-4 text-sm font-medium text-gray-900">
-                              <div className="truncate max-w-xs">{book.title}</div>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 min-w-[150px]">
                               {book.category || '-'}
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 min-w-[100px]">
                               <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
                                 {book.chapters.length} chương
                               </span>
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm">
+                            <td className="px-4 py-4 whitespace-nowrap text-sm sticky right-0 z-10 bg-white hover:bg-gray-50 min-w-[200px]">
                               <div className="flex items-center gap-1.5 sm:gap-2">
                                 <button
                                   onClick={() => handleAddChapter(book.id)}
@@ -616,74 +616,74 @@ function ContentManagementPage() {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto relative">
                     <table className="w-full table-auto">
-                      <thead className="bg-gray-50 sticky top-0 z-10">
+                      <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">ID</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[200px]">Tên bộ sách</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap sticky left-0 z-20 bg-gray-50 min-w-[120px]">ID</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap sticky left-[120px] z-20 bg-gray-50 min-w-[200px]">Tên bộ sách</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[250px]">Mô tả</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Số sách</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Thao tác</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[100px]">Số sách</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap sticky right-0 z-20 bg-gray-50 min-w-[180px]">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
                         {paginatedSeries.map((s) => {
-                    const booksInSeries = books.filter(b => b.category === s.name);
-                    return (
-                      <tr key={s.id} className="hover:bg-gray-50 transition-colors duration-150">
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{s.id}</td>
-                        <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900">
-                          {s.name}
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 text-sm text-gray-600">
-                          {s.description || '-'}
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                            {booksInSeries.length} sách
-                          </span>
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex items-center gap-1.5 sm:gap-2">
-                            <button
-                              onClick={() => {
-                                setEditingSeries(s);
-                                setSeriesForm({
-                                  id: s.id,
-                                  name: s.name,
-                                  description: s.description || ''
-                                });
-                                setShowSeriesForm(true);
-                              }}
-                              className="px-2 sm:px-3 py-1.5 sm:py-1 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
-                              title="Sửa"
-                            >
-                              ✏️ Sửa
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (confirm(`Bạn có chắc muốn xóa bộ sách "${s.name}"? Tất cả sách trong bộ này sẽ mất category!`)) {
-                                  const updatedSeries = series.filter(ser => ser.id !== s.id);
-                                  saveSeries(updatedSeries);
-                                  // Update books: remove category from books in this series
-                                  const updatedBooks = books.map(b => 
-                                    b.category === s.name ? { ...b, category: '' } : b
-                                  );
-                                  saveBooks(updatedBooks);
-                                  alert('✅ Đã xóa bộ sách!');
-                                }
-                              }}
-                              className="px-2 sm:px-3 py-1.5 sm:py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
-                              title="Xóa"
-                            >
-                              🗑️ Xóa
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                    })}
+                          const booksInSeries = books.filter(b => b.category === s.name);
+                          return (
+                            <tr key={s.id} className="hover:bg-gray-50 transition-colors duration-150">
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 sticky left-0 z-10 bg-white hover:bg-gray-50 min-w-[120px]">{s.id}</td>
+                              <td className="px-4 py-4 text-sm font-medium text-gray-900 sticky left-[120px] z-10 bg-white hover:bg-gray-50 min-w-[200px]">
+                                {s.name}
+                              </td>
+                              <td className="px-4 py-4 text-sm text-gray-600 min-w-[250px]">
+                                <div className="truncate max-w-[250px]">{s.description || '-'}</div>
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 min-w-[100px]">
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                                  {booksInSeries.length} sách
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm sticky right-0 z-10 bg-white hover:bg-gray-50 min-w-[180px]">
+                                <div className="flex items-center gap-1.5 sm:gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setEditingSeries(s);
+                                      setSeriesForm({
+                                        id: s.id,
+                                        name: s.name,
+                                        description: s.description || ''
+                                      });
+                                      setShowSeriesForm(true);
+                                    }}
+                                    className="px-2 sm:px-3 py-1.5 sm:py-1 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
+                                    title="Sửa"
+                                  >
+                                    ✏️ Sửa
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`Bạn có chắc muốn xóa bộ sách "${s.name}"? Tất cả sách trong bộ này sẽ mất category!`)) {
+                                        const updatedSeries = series.filter(ser => ser.id !== s.id);
+                                        saveSeries(updatedSeries);
+                                        // Update books: remove category from books in this series
+                                        const updatedBooks = books.map(b => 
+                                          b.category === s.name ? { ...b, category: '' } : b
+                                        );
+                                        saveBooks(updatedBooks);
+                                        alert('✅ Đã xóa bộ sách!');
+                                      }
+                                    }}
+                                    className="px-2 sm:px-3 py-1.5 sm:py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
+                                    title="Xóa"
+                                  >
+                                    🗑️ Xóa
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
