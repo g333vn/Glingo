@@ -154,7 +154,7 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
       {/* Header với số câu và trạng thái */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${
+          <div className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-white text-sm sm:text-base md:text-lg ${
             isCorrect ? 'bg-green-500' : 'bg-red-500'
           }`}>
             {index}
@@ -177,7 +177,7 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
             {question.passage}
           </div>
         )}
-        <div className="text-lg font-semibold mb-3">
+        <div className="text-base sm:text-lg font-semibold mb-3">
           {question.question || question.instruction}
         </div>
         {question.text && (
@@ -264,22 +264,22 @@ const ScoreSummary = ({ knowledgeScore, listeningScore, totalQuestions, correctA
   return (
     <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg shadow-lg p-6 mb-6 text-white">
       <h2 className="text-2xl font-bold mb-4">解答結果</h2>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
           <div className="text-sm opacity-90 mb-1">正解数</div>
-          <div className="text-3xl font-bold">{correctAnswers}/{totalQuestions}</div>
+          <div className="text-2xl sm:text-3xl font-bold">{correctAnswers}/{totalQuestions}</div>
         </div>
         <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
           <div className="text-sm opacity-90 mb-1">正解率</div>
-          <div className="text-3xl font-bold">{percentage}%</div>
+          <div className="text-2xl sm:text-3xl font-bold">{percentage}%</div>
         </div>
         <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
           <div className="text-sm opacity-90 mb-1">言語知識・読解</div>
-          <div className="text-3xl font-bold">{knowledgeScore}点</div>
+          <div className="text-2xl sm:text-3xl font-bold">{knowledgeScore}点</div>
         </div>
         <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
           <div className="text-sm opacity-90 mb-1">聴解</div>
-          <div className="text-3xl font-bold">{listeningScore}点</div>
+          <div className="text-2xl sm:text-3xl font-bold">{listeningScore}点</div>
         </div>
       </div>
     </div>

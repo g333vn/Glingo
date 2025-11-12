@@ -293,25 +293,25 @@ function JLPTExamResultPage() {
             </div>
             <div className="flex-1 px-4 md:px-6 py-4 flex flex-col items-center justify-center overflow-y-auto">
               {/* ✨ Animated Title */}
-              <h1 className="text-2xl md:text-5xl font-bold mb-6 md:mb-12 text-center animate-slideUp">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 sm:mb-6 md:mb-8 lg:mb-12 text-center animate-slideUp px-4">
                 {currentExam.title} - 結果
               </h1>
 
               {/* ✨ Animated Layout - ✅ FIXED PERFECT ALIGNMENT */}
-              <div className="flex flex-col md:flex-row gap-6 items-center md:items-stretch mb-8 w-full max-w-4xl">
+              <div className="flex flex-col md:flex-row gap-4 sm:gap-6 items-center md:items-stretch mb-6 sm:mb-8 w-full max-w-4xl px-4">
                 {/* ✨ Pass/Fail Card */}
                 <div 
-                  className={`rounded-xl shadow-md flex flex-col items-center justify-between w-full md:w-64 h-80 glass-effect hover-lift animate-slideUp ${!isPass ? 'animate-shake' : ''}`}
+                  className={`rounded-xl shadow-md flex flex-col items-center justify-between w-full md:w-64 h-64 sm:h-72 md:h-80 glass-effect hover-lift animate-slideUp ${!isPass ? 'animate-shake' : ''}`}
                   style={{ animationDelay: '0.1s', animationFillMode: 'both' }}
                 >
-                  <div className="flex-1 flex items-center justify-center pt-6">
-                    <div className={`flex items-center justify-center w-40 h-40 border-4 rounded-full text-4xl font-bold transition-all duration-500 ${isPass ? 'border-red-500 text-red-500 animate-pulse-slow' : 'border-gray-400 text-gray-500'}`}>
+                  <div className="flex-1 flex items-center justify-center pt-4 sm:pt-6">
+                    <div className={`flex items-center justify-center w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 border-4 rounded-full text-2xl sm:text-3xl md:text-4xl font-bold transition-all duration-500 ${isPass ? 'border-red-500 text-red-500 animate-pulse-slow' : 'border-gray-400 text-gray-500'}`}>
                       <div className={isPass ? 'animate-spin-slow' : ''}>
                         {isPass ? '合格' : '不合格'}
                       </div>
                     </div>
                   </div>
-                  <div className={`text-white font-bold w-full text-center py-4 rounded-b-xl text-2xl transition-all duration-500 ${isPass ? 'bg-gradient-to-r from-red-500 to-pink-500' : 'bg-gradient-to-r from-gray-500 to-gray-600'}`}>
+                  <div className={`text-white font-bold w-full text-center py-3 sm:py-4 rounded-b-xl text-lg sm:text-xl md:text-2xl transition-all duration-500 ${isPass ? 'bg-gradient-to-r from-red-500 to-pink-500' : 'bg-gradient-to-r from-gray-500 to-gray-600'}`}>
                     <AnimatedNumber value={scores.total} /> / {SCORING_CONFIG.total.max}
                   </div>
                 </div>
@@ -320,28 +320,28 @@ function JLPTExamResultPage() {
                 <div className="flex flex-col gap-4 w-full md:flex-1 justify-between">
                   {/* 語彙・知識 */}
                   <div 
-                    className="rounded-xl shadow-md w-full h-24 flex flex-row items-center justify-between px-6 glass-effect hover-lift gradient-border animate-slideUp"
+                    className="rounded-xl shadow-md w-full h-20 sm:h-24 flex flex-row items-center justify-between px-4 sm:px-6 glass-effect hover-lift gradient-border animate-slideUp"
                     style={{ animationDelay: '0.2s', animationFillMode: 'both' }}
                   >
                     <div className="flex flex-col items-start">
-                      <span className="text-base font-semibold text-gray-700">語彙・知識</span>
+                      <span className="text-sm sm:text-base font-semibold text-gray-700">語彙・知識</span>
                       <span className="text-xs text-gray-500">({breakdown.knowledgeCorrect}/{breakdown.knowledgeTotal})</span>
                     </div>
-                    <span className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                    <span className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                       <AnimatedNumber value={scores.knowledge} duration={1500} />点
                     </span>
                   </div>
 
                   {/* 読解 */}
                   <div 
-                    className="rounded-xl shadow-md w-full h-24 flex flex-row items-center justify-between px-6 glass-effect hover-lift gradient-border animate-slideUp"
+                    className="rounded-xl shadow-md w-full h-20 sm:h-24 flex flex-row items-center justify-between px-4 sm:px-6 glass-effect hover-lift gradient-border animate-slideUp"
                     style={{ animationDelay: '0.3s', animationFillMode: 'both' }}
                   >
                     <div className="flex flex-col items-start">
-                      <span className="text-base font-semibold text-gray-700">読解</span>
+                      <span className="text-sm sm:text-base font-semibold text-gray-700">読解</span>
                       <span className="text-xs text-gray-500">({breakdown.readingCorrect}/{breakdown.readingTotal})</span>
                     </div>
-                    <span className="text-4xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
+                    <span className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
                       <AnimatedNumber value={scores.reading} duration={1500} />点
                     </span>
                   </div>
