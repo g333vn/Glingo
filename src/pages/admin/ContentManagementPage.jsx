@@ -754,53 +754,53 @@ function ContentManagementPage() {
               ) : (
                 <div className="space-y-3 p-3">
                   {paginatedSeries.map((s) => {
-                  const booksInSeries = books.filter(b => b.category === s.name);
-                  return (
-                    <div key={s.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="mb-2">
-                        <div className="text-xs text-gray-500 mb-1 font-mono">{s.id}</div>
-                        <div className="text-sm font-semibold text-gray-900 mb-1">{s.name}</div>
-                        {s.description && (
-                          <div className="text-xs text-gray-600 mb-2">{s.description}</div>
-                        )}
-                        <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                          {booksInSeries.length} sách
-                        </span>
+                    const booksInSeries = books.filter(b => b.category === s.name);
+                    return (
+                      <div key={s.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <div className="mb-2">
+                          <div className="text-xs text-gray-500 mb-1 font-mono">{s.id}</div>
+                          <div className="text-sm font-semibold text-gray-900 mb-1">{s.name}</div>
+                          {s.description && (
+                            <div className="text-xs text-gray-600 mb-2">{s.description}</div>
+                          )}
+                          <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                            {booksInSeries.length} sách
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <button
+                            onClick={() => {
+                              setEditingSeries(s);
+                              setSeriesForm({
+                                id: s.id,
+                                name: s.name,
+                                description: s.description || ''
+                              });
+                              setShowSeriesForm(true);
+                            }}
+                            className="flex-1 min-w-[calc(50%-0.375rem)] px-2 py-2.5 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600 active:bg-blue-700 transition-colors min-h-[44px] flex items-center justify-center"
+                          >
+                            ✏️ Sửa
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Bạn có chắc muốn xóa bộ sách "${s.name}"? Tất cả sách trong bộ này sẽ mất category!`)) {
+                                const updatedSeries = series.filter(ser => ser.id !== s.id);
+                                saveSeries(updatedSeries);
+                                const updatedBooks = books.map(b => 
+                                  b.category === s.name ? { ...b, category: '' } : b
+                                );
+                                saveBooks(updatedBooks);
+                                alert('✅ Đã xóa bộ sách!');
+                              }
+                            }}
+                            className="flex-1 min-w-[calc(50%-0.375rem)] px-2 py-2.5 bg-red-500 text-white rounded text-xs font-medium hover:bg-red-600 active:bg-red-700 transition-colors min-h-[44px] flex items-center justify-center"
+                          >
+                            🗑️ Xóa
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        <button
-                          onClick={() => {
-                            setEditingSeries(s);
-                            setSeriesForm({
-                              id: s.id,
-                              name: s.name,
-                              description: s.description || ''
-                            });
-                            setShowSeriesForm(true);
-                          }}
-                          className="flex-1 min-w-[calc(50%-0.375rem)] px-2 py-2.5 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600 active:bg-blue-700 transition-colors min-h-[44px] flex items-center justify-center"
-                        >
-                          ✏️ Sửa
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Bạn có chắc muốn xóa bộ sách "${s.name}"? Tất cả sách trong bộ này sẽ mất category!`)) {
-                              const updatedSeries = series.filter(ser => ser.id !== s.id);
-                              saveSeries(updatedSeries);
-                              const updatedBooks = books.map(b => 
-                                b.category === s.name ? { ...b, category: '' } : b
-                              );
-                              saveBooks(updatedBooks);
-                              alert('✅ Đã xóa bộ sách!');
-                            }
-                          }}
-                          className="flex-1 min-w-[calc(50%-0.375rem)] px-2 py-2.5 bg-red-500 text-white rounded text-xs font-medium hover:bg-red-600 active:bg-red-700 transition-colors min-h-[44px] flex items-center justify-center"
-                        >
-                          🗑️ Xóa
-                        </button>
-                      </div>
-                    </div>
-                  );
+                    );
                   })}
                 </div>
               )}
