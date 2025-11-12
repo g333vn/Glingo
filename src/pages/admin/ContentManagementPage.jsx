@@ -344,66 +344,82 @@ function ContentManagementPage() {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto relative">
-                    <table className="w-full table-auto">
+                  <div className="overflow-hidden">
+                    <table className="w-full">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap sticky left-0 z-20 bg-gray-50 min-w-[120px]">ID</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap sticky left-[120px] z-20 bg-gray-50 min-w-[200px]">Tên sách</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[80px]">Ảnh bìa</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[150px]">Category</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[100px]">Chapters</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap sticky right-0 z-20 bg-gray-50 min-w-[200px]">Thao tác</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[100px]">ID</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell w-[80px]">Ảnh</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên sách</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell w-[150px]">Category</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[100px]">Chapters</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[180px]">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
                         {paginatedBooks.map((book) => (
                           <tr key={book.id} className="hover:bg-gray-50 transition-colors duration-150">
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 sticky left-0 z-10 bg-white hover:bg-gray-50 min-w-[120px]">{book.id}</td>
-                            <td className="px-4 py-4 text-sm font-medium text-gray-900 sticky left-[120px] z-10 bg-white hover:bg-gray-50 min-w-[200px]">
-                              <div className="truncate max-w-[200px]">{book.title}</div>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
+                            <td className="px-3 py-3 text-sm text-gray-900 font-mono text-xs">{book.id}</td>
+                            <td className="px-3 py-3 hidden lg:table-cell">
                               <img
                                 src={book.imageUrl}
                                 alt={book.title}
-                                className="w-12 h-16 object-cover rounded"
+                                className="w-10 h-14 object-cover rounded"
                                 loading="lazy"
                                 onError={(e) => {
                                   e.target.src = '/book_card/placeholder.jpg';
                                 }}
                               />
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 min-w-[150px]">
-                              {book.category || '-'}
+                            <td className="px-3 py-3 text-sm font-medium text-gray-900">
+                              <div className="flex items-center gap-2 lg:gap-0">
+                                <img
+                                  src={book.imageUrl}
+                                  alt={book.title}
+                                  className="w-10 h-14 object-cover rounded lg:hidden flex-shrink-0"
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    e.target.src = '/book_card/placeholder.jpg';
+                                  }}
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate">{book.title}</div>
+                                  {book.category && (
+                                    <div className="text-xs text-blue-600 mt-1 md:hidden">📚 {book.category}</div>
+                                  )}
+                                </div>
+                              </div>
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 min-w-[100px]">
+                            <td className="px-3 py-3 text-sm text-gray-900 hidden md:table-cell">
+                              <div className="truncate">{book.category || '-'}</div>
+                            </td>
+                            <td className="px-3 py-3 text-sm text-gray-900">
                               <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                                {book.chapters.length} chương
+                                {book.chapters.length}
                               </span>
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm sticky right-0 z-10 bg-white hover:bg-gray-50 min-w-[200px]">
-                              <div className="flex items-center gap-1.5 sm:gap-2">
+                            <td className="px-3 py-3 text-sm">
+                              <div className="flex items-center gap-1 flex-wrap">
                                 <button
                                   onClick={() => handleAddChapter(book.id)}
-                                  className="px-2 sm:px-3 py-1.5 sm:py-1 bg-green-500 text-white rounded hover:bg-green-600 active:bg-green-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
+                                  className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 active:bg-green-700 transition-colors duration-150 text-xs font-medium"
                                   title="Thêm chương"
                                 >
-                                  ➕ Chương
+                                  ➕
                                 </button>
                                 <button
                                   onClick={() => handleEditBook(book)}
-                                  className="px-2 sm:px-3 py-1.5 sm:py-1 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
+                                  className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition-colors duration-150 text-xs font-medium"
                                   title="Sửa"
                                 >
-                                  ✏️ Sửa
+                                  ✏️
                                 </button>
                                 <button
                                   onClick={() => handleDeleteBook(book.id)}
-                                  className="px-2 sm:px-3 py-1.5 sm:py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
+                                  className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 transition-colors duration-150 text-xs font-medium"
                                   title="Xóa"
                                 >
-                                  🗑️ Xóa
+                                  🗑️
                                 </button>
                               </div>
                             </td>
@@ -616,15 +632,15 @@ function ContentManagementPage() {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto relative">
-                    <table className="w-full table-auto">
+                  <div className="overflow-hidden">
+                    <table className="w-full">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap sticky left-0 z-20 bg-gray-50 min-w-[120px]">ID</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap sticky left-[120px] z-20 bg-gray-50 min-w-[200px]">Tên bộ sách</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[250px]">Mô tả</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[100px]">Số sách</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap sticky right-0 z-20 bg-gray-50 min-w-[180px]">Thao tác</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[100px]">ID</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên bộ sách</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Mô tả</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[100px]">Số sách</th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[140px]">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
@@ -632,20 +648,25 @@ function ContentManagementPage() {
                           const booksInSeries = books.filter(b => b.category === s.name);
                           return (
                             <tr key={s.id} className="hover:bg-gray-50 transition-colors duration-150">
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 sticky left-0 z-10 bg-white hover:bg-gray-50 min-w-[120px]">{s.id}</td>
-                              <td className="px-4 py-4 text-sm font-medium text-gray-900 sticky left-[120px] z-10 bg-white hover:bg-gray-50 min-w-[200px]">
-                                {s.name}
+                              <td className="px-3 py-3 text-sm text-gray-900 font-mono text-xs">{s.id}</td>
+                              <td className="px-3 py-3 text-sm font-medium text-gray-900">
+                                <div className="min-w-0">
+                                  <div className="truncate">{s.name}</div>
+                                  {s.description && (
+                                    <div className="text-xs text-gray-600 mt-1 lg:hidden truncate">{s.description}</div>
+                                  )}
+                                </div>
                               </td>
-                              <td className="px-4 py-4 text-sm text-gray-600 min-w-[250px]">
-                                <div className="truncate max-w-[250px]">{s.description || '-'}</div>
+                              <td className="px-3 py-3 text-sm text-gray-600 hidden lg:table-cell">
+                                <div className="truncate">{s.description || '-'}</div>
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 min-w-[100px]">
+                              <td className="px-3 py-3 text-sm text-gray-900">
                                 <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                                  {booksInSeries.length} sách
+                                  {booksInSeries.length}
                                 </span>
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm sticky right-0 z-10 bg-white hover:bg-gray-50 min-w-[180px]">
-                                <div className="flex items-center gap-1.5 sm:gap-2">
+                              <td className="px-3 py-3 text-sm">
+                                <div className="flex items-center gap-1">
                                   <button
                                     onClick={() => {
                                       setEditingSeries(s);
@@ -656,10 +677,10 @@ function ContentManagementPage() {
                                       });
                                       setShowSeriesForm(true);
                                     }}
-                                    className="px-2 sm:px-3 py-1.5 sm:py-1 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
+                                    className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition-colors duration-150 text-xs font-medium"
                                     title="Sửa"
                                   >
-                                    ✏️ Sửa
+                                    ✏️
                                   </button>
                                   <button
                                     onClick={() => {
@@ -674,10 +695,10 @@ function ContentManagementPage() {
                                         alert('✅ Đã xóa bộ sách!');
                                       }
                                     }}
-                                    className="px-2 sm:px-3 py-1.5 sm:py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
+                                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 transition-colors duration-150 text-xs font-medium"
                                     title="Xóa"
                                   >
-                                    🗑️ Xóa
+                                    🗑️
                                   </button>
                                 </div>
                               </td>
