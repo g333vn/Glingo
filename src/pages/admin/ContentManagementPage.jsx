@@ -479,50 +479,51 @@ function ContentManagementPage() {
               ) : (
                 <div className="space-y-3 p-3">
                   {paginatedBooks.map((book) => (
-                  <div key={book.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <div className="flex gap-3 mb-3">
-                      <img
-                        src={book.imageUrl}
-                        alt={book.title}
-                        className="w-16 h-20 object-cover rounded flex-shrink-0"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.target.src = '/book_card/placeholder.jpg';
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-gray-500 mb-1 font-mono truncate">{book.id}</div>
-                        <div className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">{book.title}</div>
-                        {book.category && (
-                          <div className="text-xs text-blue-600 mb-1">📚 {book.category}</div>
-                        )}
-                        <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                          {book.chapters.length} chương
-                        </span>
+                    <div key={book.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <div className="flex gap-3 mb-3">
+                        <img
+                          src={book.imageUrl}
+                          alt={book.title}
+                          className="w-16 h-20 object-cover rounded flex-shrink-0"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.target.src = '/book_card/placeholder.jpg';
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-gray-500 mb-1 font-mono truncate">{book.id}</div>
+                          <div className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">{book.title}</div>
+                          {book.category && (
+                            <div className="text-xs text-blue-600 mb-1">📚 {book.category}</div>
+                          )}
+                          <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                            {book.chapters.length} chương
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          onClick={() => handleAddChapter(book.id)}
+                          className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-2.5 bg-green-500 text-white rounded text-xs font-medium hover:bg-green-600 active:bg-green-700 transition-colors min-h-[44px] flex items-center justify-center"
+                        >
+                          ➕ Chương
+                        </button>
+                        <button
+                          onClick={() => handleEditBook(book)}
+                          className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-2.5 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600 active:bg-blue-700 transition-colors min-h-[44px] flex items-center justify-center"
+                        >
+                          ✏️ Sửa
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBook(book.id)}
+                          className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-2.5 bg-red-500 text-white rounded text-xs font-medium hover:bg-red-600 active:bg-red-700 transition-colors min-h-[44px] flex items-center justify-center"
+                        >
+                          🗑️ Xóa
+                        </button>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      <button
-                        onClick={() => handleAddChapter(book.id)}
-                        className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-2.5 bg-green-500 text-white rounded text-xs font-medium hover:bg-green-600 active:bg-green-700 transition-colors min-h-[44px] flex items-center justify-center"
-                      >
-                        ➕ Chương
-                      </button>
-                      <button
-                        onClick={() => handleEditBook(book)}
-                        className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-2.5 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600 active:bg-blue-700 transition-colors min-h-[44px] flex items-center justify-center"
-                      >
-                        ✏️ Sửa
-                      </button>
-                      <button
-                        onClick={() => handleDeleteBook(book.id)}
-                        className="flex-1 min-w-[calc(33.333%-0.375rem)] px-2 py-2.5 bg-red-500 text-white rounded text-xs font-medium hover:bg-red-600 active:bg-red-700 transition-colors min-h-[44px] flex items-center justify-center"
-                      >
-                        🗑️ Xóa
-                      </button>
-                  </div>
+                  ))}
                 </div>
-                ))
               )}
               
               {/* Mobile Pagination */}
