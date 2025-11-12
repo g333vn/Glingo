@@ -179,6 +179,10 @@ const router = createBrowserRouter([
           {
             path: 'content',
             element: <ContentManagementPage />
+          },
+          {
+            path: 'exams',
+            element: <ExamManagementPage />
           }
         ]
       },
