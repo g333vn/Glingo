@@ -6,7 +6,9 @@ import App from './App.jsx';
 import HomePage from './pages/HomePage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
-import QuizEditorPage from './pages/QuizEditorPage.jsx';
+import AdminLayout from './pages/admin/AdminLayout.jsx';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import QuizEditorPage from './pages/admin/QuizEditorPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import LevelPage from './features/books/pages/LevelPage.jsx';
 import LevelN1Page from './features/books/pages/LevelN1Page.jsx';
@@ -150,14 +152,24 @@ const router = createBrowserRouter([
         path: 'login',
         element: <LoginPage />
       },
-      // ✅ NEW: Quiz Editor Tool (Protected - Admin only)
+      // ✅ NEW: Admin Routes (Protected - Admin only)
       {
-        path: 'admin/quiz-editor',
+        path: 'admin',
         element: (
           <ProtectedRoute requiredRole="admin">
-            <QuizEditorPage />
+            <AdminLayout />
           </ProtectedRoute>
-        )
+        ),
+        children: [
+          {
+            index: true,
+            element: <AdminDashboard />
+          },
+          {
+            path: 'quiz-editor',
+            element: <QuizEditorPage />
+          }
+        ]
       },
       { 
         path: '*', 

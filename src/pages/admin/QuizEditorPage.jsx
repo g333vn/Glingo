@@ -1,12 +1,14 @@
-// src/pages/QuizEditorPage.jsx
+// src/pages/admin/QuizEditorPage.jsx
 // Tool nhập liệu quiz - Dễ dàng tạo quiz mới và export ra JSON
 // ⚠️ PROTECTED: Chỉ admin mới có thể truy cập (bảo vệ bằng ProtectedRoute)
 
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext.jsx';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 
 function QuizEditorPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [quizTitle, setQuizTitle] = useState('');
   const [questions, setQuestions] = useState([
     {
@@ -138,19 +140,18 @@ function QuizEditorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            📝 Quiz Editor - Tool Nhập Liệu
-          </h1>
-          <p className="text-gray-600">
-            Tạo quiz mới và export ra JSON format. Dễ dàng thêm vào project!
-          </p>
-        </div>
+    <div className="bg-white rounded-lg shadow-lg p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          📝 Quiz Editor
+        </h1>
+        <p className="text-gray-600">
+          Tạo quiz mới và export ra JSON format. Dễ dàng thêm vào project!
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form Input - 2 columns */}
           <div className="lg:col-span-2 space-y-6">
             {/* Quiz Title */}
@@ -366,25 +367,22 @@ function QuizEditorPage() {
           </div>
         </div>
 
-        {/* User Info & Logout */}
+        {/* Back to Dashboard */}
         <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg shadow-lg p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-blue-800">
-                👤 Đang đăng nhập: <strong>{user?.name || user?.username}</strong>
+                📝 Quiz Editor Module
               </p>
               <p className="text-xs text-blue-600 mt-1">
-                Role: <strong>{user?.role}</strong> | Email: {user?.email}
+                Tạo và quản lý quiz cho các bài học
               </p>
             </div>
             <button
-              onClick={() => {
-                logout();
-                window.location.href = '/';
-              }}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-sm"
+              onClick={() => navigate('/admin')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
             >
-              Đăng xuất
+              ← Về Dashboard
             </button>
           </div>
         </div>
@@ -410,7 +408,6 @@ function QuizEditorPage() {
             <li>Copy file vào: <code className="bg-gray-100 px-2 py-1 rounded">src/data/level/n1/shinkanzen-n1-bunpou/quizzes/</code></li>
           </ol>
         </div>
-      </div>
     </div>
   );
 }
