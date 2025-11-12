@@ -35,8 +35,7 @@ function AdminLayout() {
       id: 'content',
       label: 'Quản lý Nội dung',
       path: '/admin/content',
-      icon: '📚',
-      comingSoon: true
+      icon: '📚'
     },
     {
       id: 'settings',

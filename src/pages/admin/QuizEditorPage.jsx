@@ -39,8 +39,19 @@ function QuizEditorPage() {
   const [exportedJSON, setExportedJSON] = useState('');
   const [showPreview, setShowPreview] = useState(false);
 
-  // ✅ NEW: Get books by level
+  // ✅ NEW: Get books by level (check localStorage first, fallback to default)
   const getBooksByLevel = (levelId) => {
+    // Check localStorage first (saved from Content Management)
+    const savedBooks = localStorage.getItem(`adminBooks_${levelId}`);
+    if (savedBooks) {
+      try {
+        return JSON.parse(savedBooks);
+      } catch (error) {
+        console.error('Error loading saved books:', error);
+      }
+    }
+    
+    // Fallback to default data
     switch(levelId) {
       case 'n1': return n1BooksMetadata;
       // TODO: Thêm các level khác

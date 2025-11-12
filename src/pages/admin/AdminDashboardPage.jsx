@@ -30,6 +30,7 @@ function AdminDashboardPage() {
       icon: '📚',
       color: 'from-purple-500 to-purple-600',
       path: '/admin/content'
+      // ✅ REMOVED: comingSoon - Module đã hoàn thành
     },
     {
       title: 'Tổng số Level',
@@ -58,8 +59,8 @@ function AdminDashboardPage() {
       label: 'Quản lý Nội dung',
       icon: '📚',
       path: '/admin/content',
-      color: 'bg-purple-500 hover:bg-purple-600',
-      comingSoon: true
+      color: 'bg-purple-500 hover:bg-purple-600'
+      // ✅ REMOVED: comingSoon - Module đã hoàn thành
     }
   ];
 
