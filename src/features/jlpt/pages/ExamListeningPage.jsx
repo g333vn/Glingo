@@ -442,14 +442,14 @@ function ExamListeningPage() {
         {/* Modal cảnh báo thiếu câu */}
         {showIncompleteWarning && (
           <div 
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-[modalFadeIn_0.2s_ease-out]"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 modal-overlay-enter"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowIncompleteWarning(false);
               }
             }}
           >
-            <div className="bg-white rounded-lg p-8 max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto animate-[modalSlideUp_0.3s_ease-out]">
+            <div className="bg-white rounded-lg p-8 max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto modal-content-enter">
               <h2 className="text-xl font-bold mb-4 text-yellow-600">⚠️ CẢNH BÁO: CÒN CÂU CHƯA TRẢ LỜI</h2>
               <div className="mb-6">
                 <p className="mb-3">
@@ -485,14 +485,14 @@ function ExamListeningPage() {
         {/* Modal xác nhận submit */}
         {showSubmitModal && (
           <div 
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-[modalFadeIn_0.2s_ease-out]"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 modal-overlay-enter"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowSubmitModal(false);
               }
             }}
           >
-            <div className="bg-white rounded-lg p-8 max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto animate-[modalSlideUp_0.3s_ease-out]">
+            <div className="bg-white rounded-lg p-8 max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto modal-content-enter">
               <h2 className="text-xl font-bold mb-4">確認</h2>
               <p className="mb-6">本当に提出しますか？提出後は変更できません。</p>
               <div className="flex justify-end gap-4">

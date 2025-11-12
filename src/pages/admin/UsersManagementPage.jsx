@@ -392,7 +392,7 @@ function UsersManagementPage() {
       {/* Change Password Modal */}
       {showChangePasswordModal && changePasswordUser && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-[modalFadeIn_0.2s_ease-out]"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 modal-overlay-enter"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowChangePasswordModal(false);
@@ -400,7 +400,7 @@ function UsersManagementPage() {
             }
           }}
         >
-          <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-6 max-w-md w-full max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto animate-[modalSlideUp_0.3s_ease-out]">
+          <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-6 max-w-md w-full max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto modal-content-enter">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               🔑 Thay đổi mật khẩu
             </h2>

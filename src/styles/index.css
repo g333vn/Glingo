@@ -36,6 +36,7 @@
   }
 }
 
+/* Modal animation utility classes */
 .modal-overlay-enter {
   animation: modalFadeIn 0.2s ease-out;
 }
