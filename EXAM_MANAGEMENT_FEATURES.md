@@ -18,7 +18,7 @@
 
 ---
 
-## 🚧 Đang phát triển (Phase 2)
+## ✅ Đã hoàn thành (Phase 2)
 
 ### 3. Nhập Câu hỏi
 
@@ -28,27 +28,32 @@ Mỗi đề thi có 3 loại bài thi:
 - **Đọc hiểu (読解)**: Nhiều sections với đoạn văn dài
 - **Nghe hiểu (聴解)**: Nhiều sections với file audio
 
-#### 3.2. Form Nhập Câu hỏi
+#### 3.2. Form Nhập Câu hỏi (Quiz Editor Style)
 - **Section Form**:
   - ID section (ví dụ: section1, section2)
   - Tiêu đề (ví dụ: 問題1, 問題2)
   - Hướng dẫn (instruction)
   - Thời gian (tùy chọn, cho knowledge và listening)
   
-- **Question Form**:
+- **Question Form** (Full Page Layout):
   - ID câu hỏi
   - Category (knowledge/reading/listening)
   - Câu hỏi (text)
-  - 4 lựa chọn (A, B, C, D)
-  - Đáp án đúng (0-3 hoặc A-D)
+  - 4 lựa chọn (A, B, C, D) - Grid layout 2 cột
+  - Đáp án đúng (0-3) - Dropdown với preview
   - Giải thích (explanation)
-  - File audio URL (cho listening)
+  - **File audio URL** (cho listening) - Upload file hoặc nhập URL
+  - **Preview**: Xem trước câu hỏi
+  - **Export JSON**: Xuất JSON câu hỏi
+  - **Copy JSON**: Sao chép JSON vào clipboard
+  - **Download File**: Tải file JSON
 
 #### 3.3. Quản lý Sections và Questions
-- Thêm/sửa/xóa sections
-- Thêm/sửa/xóa questions trong section
-- Sắp xếp questions theo thứ tự
-- Preview câu hỏi trước khi lưu
+- ✅ Thêm/sửa/xóa sections
+- ✅ Thêm/sửa/xóa questions trong section
+- ✅ Sắp xếp questions theo thứ tự
+- ✅ Preview câu hỏi trước khi lưu
+- ✅ Validation form đầy đủ
 
 ---
 
@@ -57,38 +62,27 @@ Mỗi đề thi có 3 loại bài thi:
 ### 4. Upload và Quản lý File Audio
 - ✅ Upload file audio cho listening questions
 - ✅ Preview audio trước khi lưu
-- ✅ Quản lý danh sách file audio
-- ✅ Tự động tạo URL cho file audio
+- ✅ Nhập URL audio (nếu đã upload sẵn)
+- ✅ Test audio URL
+- ✅ File size validation (tối đa 10MB)
+- ✅ File type validation (audio/*)
 
 ### 5. Validation và Preview
-- ✅ Kiểm tra số câu hỏi tối thiểu/tối đa
-- ✅ Kiểm tra thời gian tổng hợp lý
-- ✅ Preview đề thi trước khi publish
-- ✅ Thống kê: Tổng số câu hỏi, thời gian, điểm tối đa
+- ✅ Kiểm tra form đầy đủ thông tin
+- ✅ Validation cho listening (bắt buộc audio)
+- ✅ Preview câu hỏi real-time
+- ✅ Hiển thị validation status
 
-### 6. Import/Export
-- ✅ Export đề thi ra JSON
-- ✅ Import đề thi từ JSON
-- ✅ Template đề thi mẫu
-- ✅ Backup/Restore
+### 6. Export/Import JSON
+- ✅ Export câu hỏi ra JSON
+- ✅ Copy JSON vào clipboard
+- ✅ Download JSON file
+- ✅ Generate JSON tự động từ form
 
-### 7. Duplicate và Template
-- ✅ Duplicate đề thi (sao chép đề thi cũ)
-- ✅ Template đề thi (tạo đề thi từ template)
-- ✅ Quick add từ đề thi khác
-
-### 8. Statistics và Analytics
-- ✅ Thống kê số câu hỏi theo section
-- ✅ Thống kê thời gian tổng
-- ✅ Thống kê điểm tối đa
-- ✅ Preview cấu trúc đề thi
-
-### 9. Advanced Features
-- ✅ Bulk import questions (import nhiều câu hỏi cùng lúc)
-- ✅ Search và filter questions
-- ✅ Drag & drop để sắp xếp questions
-- ✅ Auto-numbering questions
-- ✅ Rich text editor cho câu hỏi và giải thích
+### 7. Trạng thái Đề thi
+- ✅ Thay đổi trạng thái đề thi (Có sẵn / Đang thi / Đã kết thúc)
+- ✅ Dropdown trực tiếp trong danh sách đề thi
+- ✅ Lưu trạng thái tự động
 
 ---
 
@@ -174,27 +168,22 @@ Mỗi đề thi có 3 loại bài thi:
 
 ---
 
-## 🎯 Next Steps
+## 💾 Lưu trữ dữ liệu
 
-1. **Hoàn thiện phần nhập câu hỏi** (Phase 2)
-   - Form nhập section
-   - Form nhập question
-   - Quản lý sections và questions
-   - Preview và validation
+Tất cả dữ liệu được lưu tự động vào database:
 
-2. **Upload file audio** (Phase 3)
-   - Tích hợp file upload
-   - Quản lý audio files
-   - Preview audio
+- **Level Config**: IndexedDB (`levelConfigs` store) + localStorage (fallback)
+- **Exam Metadata**: IndexedDB (`exams` store) + localStorage (fallback)
+- **Exam Full Data**: IndexedDB (`exams` store) - Bao gồm questions, sections, audioUrl
+- **Export/Import**: Hỗ trợ export/import tất cả dữ liệu
 
-3. **Import/Export** (Phase 4)
-   - Export JSON
-   - Import JSON
-   - Template system
+## 🎯 Tính năng đã hoàn thành
 
-4. **Advanced Features** (Phase 5)
-   - Bulk operations
-   - Search/filter
-   - Drag & drop
-   - Rich text editor
+✅ **Phase 1**: Cấu hình điểm/thời gian, Quản lý đề thi (CRUD)
+✅ **Phase 2**: Nhập câu hỏi (Section & Question forms), Upload audio, Preview, Export JSON
+✅ **Phase 3**: Trạng thái đề thi, Validation đầy đủ
+
+## 🚀 Cách sử dụng
+
+Xem hướng dẫn chi tiết tại: `EXAM_MANAGEMENT_GUIDE.md` (sẽ được tạo)
 
