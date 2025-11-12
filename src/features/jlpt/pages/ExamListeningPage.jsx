@@ -442,14 +442,38 @@ function ExamListeningPage() {
         {/* Modal cảnh báo thiếu câu */}
         {showIncompleteWarning && (
           <div 
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center modal-overlay-enter"
+            className="modal-overlay-enter"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1rem',
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowIncompleteWarning(false);
               }
             }}
           >
-            <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[calc(100vh-2rem)] overflow-y-auto modal-content-enter">
+            <div 
+              className="modal-content-enter"
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '0.5rem',
+                padding: '2rem',
+                maxWidth: '28rem',
+                width: '100%',
+                maxHeight: 'calc(100vh - 4rem)',
+                overflowY: 'auto',
+              }}
+            >
               <h2 className="text-xl font-bold mb-4 text-yellow-600">⚠️ CẢNH BÁO: CÒN CÂU CHƯA TRẢ LỜI</h2>
               <div className="mb-6">
                 <p className="mb-3">
@@ -485,14 +509,38 @@ function ExamListeningPage() {
         {/* Modal xác nhận submit */}
         {showSubmitModal && (
           <div 
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center modal-overlay-enter"
+            className="modal-overlay-enter"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1rem',
+            }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setShowSubmitModal(false);
               }
             }}
           >
-            <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 max-h-[calc(100vh-2rem)] overflow-y-auto modal-content-enter">
+            <div 
+              className="modal-content-enter"
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '0.5rem',
+                padding: '2rem',
+                maxWidth: '28rem',
+                width: '100%',
+                maxHeight: 'calc(100vh - 4rem)',
+                overflowY: 'auto',
+              }}
+            >
               <h2 className="text-xl font-bold mb-4">確認</h2>
               <p className="mb-6">本当に提出しますか？提出後は変更できません。</p>
               <div className="flex justify-end gap-4">

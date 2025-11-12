@@ -392,7 +392,20 @@ function UsersManagementPage() {
       {/* Change Password Modal */}
       {showChangePasswordModal && changePasswordUser && (
         <div 
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 modal-overlay-enter"
+          className="modal-overlay-enter"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowChangePasswordModal(false);
@@ -400,7 +413,19 @@ function UsersManagementPage() {
             }
           }}
         >
-          <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-6 max-w-md w-full max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto modal-content-enter">
+          <div 
+            className="modal-content-enter"
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '0.75rem',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              padding: '1.5rem',
+              maxWidth: '28rem',
+              width: '100%',
+              maxHeight: 'calc(100vh - 4rem)',
+              overflowY: 'auto',
+            }}
+          >
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               🔑 Thay đổi mật khẩu
             </h2>
