@@ -37,24 +37,24 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl p-6 sm:p-8 md:p-10 max-w-md w-full border border-gray-100">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">🔐</div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="text-5xl sm:text-6xl mb-3 sm:mb-4">🔐</div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
             Đăng Nhập
           </h1>
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 text-sm sm:text-base">
             Vui lòng đăng nhập để tiếp tục
           </p>
         </div>
 
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           {/* Username */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2">
               Tên đăng nhập:
             </label>
             <input
@@ -65,7 +65,7 @@ function LoginPage() {
                 setError('');
               }}
               placeholder="Nhập tên đăng nhập..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 sm:py-3.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base"
               autoFocus
               required
             />
@@ -73,7 +73,7 @@ function LoginPage() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2">
               Mật khẩu:
             </label>
             <input
@@ -84,14 +84,14 @@ function LoginPage() {
                 setError('');
               }}
               placeholder="Nhập mật khẩu..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 sm:py-3.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base"
               required
             />
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm sm:text-base">
               {error}
             </div>
           )}
@@ -100,16 +100,16 @@ function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 sm:py-3.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-semibold text-base sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]"
           >
             {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
         </form>
 
         {/* Demo Accounts */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <p className="text-xs font-semibold text-gray-700 mb-2">📝 Tài khoản demo:</p>
-          <div className="space-y-1 text-xs text-gray-600">
+        <div className="mt-6 p-4 sm:p-5 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3">📝 Tài khoản demo:</p>
+          <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600">
             <p><strong>Admin:</strong> admin / admin123</p>
             <p><strong>Editor:</strong> editor / editor123</p>
             <p><strong>User:</strong> user1 / user123</p>
@@ -120,9 +120,10 @@ function LoginPage() {
         <div className="mt-6 text-center">
           <a
             href="/"
-            className="text-blue-600 hover:underline text-sm"
+            className="text-blue-600 hover:text-blue-700 hover:underline text-sm sm:text-base transition-colors inline-flex items-center gap-1"
           >
-            ← Quay về trang chủ
+            <span>←</span>
+            <span>Quay về trang chủ</span>
           </a>
         </div>
       </div>
