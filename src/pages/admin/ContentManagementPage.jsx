@@ -886,14 +886,14 @@ function ContentManagementPage() {
       )}
 
       {/* Book Form Modal - Responsive */}
-      <Modal isOpen={showBookForm} onClose={() => setShowBookForm(false)} maxWidth="42rem">
-        <div>
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
-            {editingBook ? '✏️ Sửa Sách' : '➕ Thêm Sách mới'}
-          </h2>
-            
-            <form onSubmit={handleSaveBook} className="space-y-3 sm:space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      <Modal 
+        isOpen={showBookForm} 
+        onClose={() => setShowBookForm(false)} 
+        title={editingBook ? '✏️ Sửa Sách' : '➕ Thêm Sách mới'}
+        maxWidth="42rem"
+      >
+        <form onSubmit={handleSaveBook} className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     ID Sách * (ví dụ: skm-n1-bunpou)
