@@ -898,21 +898,21 @@ function ContentManagementPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 ID Sách * (ví dụ: skm-n1-bunpou)
               </label>
-                  <input
-                    type="text"
-                    value={bookForm.id}
-                    onChange={(e) => setBookForm({ ...bookForm, id: e.target.value })}
-                    required
-                    disabled={!!editingBook}
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
-                    placeholder="skm-n1-bunpou"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">ID dùng để định danh sách (không có khoảng trắng)</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Bộ sách (Category) *
-                  </label>
+              <input
+                type="text"
+                value={bookForm.id}
+                onChange={(e) => setBookForm({ ...bookForm, id: e.target.value })}
+                required
+                disabled={!!editingBook}
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
+                placeholder="skm-n1-bunpou"
+              />
+              <p className="text-xs text-gray-500 mt-1">ID dùng để định danh sách (không có khoảng trắng)</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Bộ sách (Category) *
+              </label>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <select
                       value={bookForm.category}
@@ -1002,22 +1002,16 @@ function ContentManagementPage() {
                 </button>
               </div>
             </form>
-        </div>
       </Modal>
 
       {/* Chapter Form Modal - Responsive */}
       <Modal 
         isOpen={showChapterForm && !!selectedBook} 
         onClose={() => setShowChapterForm(false)} 
-        title={editingChapter ? '✏️ Sửa Chương' : '➕ Thêm Chương mới'}
+        title={`${editingChapter ? '✏️ Sửa Chương' : '➕ Thêm Chương mới'} - ${selectedBook?.title || 'N/A'}`}
         maxWidth="28rem"
       >
-        <div>
-            <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-              Sách: <strong>{selectedBook?.title || 'N/A'}</strong>
-            </p>
-            
-            <form onSubmit={handleSaveChapter} className="space-y-3 sm:space-y-4">
+        <form onSubmit={handleSaveChapter} className="space-y-3 sm:space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   ID Chương * (ví dụ: bai-1, unit-1)
@@ -1084,13 +1078,7 @@ function ContentManagementPage() {
         title={editingSeries ? '✏️ Sửa Bộ sách' : '➕ Thêm Bộ sách mới'}
         maxWidth="28rem"
       >
-            {!editingSeries && (
-              <p className="text-xs text-gray-500 mb-3 sm:mb-4">
-                💡 Bộ sách này sẽ được tạo cho level: <strong className="uppercase">{selectedLevel}</strong>
-              </p>
-            )}
-            
-            <form onSubmit={(e) => {
+        <form onSubmit={(e) => {
               e.preventDefault();
               if (!seriesForm.name) {
                 alert('⚠️ Vui lòng điền tên bộ sách!');
