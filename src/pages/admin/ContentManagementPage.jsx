@@ -1172,42 +1172,9 @@ function ContentManagementPage() {
       )}
 
       {/* ✅ NEW: Series Form Modal - Responsive */}
-      {showSeriesForm && (
-        <div 
-          className="modal-overlay-enter"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowSeriesForm(false);
-            }
-          }}
-        >
-          <div 
-            className="modal-content-enter"
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '0.75rem',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              padding: '1.5rem',
-              maxWidth: '28rem',
-              width: '100%',
-              maxHeight: 'calc(100vh - 4rem)',
-              overflowY: 'auto',
-            }}
-          >
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
+      <Modal isOpen={showSeriesForm} onClose={() => setShowSeriesForm(false)} maxWidth="28rem">
+        <div>
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
               {editingSeries ? '✏️ Sửa Bộ sách' : '➕ Thêm Bộ sách mới'}
             </h2>
             {!editingSeries && (
