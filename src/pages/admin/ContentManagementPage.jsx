@@ -880,7 +880,14 @@ function ContentManagementPage() {
 
       {/* Book Form Modal - Responsive */}
       {showBookForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowBookForm(false);
+            }
+          }}
+        >
           <div className="bg-white rounded-xl shadow-2xl p-3 sm:p-4 md:p-6 max-w-2xl w-full my-4 sm:my-8 max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
               {editingBook ? '✏️ Sửa Sách' : '➕ Thêm Sách mới'}
@@ -1002,7 +1009,14 @@ function ContentManagementPage() {
 
       {/* Chapter Form Modal - Responsive */}
       {showChapterForm && selectedBook && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowChapterForm(false);
+            }
+          }}
+        >
           <div className="bg-white rounded-xl shadow-2xl p-3 sm:p-4 md:p-6 max-w-md w-full my-4 sm:my-8 max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2">
               {editingChapter ? '✏️ Sửa Chương' : '➕ Thêm Chương mới'}
@@ -1075,7 +1089,14 @@ function ContentManagementPage() {
 
       {/* ✅ NEW: Series Form Modal - Responsive */}
       {showSeriesForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowSeriesForm(false);
+            }
+          }}
+        >
           <div className="bg-white rounded-xl shadow-2xl p-3 sm:p-4 md:p-6 max-w-md w-full my-4 sm:my-8 max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
               {editingSeries ? '✏️ Sửa Bộ sách' : '➕ Thêm Bộ sách mới'}
