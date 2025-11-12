@@ -429,14 +429,14 @@ function ContentManagementPage() {
       {activeTab === 'series' && (
         <div className="space-y-4 sm:space-y-6">
           {/* Level Selection */}
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4 md:p-6">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Chọn Cấp độ (Level)
             </label>
             <select
               value={selectedLevel}
               onChange={(e) => setSelectedLevel(e.target.value)}
-              className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white"
+              className="w-full sm:w-auto px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white"
             >
               <option value="n1">N1</option>
               <option value="n2">N2</option>
