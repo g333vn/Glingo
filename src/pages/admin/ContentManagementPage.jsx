@@ -111,6 +111,8 @@ function ContentManagementPage() {
 
   // State for chapters data (async loading)
   const [chaptersData, setChaptersData] = useState({});
+  // State for quizzes data (async loading)
+  const [quizzesData, setQuizzesData] = useState({});
 
   // Load chapters for all books
   useEffect(() => {
@@ -128,6 +130,26 @@ function ContentManagementPage() {
       loadChapters();
     }
   }, [books, selectedLevel]);
+
+  // Load quizzes for selected book when chapter form opens
+  useEffect(() => {
+    const loadQuizzes = async () => {
+      if (showChapterForm && selectedBook?.id) {
+        const newQuizzesData = {};
+        const chapters = selectedBook.existingChapters || [];
+        for (const chapter of chapters) {
+          const quiz = await storageManager.getQuiz(selectedBook.id, chapter.id);
+          if (quiz) {
+            newQuizzesData[chapter.id] = quiz;
+          }
+        }
+        setQuizzesData(newQuizzesData);
+      }
+    };
+    if (showChapterForm && selectedBook?.id) {
+      loadQuizzes();
+    }
+  }, [showChapterForm, selectedBook]);
 
   // Get book data (with chapters) - Now uses async chaptersData
   const getBookData = useCallback((bookId) => {
@@ -1068,16 +1090,16 @@ function ContentManagementPage() {
                   />
                 </div>
                 
-                {/* ✅ NEW: Preview existing books */}
+                {/* ✅ NEW: Preview existing books - Show ALL books with scroll */}
                 <div className="sm:col-span-2">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                     <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
                       <span>📚</span>
-                      <span>Sách đã có trong Level {selectedLevel.toUpperCase()} ({books.length})</span>
+                      <span>Tất cả sách trong Level {selectedLevel.toUpperCase()} ({books.length})</span>
                     </h4>
                     {books.length > 0 ? (
-                      <div className="max-h-40 overflow-y-auto space-y-1">
-                        {books.slice(0, 10).map((book) => (
+                      <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
+                        {books.map((book) => (
                           <div 
                             key={book.id}
                             className={`text-xs px-2 py-1 rounded ${
@@ -1091,9 +1113,6 @@ function ContentManagementPage() {
                             {book.category && <span className="ml-2 text-blue-600">({book.category})</span>}
                           </div>
                         ))}
-                        {books.length > 10 && (
-                          <p className="text-xs text-gray-500 italic mt-1">... và {books.length - 10} sách khác</p>
-                        )}
                       </div>
                     ) : (
                       <p className="text-xs text-gray-600 italic">Chưa có sách nào</p>
@@ -1205,13 +1224,13 @@ function ContentManagementPage() {
                     <span>Dữ liệu hiện có của sách "{selectedBook.title}"</span>
                   </h4>
                   
-                  {/* Existing Chapters */}
+                  {/* Existing Chapters - Show ALL chapters with scroll */}
                   <div className="mb-3">
                     <p className="text-xs font-medium text-blue-800 mb-1.5">
-                      📚 Chapters đã có ({selectedBook.existingChapters?.length || 0}):
+                      📚 Tất cả chapters của sách này ({selectedBook.existingChapters?.length || 0}):
                     </p>
                     {selectedBook.existingChapters && selectedBook.existingChapters.length > 0 ? (
-                      <div className="max-h-32 overflow-y-auto space-y-1">
+                      <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
                         {selectedBook.existingChapters.map((ch, idx) => (
                           <div 
                             key={idx}
@@ -1355,15 +1374,15 @@ function ContentManagementPage() {
                 />
               </div>
               
-              {/* ✅ NEW: Preview existing series */}
+              {/* ✅ NEW: Preview existing series - Show ALL series with scroll */}
               <div>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                   <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
                     <span>📦</span>
-                    <span>Bộ sách đã có trong Level {selectedLevel.toUpperCase()} ({series.length})</span>
+                    <span>Tất cả bộ sách trong Level {selectedLevel.toUpperCase()} ({series.length})</span>
                   </h4>
                   {series.length > 0 ? (
-                    <div className="max-h-32 overflow-y-auto space-y-1">
+                    <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
                       {series.map((s) => (
                         <div 
                           key={s.id}
