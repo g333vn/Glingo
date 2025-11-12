@@ -2,73 +2,13 @@
 // Module quản lý nội dung - Quản lý sách, chapters, và đề thi
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import ReactDOM from 'react-dom';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import Modal from '../../components/Modal.jsx';
 import { n1BooksMetadata } from '../../data/level/n1/books-metadata.js';
 import { n1Books } from '../../data/level/n1/books.js';
 
-// ✅ Helper: Lock/unlock body scroll
-const useBodyScrollLock = (isLocked) => {
-  useEffect(() => {
-    if (isLocked) {
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = originalOverflow || '';
-      };
-    }
-  }, [isLocked]);
-};
-
-// ✅ Modal Component với Portal
-const Modal = ({ isOpen, onClose, children, maxWidth = '42rem' }) => {
-  useBodyScrollLock(isOpen);
-
-  if (!isOpen) return null;
-
-  return ReactDOM.createPortal(
-    <div 
-      className="modal-overlay-enter"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-        overflowY: 'auto',
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <div 
-        className="modal-content-enter"
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '0.75rem',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          padding: '1.5rem',
-          maxWidth,
-          width: '100%',
-          maxHeight: 'calc(100vh - 4rem)',
-          overflowY: 'auto',
-          margin: '2rem auto',
-        }}
-      >
-        {children}
-      </div>
-    </div>,
-    document.body
-  );
-};
+// Note: Modal component đã được extract thành component riêng
+// Import từ src/components/Modal.jsx
 
 function ContentManagementPage() {
   const { user } = useAuth();
@@ -1066,11 +1006,13 @@ function ContentManagementPage() {
       </Modal>
 
       {/* Chapter Form Modal - Responsive */}
-      <Modal isOpen={showChapterForm && !!selectedBook} onClose={() => setShowChapterForm(false)} maxWidth="28rem">
+      <Modal 
+        isOpen={showChapterForm && !!selectedBook} 
+        onClose={() => setShowChapterForm(false)} 
+        title={editingChapter ? '✏️ Sửa Chương' : '➕ Thêm Chương mới'}
+        maxWidth="28rem"
+      >
         <div>
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2">
-              {editingChapter ? '✏️ Sửa Chương' : '➕ Thêm Chương mới'}
-            </h2>
             <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
               Sách: <strong>{selectedBook?.title || 'N/A'}</strong>
             </p>
