@@ -5,7 +5,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
-function ProtectedRoute({ children, requiredPermission, requiredRole }) {
+function ProtectedRoute({ children, requiredPermission, requiredRole, adminOnly }) {
   const { user, hasPermission, isLoading } = useAuth();
   const location = useLocation();
 
@@ -24,6 +24,29 @@ function ProtectedRoute({ children, requiredPermission, requiredRole }) {
   // Not logged in - redirect to login
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Check adminOnly requirement
+  if (adminOnly && user.role !== 'admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
+          <div className="text-5xl mb-4">🚫</div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            Không có quyền truy cập
+          </h1>
+          <p className="text-gray-600 mb-4">
+            Bạn cần quyền <strong>admin</strong> để truy cập trang này.
+          </p>
+          <a
+            href="/"
+            className="text-blue-600 hover:underline"
+          >
+            ← Quay về trang chủ
+          </a>
+        </div>
+      </div>
+    );
   }
 
   // Check role requirement
