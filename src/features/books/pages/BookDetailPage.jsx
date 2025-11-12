@@ -47,22 +47,26 @@ function BookDetailPage() {
 
   // Load book and chapters
   useEffect(() => {
-    // Try localStorage first for chapters
-    const savedChapters = storageManager.getChapters(bookId);
-    
-    if (savedChapters && savedChapters.length > 0) {
-      // Use localStorage chapters
-      setBookContents(savedChapters);
-      console.log(`✅ Loaded ${savedChapters.length} chapters from localStorage`);
-    } else {
-      // Fallback to static data
-      const book = bookData[bookId] || bookData.default;
-      setBookContents(book.contents || []);
-      console.log(`📁 Loaded ${book.contents?.length || 0} chapters from static file`);
-    }
+    const loadChapters = async () => {
+      // Try IndexedDB/localStorage first for chapters
+      const savedChapters = await storageManager.getChapters(bookId);
+      
+      if (savedChapters && savedChapters.length > 0) {
+        // Use saved chapters (IndexedDB or localStorage)
+        setBookContents(savedChapters);
+        console.log(`✅ Loaded ${savedChapters.length} chapters from ${storageManager.useIndexedDB ? 'IndexedDB' : 'localStorage'}`);
+      } else {
+        // Fallback to static data
+        const book = bookData[bookId] || bookData.default;
+        setBookContents(book.contents || []);
+        console.log(`📁 Loaded ${book.contents?.length || 0} chapters from static file`);
+      }
 
-    // Get book info
-    setCurrentBook(bookData[bookId] || bookData.default);
+      // Get book info
+      setCurrentBook(bookData[bookId] || bookData.default);
+    };
+
+    loadChapters();
   }, [bookId]);
 
   const startIndex = (currentPage - 1) * contentsPerPage;

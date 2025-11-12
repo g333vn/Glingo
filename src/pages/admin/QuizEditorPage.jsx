@@ -193,8 +193,8 @@ function QuizEditorPage() {
     alert('✅ Đã copy JSON vào clipboard!');
   };
 
-  // ✅ UPDATED: Save to localStorage (primary method)
-  const handleSaveToLocal = () => {
+  // ✅ UPDATED: Save to IndexedDB (unlimited storage!) or localStorage
+  const handleSaveToLocal = async () => {
     if (!isValid()) {
       alert('⚠️ Vui lòng điền đầy đủ thông tin trước khi lưu!');
       return;
@@ -219,17 +219,22 @@ function QuizEditorPage() {
       }
     };
 
-    // Save to localStorage
-    storageManager.saveQuiz(selectedBook, selectedChapter, quizData);
+    // Save to IndexedDB (unlimited storage!) or localStorage
+    const success = await storageManager.saveQuiz(selectedBook, selectedChapter, quizData);
     
-    alert(`✅ Đã lưu quiz vào localStorage!\n\n` +
-          `📍 Location:\n` +
-          `- Level: ${selectedLevel}\n` +
-          `- Book: ${selectedBook}\n` +
-          `- Chapter: ${selectedChapter}\n\n` +
-          `📊 Stats:\n` +
-          `- Questions: ${questions.length}\n\n` +
-          `💡 Quiz sẽ hiển thị ngay khi học viên vào bài học này!`);
+    if (success) {
+      const storageType = storageManager.useIndexedDB ? 'IndexedDB (unlimited storage!)' : 'localStorage';
+      alert(`✅ Đã lưu quiz vào ${storageType}!\n\n` +
+            `📍 Location:\n` +
+            `- Level: ${selectedLevel}\n` +
+            `- Book: ${selectedBook}\n` +
+            `- Chapter: ${selectedChapter}\n\n` +
+            `📊 Stats:\n` +
+            `- Questions: ${questions.length}\n\n` +
+            `💡 Quiz sẽ hiển thị ngay khi học viên vào bài học này!`);
+    } else {
+      alert('❌ Lỗi khi lưu quiz! Có thể do dung lượng không đủ (nếu dùng localStorage).');
+    }
   };
 
   // ✅ OPTIONAL: Download JSON file (backup option)

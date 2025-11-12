@@ -33,16 +33,16 @@ function QuizPage() {
   const quizContentRef = useRef(null);
   useDictionaryDoubleClick(quizContentRef);
 
-  // ✅ UPDATED: Load quiz with localStorage priority
+  // ✅ UPDATED: Load quiz with IndexedDB/localStorage priority
   useEffect(() => {
     const loadQuiz = async () => {
       setIsLoading(true);
       try {
-        // 1. Try localStorage first (highest priority)
-        const savedQuiz = storageManager.getQuiz(bookId, lessonId);
+        // 1. Try IndexedDB/localStorage first (highest priority)
+        const savedQuiz = await storageManager.getQuiz(bookId, lessonId);
         if (savedQuiz) {
           setCurrentQuiz(savedQuiz);
-          console.log(`✅ Loaded quiz from localStorage: ${bookId}/${lessonId}`);
+          console.log(`✅ Loaded quiz from ${storageManager.useIndexedDB ? 'IndexedDB' : 'localStorage'}: ${bookId}/${lessonId}`);
           setIsLoading(false);
           return;
         }

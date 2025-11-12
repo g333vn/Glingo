@@ -13,7 +13,11 @@ function AdminDashboardPage() {
 
   // Load storage info on mount
   useEffect(() => {
-    setStorageInfo(storageManager.getStorageInfo());
+    const loadStorageInfo = async () => {
+      const info = await storageManager.getStorageInfo();
+      setStorageInfo(info);
+    };
+    loadStorageInfo();
   }, []);
 
   const stats = [
@@ -171,8 +175,8 @@ function AdminDashboardPage() {
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-3">
                 <button 
-                  onClick={() => {
-                    const data = storageManager.exportAll();
+                  onClick={async () => {
+                    const data = await storageManager.exportAll();
                     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -189,11 +193,12 @@ function AdminDashboardPage() {
                 </button>
                 
                 <button 
-                  onClick={() => {
+                  onClick={async () => {
                     if (confirm('⚠️ Xóa TẤT CẢ dữ liệu admin?\n\n- Books\n- Chapters\n- Quizzes\n- Series\n\nHành động này không thể hoàn tác!\nBạn nên export dữ liệu trước.')) {
-                      const count = storageManager.clearAllAdminData();
+                      const count = await storageManager.clearAllAdminData();
                       alert(`✅ Đã xóa ${count} items!`);
-                      setStorageInfo(storageManager.getStorageInfo());
+                      const info = await storageManager.getStorageInfo();
+                      setStorageInfo(info);
                     }
                   }}
                   className="flex-1 min-w-[200px] px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 active:bg-red-700 transition-all shadow-md font-semibold flex items-center justify-center gap-2"
@@ -203,8 +208,9 @@ function AdminDashboardPage() {
                 </button>
 
                 <button 
-                  onClick={() => {
-                    setStorageInfo(storageManager.getStorageInfo());
+                  onClick={async () => {
+                    const info = await storageManager.getStorageInfo();
+                    setStorageInfo(info);
                     alert('✅ Đã refresh thông tin storage!');
                   }}
                   className="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 active:bg-gray-700 transition-all shadow-md font-semibold flex items-center justify-center gap-2"

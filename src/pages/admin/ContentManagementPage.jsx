@@ -52,20 +52,18 @@ function ContentManagementPage() {
 
   // Load books when level changes
   useEffect(() => {
-    loadBooks();
-    loadSeries();
+    const loadData = async () => {
+      await loadBooks();
+      await loadSeries();
+    };
+    loadData();
   }, [selectedLevel]);
   
-  // ✅ NEW: Load series/categories
-  const loadSeries = () => {
-    const savedSeries = localStorage.getItem(`adminSeries_${selectedLevel}`);
-    if (savedSeries) {
-      try {
-        setSeries(JSON.parse(savedSeries));
-      } catch (error) {
-        console.error('Error loading series:', error);
-        setSeries(getDefaultSeries());
-      }
+  // ✅ UPDATED: Load series/categories (async)
+  const loadSeries = async () => {
+    const savedSeries = await storageManager.getSeries(selectedLevel);
+    if (savedSeries && savedSeries.length > 0) {
+      setSeries(savedSeries);
     } else {
       setSeries(getDefaultSeries());
     }
@@ -82,22 +80,17 @@ function ContentManagementPage() {
     }));
   };
   
-  // ✅ NEW: Save series
-  const saveSeries = (updatedSeries) => {
+  // ✅ UPDATED: Save series (async)
+  const saveSeries = async (updatedSeries) => {
     setSeries(updatedSeries);
-    localStorage.setItem(`adminSeries_${selectedLevel}`, JSON.stringify(updatedSeries));
+    await storageManager.saveSeries(selectedLevel, updatedSeries);
   };
 
-  const loadBooks = () => {
-    // Load from localStorage first, fallback to default data
-    const savedBooks = localStorage.getItem(`adminBooks_${selectedLevel}`);
-    if (savedBooks) {
-      try {
-        setBooks(JSON.parse(savedBooks));
-      } catch (error) {
-        console.error('Error loading books:', error);
-        setBooks(getDefaultBooks());
-      }
+  const loadBooks = async () => {
+    // Load from IndexedDB/localStorage first, fallback to default data
+    const savedBooks = await storageManager.getBooks(selectedLevel);
+    if (savedBooks && savedBooks.length > 0) {
+      setBooks(savedBooks);
     } else {
       setBooks(getDefaultBooks());
     }
@@ -111,17 +104,36 @@ function ContentManagementPage() {
     }
   };
 
-  const saveBooks = (updatedBooks) => {
+  const saveBooks = async (updatedBooks) => {
     setBooks(updatedBooks);
-    localStorage.setItem(`adminBooks_${selectedLevel}`, JSON.stringify(updatedBooks));
+    await storageManager.saveBooks(selectedLevel, updatedBooks);
   };
 
-  // Get book data (with chapters) - Memoized để tránh re-compute
+  // State for chapters data (async loading)
+  const [chaptersData, setChaptersData] = useState({});
+
+  // Load chapters for all books
+  useEffect(() => {
+    const loadChapters = async () => {
+      const newChaptersData = {};
+      for (const book of books) {
+        const savedChapters = await storageManager.getChapters(book.id);
+        if (savedChapters && savedChapters.length > 0) {
+          newChaptersData[book.id] = savedChapters;
+        }
+      }
+      setChaptersData(newChaptersData);
+    };
+    if (books.length > 0) {
+      loadChapters();
+    }
+  }, [books, selectedLevel]);
+
+  // Get book data (with chapters) - Now uses async chaptersData
   const getBookData = useCallback((bookId) => {
-    // Try localStorage first
-    const savedChapters = storageManager.getChapters(bookId);
-    if (savedChapters && savedChapters.length > 0) {
-      return { contents: savedChapters };
+    // Try chaptersData first (from IndexedDB/localStorage)
+    if (chaptersData[bookId] && chaptersData[bookId].length > 0) {
+      return { contents: chaptersData[bookId] };
     }
     
     // Fallback to static data
@@ -129,7 +141,7 @@ function ContentManagementPage() {
       case 'n1': return n1Books[bookId];
       default: return null;
     }
-  }, [selectedLevel]);
+  }, [selectedLevel, chaptersData]);
 
   // Memoize books với chapters data để tránh re-compute mỗi lần render
   const booksWithChapters = useMemo(() => {
@@ -236,18 +248,18 @@ function ContentManagementPage() {
     setShowChapterForm(true);
   };
 
-  const handleSaveChapter = (e) => {
+  const handleSaveChapter = async (e) => {
     e.preventDefault();
     if (!chapterForm.id || !chapterForm.title || !selectedBook) {
       alert('⚠️ Vui lòng điền đầy đủ thông tin!');
       return;
     }
 
-    // Get existing chapters from localStorage or default data
-    let chapters = storageManager.getChapters(selectedBook.id) || [];
+    // Get existing chapters from IndexedDB/localStorage or default data
+    let chapters = await storageManager.getChapters(selectedBook.id);
     
-    // If no chapters in localStorage, try to get from static data
-    if (chapters.length === 0) {
+    // If no chapters in storage, try to get from static data
+    if (!chapters || chapters.length === 0) {
       const bookData = getBookData(selectedBook.id);
       chapters = bookData?.contents || [];
     }
@@ -266,40 +278,60 @@ function ContentManagementPage() {
       chapters = [...chapters, { ...chapterForm }];
     }
 
-    // Save to localStorage
-    storageManager.saveChapters(selectedBook.id, chapters);
+    // Save to IndexedDB (unlimited storage!) or localStorage
+    const success = await storageManager.saveChapters(selectedBook.id, chapters);
     
-    setShowChapterForm(false);
-    setEditingChapter(null);
-    setChapterForm({ id: '', title: '' });
-    
-    alert(`✅ Đã lưu chapter vào localStorage!\n\n` +
-          `📍 Sách: ${selectedBook.title}\n` +
-          `📝 Chapter: ${chapterForm.title}\n\n` +
-          `💡 Chapter sẽ hiển thị ngay tại trang chi tiết sách!`);
-    
-    // Refresh books to update chapter count
-    loadBooks();
+    if (success) {
+      // Update local state
+      setChaptersData(prev => ({
+        ...prev,
+        [selectedBook.id]: chapters
+      }));
+      
+      setShowChapterForm(false);
+      setEditingChapter(null);
+      setChapterForm({ id: '', title: '' });
+      
+      alert(`✅ Đã lưu chapter vào ${storageManager.useIndexedDB ? 'IndexedDB' : 'localStorage'}!\n\n` +
+            `📍 Sách: ${selectedBook.title}\n` +
+            `📝 Chapter: ${chapterForm.title}\n\n` +
+            `💡 Chapter sẽ hiển thị ngay tại trang chi tiết sách!`);
+      
+      // Refresh books to update chapter count
+      loadBooks();
+    } else {
+      alert('❌ Lỗi khi lưu chapter!');
+    }
   };
 
-  const handleDeleteChapter = (book, chapter) => {
+  const handleDeleteChapter = async (book, chapter) => {
     if (!confirm(`⚠️ Xóa chapter "${chapter.title}"?\n\nHành động này không thể hoàn tác!`)) {
       return;
     }
 
-    let chapters = storageManager.getChapters(book.id) || [];
+    let chapters = await storageManager.getChapters(book.id);
     
-    // If no chapters in localStorage, get from static data
-    if (chapters.length === 0) {
+    // If no chapters in storage, get from static data
+    if (!chapters || chapters.length === 0) {
       const bookData = getBookData(book.id);
       chapters = bookData?.contents || [];
     }
 
     chapters = chapters.filter(ch => ch.id !== chapter.id);
-    storageManager.saveChapters(book.id, chapters);
+    const success = await storageManager.saveChapters(book.id, chapters);
     
-    alert(`✅ Đã xóa chapter "${chapter.title}"!`);
-    loadBooks(); // Refresh
+    if (success) {
+      // Update local state
+      setChaptersData(prev => ({
+        ...prev,
+        [book.id]: chapters
+      }));
+      
+      alert(`✅ Đã xóa chapter "${chapter.title}"!`);
+      loadBooks(); // Refresh
+    } else {
+      alert('❌ Lỗi khi xóa chapter!');
+    }
   };
 
   return (
