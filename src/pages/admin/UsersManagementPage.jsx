@@ -35,7 +35,18 @@ function UsersManagementPage() {
       try {
         const parsed = JSON.parse(savedUsers);
         if (parsed && parsed.length > 0) {
-          setUsers(parsed);
+          // Merge với initialUsers để lấy password (chỉ trong memory)
+          const mergedUsers = parsed.map(savedUser => {
+            const originalUser = initialUsers.find(u => u.id === savedUser.id || u.username === savedUser.username);
+            return originalUser ? { ...savedUser, password: originalUser.password } : savedUser;
+          });
+          // Thêm users mới từ initialUsers nếu chưa có
+          initialUsers.forEach(originalUser => {
+            if (!mergedUsers.find(u => u.id === originalUser.id || u.username === originalUser.username)) {
+              mergedUsers.push(originalUser);
+            }
+          });
+          setUsers(mergedUsers);
         }
       } catch (error) {
         console.error('Error loading users:', error);
@@ -43,10 +54,12 @@ function UsersManagementPage() {
     }
   }, []);
 
-  // Save users to localStorage
+  // Save users to localStorage (KHÔNG lưu password - chỉ lưu metadata)
   const saveUsers = (updatedUsers) => {
     setUsers(updatedUsers);
-    localStorage.setItem('adminUsers', JSON.stringify(updatedUsers));
+    // ⚠️ BẢO MẬT: Chỉ lưu users metadata, KHÔNG lưu password
+    const usersWithoutPassword = updatedUsers.map(({ password, ...user }) => user);
+    localStorage.setItem('adminUsers', JSON.stringify(usersWithoutPassword));
   };
 
   // Handle form input change

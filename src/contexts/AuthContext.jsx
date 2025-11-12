@@ -39,6 +39,10 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('authUser');
+    // ⚠️ BẢO MẬT: Xóa dữ liệu users khỏi localStorage khi logout
+    // (Lưu ý: adminUsers không chứa password, nhưng vẫn nên xóa để bảo mật)
+    // Uncomment dòng dưới nếu muốn xóa hoàn toàn dữ liệu users khi logout
+    localStorage.removeItem('adminUsers');
   };
 
   // Check if user has permission

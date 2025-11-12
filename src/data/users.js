@@ -53,11 +53,18 @@ export function hasPermission(userRole, permission) {
 }
 
 // Helper function để get users (check localStorage trước)
+// ⚠️ BẢO MẬT: localStorage KHÔNG chứa password, chỉ chứa metadata
+// Password chỉ có trong users mặc định (trong code)
 export function getUsers() {
   try {
     const savedUsers = localStorage.getItem('adminUsers');
     if (savedUsers) {
-      return JSON.parse(savedUsers);
+      const parsed = JSON.parse(savedUsers);
+      // Merge với users mặc định để lấy password
+      return parsed.map(savedUser => {
+        const originalUser = users.find(u => u.id === savedUser.id || u.username === savedUser.username);
+        return originalUser ? { ...savedUser, password: originalUser.password } : savedUser;
+      });
     }
   } catch (error) {
     console.error('Error loading users from localStorage:', error);
