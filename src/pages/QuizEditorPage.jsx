@@ -5,9 +5,9 @@ import React, { useState } from 'react';
 
 function QuizEditorPage() {
   const [quizTitle, setQuizTitle] = useState('');
-  const [questions, setQuestions] = useState(
-    Array.from({ length: 10 }, (_, i) => ({
-      id: i + 1,
+  const [questions, setQuestions] = useState([
+    {
+      id: 1,
       text: '',
       options: [
         { label: 'A', text: '' },
@@ -17,8 +17,8 @@ function QuizEditorPage() {
       ],
       correct: 'A',
       explanation: ''
-    }))
-  );
+    }
+  ]);
 
   const [exportedJSON, setExportedJSON] = useState('');
   const [showPreview, setShowPreview] = useState(false);
@@ -33,6 +33,50 @@ function QuizEditorPage() {
       newQuestions[index].options[optionIndex].text = value;
     }
     setQuestions(newQuestions);
+  };
+
+  // Add new question
+  const addQuestion = () => {
+    const newQuestion = {
+      id: questions.length + 1,
+      text: '',
+      options: [
+        { label: 'A', text: '' },
+        { label: 'B', text: '' },
+        { label: 'C', text: '' },
+        { label: 'D', text: '' }
+      ],
+      correct: 'A',
+      explanation: ''
+    };
+    setQuestions([...questions, newQuestion]);
+  };
+
+  // Remove question
+  const removeQuestion = (index) => {
+    if (questions.length <= 1) {
+      alert('⚠️ Phải có ít nhất 1 câu hỏi!');
+      return;
+    }
+    const newQuestions = questions.filter((_, i) => i !== index);
+    // Re-number questions
+    const renumberedQuestions = newQuestions.map((q, i) => ({
+      ...q,
+      id: i + 1
+    }));
+    setQuestions(renumberedQuestions);
+  };
+
+  // Duplicate question
+  const duplicateQuestion = (index) => {
+    const questionToDuplicate = questions[index];
+    const newQuestion = {
+      ...questionToDuplicate,
+      id: questions.length + 1,
+      text: questionToDuplicate.text + ' (Copy)',
+      options: questionToDuplicate.options.map(opt => ({ ...opt }))
+    };
+    setQuestions([...questions, newQuestion]);
   };
 
   // Generate JSON
@@ -124,19 +168,41 @@ function QuizEditorPage() {
             {questions.map((question, qIndex) => (
               <div key={qIndex} className="bg-white rounded-lg shadow-lg p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Câu hỏi {question.id}
-                  </h3>
-                  <select
-                    value={question.correct}
-                    onChange={(e) => updateQuestion(qIndex, 'correct', e.target.value)}
-                    className="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="A">Đáp án đúng: A</option>
-                    <option value="B">Đáp án đúng: B</option>
-                    <option value="C">Đáp án đúng: C</option>
-                    <option value="D">Đáp án đúng: D</option>
-                  </select>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      Câu hỏi {question.id}
+                    </h3>
+                    <span className="text-sm text-gray-500">
+                      ({questions.length} câu hỏi)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={question.correct}
+                      onChange={(e) => updateQuestion(qIndex, 'correct', e.target.value)}
+                      className="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="A">Đáp án đúng: A</option>
+                      <option value="B">Đáp án đúng: B</option>
+                      <option value="C">Đáp án đúng: C</option>
+                      <option value="D">Đáp án đúng: D</option>
+                    </select>
+                    <button
+                      onClick={() => duplicateQuestion(qIndex)}
+                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+                      title="Duplicate câu hỏi này"
+                    >
+                      📋 Copy
+                    </button>
+                    <button
+                      onClick={() => removeQuestion(qIndex)}
+                      className="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
+                      title="Xóa câu hỏi này"
+                      disabled={questions.length <= 1}
+                    >
+                      🗑️ Xóa
+                    </button>
+                  </div>
                 </div>
 
                 {/* Question Text */}
@@ -188,6 +254,20 @@ function QuizEditorPage() {
                 </div>
               </div>
             ))}
+
+            {/* Add Question Button */}
+            <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-dashed border-gray-300">
+              <button
+                onClick={addQuestion}
+                className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-semibold text-lg flex items-center justify-center gap-2"
+              >
+                <span className="text-2xl">➕</span>
+                Thêm câu hỏi mới
+              </button>
+              <p className="text-center text-gray-500 text-sm mt-2">
+                Hiện tại có {questions.length} câu hỏi. Click để thêm câu hỏi mới.
+              </p>
+            </div>
           </div>
 
           {/* Sidebar - Preview & Export */}
@@ -235,6 +315,9 @@ function QuizEditorPage() {
               <div className="mt-4 p-3 rounded-lg bg-gray-50">
                 <p className={`text-sm font-medium ${isValid() ? 'text-green-600' : 'text-red-600'}`}>
                   {isValid() ? '✅ Form hợp lệ' : '⚠️ Vui lòng điền đầy đủ thông tin'}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Số câu hỏi: <strong>{questions.length}</strong>
                 </p>
               </div>
             </div>
@@ -284,12 +367,19 @@ function QuizEditorPage() {
         <div className="mt-6 bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4">📖 Hướng dẫn sử dụng</h2>
           <ol className="list-decimal list-inside space-y-2 text-gray-700">
-            <li>Điền tên quiz và 10 câu hỏi với đầy đủ 4 đáp án (A, B, C, D)</li>
-            <li>Chọn đáp án đúng cho mỗi câu hỏi</li>
-            <li>Điền giải thích cho mỗi câu hỏi</li>
+            <li>Điền tên quiz</li>
+            <li>Thêm câu hỏi: Click nút "➕ Thêm câu hỏi mới" để thêm câu hỏi (không giới hạn số lượng)</li>
+            <li>Điền đầy đủ thông tin cho mỗi câu hỏi:
+              <ul className="list-disc list-inside ml-4 mt-1">
+                <li>Câu hỏi (text)</li>
+                <li>4 đáp án (A, B, C, D)</li>
+                <li>Chọn đáp án đúng</li>
+                <li>Giải thích (khuyến khích)</li>
+              </ul>
+            </li>
+            <li>Có thể xóa câu hỏi bằng nút "🗑️ Xóa" hoặc copy câu hỏi bằng nút "📋 Copy"</li>
             <li>Click "Export JSON" để tạo file JSON</li>
-            <li>Click "Copy JSON" để copy vào clipboard</li>
-            <li>Hoặc "Download File" để tải file JSON về máy</li>
+            <li>Click "Copy JSON" để copy vào clipboard hoặc "Download File" để tải về</li>
             <li>Đặt tên file: <code className="bg-gray-100 px-2 py-1 rounded">bai-X.json</code> (X là số bài)</li>
             <li>Copy file vào: <code className="bg-gray-100 px-2 py-1 rounded">src/data/level/n1/shinkanzen-n1-bunpou/quizzes/</code></li>
           </ol>
