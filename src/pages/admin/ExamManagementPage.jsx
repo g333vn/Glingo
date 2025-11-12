@@ -1165,6 +1165,409 @@ function ExamManagementPage() {
         </div>
       )}
 
+      {/* Question Form - Quiz Editor Style (Full Page Layout) */}
+      {showQuestionForm && (
+        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+          {/* Header */}
+          <div className="mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+                  {editingQuestion ? '✏️ Sửa Câu hỏi' : '➕ Thêm Câu hỏi mới'}
+                </h1>
+                <p className="text-sm sm:text-base text-gray-600">
+                  {selectedSection && (
+                    <>Section: <span className="font-mono">{selectedSection.title} ({selectedSection.id})</span> | </>
+                  )}
+                  Loại: <span className="uppercase font-semibold">{selectedTestType}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  // Clean up blob URL if exists
+                  if (questionForm.audioUrl && questionForm.audioUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(questionForm.audioUrl);
+                  }
+                  setShowQuestionForm(false);
+                  setExportedJSON('');
+                  setShowPreview(false);
+                }}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold text-sm"
+              >
+                ✕ Đóng
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            {/* Form Input - 2 columns */}
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+              <form onSubmit={handleSaveQuestion} className="space-y-4 sm:space-y-6">
+                {/* Question ID */}
+                <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        ID Câu hỏi * (ví dụ: 1, 2, 3)
+                      </label>
+                      <input
+                        type="text"
+                        value={questionForm.id}
+                        onChange={(e) => setQuestionForm({ ...questionForm, id: e.target.value })}
+                        required
+                        disabled={!!editingQuestion}
+                        className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white disabled:bg-gray-100"
+                        placeholder="1"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">ID dùng để định danh câu hỏi</p>
+                    </div>
+                    {selectedTestType === 'listening' && questionForm.id && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Format cho Listening
+                        </label>
+                        <div className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-mono">
+                          Key: {selectedSection?.id || 'section'}-{String(questionForm.id).padStart(2, '0')}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Format này sẽ được dùng trong ExamListeningPage</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Question Text - Like Quiz Editor */}
+                <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Câu hỏi:
+                  </label>
+                  <textarea
+                    value={questionForm.question}
+                    onChange={(e) => setQuestionForm({ ...questionForm, question: e.target.value })}
+                    required
+                    placeholder="Nhập câu hỏi tiếng Nhật..."
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Options - Grid Layout like Quiz Editor */}
+                <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+                        Câu hỏi {questionForm.id || 'mới'}
+                      </h3>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                      <select
+                        value={questionForm.correctAnswer}
+                        onChange={(e) => setQuestionForm({ 
+                          ...questionForm, 
+                          correctAnswer: parseInt(e.target.value) 
+                        })}
+                        className="px-2 sm:px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
+                      >
+                        <option value="0">Đáp án đúng: A</option>
+                        <option value="1">Đáp án đúng: B</option>
+                        <option value="2">Đáp án đúng: C</option>
+                        <option value="3">Đáp án đúng: D</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Options */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    {['A', 'B', 'C', 'D'].map((label, idx) => (
+                      <div key={idx}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {label}:
+                        </label>
+                        <input
+                          type="text"
+                          value={questionForm.options[idx] || ''}
+                          onChange={(e) => {
+                            const newOptions = [...questionForm.options];
+                            newOptions[idx] = e.target.value;
+                            setQuestionForm({ ...questionForm, options: newOptions });
+                          }}
+                          placeholder={`Đáp án ${label}`}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            questionForm.correctAnswer === idx ? 'border-green-500 bg-green-50' : 'border-gray-300'
+                          }`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Explanation - Like Quiz Editor */}
+                <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Giải thích:
+                  </label>
+                  <textarea
+                    value={questionForm.explanation}
+                    onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
+                    required
+                    placeholder="Giải thích tại sao đáp án đúng..."
+                    rows={2}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Audio Upload Section - For Listening */}
+                {selectedTestType === 'listening' && (
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-lg p-4 sm:p-6 border-2 border-purple-300">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-2xl">🎧</span>
+                      <div>
+                        <label className="block text-base font-bold text-gray-800">
+                          File Audio * (Bắt buộc cho Listening)
+                        </label>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Upload file audio hoặc nhập URL cho câu hỏi nghe hiểu
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* File Upload */}
+                    <div className="mb-4">
+                      <div className="bg-white rounded-lg p-4 border-2 border-dashed border-purple-400 hover:border-purple-500 transition-colors">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          📤 Upload File Audio
+                        </label>
+                        <input
+                          type="file"
+                          accept="audio/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              if (file.size > 10 * 1024 * 1024) {
+                                alert('⚠️ File quá lớn! Vui lòng chọn file nhỏ hơn 10MB.');
+                                e.target.value = '';
+                                return;
+                              }
+                              if (!file.type.startsWith('audio/')) {
+                                alert('⚠️ Vui lòng chọn file audio!');
+                                e.target.value = '';
+                                return;
+                              }
+                              const audioUrl = URL.createObjectURL(file);
+                              setQuestionForm({ ...questionForm, audioUrl, audioFile: file });
+                            }
+                          }}
+                          className="w-full px-3 py-2.5 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white cursor-pointer text-sm"
+                        />
+                        <p className="text-xs text-gray-600 mt-2">
+                          📎 Chọn file audio (MP3, WAV, OGG) - Tối đa 10MB
+                        </p>
+                        {questionForm.audioFile && (
+                          <div className="mt-3 p-3 bg-green-50 rounded-lg border-2 border-green-300">
+                            <p className="text-sm text-green-800 font-bold flex items-center gap-2">
+                              <span>✅</span>
+                              <span>Đã chọn: {questionForm.audioFile.name}</span>
+                            </p>
+                            <p className="text-xs text-green-600 mt-1">
+                              Kích thước: {(questionForm.audioFile.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Audio Preview */}
+                    {questionForm.audioUrl && (
+                      <div className="mb-4 bg-white rounded-lg p-4 border-2 border-purple-300 shadow-md">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-lg">🔊</span>
+                          <p className="text-sm font-bold text-gray-800">Preview Audio</p>
+                        </div>
+                        <audio controls className="w-full h-10">
+                          <source src={questionForm.audioUrl} type="audio/mpeg" />
+                          Trình duyệt không hỗ trợ audio.
+                        </audio>
+                        {questionForm.audioUrl.startsWith('blob:') && (
+                          <div className="mt-3 p-2 bg-orange-50 rounded border-2 border-orange-300">
+                            <p className="text-xs text-orange-800 font-semibold">
+                              ⚠️ File tạm thời (blob URL)
+                            </p>
+                            <p className="text-xs text-orange-600 mt-1">
+                              Cần upload file vào thư mục public/audio và nhập URL cố định để lưu vĩnh viễn.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* URL Input */}
+                    <div className="bg-white rounded-lg p-4 border-2 border-purple-200">
+                      <label className="block text-sm font-bold text-gray-800 mb-2">
+                        🔗 Hoặc nhập URL Audio (nếu đã upload sẵn)
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={questionForm.audioUrl && !questionForm.audioUrl.startsWith('blob:') ? questionForm.audioUrl : ''}
+                          onChange={(e) => {
+                            if (!e.target.value.startsWith('blob:')) {
+                              setQuestionForm({ ...questionForm, audioUrl: e.target.value, audioFile: null });
+                            }
+                          }}
+                          className="flex-1 px-3 py-2.5 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                          placeholder="/audio/n1/2024-12/listening-1.mp3"
+                        />
+                        {questionForm.audioUrl && !questionForm.audioUrl.startsWith('blob:') && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const audio = new Audio(questionForm.audioUrl);
+                              audio.play().catch(() => alert('⚠️ Không thể phát audio. Kiểm tra lại URL.'));
+                            }}
+                            className="px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm shadow-md transition-colors"
+                            title="Test audio URL"
+                          >
+                            ▶️ Test
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+                        <span>💡</span>
+                        <span>Đường dẫn từ thư mục public (ví dụ: /audio/n1/2024-12/q1-01.mp3)</span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Save Button */}
+                <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 border-2 border-dashed border-gray-300">
+                  <button
+                    type="submit"
+                    className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-semibold text-base sm:text-lg flex items-center justify-center gap-2"
+                  >
+                    <span className="text-xl sm:text-2xl">💾</span>
+                    {editingQuestion ? 'Lưu thay đổi' : 'Thêm Câu hỏi'}
+                  </button>
+                  <p className="text-center text-gray-500 text-xs sm:text-sm mt-2">
+                    {editingQuestion ? 'Lưu các thay đổi của câu hỏi này' : 'Click để lưu câu hỏi vào section'}
+                  </p>
+                </div>
+              </form>
+            </div>
+
+            {/* Sidebar - Preview & Export - Like Quiz Editor */}
+            <div className="space-y-4 sm:space-y-6">
+              {/* Actions */}
+              <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 sticky top-6">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Actions</h2>
+                
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setShowPreview(!showPreview)}
+                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
+                  >
+                    {showPreview ? '👁️ Ẩn Preview' : '👁️ Xem Preview'}
+                  </button>
+
+                  <button
+                    onClick={handleExportQuestion}
+                    disabled={!isQuestionValid()}
+                    className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-semibold"
+                  >
+                    📤 Export JSON
+                  </button>
+
+                  {exportedJSON && (
+                    <>
+                      <button
+                        onClick={handleCopyQuestion}
+                        className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-semibold"
+                      >
+                        📋 Copy JSON
+                      </button>
+
+                      <button
+                        onClick={handleDownloadQuestion}
+                        className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-semibold"
+                      >
+                        💾 Download File
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Validation Status */}
+                <div className="mt-4 p-3 rounded-lg bg-gray-50">
+                  <p className={`text-sm font-medium ${isQuestionValid() ? 'text-green-600' : 'text-red-600'}`}>
+                    {isQuestionValid() ? '✅ Form hợp lệ' : '⚠️ Vui lòng điền đầy đủ thông tin'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    ID: <strong>{questionForm.id || 'Chưa có'}</strong>
+                  </p>
+                  {selectedTestType === 'listening' && !questionForm.audioUrl && (
+                    <p className="text-xs text-red-600 mt-2">
+                      ⚠️ Cần upload file audio cho listening
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Preview */}
+              {showPreview && (
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <h2 className="text-xl font-bold text-gray-800 mb-4">Preview</h2>
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <p className="font-semibold text-blue-800">
+                        Câu hỏi {questionForm.id || 'mới'}: {questionForm.question || '(Chưa có câu hỏi)'}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="space-y-1 text-sm">
+                        {questionForm.options.map((opt, idx) => {
+                          if (!opt.trim()) return null;
+                          return (
+                            <p
+                              key={idx}
+                              className={questionForm.correctAnswer === idx ? 'text-green-600 font-semibold' : 'text-gray-600'}
+                            >
+                              {String.fromCharCode(65 + idx)}. {opt || '(Chưa có đáp án)'}
+                            </p>
+                          );
+                        })}
+                      </div>
+                      {questionForm.explanation && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-xs text-gray-600">
+                            <strong>Giải thích:</strong> {questionForm.explanation}
+                          </p>
+                        </div>
+                      )}
+                      {selectedTestType === 'listening' && questionForm.audioUrl && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-xs text-purple-600">
+                            <strong>🎧 Audio:</strong> {questionForm.audioUrl}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Exported JSON */}
+              {exportedJSON && (
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <h2 className="text-xl font-bold text-gray-800 mb-4">Exported JSON</h2>
+                  <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs max-h-96 overflow-y-auto">
+                    {exportedJSON}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Exam Form Modal */}
       <Modal
         isOpen={showExamForm}
@@ -1349,19 +1752,7 @@ function ExamManagementPage() {
         </form>
       </Modal>
 
-      {/* Question Form Modal */}
-      <Modal
-        isOpen={showQuestionForm}
-        onClose={() => {
-          // Clean up blob URL if exists
-          if (questionForm.audioUrl && questionForm.audioUrl.startsWith('blob:')) {
-            URL.revokeObjectURL(questionForm.audioUrl);
-          }
-          setShowQuestionForm(false);
-        }}
-        title={editingQuestion ? '✏️ Sửa Câu hỏi' : '➕ Thêm Câu hỏi mới'}
-        maxWidth="48rem"
-      >
+      {/* Question Form Modal - REMOVED: Replaced with Quiz Editor style full page layout above */}
         <form onSubmit={handleSaveQuestion} className="space-y-4">
           {/* Header Info */}
           <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
