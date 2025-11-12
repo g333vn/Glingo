@@ -6,6 +6,19 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import { getExamById } from '../../../data/jlpt/jlptData.js';
 import { getExamQuestions } from '../../../data/jlpt/examQuestionsData.js';
 
+// ✅ Helper: Lock/unlock body scroll
+const useBodyScrollLock = (isLocked) => {
+  useEffect(() => {
+    if (isLocked) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow || '';
+      };
+    }
+  }, [isLocked]);
+};
+
 // Component đồng hồ đếm ngược
 const CountdownTimer = ({ initialTime, onTimeUp }) => {
   const [timeLeft, setTimeLeft] = useState(initialTime * 60);
@@ -161,6 +174,9 @@ function ExamKnowledgePage() {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false); // ✅ Modal cảnh báo thiếu câu
   const [unansweredCount, setUnansweredCount] = useState(0);
+  
+  // ✅ Lock body scroll when any modal is open
+  useBodyScrollLock(showSubmitModal || showIncompleteWarning);
 
   // Load answers từ localStorage
   useEffect(() => {
@@ -430,17 +446,3 @@ function ExamKnowledgePage() {
     </>
   );
 }
-
-function ExamKnowledgePage() {
-  const { levelId, examId } = useParams();
-  const navigate = useNavigate();
-  const [showSubmitModal, setShowSubmitModal] = useState(false);
-  
-  // ✅ Lock body scroll when modal is open
-  useBodyScrollLock(showSubmitModal);
-  const [showSubmitModal, setShowSubmitModal] = useState(false);
-  
-  // ✅ Lock body scroll when modal is open
-  useBodyScrollLock(showSubmitModal);
-  
-  // ... rest of component

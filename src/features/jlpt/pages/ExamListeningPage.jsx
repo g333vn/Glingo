@@ -242,6 +242,9 @@ function ExamListeningPage() {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
   const [unansweredCount, setUnansweredCount] = useState(0);
+  
+  // ✅ Lock body scroll when any modal is open
+  useBodyScrollLock(showSubmitModal || showIncompleteWarning);
 
   // Load answers từ localStorage
   useEffect(() => {
@@ -438,8 +441,15 @@ function ExamListeningPage() {
 
         {/* Modal cảnh báo thiếu câu */}
         {showIncompleteWarning && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-md">
+          <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowIncompleteWarning(false);
+              }
+            }}
+          >
+            <div className="bg-white rounded-lg p-8 max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto">
               <h2 className="text-xl font-bold mb-4 text-yellow-600">⚠️ CẢNH BÁO: CÒN CÂU CHƯA TRẢ LỜI</h2>
               <div className="mb-6">
                 <p className="mb-3">
