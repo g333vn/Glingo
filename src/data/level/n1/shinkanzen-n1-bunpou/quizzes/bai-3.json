@@ -1,0 +1,126 @@
+{
+  "title": "Bài 3: Ôn tập phần 1",
+  "questions": [
+    {
+      "id": 1,
+      "text": "次の文の空欄に適切な語句を入れなさい。 この問題は(　　)解決する必要がある。",
+      "options": [
+        { "label": "A", "text": "早急に" },
+        { "label": "B", "text": "早急して" },
+        { "label": "C", "text": "早急し" },
+        { "label": "D", "text": "早急した" }
+      ],
+      "correct": "A",
+      "explanation": "「早急に」は副詞で、「解決する」を修飾します。"
+    },
+    {
+      "id": 2,
+      "text": "次の文の意味に最も近いものを選びなさい。 彼は迅速に対応した。",
+      "options": [
+        { "label": "A", "text": "He responded quickly." },
+        { "label": "B", "text": "He responded slowly." },
+        { "label": "C", "text": "He responded carefully." },
+        { "label": "D", "text": "He responded politely." }
+      ],
+      "correct": "A",
+      "explanation": "'迅速に' nghĩa là 'quickly', vậy A là đúng."
+    },
+    {
+      "id": 3,
+      "text": "次の文の空欄に適切な語句を入れなさい。 この件は(　　)処理いたします。",
+      "options": [
+        { "label": "A", "text": "適切に" },
+        { "label": "B", "text": "適切して" },
+        { "label": "C", "text": "適切し" },
+        { "label": "D", "text": "適切した" }
+      ],
+      "correct": "A",
+      "explanation": "「適切に」は副詞で、「処理する」を修飾します。"
+    },
+    {
+      "id": 4,
+      "text": "Câu hỏi 4: Demo câu hỏi tiếng Nhật với khoảng trống (空欄に適切な語句を入れなさい)。",
+      "options": [
+        { "label": "A", "text": "Đáp án đúng" },
+        { "label": "B", "text": "Đáp án sai 1" },
+        { "label": "C", "text": "Đáp án sai 2" },
+        { "label": "D", "text": "Đáp án sai 3" }
+      ],
+      "correct": "A",
+      "explanation": "Giải thích demo cho câu hỏi 4: Đáp án A là đúng vì [lý do ngắn gọn]."
+    },
+    {
+      "id": 5,
+      "text": "Câu hỏi 5: Demo câu hỏi tiếng Nhật với khoảng trống (空欄に適切な語句を入れなさい)。",
+      "options": [
+        { "label": "A", "text": "Đáp án đúng" },
+        { "label": "B", "text": "Đáp án sai 1" },
+        { "label": "C", "text": "Đáp án sai 2" },
+        { "label": "D", "text": "Đáp án sai 3" }
+      ],
+      "correct": "A",
+      "explanation": "Giải thích demo cho câu hỏi 5: Đáp án A là đúng vì [lý do ngắn gọn]."
+    },
+    {
+      "id": 6,
+      "text": "Câu hỏi 6: Demo câu hỏi tiếng Nhật với khoảng trống (空欄に適切な語句を入れなさい)。",
+      "options": [
+        { "label": "A", "text": "Đáp án đúng" },
+        { "label": "B", "text": "Đáp án sai 1" },
+        { "label": "C", "text": "Đáp án sai 2" },
+        { "label": "D", "text": "Đáp án sai 3" }
+      ],
+      "correct": "A",
+      "explanation": "Giải thích demo cho câu hỏi 6: Đáp án A là đúng vì [lý do ngắn gọn]."
+    },
+    {
+      "id": 7,
+      "text": "Câu hỏi 7: Demo câu hỏi tiếng Nhật với khoảng trống (空欄に適切な語句を入れなさい)。",
+      "options": [
+        { "label": "A", "text": "Đáp án đúng" },
+        { "label": "B", "text": "Đáp án sai 1" },
+        { "label": "C", "text": "Đáp án sai 2" },
+        { "label": "D", "text": "Đáp án sai 3" }
+      ],
+      "correct": "A",
+      "explanation": "Giải thích demo cho câu hỏi 7: Đáp án A là đúng vì [lý do ngắn gọn]."
+    },
+    {
+      "id": 8,
+      "text": "Câu hỏi 8: Demo câu hỏi tiếng Nhật với khoảng trống (空欄に適切な語句を入れなさい)。",
+      "options": [
+        { "label": "A", "text": "Đáp án đúng" },
+        { "label": "B", "text": "Đáp án sai 1" },
+        { "label": "C", "text": "Đáp án sai 2" },
+        { "label": "D", "text": "Đáp án sai 3" }
+      ],
+      "correct": "A",
+      "explanation": "Giải thích demo cho câu hỏi 8: Đáp án A là đúng vì [lý do ngắn gọn]."
+    },
+    {
+      "id": 9,
+      "text": "Câu hỏi 9: Demo câu hỏi tiếng Nhật với khoảng trống (空欄に適切な語句を入れなさい)。",
+      "options": [
+        { "label": "A", "text": "Đáp án đúng" },
+        { "label": "B", "text": "Đáp án sai 1" },
+        { "label": "C", "text": "Đáp án sai 2" },
+        { "label": "D", "text": "Đáp án sai 3" }
+      ],
+      "correct": "A",
+      "explanation": "Giải thích demo cho câu hỏi 9: Đáp án A là đúng vì [lý do ngắn gọn]."
+    },
+    {
+      "id": 10,
+      "text": "Câu hỏi 10: Demo câu hỏi tiếng Nhật với khoảng trống (空欄に適切な語句を入れなさい)。",
+      "options": [
+        { "label": "A", "text": "Đáp án đúng" },
+        { "label": "B", "text": "Đáp án sai 1" },
+        { "label": "C", "text": "Đáp án sai 2" },
+        { "label": "D", "text": "Đáp án sai 3" }
+      ],
+      "correct": "A",
+      "explanation": "Giải thích demo cho câu hỏi 10: Đáp án A là đúng vì [lý do ngắn gọn]."
+    }
+  ]
+}
+
