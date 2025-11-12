@@ -1250,14 +1250,35 @@ function ContentManagementPage() {
                     )}
                   </div>
 
-                  {/* Existing Quizzes (if any) */}
+                  {/* Existing Quizzes - Show ALL quizzes for this book */}
                   <div>
                     <p className="text-xs font-medium text-blue-800 mb-1.5">
-                      ✏️ Quizzes đã có:
+                      ✏️ Quizzes đã có cho sách này:
                     </p>
-                    <p className="text-xs text-gray-600 italic">
-                      (Sẽ hiển thị khi có quiz cho các chapters này)
-                    </p>
+                    {selectedBook.existingChapters && selectedBook.existingChapters.length > 0 ? (
+                      <div className="max-h-40 overflow-y-auto space-y-1 pr-2">
+                        {selectedBook.existingChapters
+                          .filter(ch => quizzesData[ch.id]) // Only show chapters with quizzes
+                          .map((ch, idx) => {
+                            const quiz = quizzesData[ch.id];
+                            return (
+                              <div 
+                                key={idx}
+                                className="text-xs px-2 py-1 rounded bg-green-50 text-green-800 border border-green-200"
+                              >
+                                <span className="font-mono font-semibold">{ch.id}</span>
+                                {ch.title && <span className="ml-2">- {ch.title}</span>}
+                                <span className="ml-2 font-semibold">({quiz.questions?.length || 0} câu hỏi)</span>
+                              </div>
+                            );
+                          })}
+                        {selectedBook.existingChapters.filter(ch => quizzesData[ch.id]).length === 0 && (
+                          <p className="text-xs text-gray-600 italic">Chưa có quiz nào cho các chapters này</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-600 italic">Chưa có quiz nào</p>
+                    )}
                   </div>
                 </div>
               )}
