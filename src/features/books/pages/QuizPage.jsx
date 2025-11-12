@@ -10,6 +10,7 @@ import { bookData } from '../../../data/level/bookData.js';
 
 // ✅ NEW: Import dữ liệu từ thư mục data/level (đường dẫn tương tự bookData)
 // ✅ BƯỚC 2: Giữ backward compatibility với quizData cũ
+import storageManager from '../../../utils/localStorageManager.js';
 import { quizData } from '../../../data/level/quizData.js';
 
 // ✅ BƯỚC 2: Import helper để lazy load quiz từ JSON
@@ -32,23 +33,35 @@ function QuizPage() {
   const quizContentRef = useRef(null);
   useDictionaryDoubleClick(quizContentRef);
 
-  // ✅ BƯỚC 2: Lazy load quiz data từ JSON
+  // ✅ UPDATED: Load quiz with localStorage priority
   useEffect(() => {
     const loadQuiz = async () => {
       setIsLoading(true);
       try {
-        // Thử load từ JSON trước (cho shinkanzen-n1-bunpou)
+        // 1. Try localStorage first (highest priority)
+        const savedQuiz = storageManager.getQuiz(bookId, lessonId);
+        if (savedQuiz) {
+          setCurrentQuiz(savedQuiz);
+          console.log(`✅ Loaded quiz from localStorage: ${bookId}/${lessonId}`);
+          setIsLoading(false);
+          return;
+        }
+
+        // 2. Try load từ JSON (cho shinkanzen-n1-bunpou)
         if (bookId === 'skm-n1-bunpou') {
           const quiz = await loadQuizData(lessonId);
           if (quiz && quiz.questions && quiz.questions.length > 0) {
             setCurrentQuiz(quiz);
+            console.log(`📁 Loaded quiz from JSON: ${bookId}/${lessonId}`);
             setIsLoading(false);
             return;
           }
         }
-        // Fallback về quizData cũ nếu không tìm thấy JSON
+        
+        // 3. Fallback về quizData cũ nếu không tìm thấy JSON
         const fallbackQuiz = quizData[lessonId] || quizData.default;
         setCurrentQuiz(fallbackQuiz);
+        console.log(`📄 Loaded quiz from static file: ${lessonId}`);
       } catch (error) {
         console.error('Error loading quiz:', error);
         // Fallback về quizData cũ

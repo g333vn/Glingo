@@ -1,8 +1,9 @@
 // (grid bài học)chọn menu bài học sách hiện tại
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
+import storageManager from '../../../utils/localStorageManager.js';
 import { bookData } from '../../../data/level/bookData.js';
 
 const contentsPerPage = 15;
@@ -41,10 +42,28 @@ const LessonCard = ({ title, lessonId, levelId }) => {
 function BookDetailPage() {
   const { levelId, bookId } = useParams();
   const [currentPage, setCurrentPage] = useState(1);
+  const [bookContents, setBookContents] = useState([]);
+  const [currentBook, setCurrentBook] = useState(null);
 
-  // Lấy data từ bookData.js
-  const currentBook = bookData[bookId] || bookData.default;
-  const bookContents = currentBook.contents || [];
+  // Load book and chapters
+  useEffect(() => {
+    // Try localStorage first for chapters
+    const savedChapters = storageManager.getChapters(bookId);
+    
+    if (savedChapters && savedChapters.length > 0) {
+      // Use localStorage chapters
+      setBookContents(savedChapters);
+      console.log(`✅ Loaded ${savedChapters.length} chapters from localStorage`);
+    } else {
+      // Fallback to static data
+      const book = bookData[bookId] || bookData.default;
+      setBookContents(book.contents || []);
+      console.log(`📁 Loaded ${book.contents?.length || 0} chapters from static file`);
+    }
+
+    // Get book info
+    setCurrentBook(bookData[bookId] || bookData.default);
+  }, [bookId]);
 
   const startIndex = (currentPage - 1) * contentsPerPage;
   const endIndex = startIndex + contentsPerPage;
@@ -55,7 +74,7 @@ function BookDetailPage() {
     { name: 'ホーム', link: '/' },
     { name: 'LEVEL', link: '/level' },
     { name: levelId.toUpperCase(), link: `/level/${levelId}` },
-    { name: currentBook.title, link: `/level/${levelId}/${bookId}` }
+    { name: currentBook?.title || bookId, link: `/level/${levelId}/${bookId}` }
   ];
 
   // Create grid items (fill empty slots)

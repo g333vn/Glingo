@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import Modal from '../../components/Modal.jsx';
+import storageManager from '../../utils/localStorageManager.js';
 import { n1BooksMetadata } from '../../data/level/n1/books-metadata.js';
 import { n1Books } from '../../data/level/n1/books.js';
 
@@ -117,6 +118,13 @@ function ContentManagementPage() {
 
   // Get book data (with chapters) - Memoized để tránh re-compute
   const getBookData = useCallback((bookId) => {
+    // Try localStorage first
+    const savedChapters = storageManager.getChapters(bookId);
+    if (savedChapters && savedChapters.length > 0) {
+      return { contents: savedChapters };
+    }
+    
+    // Fallback to static data
     switch(selectedLevel) {
       case 'n1': return n1Books[bookId];
       default: return null;
@@ -230,22 +238,68 @@ function ContentManagementPage() {
 
   const handleSaveChapter = (e) => {
     e.preventDefault();
-    if (!chapterForm.id || !selectedBook) {
+    if (!chapterForm.id || !chapterForm.title || !selectedBook) {
       alert('⚠️ Vui lòng điền đầy đủ thông tin!');
       return;
     }
 
-    // Note: Chapters are stored in bookData files, not localStorage
-    // This is a UI for managing, but actual save would need to update the source files
-    // For now, we'll show instructions
-    alert(`✅ Chapter đã được chuẩn bị!\n\nĐể lưu chapter, bạn cần:\n1. Cập nhật file: src/data/level/${selectedLevel}/${selectedBook?.id || 'book-id'}.js\n2. Thêm chapter vào mảng 'chapters'\n\nHoặc sử dụng Quiz Editor để tạo quiz cho chapter mới.`);
+    // Get existing chapters from localStorage or default data
+    let chapters = storageManager.getChapters(selectedBook.id) || [];
+    
+    // If no chapters in localStorage, try to get from static data
+    if (chapters.length === 0) {
+      const bookData = getBookData(selectedBook.id);
+      chapters = bookData?.contents || [];
+    }
+
+    if (editingChapter) {
+      // Update existing chapter
+      chapters = chapters.map(ch => 
+        ch.id === editingChapter.id ? { ...chapterForm } : ch
+      );
+    } else {
+      // Add new chapter
+      if (chapters.find(ch => ch.id === chapterForm.id)) {
+        alert('⚠️ ID chapter đã tồn tại!');
+        return;
+      }
+      chapters = [...chapters, { ...chapterForm }];
+    }
+
+    // Save to localStorage
+    storageManager.saveChapters(selectedBook.id, chapters);
+    
     setShowChapterForm(false);
+    setEditingChapter(null);
+    setChapterForm({ id: '', title: '' });
+    
+    alert(`✅ Đã lưu chapter vào localStorage!\n\n` +
+          `📍 Sách: ${selectedBook.title}\n` +
+          `📝 Chapter: ${chapterForm.title}\n\n` +
+          `💡 Chapter sẽ hiển thị ngay tại trang chi tiết sách!`);
+    
+    // Refresh books to update chapter count
+    loadBooks();
   };
 
-  const handleDeleteChapter = (bookId, chapterId) => {
-    if (confirm('Bạn có chắc muốn xóa chương này?')) {
-      alert('⚠️ Để xóa chapter, bạn cần chỉnh sửa file source code trực tiếp.\n\nFile: src/data/level/' + selectedLevel + '/' + bookId + '.js');
+  const handleDeleteChapter = (book, chapter) => {
+    if (!confirm(`⚠️ Xóa chapter "${chapter.title}"?\n\nHành động này không thể hoàn tác!`)) {
+      return;
     }
+
+    let chapters = storageManager.getChapters(book.id) || [];
+    
+    // If no chapters in localStorage, get from static data
+    if (chapters.length === 0) {
+      const bookData = getBookData(book.id);
+      chapters = bookData?.contents || [];
+    }
+
+    chapters = chapters.filter(ch => ch.id !== chapter.id);
+    storageManager.saveChapters(book.id, chapters);
+    
+    alert(`✅ Đã xóa chapter "${chapter.title}"!`);
+    loadBooks(); // Refresh
   };
 
   return (

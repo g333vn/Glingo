@@ -1,13 +1,15 @@
 // src/pages/admin/AdminDashboardPage.jsx
 // Trang Dashboard chính của Admin
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import storageManager from '../../utils/localStorageManager.js';
 
 function AdminDashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [storageInfo, setStorageInfo] = useState(null);
 
   const stats = [
     {

@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import storageManager from '../../utils/localStorageManager.js';
 import { n1BooksMetadata } from '../../data/level/n1/books-metadata.js';
 import { n1Books } from '../../data/level/n1/books.js';
 // TODO: Import các level khác khi có data
@@ -192,8 +193,52 @@ function QuizEditorPage() {
     alert('✅ Đã copy JSON vào clipboard!');
   };
 
-  // Download JSON file
+  // ✅ UPDATED: Save to localStorage (primary method)
+  const handleSaveToLocal = () => {
+    if (!isValid()) {
+      alert('⚠️ Vui lòng điền đầy đủ thông tin trước khi lưu!');
+      return;
+    }
+
+    const quizData = {
+      lessonId: selectedChapter,
+      title: quizTitle,
+      questions: questions.map(q => ({
+        id: q.id,
+        question: q.text,
+        options: q.options.map(o => ({ label: o.label, text: o.text })),
+        correctAnswer: q.correct,
+        explanation: q.explanation
+      })),
+      metadata: {
+        level: selectedLevel,
+        bookId: selectedBook,
+        chapterId: selectedChapter,
+        createdAt: new Date().toISOString(),
+        questionCount: questions.length
+      }
+    };
+
+    // Save to localStorage
+    storageManager.saveQuiz(selectedBook, selectedChapter, quizData);
+    
+    alert(`✅ Đã lưu quiz vào localStorage!\n\n` +
+          `📍 Location:\n` +
+          `- Level: ${selectedLevel}\n` +
+          `- Book: ${selectedBook}\n` +
+          `- Chapter: ${selectedChapter}\n\n` +
+          `📊 Stats:\n` +
+          `- Questions: ${questions.length}\n\n` +
+          `💡 Quiz sẽ hiển thị ngay khi học viên vào bài học này!`);
+  };
+
+  // ✅ OPTIONAL: Download JSON file (backup option)
   const handleDownload = () => {
+    if (!isValid()) {
+      alert('⚠️ Vui lòng điền đầy đủ thông tin trước khi download!');
+      return;
+    }
+
     const json = generateJSON();
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -215,6 +260,8 @@ function QuizEditorPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    alert(`✅ Đã download file "${filename}"!\n\nFile backup đã được tải về máy.`);
   };
 
   // ✅ NEW: Get file path for display
