@@ -1128,6 +1128,241 @@ function ExamManagementPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Section Form Modal */}
+      <Modal
+        isOpen={showSectionForm}
+        onClose={() => setShowSectionForm(false)}
+        title={editingSection ? '✏️ Sửa Section' : '➕ Thêm Section mới'}
+        maxWidth="32rem"
+      >
+        <form onSubmit={handleSaveSection} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              ID Section * (ví dụ: section1, section2)
+            </label>
+            <input
+              type="text"
+              value={sectionForm.id}
+              onChange={(e) => setSectionForm({ ...sectionForm, id: e.target.value })}
+              required
+              disabled={!!editingSection}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+              placeholder="section1"
+            />
+            <p className="text-xs text-gray-500 mt-1">ID dùng để định danh section</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tiêu đề * (ví dụ: 問題1, 問題2)
+            </label>
+            <input
+              type="text"
+              value={sectionForm.title}
+              onChange={(e) => setSectionForm({ ...sectionForm, title: e.target.value })}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="問題1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Hướng dẫn (Instruction)
+            </label>
+            <textarea
+              value={sectionForm.instruction}
+              onChange={(e) => setSectionForm({ ...sectionForm, instruction: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+              placeholder="（　　）に入れるのに最もよいものを、1・2・3・4から一つ選びなさい。"
+            />
+          </div>
+          {(selectedTestType === 'knowledge' || selectedTestType === 'listening') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Thời gian (phút) {selectedTestType === 'knowledge' ? '(tùy chọn)' : '*'}
+              </label>
+              <input
+                type="number"
+                value={sectionForm.timeLimit || ''}
+                onChange={(e) => setSectionForm({ 
+                  ...sectionForm, 
+                  timeLimit: e.target.value ? parseInt(e.target.value) : null 
+                })}
+                min="1"
+                required={selectedTestType === 'listening'}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="30"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {selectedTestType === 'knowledge' 
+                  ? 'Thời gian cho section này (tùy chọn, có thể để trống)'
+                  : 'Thời gian bắt buộc cho listening section'}
+              </p>
+            </div>
+          )}
+          <div className="flex gap-3 mt-6">
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+            >
+              💾 {editingSection ? 'Lưu thay đổi' : 'Thêm Section'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSectionForm(false)}
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold"
+            >
+              Hủy
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Question Form Modal */}
+      <Modal
+        isOpen={showQuestionForm}
+        onClose={() => setShowQuestionForm(false)}
+        title={editingQuestion ? '✏️ Sửa Câu hỏi' : '➕ Thêm Câu hỏi mới'}
+        maxWidth="42rem"
+      >
+        <form onSubmit={handleSaveQuestion} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              ID Câu hỏi * (ví dụ: 1, 2, 3)
+            </label>
+            <input
+              type="text"
+              value={questionForm.id}
+              onChange={(e) => setQuestionForm({ ...questionForm, id: e.target.value })}
+              required
+              disabled={!!editingQuestion}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+              placeholder="1"
+            />
+            <p className="text-xs text-gray-500 mt-1">ID dùng để định danh câu hỏi</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Câu hỏi *
+            </label>
+            <textarea
+              value={questionForm.question}
+              onChange={(e) => setQuestionForm({ ...questionForm, question: e.target.value })}
+              required
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+              placeholder="彼の説明は（　　）で、誰にでも理解できる。"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Lựa chọn * (ít nhất 2 lựa chọn)
+            </label>
+            <div className="space-y-2">
+              {['A', 'B', 'C', 'D'].map((label, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="w-8 text-sm font-semibold text-gray-700">{label}:</span>
+                  <input
+                    type="text"
+                    value={questionForm.options[idx] || ''}
+                    onChange={(e) => {
+                      const newOptions = [...questionForm.options];
+                      newOptions[idx] = e.target.value;
+                      setQuestionForm({ ...questionForm, options: newOptions });
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder={`Lựa chọn ${label}`}
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Có thể để trống lựa chọn C và D nếu chỉ có 2 lựa chọn
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Đáp án đúng *
+            </label>
+            <select
+              value={questionForm.correctAnswer}
+              onChange={(e) => setQuestionForm({ 
+                ...questionForm, 
+                correctAnswer: parseInt(e.target.value) 
+              })}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {questionForm.options.map((opt, idx) => {
+                if (!opt.trim()) return null;
+                return (
+                  <option key={idx} value={idx}>
+                    {String.fromCharCode(65 + idx)}: {opt}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+          {selectedTestType === 'listening' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                URL File Audio *
+              </label>
+              <input
+                type="text"
+                value={questionForm.audioUrl}
+                onChange={(e) => setQuestionForm({ ...questionForm, audioUrl: e.target.value })}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="/audio/n1/2024-12/listening-1.mp3"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Đường dẫn file audio từ thư mục public
+              </p>
+              {questionForm.audioUrl && (
+                <div className="mt-2">
+                  <audio controls className="w-full">
+                    <source src={questionForm.audioUrl} type="audio/mpeg" />
+                    Trình duyệt không hỗ trợ audio.
+                  </audio>
+                </div>
+              )}
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Giải thích *
+            </label>
+            <textarea
+              value={questionForm.explanation}
+              onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
+              required
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+              placeholder="「簡潔」は「短くてわかりやすい」という意味で、説明の質を表すのに最適です。"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Giải thích chi tiết tại sao đáp án này đúng
+            </p>
+          </div>
+          <div className="flex gap-3 mt-6">
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+            >
+              💾 {editingQuestion ? 'Lưu thay đổi' : 'Thêm Câu hỏi'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowQuestionForm(false)}
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold"
+            >
+              Hủy
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
