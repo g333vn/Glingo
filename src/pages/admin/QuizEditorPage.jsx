@@ -2,13 +2,24 @@
 // Tool nhập liệu quiz - Dễ dàng tạo quiz mới và export ra JSON
 // ⚠️ PROTECTED: Chỉ admin mới có thể truy cập (bảo vệ bằng ProtectedRoute)
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import { n1BooksMetadata } from '../../data/level/n1/books-metadata.js';
+import { n1Books } from '../../data/level/n1/books.js';
+// TODO: Import các level khác khi có data
+// import { n2BooksMetadata } from '../../data/level/n2/books-metadata.js';
+// import { n2Books } from '../../data/level/n2/books.js';
 
 function QuizEditorPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // ✅ NEW: Location selection states
+  const [selectedLevel, setSelectedLevel] = useState('n1');
+  const [selectedBook, setSelectedBook] = useState('');
+  const [selectedChapter, setSelectedChapter] = useState('');
+  
   const [quizTitle, setQuizTitle] = useState('');
   const [questions, setQuestions] = useState([
     {
@@ -27,6 +38,61 @@ function QuizEditorPage() {
 
   const [exportedJSON, setExportedJSON] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+
+  // ✅ NEW: Get books by level
+  const getBooksByLevel = (levelId) => {
+    switch(levelId) {
+      case 'n1': return n1BooksMetadata;
+      // TODO: Thêm các level khác
+      // case 'n2': return n2BooksMetadata;
+      // case 'n3': return n3BooksMetadata;
+      // case 'n4': return n4BooksMetadata;
+      // case 'n5': return n5BooksMetadata;
+      default: return [];
+    }
+  };
+
+  // ✅ NEW: Get book data by level and bookId
+  const getBookData = (levelId, bookId) => {
+    switch(levelId) {
+      case 'n1': return n1Books[bookId];
+      // TODO: Thêm các level khác
+      default: return null;
+    }
+  };
+
+  // ✅ NEW: Available books for selected level
+  const availableBooks = useMemo(() => {
+    return getBooksByLevel(selectedLevel);
+  }, [selectedLevel]);
+
+  // ✅ NEW: Available chapters for selected book
+  const availableChapters = useMemo(() => {
+    if (!selectedBook || !selectedLevel) return [];
+    const bookData = getBookData(selectedLevel, selectedBook);
+    return bookData?.contents || [];
+  }, [selectedBook, selectedLevel]);
+
+  // ✅ NEW: Reset book and chapter when level changes
+  useEffect(() => {
+    setSelectedBook('');
+    setSelectedChapter('');
+  }, [selectedLevel]);
+
+  // ✅ NEW: Reset chapter when book changes
+  useEffect(() => {
+    setSelectedChapter('');
+  }, [selectedBook]);
+
+  // ✅ NEW: Auto-fill quiz title from chapter
+  useEffect(() => {
+    if (selectedChapter && availableChapters.length > 0) {
+      const chapter = availableChapters.find(ch => ch.id === selectedChapter);
+      if (chapter && !quizTitle) {
+        setQuizTitle(chapter.title || '');
+      }
+    }
+  }, [selectedChapter, availableChapters]);
 
   // Update question
   const updateQuestion = (index, field, value) => {
@@ -122,16 +188,45 @@ function QuizEditorPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `bai-${questions[0]?.id || 'X'}.json`;
+    
+    // ✅ NEW: Generate filename based on location
+    let filename = 'quiz.json';
+    if (selectedChapter) {
+      filename = `${selectedChapter}.json`;
+    } else if (selectedBook) {
+      filename = `${selectedBook}-quiz.json`;
+    } else {
+      filename = `bai-${questions[0]?.id || 'X'}.json`;
+    }
+    
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
+  // ✅ NEW: Get file path for display
+  const getFilePath = () => {
+    if (!selectedLevel || !selectedBook || !selectedChapter) {
+      return 'Chưa chọn đầy đủ thông tin';
+    }
+    
+    // Map bookId to folder name (some books have different folder structure)
+    let bookFolder = selectedBook;
+    if (selectedBook === 'skm-n1-bunpou') {
+      bookFolder = 'shinkanzen-n1-bunpou';
+    }
+    
+    return `src/data/level/${selectedLevel}/${bookFolder}/quizzes/${selectedChapter}.json`;
+  };
+
   // Validate form
   const isValid = () => {
     if (!quizTitle.trim()) return false;
+    if (!selectedLevel || !selectedBook || !selectedChapter) {
+      return false; // ✅ NEW: Require location selection
+    }
     return questions.every(q => 
       q.text.trim() && 
       q.options.every(opt => opt.text.trim()) &&
@@ -154,10 +249,89 @@ function QuizEditorPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Form Input - 2 columns */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          {/* ✅ NEW: Location Selection */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-lg p-4 sm:p-6 border-2 border-blue-200">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">
+              📍 Chọn vị trí lưu Quiz
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Level Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cấp độ (Level) *
+                </label>
+                <select
+                  value={selectedLevel}
+                  onChange={(e) => setSelectedLevel(e.target.value)}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white"
+                  required
+                >
+                  <option value="n1">N1</option>
+                  <option value="n2">N2</option>
+                  <option value="n3">N3</option>
+                  <option value="n4">N4</option>
+                  <option value="n5">N5</option>
+                </select>
+              </div>
+
+              {/* Book Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sách (Book) *
+                </label>
+                <select
+                  value={selectedBook}
+                  onChange={(e) => setSelectedBook(e.target.value)}
+                  disabled={!selectedLevel || availableBooks.length === 0}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  required
+                >
+                  <option value="">-- Chọn sách --</option>
+                  {availableBooks.map((book) => (
+                    <option key={book.id} value={book.id}>
+                      {book.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Chapter Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Chương (Chapter) *
+                </label>
+                <select
+                  value={selectedChapter}
+                  onChange={(e) => setSelectedChapter(e.target.value)}
+                  disabled={!selectedBook || availableChapters.length === 0}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  required
+                >
+                  <option value="">-- Chọn chương --</option>
+                  {availableChapters.map((chapter) => (
+                    <option key={chapter.id} value={chapter.id}>
+                      {chapter.title || chapter.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* ✅ NEW: Display file path */}
+            {selectedLevel && selectedBook && selectedChapter && (
+              <div className="mt-4 p-3 bg-white rounded-lg border border-blue-300">
+                <p className="text-xs text-gray-600 mb-1">📁 Đường dẫn file sẽ được lưu:</p>
+                <p className="text-sm font-mono text-blue-700 break-all">
+                  {getFilePath()}
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Quiz Title */}
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              📚 Tên Quiz (Title)
+              📚 Tên Quiz (Title) *
             </label>
             <input
               type="text"
@@ -165,7 +339,13 @@ function QuizEditorPage() {
               onChange={(e) => setQuizTitle(e.target.value)}
               placeholder="Ví dụ: Bài 1: Phân biệt cấu trúc A và B"
               className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              required
             />
+            {selectedChapter && availableChapters.length > 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                💡 Tên đã được tự động điền từ chương đã chọn. Bạn có thể chỉnh sửa.
+              </p>
+            )}
           </div>
 
           {/* Questions */}
@@ -323,6 +503,12 @@ function QuizEditorPage() {
                 <p className="text-xs text-gray-500 mt-2">
                   Số câu hỏi: <strong>{questions.length}</strong>
                 </p>
+                {/* ✅ NEW: Location validation */}
+                {(!selectedLevel || !selectedBook || !selectedChapter) && (
+                  <p className="text-xs text-red-600 mt-2">
+                    ⚠️ Vui lòng chọn đầy đủ: Level → Book → Chapter
+                  </p>
+                )}
               </div>
             </div>
 
@@ -387,27 +573,40 @@ function QuizEditorPage() {
           </div>
         </div>
 
-        {/* Instructions */}
-        <div className="mt-6 bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">📖 Hướng dẫn sử dụng</h2>
-          <ol className="list-decimal list-inside space-y-2 text-gray-700">
-            <li>Điền tên quiz</li>
-            <li>Thêm câu hỏi: Click nút "➕ Thêm câu hỏi mới" để thêm câu hỏi (không giới hạn số lượng)</li>
-            <li>Điền đầy đủ thông tin cho mỗi câu hỏi:
-              <ul className="list-disc list-inside ml-4 mt-1">
-                <li>Câu hỏi (text)</li>
-                <li>4 đáp án (A, B, C, D)</li>
-                <li>Chọn đáp án đúng</li>
-                <li>Giải thích (khuyến khích)</li>
-              </ul>
-            </li>
-            <li>Có thể xóa câu hỏi bằng nút "🗑️ Xóa" hoặc copy câu hỏi bằng nút "📋 Copy"</li>
-            <li>Click "Export JSON" để tạo file JSON</li>
-            <li>Click "Copy JSON" để copy vào clipboard hoặc "Download File" để tải về</li>
-            <li>Đặt tên file: <code className="bg-gray-100 px-2 py-1 rounded">bai-X.json</code> (X là số bài)</li>
-            <li>Copy file vào: <code className="bg-gray-100 px-2 py-1 rounded">src/data/level/n1/shinkanzen-n1-bunpou/quizzes/</code></li>
-          </ol>
-        </div>
+              {/* Instructions */}
+              <div className="mt-6 bg-white rounded-lg shadow-lg p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">📖 Hướng dẫn sử dụng</h2>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+                  <li className="mb-2">
+                    <strong>Chọn vị trí lưu Quiz:</strong>
+                    <ul className="list-disc list-inside ml-4 mt-1 text-xs">
+                      <li>Chọn <strong>Cấp độ</strong> (N1, N2, N3, N4, N5)</li>
+                      <li>Chọn <strong>Sách</strong> (từ danh sách sách của level đã chọn)</li>
+                      <li>Chọn <strong>Chương</strong> (từ danh sách chương của sách đã chọn)</li>
+                      <li>Tên quiz sẽ tự động điền từ tên chương (có thể chỉnh sửa)</li>
+                    </ul>
+                  </li>
+                  <li className="mb-2">Thêm câu hỏi: Click nút "➕ Thêm câu hỏi mới" (không giới hạn số lượng)</li>
+                  <li className="mb-2">Điền đầy đủ thông tin cho mỗi câu hỏi:
+                    <ul className="list-disc list-inside ml-4 mt-1 text-xs">
+                      <li>Câu hỏi (text)</li>
+                      <li>4 đáp án (A, B, C, D)</li>
+                      <li>Chọn đáp án đúng</li>
+                      <li>Giải thích (khuyến khích)</li>
+                    </ul>
+                  </li>
+                  <li className="mb-2">Có thể xóa câu hỏi bằng nút "🗑️ Xóa" hoặc copy bằng nút "📋 Copy"</li>
+                  <li className="mb-2">Click "Export JSON" để tạo file JSON</li>
+                  <li className="mb-2">Click "Copy JSON" hoặc "Download File" để lưu</li>
+                  <li className="mb-2">
+                    <strong>Lưu file:</strong> Copy file vào đúng đường dẫn hiển thị ở trên
+                    <br />
+                    <code className="bg-gray-100 px-2 py-1 rounded text-xs mt-1 inline-block">
+                      {selectedLevel && selectedBook && selectedChapter ? getFilePath() : 'src/data/level/[level]/[book]/quizzes/[chapter].json'}
+                    </code>
+                  </li>
+                </ol>
+              </div>
     </div>
   );
 }
