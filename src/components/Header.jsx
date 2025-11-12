@@ -162,18 +162,14 @@ function Header({ onUserIconClick }) {
                 ${isScrolled ? 'scale-90' : 'scale-100'}
               `}
             />
-            <span className={`
-              font-bold text-sm sm:text-base md:hidden lg:block lg:text-xl text-white whitespace-nowrap
-              transition-all duration-500
-              group-hover:text-yellow-300
-              ${isScrolled ? 'text-sm sm:text-base lg:text-lg' : 'text-sm sm:text-base lg:text-xl'}
-            `}>
+            {/* Logo text - Ẩn trên tablet (768px-1024px), chỉ hiện trên desktop lớn */}
+            <span className="font-bold text-sm sm:text-base md:hidden xl:block xl:text-xl text-white whitespace-nowrap transition-all duration-500 group-hover:text-yellow-300">
               Learn Your Approach
             </span>
           </button>
 
           {/* Desktop Links với Enhanced Effects - Tablet: gap nhỏ hơn, Desktop: gap lớn */}
-          <div className="hidden md:flex items-center gap-2 md:gap-2.5 lg:gap-6 xl:gap-8">
+          <div className="hidden md:flex items-center gap-1.5 md:gap-2 lg:gap-3 xl:gap-6 2xl:gap-8">
             {/* Home */}
             <button
               onClick={() => handleNavigate('/')}
@@ -270,34 +266,34 @@ function Header({ onUserIconClick }) {
               )}
             </div>
 
-            {/* About - Ẩn trên tablet, hiện trên desktop */}
+            {/* About - Ẩn trên tablet, hiện trên desktop lớn */}
             <button
               onClick={() => handleNavigate('/about')}
-              className={`${getLinkClass('/about')} bg-transparent border-none cursor-pointer font-medium text-sm md:text-base hidden lg:block`}
+              className={`${getLinkClass('/about')} bg-transparent border-none cursor-pointer font-medium text-xs md:text-sm lg:text-base hidden xl:block`}
             >
               ABOUT ME
             </button>
 
             {/* User Info / Login */}
             {user ? (
-              <div className="flex items-center gap-1 md:gap-1.5 lg:gap-2 xl:gap-3">
+              <div className="flex items-center gap-1 md:gap-1 lg:gap-1.5 xl:gap-2 2xl:gap-3">
                 {/* Admin Panel Button (chỉ hiển thị cho admin) - Tablet: chỉ icon, Desktop: có text */}
                 {isAdmin() && (
                   <button
                     onClick={() => navigate('/admin')}
-                    className="px-2 md:px-3 lg:px-4 py-1.5 md:py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-all font-semibold text-xs md:text-sm shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-1 md:gap-2"
+                    className="px-1.5 md:px-2 lg:px-3 xl:px-4 py-1 md:py-1.5 lg:py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-all font-semibold text-[10px] md:text-xs lg:text-sm shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-0.5 md:gap-1 lg:gap-2"
                     title="Admin Dashboard"
                   >
                     <span>⚙️</span>
-                    <span className="hidden lg:inline">Admin Panel</span>
+                    <span className="hidden xl:inline">Admin Panel</span>
                   </button>
                 )}
-                  <div className="flex items-center gap-1 md:gap-1.5 lg:gap-2 px-1.5 md:px-2 lg:px-3 py-1 md:py-1.5 bg-yellow-400/10 rounded-lg border border-yellow-400/30">
-                    <span className="text-yellow-400 text-xs md:text-xs lg:text-sm font-medium truncate max-w-[60px] md:max-w-[80px] lg:max-w-none">
+                  <div className="flex items-center gap-0.5 md:gap-1 lg:gap-1.5 px-1 md:px-1.5 lg:px-2 xl:px-3 py-0.5 md:py-1 lg:py-1.5 bg-yellow-400/10 rounded-lg border border-yellow-400/30">
+                    <span className="text-yellow-400 text-[10px] md:text-xs lg:text-sm font-medium truncate max-w-[50px] md:max-w-[60px] lg:max-w-[80px] xl:max-w-none">
                       {user.name || user.username}
                     </span>
                     {isAdmin() && (
-                      <span className="text-[10px] md:text-xs bg-red-500 text-white px-1 md:px-1.5 lg:px-2 py-0.5 rounded-full flex-shrink-0">
+                      <span className="text-[9px] md:text-[10px] lg:text-xs bg-red-500 text-white px-0.5 md:px-1 lg:px-1.5 xl:px-2 py-0.5 rounded-full flex-shrink-0">
                         Admin
                       </span>
                     )}
@@ -307,11 +303,11 @@ function Header({ onUserIconClick }) {
                       logout();
                       navigate('/');
                     }}
-                    className="px-2 md:px-3 py-1 md:py-1.5 text-white hover:text-red-400 transition-colors text-xs md:text-sm font-medium whitespace-nowrap"
+                    className="px-1 md:px-2 lg:px-3 py-0.5 md:py-1 lg:py-1.5 text-white hover:text-red-400 transition-colors text-[10px] md:text-xs lg:text-sm font-medium whitespace-nowrap"
                     title="Đăng xuất"
                   >
-                    <span className="hidden lg:inline">Đăng xuất</span>
-                    <span className="lg:hidden">X</span>
+                    <span className="hidden xl:inline">Đăng xuất</span>
+                    <span className="xl:hidden">X</span>
                   </button>
               </div>
             ) : (
@@ -319,8 +315,8 @@ function Header({ onUserIconClick }) {
                 onClick={() => navigate('/login')}
                 className="px-2 md:px-4 py-1 md:py-2 bg-yellow-400/20 hover:bg-yellow-400/30 text-yellow-400 rounded-lg transition-all font-medium text-xs md:text-sm border border-yellow-400/30 whitespace-nowrap"
               >
-                <span className="hidden lg:inline">Đăng nhập</span>
-                <span className="lg:hidden">Login</span>
+                <span className="hidden xl:inline">Đăng nhập</span>
+                <span className="xl:hidden">Login</span>
               </button>
             )}
           </div>
