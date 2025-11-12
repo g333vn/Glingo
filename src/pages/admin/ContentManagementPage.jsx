@@ -8,7 +8,7 @@ import { n1Books } from '../../data/level/n1/books.js';
 
 function ContentManagementPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('books'); // 'books' | 'exams'
+  const [activeTab, setActiveTab] = useState('books'); // 'books' | 'exams' | 'series'
   const [selectedLevel, setSelectedLevel] = useState('n1');
   
   // Books management states
@@ -18,6 +18,16 @@ function ContentManagementPage() {
   const [showChapterForm, setShowChapterForm] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
   const [editingChapter, setEditingChapter] = useState(null);
+  
+  // ✅ NEW: Series/Category management states
+  const [series, setSeries] = useState([]);
+  const [showSeriesForm, setShowSeriesForm] = useState(false);
+  const [editingSeries, setEditingSeries] = useState(null);
+  const [seriesForm, setSeriesForm] = useState({
+    id: '',
+    name: '',
+    description: ''
+  });
 
   // Book form state
   const [bookForm, setBookForm] = useState({
@@ -36,7 +46,40 @@ function ContentManagementPage() {
   // Load books when level changes
   useEffect(() => {
     loadBooks();
+    loadSeries();
   }, [selectedLevel]);
+  
+  // ✅ NEW: Load series/categories
+  const loadSeries = () => {
+    const savedSeries = localStorage.getItem(`adminSeries_${selectedLevel}`);
+    if (savedSeries) {
+      try {
+        setSeries(JSON.parse(savedSeries));
+      } catch (error) {
+        console.error('Error loading series:', error);
+        setSeries(getDefaultSeries());
+      }
+    } else {
+      setSeries(getDefaultSeries());
+    }
+  };
+  
+  // ✅ NEW: Get default series from existing books
+  const getDefaultSeries = () => {
+    const allBooks = getDefaultBooks();
+    const uniqueCategories = [...new Set(allBooks.map(book => book.category).filter(Boolean))];
+    return uniqueCategories.map((cat, index) => ({
+      id: `series-${index + 1}`,
+      name: cat,
+      description: `Bộ sách ${cat}`
+    }));
+  };
+  
+  // ✅ NEW: Save series
+  const saveSeries = (updatedSeries) => {
+    setSeries(updatedSeries);
+    localStorage.setItem(`adminSeries_${selectedLevel}`, JSON.stringify(updatedSeries));
+  };
 
   const loadBooks = () => {
     // Load from localStorage first, fallback to default data
@@ -203,6 +246,16 @@ function ContentManagementPage() {
           📖 Quản lý Sách
         </button>
         <button
+          onClick={() => setActiveTab('series')}
+          className={`flex-1 px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${
+            activeTab === 'series'
+              ? 'bg-blue-500 text-white shadow-md'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          📚 Quản lý Bộ sách
+        </button>
+        <button
           onClick={() => setActiveTab('exams')}
           className={`flex-1 px-4 py-2 rounded-lg font-semibold transition-colors duration-200 ${
             activeTab === 'exams'
@@ -322,6 +375,103 @@ function ContentManagementPage() {
         </div>
       )}
 
+      {/* ✅ NEW: Series/Category Management */}
+      {activeTab === 'series' && (
+        <div className="space-y-6">
+          {/* Series List */}
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+                Danh sách Bộ sách ({series.length})
+              </h2>
+              <button
+                onClick={() => {
+                  setSeriesForm({ id: '', name: '', description: '' });
+                  setEditingSeries(null);
+                  setShowSeriesForm(true);
+                }}
+                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-2 text-sm sm:text-base"
+              >
+                <span>➕</span>
+                <span>Thêm Bộ sách mới</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[500px] table-fixed">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">ID</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên bộ sách</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mô tả</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">Số sách</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[200px]">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {series.map((s) => {
+                    const booksInSeries = books.filter(b => b.category === s.name);
+                    return (
+                      <tr key={s.id} className="hover:bg-gray-50 transition-colors duration-150">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{s.id}</td>
+                        <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900">
+                          {s.name}
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 text-sm text-gray-600">
+                          {s.description || '-'}
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                            {booksInSeries.length} sách
+                          </span>
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                            <button
+                              onClick={() => {
+                                setEditingSeries(s);
+                                setSeriesForm({
+                                  id: s.id,
+                                  name: s.name,
+                                  description: s.description || ''
+                                });
+                                setShowSeriesForm(true);
+                              }}
+                              className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-150 text-xs font-medium"
+                              title="Sửa"
+                            >
+                              ✏️ Sửa
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm(`Bạn có chắc muốn xóa bộ sách "${s.name}"? Tất cả sách trong bộ này sẽ mất category!`)) {
+                                  const updatedSeries = series.filter(ser => ser.id !== s.id);
+                                  saveSeries(updatedSeries);
+                                  // Update books: remove category from books in this series
+                                  const updatedBooks = books.map(b => 
+                                    b.category === s.name ? { ...b, category: '' } : b
+                                  );
+                                  saveBooks(updatedBooks);
+                                  alert('✅ Đã xóa bộ sách!');
+                                }
+                              }}
+                              className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors duration-150 text-xs font-medium"
+                              title="Xóa"
+                            >
+                              🗑️ Xóa
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Exams Management - Coming Soon */}
       {activeTab === 'exams' && (
         <div className="bg-white rounded-lg shadow-lg p-8 text-center">
@@ -362,15 +512,38 @@ function ContentManagementPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category
+                    Bộ sách (Category) *
                   </label>
-                  <input
-                    type="text"
-                    value={bookForm.category}
-                    onChange={(e) => setBookForm({ ...bookForm, category: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                    placeholder="新完全マスター"
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={bookForm.category}
+                      onChange={(e) => setBookForm({ ...bookForm, category: e.target.value })}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white"
+                      required
+                    >
+                      <option value="">-- Chọn bộ sách --</option>
+                      {series.map((s) => (
+                        <option key={s.id} value={s.name}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSeriesForm({ id: '', name: '', description: '' });
+                        setEditingSeries(null);
+                        setShowSeriesForm(true);
+                      }}
+                      className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold whitespace-nowrap"
+                      title="Tạo bộ sách mới"
+                    >
+                      ➕ Mới
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Chọn bộ sách có sẵn hoặc tạo bộ sách mới
+                  </p>
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -498,6 +671,97 @@ function ContentManagementPage() {
                 <button
                   type="button"
                   onClick={() => setShowChapterForm(false)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-semibold text-sm sm:text-base"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ NEW: Series Form Modal */}
+      {showSeriesForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">
+              {editingSeries ? '✏️ Sửa Bộ sách' : '➕ Thêm Bộ sách mới'}
+            </h2>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (!seriesForm.name) {
+                alert('⚠️ Vui lòng điền tên bộ sách!');
+                return;
+              }
+
+              let updatedSeries;
+              if (editingSeries) {
+                // Update existing series
+                const oldName = editingSeries.name;
+                updatedSeries = series.map(s => 
+                  s.id === editingSeries.id ? { ...seriesForm } : s
+                );
+                // Update books: change category name if series name changed
+                if (oldName !== seriesForm.name) {
+                  const updatedBooks = books.map(b => 
+                    b.category === oldName ? { ...b, category: seriesForm.name } : b
+                  );
+                  saveBooks(updatedBooks);
+                }
+              } else {
+                // Add new series
+                if (series.find(s => s.name === seriesForm.name)) {
+                  alert('⚠️ Tên bộ sách đã tồn tại!');
+                  return;
+                }
+                const newId = `series-${Date.now()}`;
+                updatedSeries = [...series, { ...seriesForm, id: newId }];
+              }
+              
+              saveSeries(updatedSeries);
+              setShowSeriesForm(false);
+              alert('✅ Đã lưu bộ sách!');
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tên bộ sách * (ví dụ: 新完全マスター)
+                </label>
+                <input
+                  type="text"
+                  value={seriesForm.name}
+                  onChange={(e) => setSeriesForm({ ...seriesForm, name: e.target.value })}
+                  required
+                  disabled={!!editingSeries}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 text-sm sm:text-base"
+                  placeholder="新完全マスター"
+                />
+                <p className="text-xs text-gray-500 mt-1">Tên bộ sách (không thể thay đổi sau khi tạo)</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mô tả
+                </label>
+                <textarea
+                  value={seriesForm.description}
+                  onChange={(e) => setSeriesForm({ ...seriesForm, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                  placeholder="Mô tả về bộ sách này..."
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm sm:text-base"
+                >
+                  💾 {editingSeries ? 'Lưu thay đổi' : 'Thêm Bộ sách'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSeriesForm(false)}
                   className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-semibold text-sm sm:text-base"
                 >
                   Hủy
