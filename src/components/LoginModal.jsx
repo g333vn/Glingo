@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // Import icons từ các bộ khác nhau để có logo đẹp hơn
 import { FaApple } from 'react-icons/fa'; 
 import { FcGoogle } from "react-icons/fc"; // Google icon từ Flat Color Icons
 import { SiFacebook, SiLine } from "react-icons/si"; // Facebook & LINE icons từ Simple Icons
 
 function LoginModal({ onClose }) { 
-  const [isRegisterView, setIsRegisterView] = useState(true); 
+  const [isRegisterView, setIsRegisterView] = useState(true);
+  
+  // ✅ Lock body scroll when modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow || '';
+    };
+  }, []); 
 
   const handleBackdropClick = (event) => {
     if (event.target.id === 'modal-backdrop') {
