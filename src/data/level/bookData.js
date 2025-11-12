@@ -3,14 +3,18 @@
 // Giữ nguyên export để tương thích với code cũ
 
 import { n1Books } from './n1/books.js';
+import { n2Books } from './n2/books.js';
+import { n3Books } from './n3/books.js';
+import { n4Books } from './n4/books.js';
+import { n5Books } from './n5/books.js';
 
-// Export tất cả books (hiện tại chỉ có N1, sẽ thêm N2-N5 sau)
+// Export tất cả books từ tất cả levels
 export const bookData = {
   ...n1Books,
-  // Thêm các level khác sau:
-  // ...n2Books,
-  // ...n3Books,
-  // ...
+  ...n2Books,
+  ...n3Books,
+  ...n4Books,
+  ...n5Books,
   
   // Default fallback
   'default': {
