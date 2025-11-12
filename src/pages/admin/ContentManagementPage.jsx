@@ -80,10 +80,14 @@ function ContentManagementPage() {
     }));
   };
   
-  // ✅ UPDATED: Save series (async)
+  // ✅ UPDATED: Save series (async) - Sắp xếp theo tên
   const saveSeries = async (updatedSeries) => {
-    setSeries(updatedSeries);
-    await storageManager.saveSeries(selectedLevel, updatedSeries);
+    // ✅ Sắp xếp series theo tên
+    const sortedSeries = [...updatedSeries].sort((a, b) => {
+      return (a.name || '').localeCompare(b.name || '');
+    });
+    setSeries(sortedSeries);
+    await storageManager.saveSeries(selectedLevel, sortedSeries);
   };
 
   const loadBooks = async () => {
@@ -165,14 +169,26 @@ function ContentManagementPage() {
     }
   }, [selectedLevel, chaptersData]);
 
-  // Memoize books với chapters data để tránh re-compute mỗi lần render
+  // Memoize books với chapters data và sắp xếp theo category
   const booksWithChapters = useMemo(() => {
-    return books.map(book => {
+    const booksWithData = books.map(book => {
       const bookData = getBookData(book.id);
       return {
         ...book,
         chapters: bookData?.contents || []
       };
+    });
+    
+    // ✅ Sắp xếp theo category (series), sau đó theo title
+    return booksWithData.sort((a, b) => {
+      // Sắp xếp theo category trước
+      const categoryA = a.category || '';
+      const categoryB = b.category || '';
+      if (categoryA !== categoryB) {
+        return categoryA.localeCompare(categoryB);
+      }
+      // Nếu cùng category, sắp xếp theo title
+      return (a.title || '').localeCompare(b.title || '');
     });
   }, [books, getBookData]);
 
@@ -1090,7 +1106,7 @@ function ContentManagementPage() {
                   />
                 </div>
                 
-                {/* ✅ NEW: Preview existing books - Show ALL books with scroll */}
+                {/* ✅ NEW: Preview existing books - Show ALL books grouped by category */}
                 <div className="sm:col-span-2">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                     <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
@@ -1098,21 +1114,42 @@ function ContentManagementPage() {
                       <span>Tất cả sách trong Level {selectedLevel.toUpperCase()} ({books.length})</span>
                     </h4>
                     {books.length > 0 ? (
-                      <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
-                        {books.map((book) => (
-                          <div 
-                            key={book.id}
-                            className={`text-xs px-2 py-1 rounded ${
-                              book.id === bookForm.id && !editingBook
-                                ? 'bg-red-100 text-red-800 border border-red-300'
-                                : 'bg-white text-gray-700 border border-gray-200'
-                            }`}
-                          >
-                            <span className="font-mono font-semibold">{book.id}</span>
-                            {book.title && <span className="ml-2">- {book.title}</span>}
-                            {book.category && <span className="ml-2 text-blue-600">({book.category})</span>}
-                          </div>
-                        ))}
+                      <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                        {(() => {
+                          // ✅ Nhóm books theo category
+                          const groupedBooks = books.reduce((acc, book) => {
+                            const category = book.category || 'Không có category';
+                            if (!acc[category]) {
+                              acc[category] = [];
+                            }
+                            acc[category].push(book);
+                            return acc;
+                          }, {});
+                          
+                          // Sắp xếp categories
+                          const sortedCategories = Object.keys(groupedBooks).sort();
+                          
+                          return sortedCategories.map((category) => (
+                            <div key={category} className="space-y-1">
+                              <div className="text-xs font-bold text-blue-900 bg-blue-100 px-2 py-1 rounded">
+                                📦 {category}
+                              </div>
+                              {groupedBooks[category].map((book) => (
+                                <div 
+                                  key={book.id}
+                                  className={`text-xs px-2 py-1 rounded ml-2 ${
+                                    book.id === bookForm.id && !editingBook
+                                      ? 'bg-red-100 text-red-800 border border-red-300'
+                                      : 'bg-white text-gray-700 border border-gray-200'
+                                  }`}
+                                >
+                                  <span className="font-mono font-semibold">{book.id}</span>
+                                  {book.title && <span className="ml-2">- {book.title}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          ));
+                        })()}
                       </div>
                     ) : (
                       <p className="text-xs text-gray-600 italic">Chưa có sách nào</p>
