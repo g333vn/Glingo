@@ -305,19 +305,32 @@ function ContentManagementPage() {
 
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full min-w-[600px] table-fixed">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">ID</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">Ảnh bìa</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên sách</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[150px]">Category</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">Chapters</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[200px]">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {booksWithChapters.map((book) => (
+              {booksWithChapters.length === 0 ? (
+                <div className="text-center py-12 px-4">
+                  <div className="text-5xl mb-4">📚</div>
+                  <p className="text-base font-medium text-gray-700 mb-2">Chưa có sách nào</p>
+                  <p className="text-sm text-gray-500 mb-4">Nhấn "Thêm Sách mới" để bắt đầu</p>
+                  <button
+                    onClick={handleAddBook}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                  >
+                    ➕ Thêm Sách mới
+                  </button>
+                </div>
+              ) : (
+                <table className="w-full min-w-[600px] table-fixed">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">ID</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">Ảnh bìa</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên sách</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[150px]">Category</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">Chapters</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[200px]">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {booksWithChapters.map((book) => (
                     <tr key={book.id} className="hover:bg-gray-50 transition-colors duration-150">
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{book.id}</td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
@@ -368,9 +381,10 @@ function ContentManagementPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
 
             {/* Mobile Card View */}
@@ -478,18 +492,35 @@ function ContentManagementPage() {
 
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full min-w-[500px] table-fixed">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">ID</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên bộ sách</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mô tả</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">Số sách</th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[200px]">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {series.map((s) => {
+              {series.length === 0 ? (
+                <div className="text-center py-12 px-4">
+                  <div className="text-5xl mb-4">📚</div>
+                  <p className="text-base font-medium text-gray-700 mb-2">Chưa có bộ sách nào</p>
+                  <p className="text-sm text-gray-500 mb-4">Nhấn "Thêm Bộ sách mới" để bắt đầu</p>
+                  <button
+                    onClick={() => {
+                      setSeriesForm({ id: '', name: '', description: '' });
+                      setEditingSeries(null);
+                      setShowSeriesForm(true);
+                    }}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                  >
+                    ➕ Thêm Bộ sách mới
+                  </button>
+                </div>
+              ) : (
+                <table className="w-full min-w-[500px] table-fixed">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">ID</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên bộ sách</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mô tả</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">Số sách</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[200px]">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {series.map((s) => {
                     const booksInSeries = books.filter(b => b.category === s.name);
                     return (
                       <tr key={s.id} className="hover:bg-gray-50 transition-colors duration-150">
@@ -506,7 +537,7 @@ function ContentManagementPage() {
                           </span>
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
                             <button
                               onClick={() => {
                                 setEditingSeries(s);
@@ -517,7 +548,7 @@ function ContentManagementPage() {
                                 });
                                 setShowSeriesForm(true);
                               }}
-                              className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-150 text-xs font-medium"
+                              className="px-2 sm:px-3 py-1.5 sm:py-1 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
                               title="Sửa"
                             >
                               ✏️ Sửa
@@ -535,7 +566,7 @@ function ContentManagementPage() {
                                   alert('✅ Đã xóa bộ sách!');
                                 }
                               }}
-                              className="w-full sm:w-auto px-2 sm:px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors duration-150 text-xs font-medium"
+                              className="px-2 sm:px-3 py-1.5 sm:py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
                               title="Xóa"
                             >
                               🗑️ Xóa
@@ -544,9 +575,10 @@ function ContentManagementPage() {
                         </td>
                       </tr>
                     );
-                  })}
-                </tbody>
-              </table>
+                    })}
+                  </tbody>
+                </table>
+              )}
             </div>
 
             {/* Mobile Card View */}
