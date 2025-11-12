@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider, useParams } from 'react-router-dom
 import App from './App.jsx';
 import HomePage from './pages/HomePage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
+import QuizEditorPage from './pages/QuizEditorPage.jsx';
 import LevelPage from './features/books/pages/LevelPage.jsx';
 import LevelN1Page from './features/books/pages/LevelN1Page.jsx';
 
@@ -141,6 +142,11 @@ const router = createBrowserRouter([
       {
         path: 'about',
         element: <AboutPage />
+      },
+      // ✅ NEW: Quiz Editor Tool
+      {
+        path: 'admin/quiz-editor',
+        element: <QuizEditorPage />
       },
       { 
         path: '*', 
