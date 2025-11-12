@@ -904,7 +904,7 @@ function ContentManagementPage() {
             }
           }}
         >
-          <div className="bg-white rounded-xl shadow-2xl p-3 sm:p-4 md:p-6 max-w-2xl w-full max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto modal-content-enter">
+          <div className="bg-white rounded-xl shadow-2xl p-3 sm:p-4 md:p-6 max-w-2xl w-full mx-auto max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto modal-content-enter">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
               {editingBook ? '✏️ Sửa Sách' : '➕ Thêm Sách mới'}
             </h2>
@@ -1033,7 +1033,7 @@ function ContentManagementPage() {
             }
           }}
         >
-          <div className="bg-white rounded-xl shadow-2xl p-3 sm:p-4 md:p-6 max-w-md w-full max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto modal-content-enter">
+          <div className="bg-white rounded-xl shadow-2xl p-3 sm:p-4 md:p-6 max-w-md w-full mx-auto max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto modal-content-enter">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2">
               {editingChapter ? '✏️ Sửa Chương' : '➕ Thêm Chương mới'}
             </h2>
@@ -1113,7 +1113,7 @@ function ContentManagementPage() {
             }
           }}
         >
-          <div className="bg-white rounded-xl shadow-2xl p-3 sm:p-4 md:p-6 max-w-md w-full max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto modal-content-enter">
+          <div className="bg-white rounded-xl shadow-2xl p-3 sm:p-4 md:p-6 max-w-md w-full mx-auto max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto modal-content-enter">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
               {editingSeries ? '✏️ Sửa Bộ sách' : '➕ Thêm Bộ sách mới'}
             </h2>

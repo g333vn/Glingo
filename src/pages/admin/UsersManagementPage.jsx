@@ -400,7 +400,7 @@ function UsersManagementPage() {
             }
           }}
         >
-          <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-6 max-w-md w-full max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto modal-content-enter">
+          <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-6 max-w-md w-full mx-auto max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto modal-content-enter">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               🔑 Thay đổi mật khẩu
             </h2>
