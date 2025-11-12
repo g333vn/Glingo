@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 // Import icons từ các bộ khác nhau để có logo đẹp hơn
 import { FaApple } from 'react-icons/fa'; 
 import { FcGoogle } from "react-icons/fc"; // Google icon từ Flat Color Icons
@@ -16,20 +17,12 @@ function LoginModal({ onClose }) {
     };
   }, []); 
 
-  const handleBackdropClick = (event) => {
-    if (event.target.id === 'modal-backdrop') {
-      onClose(); 
-    }
-  };
-
   const toggleView = () => {
     setIsRegisterView(!isRegisterView);
   };
 
-  return (
+  return ReactDOM.createPortal(
     <div 
-      id="modal-backdrop"
-      onClick={handleBackdropClick}
       className="modal-overlay-enter"
       style={{
         position: 'fixed',
@@ -43,6 +36,12 @@ function LoginModal({ onClose }) {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
+        overflowY: 'auto',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
       }}
     >
       {/* --- Hộp thoại Modal --- */}
@@ -56,6 +55,7 @@ function LoginModal({ onClose }) {
           width: '100%',
           maxWidth: '24rem',
           position: 'relative',
+          margin: '2rem auto',
         }}
       > {/* Giảm max-w một chút */}
         
