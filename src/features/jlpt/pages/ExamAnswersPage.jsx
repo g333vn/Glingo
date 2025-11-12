@@ -393,14 +393,14 @@ function ExamAnswersPage() {
           <Sidebar />
           
           <div className="flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col w-full">
-            <div className="p-6 border-b border-gray-300">
+            <div className="p-4 sm:p-5 md:p-6 border-b border-gray-300">
               <Breadcrumbs paths={breadcrumbPaths} />
-              <h1 className="text-3xl font-bold text-gray-800 mt-4">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-3 sm:mt-4">
                 {currentExam.title} - 解答・解説
               </h1>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6">
               <div className="max-w-4xl mx-auto">
                 <ScoreSummary
                   knowledgeScore={knowledgeScore}
@@ -416,10 +416,10 @@ function ExamAnswersPage() {
                   listeningAnswers={listeningAnswers}
                 />
 
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                    <span className="bg-blue-500 text-white px-3 py-1 rounded">Part 1</span>
-                    言語知識・読解
+                <div className="mb-6 sm:mb-8">
+                  <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
+                    <span className="bg-blue-500 text-white px-2 sm:px-3 py-1 rounded text-sm sm:text-base">Part 1</span>
+                    <span className="text-base sm:text-lg md:text-xl">言語知識・読解</span>
                   </h2>
                   {knowledgeQuestions.map((q, idx) => (
                     <AnswerCard
@@ -432,10 +432,10 @@ function ExamAnswersPage() {
                   ))}
                 </div>
 
-                <div className="mb-8">
-                  <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                    <span className="bg-purple-500 text-white px-3 py-1 rounded">Part 2</span>
-                    聴解
+                <div className="mb-6 sm:mb-8">
+                  <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
+                    <span className="bg-purple-500 text-white px-2 sm:px-3 py-1 rounded text-sm sm:text-base">Part 2</span>
+                    <span className="text-base sm:text-lg md:text-xl">聴解</span>
                   </h2>
                   {listeningQuestions.map((q, idx) => {
                     const questionKey = `${q.sectionId}-${q.number}`;
@@ -451,22 +451,22 @@ function ExamAnswersPage() {
                   })}
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-4 mt-8">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 sm:mt-8">
                   <button
                     onClick={() => navigate(`/jlpt/${levelId}/${examId}/result`)}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold px-6 py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
                   >
                     ← 結果画面に戻る
                   </button>
                   <button
                     onClick={() => setShowConfirmModal(true)}
-                    className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold px-6 py-3 rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
                   >
                     🔄 もう一度受験する
                   </button>
                   <button
                     onClick={() => handleNavigateWithConfirm(`/jlpt/${levelId}`)}
-                    className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold px-6 py-3 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
                   >
                     📋 試験一覧へ
                   </button>

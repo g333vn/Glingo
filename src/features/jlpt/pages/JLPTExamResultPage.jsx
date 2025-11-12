@@ -291,7 +291,7 @@ function JLPTExamResultPage() {
             <div className="pt-4 px-4 md:px-6 pb-2">
               <Breadcrumbs paths={breadcrumbPaths} />
             </div>
-            <div className="flex-1 px-4 md:px-6 py-4 flex flex-col items-center justify-center overflow-y-auto">
+            <div className="flex-1 px-2 sm:px-4 md:px-6 py-3 sm:py-4 flex flex-col items-center justify-center overflow-y-auto">
               {/* ✨ Animated Title */}
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 sm:mb-6 md:mb-8 lg:mb-12 text-center animate-slideUp px-4">
                 {currentExam.title} - 結果
@@ -348,14 +348,14 @@ function JLPTExamResultPage() {
 
                   {/* 聴解 */}
                   <div 
-                    className="rounded-xl shadow-md w-full h-24 flex flex-row items-center justify-between px-6 glass-effect hover-lift gradient-border animate-slideUp"
+                    className="rounded-xl shadow-md w-full h-20 sm:h-24 flex flex-row items-center justify-between px-4 sm:px-6 glass-effect hover-lift gradient-border animate-slideUp"
                     style={{ animationDelay: '0.4s', animationFillMode: 'both' }}
                   >
                     <div className="flex flex-col items-start">
-                      <span className="text-base font-semibold text-gray-700">聴解</span>
+                      <span className="text-sm sm:text-base font-semibold text-gray-700">聴解</span>
                       <span className="text-xs text-gray-500">({breakdown.listeningCorrect}/{breakdown.listeningTotal})</span>
                     </div>
-                    <span className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                    <span className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                       <AnimatedNumber value={scores.listening} duration={1500} />点
                     </span>
                   </div>
@@ -363,26 +363,26 @@ function JLPTExamResultPage() {
               </div>
 
               {/* ✨ Animated Action Buttons - ✅ FIXED */}
-              <div className="flex flex-col gap-3 md:gap-4 w-full max-w-2xl animate-slideUp" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
+              <div className="flex flex-col gap-3 md:gap-4 w-full max-w-2xl animate-slideUp px-4" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
                 {/* View Answers Button */}
                 <button
                   onClick={handleViewAnswers}
-                  className="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold px-6 md:px-8 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-2xl text-base w-full transform hover:scale-105 btn-glow"
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-2xl text-sm sm:text-base w-full transform hover:scale-105 btn-glow"
                 >
                   📝 解答・解説を見る
                 </button>
                 
                 {/* Retry & Exit Buttons */}
-                <div className="flex gap-4 justify-center w-full">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center w-full">
                   <button
                     onClick={() => setShowConfirmModal(true)}
-                    className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold px-6 py-3 rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 text-base flex-1 transform hover:scale-105 btn-glow"
+                    className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 text-sm sm:text-base flex-1 transform hover:scale-105 btn-glow"
                   >
                     🔄 もう一度受験する
                   </button>
                   <button
                     onClick={() => handleNavigateWithConfirm(`/jlpt/${levelId}`)}
-                    className="bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold px-6 py-3 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 text-base flex-1 transform hover:scale-105 btn-glow"
+                    className="bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 text-sm sm:text-base flex-1 transform hover:scale-105 btn-glow"
                   >
                     📋 試験一覧へ
                   </button>
