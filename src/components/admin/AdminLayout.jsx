@@ -54,34 +54,35 @@ function AdminLayout() {
     return location.pathname.startsWith(path);
   };
 
-  // Mobile sidebar state
+  // Mobile/Tablet sidebar state - Menu ẩn/hiện
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Mobile Menu Button */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+      {/* Mobile/Tablet Menu Button */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100 transition-colors"
+        className="xl:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg hover:bg-gray-100 transition-colors"
         aria-label="Toggle menu"
       >
         {isMobileMenuOpen ? '✕' : '☰'}
       </button>
 
-      {/* Mobile Overlay */}
+      {/* Mobile/Tablet Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          className="xl:hidden fixed inset-0 bg-black/50 z-30"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full bg-white shadow-2xl transition-all duration-300 z-40 ${
+      {/* Sidebar - Desktop: Fixed, Mobile/Tablet: Overlay */}
+      <div className={`fixed left-0 top-0 h-screen bg-white shadow-2xl transition-all duration-300 z-40 ${
         isSidebarOpen ? 'w-64' : 'w-20'
       } ${
-        // Mobile: Sidebar là overlay, ẩn khi đóng
-        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        // Mobile/Tablet: Sidebar là overlay, ẩn khi đóng
+        // Desktop (xl): Sidebar luôn hiện, có thể thu gọn
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'
       }`}>
         {/* Sidebar Header */}
         <div className="h-20 flex items-center justify-between px-4 border-b border-gray-200">
@@ -91,12 +92,21 @@ function AdminLayout() {
               <p className="text-xs text-gray-500">Quản trị hệ thống</p>
             </div>
           )}
+          {/* Desktop only: Toggle sidebar collapse */}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="hidden xl:block p-2 hover:bg-gray-100 rounded-lg transition-colors"
             title={isSidebarOpen ? 'Thu gọn' : 'Mở rộng'}
           >
             {isSidebarOpen ? '◀' : '▶'}
+          </button>
+          {/* Mobile/Tablet: Close button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="xl:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Đóng menu"
+          >
+            ✕
           </button>
         </div>
 
@@ -189,14 +199,14 @@ function AdminLayout() {
       </div>
 
       {/* Main Content */}
-      <div className={`transition-all duration-300 ${
-        // Desktop: margin khi sidebar mở
-        isSidebarOpen ? 'lg:ml-64' : 'lg:ml-20'
+      <div className={`flex-1 transition-all duration-300 ${
+        // Desktop (xl): margin khi sidebar mở
+        isSidebarOpen ? 'xl:ml-64' : 'xl:ml-20'
       } ${
-        // Mobile: không margin
+        // Mobile/Tablet: không margin (sidebar là overlay)
         'ml-0'
       }`}>
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 min-h-full">
           <Outlet />
         </div>
       </div>
