@@ -403,7 +403,7 @@ function ExamKnowledgePage() {
               }
             }}
           >
-            <div className="bg-white rounded-lg p-8 max-w-md">
+            <div className="bg-white rounded-lg p-8 max-w-md max-h-[calc(100vh-2rem)] overflow-y-auto">
               <h2 className="text-xl font-bold mb-4">確認</h2>
               <p className="mb-6">本当に提出しますか？提出後は変更できません。</p>
               <div className="flex justify-end gap-4">
@@ -431,4 +431,16 @@ function ExamKnowledgePage() {
   );
 }
 
-export default ExamKnowledgePage;
+function ExamKnowledgePage() {
+  const { levelId, examId } = useParams();
+  const navigate = useNavigate();
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  
+  // ✅ Lock body scroll when modal is open
+  useBodyScrollLock(showSubmitModal);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  
+  // ✅ Lock body scroll when modal is open
+  useBodyScrollLock(showSubmitModal);
+  
+  // ... rest of component

@@ -5,6 +5,19 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { users as initialUsers, roles } from '../../data/users.js';
 
+// ✅ Helper: Lock/unlock body scroll
+const useBodyScrollLock = (isLocked) => {
+  useEffect(() => {
+    if (isLocked) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow || '';
+      };
+    }
+  }, [isLocked]);
+};
+
 function UsersManagementPage() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState(initialUsers);
@@ -171,6 +184,9 @@ function UsersManagementPage() {
     setFormData({ username: '', password: '', name: '', email: '', role: 'user' });
     setShowAddForm(false);
   };
+
+  // ✅ Lock body scroll when modal is open
+  useBodyScrollLock(showChangePasswordModal);
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4">
@@ -384,7 +400,7 @@ function UsersManagementPage() {
             }
           }}
         >
-          <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-6 max-w-md w-full max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               🔑 Thay đổi mật khẩu
             </h2>
