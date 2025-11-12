@@ -281,6 +281,17 @@ function Header({ onUserIconClick }) {
             {/* User Info / Login */}
             {user ? (
               <div className="flex items-center gap-3">
+                {/* Admin Panel Button (chỉ hiển thị cho admin) */}
+                {isAdmin() && (
+                  <button
+                    onClick={() => navigate('/admin')}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-all font-semibold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                    title="Admin Dashboard"
+                  >
+                    <span>⚙️</span>
+                    <span>Admin Panel</span>
+                  </button>
+                )}
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-400/10 rounded-lg border border-yellow-400/30">
                   <span className="text-yellow-400 text-sm font-medium">
                     👤 {user.name || user.username}
@@ -401,6 +412,21 @@ function Header({ onUserIconClick }) {
             <div className="border-t border-gray-600/50 pt-2">
               {user ? (
                 <>
+                  {/* Admin Panel Button (Mobile) */}
+                  {isAdmin() && (
+                    <button
+                      onClick={() => {
+                        navigate('/admin');
+                        handleMobileLinkClick();
+                      }}
+                      className="w-full text-left px-4 py-3 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 hover:bg-purple-500/30 transition-colors mb-2 border border-purple-400/30"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>⚙️</span>
+                        <span className="font-semibold">Admin Panel</span>
+                      </span>
+                    </button>
+                  )}
                   <div className="px-4 py-3 bg-yellow-400/10 rounded-lg mb-2 border border-yellow-400/30">
                     <p className="text-yellow-400 text-sm font-medium">
                       👤 {user.name || user.username}
