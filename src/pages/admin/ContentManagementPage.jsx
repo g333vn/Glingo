@@ -329,7 +329,7 @@ function ContentManagementPage() {
             </div>
 
             {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden md:block">
               {booksWithChapters.length === 0 ? (
                 <div className="text-center py-12 px-4">
                   <div className="text-5xl mb-4">📚</div>
@@ -343,70 +343,72 @@ function ContentManagementPage() {
                   </button>
                 </div>
               ) : (
-                <table className="w-full min-w-[600px] table-fixed">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">ID</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">Ảnh bìa</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên sách</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[150px]">Category</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[120px]">Chapters</th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[200px]">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {booksWithChapters.map((book) => (
-                    <tr key={book.id} className="hover:bg-gray-50 transition-colors duration-150">
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{book.id}</td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                        <img
-                          src={book.imageUrl}
-                          alt={book.title}
-                          className="w-12 h-16 object-cover rounded"
-                          loading="lazy"
-                          onError={(e) => {
-                            e.target.src = '/book_card/placeholder.jpg';
-                          }}
-                        />
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900 max-w-xs">
-                        <div className="truncate">{book.title}</div>
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {book.category || '-'}
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                          {book.chapters.length} chương
-                        </span>
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          <button
-                            onClick={() => handleAddChapter(book.id)}
-                            className="px-2 sm:px-3 py-1.5 sm:py-1 bg-green-500 text-white rounded hover:bg-green-600 active:bg-green-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
-                            title="Thêm chương"
-                          >
-                            ➕ Chương
-                          </button>
-                          <button
-                            onClick={() => handleEditBook(book)}
-                            className="px-2 sm:px-3 py-1.5 sm:py-1 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
-                            title="Sửa"
-                          >
-                            ✏️ Sửa
-                          </button>
-                          <button
-                            onClick={() => handleDeleteBook(book.id)}
-                            className="px-2 sm:px-3 py-1.5 sm:py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
-                            title="Xóa"
-                          >
-                            🗑️ Xóa
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    ))}
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full table-auto">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">ID</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Ảnh bìa</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[200px]">Tên sách</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap min-w-[150px]">Category</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Chapters</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 bg-white">
+                        {paginatedBooks.map((book) => (
+                          <tr key={book.id} className="hover:bg-gray-50 transition-colors duration-150">
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{book.id}</td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <img
+                                src={book.imageUrl}
+                                alt={book.title}
+                                className="w-12 h-16 object-cover rounded"
+                                loading="lazy"
+                                onError={(e) => {
+                                  e.target.src = '/book_card/placeholder.jpg';
+                                }}
+                              />
+                            </td>
+                            <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                              <div className="truncate max-w-xs">{book.title}</div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {book.category || '-'}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                                {book.chapters.length} chương
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm">
+                              <div className="flex items-center gap-1.5 sm:gap-2">
+                                <button
+                                  onClick={() => handleAddChapter(book.id)}
+                                  className="px-2 sm:px-3 py-1.5 sm:py-1 bg-green-500 text-white rounded hover:bg-green-600 active:bg-green-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
+                                  title="Thêm chương"
+                                >
+                                  ➕ Chương
+                                </button>
+                                <button
+                                  onClick={() => handleEditBook(book)}
+                                  className="px-2 sm:px-3 py-1.5 sm:py-1 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
+                                  title="Sửa"
+                                >
+                                  ✏️ Sửa
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteBook(book.id)}
+                                  className="px-2 sm:px-3 py-1.5 sm:py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 transition-colors duration-150 text-xs font-medium min-h-[36px] sm:min-h-0 flex items-center justify-center"
+                                  title="Xóa"
+                                >
+                                  🗑️ Xóa
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
@@ -470,13 +472,13 @@ function ContentManagementPage() {
             <div className="md:hidden">
               {booksWithChapters.length === 0 ? (
                 <div className="text-center py-8 px-4">
-                <div className="text-center py-8 px-4">
                   <div className="text-4xl mb-3">📚</div>
                   <p className="text-sm font-medium text-gray-700 mb-1">Chưa có sách nào</p>
                   <p className="text-xs text-gray-500">Nhấn "Thêm Sách mới" để bắt đầu</p>
                 </div>
               ) : (
-                booksWithChapters.map((book) => (
+                <div className="space-y-3 p-3">
+                  {paginatedBooks.map((book) => (
                   <div key={book.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                     <div className="flex gap-3 mb-3">
                       <img
@@ -744,13 +746,13 @@ function ContentManagementPage() {
             <div className="md:hidden">
               {series.length === 0 ? (
                 <div className="text-center py-8 px-4">
-                <div className="text-center py-8 px-4">
                   <div className="text-4xl mb-3">📚</div>
                   <p className="text-sm font-medium text-gray-700 mb-1">Chưa có bộ sách nào</p>
                   <p className="text-xs text-gray-500">Nhấn "Thêm Bộ sách mới" để bắt đầu</p>
                 </div>
               ) : (
-                series.map((s) => {
+                <div className="space-y-3 p-3">
+                  {paginatedSeries.map((s) => {
                   const booksInSeries = books.filter(b => b.category === s.name);
                   return (
                     <div key={s.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
