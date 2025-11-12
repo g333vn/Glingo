@@ -182,7 +182,7 @@ function HomePage() {
                 </div>
               </div>
 
-              <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 transition-all duration-1000 delay-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+              <div className={`grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 transition-all duration-1000 delay-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                 <div className="group bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-yellow-300">
                   <div className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">📝</div>
                   <h3 className="font-bold text-gray-900 mb-1 text-lg">JLPT Tests</h3>
@@ -195,22 +195,16 @@ function HomePage() {
                   <p className="text-sm text-gray-700 font-medium">Đa dạng</p>
                 </div>
 
-
                 <div className="group bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-blue-300">
                   <div className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">🔍</div>
                   <h3 className="font-bold text-gray-900 mb-1 text-lg">Tra từ nhanh</h3>
                   <p className="text-sm text-gray-700 font-medium">Nhật-Việt-Anh</p>
                 </div>
+
                 <div className="group bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-green-300">
                   <div className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">🌙</div>
                   <h3 className="font-bold text-gray-900 mb-1 text-lg">24/7 Access</h3>
                   <p className="text-sm text-gray-700 font-medium">Mọi lúc</p>
-                </div>
-
-                <div className="group bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-pink-300">
-                  <div className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">💚</div>
-                  <h3 className="font-bold text-gray-900 mb-1 text-lg">100% Free</h3>
-                  <p className="text-sm text-gray-700 font-medium">Miễn phí</p>
                 </div>
               </div>
             </div>
