@@ -716,6 +716,10 @@ class LocalStorageManager {
 
 // Export singleton instance
 const storageManager = new LocalStorageManager();
+
+// Export helper to check if IndexedDB is being used
+export const isUsingIndexedDB = () => storageManager.useIndexedDB;
+
 export default storageManager;
 
 // Export helper functions

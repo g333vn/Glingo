@@ -223,8 +223,8 @@ function QuizEditorPage() {
     const success = await storageManager.saveQuiz(selectedBook, selectedChapter, quizData);
     
     if (success) {
-      const storageType = storageManager.useIndexedDB ? 'IndexedDB (unlimited storage!)' : 'localStorage';
-      alert(`✅ Đã lưu quiz vào ${storageType}!\n\n` +
+      // Storage type is determined automatically (IndexedDB if available, localStorage otherwise)
+      alert(`✅ Đã lưu quiz!\n\n` +
             `📍 Location:\n` +
             `- Level: ${selectedLevel}\n` +
             `- Book: ${selectedBook}\n` +

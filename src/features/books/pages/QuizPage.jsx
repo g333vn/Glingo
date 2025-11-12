@@ -42,7 +42,7 @@ function QuizPage() {
         const savedQuiz = await storageManager.getQuiz(bookId, lessonId);
         if (savedQuiz) {
           setCurrentQuiz(savedQuiz);
-          console.log(`✅ Loaded quiz from ${storageManager.useIndexedDB ? 'IndexedDB' : 'localStorage'}: ${bookId}/${lessonId}`);
+          console.log(`✅ Loaded quiz from storage: ${bookId}/${lessonId}`);
           setIsLoading(false);
           return;
         }

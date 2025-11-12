@@ -54,7 +54,7 @@ function BookDetailPage() {
       if (savedChapters && savedChapters.length > 0) {
         // Use saved chapters (IndexedDB or localStorage)
         setBookContents(savedChapters);
-        console.log(`✅ Loaded ${savedChapters.length} chapters from ${storageManager.useIndexedDB ? 'IndexedDB' : 'localStorage'}`);
+        console.log(`✅ Loaded ${savedChapters.length} chapters from storage`);
       } else {
         // Fallback to static data
         const book = bookData[bookId] || bookData.default;

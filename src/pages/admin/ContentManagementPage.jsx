@@ -193,7 +193,7 @@ function ContentManagementPage() {
     setShowBookForm(true);
   };
 
-  const handleSaveBook = (e) => {
+  const handleSaveBook = async (e) => {
     e.preventDefault();
     if (!bookForm.id || !bookForm.title) {
       alert('⚠️ Vui lòng điền đầy đủ ID và Tên sách!');
@@ -215,9 +215,14 @@ function ContentManagementPage() {
       updatedBooks = [...books, { ...bookForm }];
     }
     
-    await saveBooks(updatedBooks);
-    setShowBookForm(false);
-    alert('✅ Đã lưu sách!');
+    try {
+      await saveBooks(updatedBooks);
+      setShowBookForm(false);
+      alert('✅ Đã lưu sách!');
+    } catch (error) {
+      console.error('Error saving book:', error);
+      alert('❌ Lỗi khi lưu sách!');
+    }
   };
 
   const handleDeleteBook = async (bookId) => {
@@ -292,7 +297,7 @@ function ContentManagementPage() {
       setEditingChapter(null);
       setChapterForm({ id: '', title: '' });
       
-      alert(`✅ Đã lưu chapter vào ${storageManager.useIndexedDB ? 'IndexedDB' : 'localStorage'}!\n\n` +
+      alert(`✅ Đã lưu chapter!\n\n` +
             `📍 Sách: ${selectedBook.title}\n` +
             `📝 Chapter: ${chapterForm.title}\n\n` +
             `💡 Chapter sẽ hiển thị ngay tại trang chi tiết sách!`);
