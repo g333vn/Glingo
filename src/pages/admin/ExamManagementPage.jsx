@@ -1264,26 +1264,56 @@ function ExamManagementPage() {
       {/* Question Form Modal */}
       <Modal
         isOpen={showQuestionForm}
-        onClose={() => setShowQuestionForm(false)}
+        onClose={() => {
+          // Clean up blob URL if exists
+          if (questionForm.audioUrl && questionForm.audioUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(questionForm.audioUrl);
+          }
+          setShowQuestionForm(false);
+        }}
         title={editingQuestion ? '✏️ Sửa Câu hỏi' : '➕ Thêm Câu hỏi mới'}
-        maxWidth="42rem"
+        maxWidth="48rem"
       >
         <form onSubmit={handleSaveQuestion} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              ID Câu hỏi * (ví dụ: 1, 2, 3)
-            </label>
-            <input
-              type="text"
-              value={questionForm.id}
-              onChange={(e) => setQuestionForm({ ...questionForm, id: e.target.value })}
-              required
-              disabled={!!editingQuestion}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-              placeholder="1"
-            />
-            <p className="text-xs text-gray-500 mt-1">ID dùng để định danh câu hỏi</p>
+          {/* Header Info */}
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+            <p className="text-xs text-blue-800 font-semibold">
+              📍 Loại bài thi: <span className="uppercase">{selectedTestType}</span>
+              {selectedSection && (
+                <> | Section: <span className="font-mono">{selectedSection.title} ({selectedSection.id})</span></>
+              )}
+            </p>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ID Câu hỏi * (ví dụ: 1, 2, 3)
+              </label>
+              <input
+                type="text"
+                value={questionForm.id}
+                onChange={(e) => setQuestionForm({ ...questionForm, id: e.target.value })}
+                required
+                disabled={!!editingQuestion}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                placeholder="1"
+              />
+              <p className="text-xs text-gray-500 mt-1">ID dùng để định danh câu hỏi</p>
+            </div>
+            {selectedTestType === 'listening' && questionForm.id && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Format cho Listening
+                </label>
+                <div className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-mono">
+                  Key: {selectedSection?.id || 'section'}-{String(questionForm.id).padStart(2, '0')}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Format này sẽ được dùng trong ExamListeningPage</p>
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Câu hỏi *
