@@ -64,8 +64,15 @@
 /* ============================================
    GLOBAL SETUP
    ============================================ */
-html, body, #root {
+html, body {
   height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  height: 100%;
+  position: relative;
 }
 
 /* iOS 100vh fix: use --app-vh set from JS */
