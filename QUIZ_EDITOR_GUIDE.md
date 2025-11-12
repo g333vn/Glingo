@@ -17,9 +17,16 @@ Tool nhập liệu quiz giúp bạn tạo quiz mới một cách dễ dàng, kh�
    - Điền tên bài học, ví dụ: "Bài 1: Phân biệt cấu trúc A và B"
    - Tên này sẽ hiển thị ở đầu trang quiz
 
-### Bước 2: Điền 10 câu hỏi
+### Bước 2: Thêm và điền câu hỏi
 
-Với mỗi câu hỏi, bạn cần điền:
+**Lưu ý:** Tool hỗ trợ **số câu hỏi linh hoạt** - không giới hạn! Bạn có thể có 10, 20, 30, 100... câu hỏi tùy ý.
+
+1. **Thêm câu hỏi:**
+   - Click nút **"➕ Thêm câu hỏi mới"** ở cuối form
+   - Có thể thêm bao nhiêu câu hỏi tùy ý
+   - Mỗi câu hỏi sẽ tự động được đánh số (1, 2, 3, ...)
+
+2. **Với mỗi câu hỏi, bạn cần điền:**
 
 1. **Câu hỏi (Question Text):**
    - Nhập câu hỏi tiếng Nhật hoặc tiếng Việt
@@ -36,6 +43,11 @@ Với mỗi câu hỏi, bạn cần điền:
 4. **Giải thích (Explanation):**
    - Giải thích tại sao đáp án đó đúng
    - Có thể viết bằng tiếng Nhật hoặc tiếng Việt
+
+5. **Quản lý câu hỏi:**
+   - **Xóa câu hỏi:** Click nút "🗑️ Xóa" (phải có ít nhất 1 câu hỏi)
+   - **Copy câu hỏi:** Click nút "📋 Copy" để duplicate câu hỏi (tiện khi có câu hỏi tương tự)
+   - Khi xóa, các câu hỏi sẽ tự động được đánh số lại
 
 ### Bước 3: Preview (Tùy chọn)
 
@@ -98,8 +110,9 @@ Với mỗi câu hỏi, bạn cần điền:
    - X phải là số (1, 2, 3, ...)
 
 2. **Số câu hỏi:**
-   - Mỗi quiz phải có đúng 10 câu hỏi
-   - Không được để trống câu hỏi nào
+   - **Không giới hạn số lượng** - có thể có 1, 10, 20, 30, 100... câu hỏi
+   - Phải có ít nhất 1 câu hỏi
+   - Không được để trống câu hỏi nào (phải điền đầy đủ thông tin)
 
 3. **Đáp án:**
    - Mỗi câu hỏi phải có đủ 4 đáp án (A, B, C, D)
@@ -161,7 +174,7 @@ Với mỗi câu hỏi, bạn cần điền:
 Trước khi export, đảm bảo:
 
 - [ ] Đã điền tên quiz
-- [ ] Đã điền đủ 10 câu hỏi
+- [ ] Đã thêm và điền đủ số câu hỏi cần thiết (10, 20, 30... tùy ý)
 - [ ] Mỗi câu hỏi có đủ 4 đáp án
 - [ ] Đã chọn đáp án đúng cho mỗi câu
 - [ ] Đã điền giải thích (khuyến khích)
