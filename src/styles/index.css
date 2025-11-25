@@ -4,11 +4,91 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ✅ FIX: Prevent horizontal overflow + Optimize performance */
+@layer base {
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    @apply overflow-x-hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    max-width: 100vw;
+    box-sizing: border-box;
+  }
+
+  #root {
+    @apply overflow-x-hidden;
+    max-width: 100vw;
+    box-sizing: border-box;
+  }
+
+  /* ✅ Performance: Optimize UI transitions (NOT animations) */
+  @media (max-width: 1024px) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    /* Speed up ONLY transitions (hover, click, etc) */
+    button:not([class*="animate"]),
+    a:not([class*="animate"]),
+    input,
+    select,
+    textarea,
+    div:not([class*="animate"]).transition-all {
+      transition-duration: 0.15s !important;
+    }
+  }
+
+  /* ✅ Performance: Optimize backdrop-filter */
+  @media (max-width: 768px) {
+
+    .backdrop-blur,
+    .backdrop-blur-sm,
+    .backdrop-blur-md,
+    .backdrop-blur-lg,
+    .backdrop-blur-xl {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+  }
+
+  /* ✅ Hardware acceleration for smooth scrolling */
+  @media (min-width: 1025px) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+}
+
+/* Toast Notification Animations */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
 /* ✅ Modal animations */
 @keyframes modalFadeIn {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -19,6 +99,7 @@
     opacity: 0;
     transform: translateY(20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -30,6 +111,7 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+
   to {
     opacity: 0;
     transform: translateY(20px) scale(0.95);
@@ -56,10 +138,265 @@
 /* ============================================
    GLOBAL SETUP
    ============================================ */
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
+}
+
+/* ============================================
+   HEADER FONT CONSISTENCY - Prevent font changes on language switch
+   ============================================ */
+header[lang="en"],
+header[lang="en"] *,
+header[lang="en"] button,
+header[lang="en"] nav,
+header[lang="en"] div {
+  font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+  font-feature-settings: normal !important;
+  font-variant: normal !important;
+  text-rendering: optimizeLegibility !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  letter-spacing: inherit !important;
+}
+
+/* ============================================
+   PERFECT FLAG WAVE ANIMATION - Realistic 3D Waving
+   ============================================ */
+@keyframes flag-perfect-wave {
+  0% {
+    transform: rotateY(0deg) rotateX(0deg) skewY(0deg);
+  }
+
+  15% {
+    transform: rotateY(-12deg) rotateX(2deg) skewY(2deg);
+  }
+
+  30% {
+    transform: rotateY(-18deg) rotateX(0deg) skewY(4deg);
+  }
+
+  45% {
+    transform: rotateY(-12deg) rotateX(-2deg) skewY(2deg);
+  }
+
+  60% {
+    transform: rotateY(-6deg) rotateX(0deg) skewY(-2deg);
+  }
+
+  75% {
+    transform: rotateY(-12deg) rotateX(1deg) skewY(0deg);
+  }
+
+  100% {
+    transform: rotateY(0deg) rotateX(0deg) skewY(0deg);
+  }
+}
+
+.animate-flag-perfect-wave {
+  animation: flag-perfect-wave 2.5s ease-in-out infinite;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+}
+
+/* Wave ripple effect */
+@keyframes wave-ripple {
+
+  0%,
+  100% {
+    transform: translateX(0%) scaleX(1) scaleY(1);
+    opacity: 0.15;
+  }
+
+  33% {
+    transform: translateX(3%) scaleX(1.04) scaleY(0.98);
+    opacity: 0.25;
+  }
+
+  66% {
+    transform: translateX(-2%) scaleX(0.98) scaleY(1.02);
+    opacity: 0.2;
+  }
+}
+
+.animate-wave-ripple {
+  animation: wave-ripple 2.5s ease-in-out infinite;
+}
+
+/* Fabric wave texture */
+@keyframes fabric-wave {
+
+  0%,
+  100% {
+    transform: translateY(0%) scale(1);
+    opacity: 0.1;
+  }
+
+  50% {
+    transform: translateY(-3%) scale(1.05);
+    opacity: 0.2;
+  }
+}
+
+.animate-fabric-wave {
+  animation: fabric-wave 2.5s ease-in-out infinite 0.5s;
+}
+
+/* Flag shine effect */
+@keyframes flag-shine {
+  0% {
+    transform: translateX(-100%) skewX(-25deg);
+  }
+
+  100% {
+    transform: translateX(400%) skewX(-25deg);
+  }
+}
+
+.animate-flag-shine {
+  animation: flag-shine 3.5s ease-in-out infinite;
+}
+
+/* Edge glow effect */
+@keyframes edge-glow {
+
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.animate-edge-glow {
+  animation: edge-glow 2.5s ease-in-out infinite;
+}
+
+/* Wind trail animations - 6 particles */
+@keyframes wind-trail-1 {
+  0% {
+    transform: translateX(0) translateY(0) scale(1);
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: translateX(40px) translateY(-8px) scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes wind-trail-2 {
+  0% {
+    transform: translateX(0) translateY(0) scale(1);
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: translateX(50px) translateY(-4px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes wind-trail-3 {
+  0% {
+    transform: translateX(0) translateY(0) scale(1);
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: translateX(60px) translateY(-2px) scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes wind-trail-4 {
+  0% {
+    transform: translateX(0) translateY(0) scale(1);
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: translateX(45px) translateY(6px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes wind-trail-5 {
+  0% {
+    transform: translateX(0) translateY(0) scale(1);
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 0.7;
+  }
+
+  100% {
+    transform: translateX(55px) translateY(3px) scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes wind-trail-6 {
+  0% {
+    transform: translateX(0) translateY(0) scale(1);
+    opacity: 0;
+  }
+
+  40% {
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: translateX(65px) translateY(8px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.animate-wind-trail-1 {
+  animation: wind-trail-1 1.4s ease-out infinite;
+}
+
+.animate-wind-trail-2 {
+  animation: wind-trail-2 1.4s ease-out infinite 0.1s;
+}
+
+.animate-wind-trail-3 {
+  animation: wind-trail-3 1.4s ease-out infinite 0.2s;
+}
+
+.animate-wind-trail-4 {
+  animation: wind-trail-4 1.4s ease-out infinite 0.15s;
+}
+
+.animate-wind-trail-5 {
+  animation: wind-trail-5 1.4s ease-out infinite 0.25s;
+}
+
+.animate-wind-trail-6 {
+  animation: wind-trail-6 1.4s ease-out infinite 0.35s;
 }
 
 #root {
@@ -73,9 +410,14 @@ html, body {
 }
 
 /* Ensure scroll quote hidden on small screens even if Tailwind classes fail */
-.quote-scroll { display: none; }
+.quote-scroll {
+  display: none;
+}
+
 @media (min-width: 1280px) {
-  .quote-scroll { display: block; }
+  .quote-scroll {
+    display: block;
+  }
 }
 
 /* ============================================
@@ -84,34 +426,44 @@ html, body {
 
 /* Float Animation - For logos and decorative elements */
 @keyframes float {
-  0%, 100% { 
-    transform: translateY(0px); 
+
+  0%,
+  100% {
+    transform: translateY(0px);
   }
-  50% { 
-    transform: translateY(-20px); 
+
+  50% {
+    transform: translateY(-20px);
   }
 }
 
 /* Gradient Animation - For animated text gradients */
 @keyframes gradient {
-  0%, 100% { 
-    background-position: 0% 50%; 
+
+  0%,
+  100% {
+    background-position: 0% 50%;
   }
-  50% { 
-    background-position: 100% 50%; 
+
+  50% {
+    background-position: 100% 50%;
   }
 }
 
 /* Blob Animation - For background decorative elements */
 @keyframes blob {
-  0%, 100% { 
-    transform: translate(0, 0) scale(1); 
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
   }
-  33% { 
-    transform: translate(30px, -50px) scale(1.1); 
+
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
   }
-  66% { 
-    transform: translate(-20px, 20px) scale(0.9); 
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
   }
 }
 
@@ -121,6 +473,7 @@ html, body {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -129,10 +482,13 @@ html, body {
 
 /* Pulse Glow - For emphasis elements */
 @keyframes pulseGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.7;
     transform: scale(1.05);
@@ -145,6 +501,7 @@ html, body {
     opacity: 0;
     transform: translateY(50px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -153,9 +510,12 @@ html, body {
 
 /* Bounce Subtle - Gentler bounce for icons */
 @keyframes bounceSubtle {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -166,6 +526,7 @@ html, body {
   0% {
     background-position: -1000px 0;
   }
+
   100% {
     background-position: 1000px 0;
   }
@@ -202,12 +563,10 @@ html, body {
 }
 
 .animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent 100%);
   background-size: 1000px 100%;
   animation: shimmer 2s infinite;
 }
@@ -305,28 +664,132 @@ html, body {
   scroll-snap-align: start;
 }
 
-/* Custom scrollbar styling */
+/* ============================================
+   NEO BRUTALISM CUSTOM SCROLLBAR
+   ============================================ */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 14px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #2D2D2D;
+  border-left: 3px solid black;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #fbbf24, #f97316);
-  border-radius: 5px;
+  background: #FFB800;
+  border: 3px solid black;
+  border-radius: 0;
+  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 1);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #f97316, #ef4444);
+  background: #FF5722;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
 }
 
-/* Focus visible for accessibility */
+::-webkit-scrollbar-thumb:active {
+  background: #FF1493;
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thick;
+  scrollbar-color: #FFB800 #2D2D2D;
+}
+
+/* Focus visible for accessibility - NEO BRUTALISM */
 *:focus-visible {
-  outline: 2px solid #fbbf24;
+  outline: 3px solid black;
   outline-offset: 2px;
+  box-shadow: 0 0 0 2px #FFB800;
+}
+
+/* ============================================
+   NEO BRUTALISM UTILITY CLASSES
+   ============================================ */
+
+/* Neo Brutalism Button Base */
+.btn-brutal {
+  border: 3px solid black;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+}
+
+.btn-brutal:hover {
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+  transform: translate(-2px, -2px);
+}
+
+.btn-brutal:active {
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  transform: translate(2px, 2px);
+}
+
+/* Neo Brutalism Card */
+.card-brutal {
+  border: 4px solid black;
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+  transition: all 0.2s ease;
+}
+
+.card-brutal:hover {
+  box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+  transform: translate(-2px, -2px);
+}
+
+/* Neo Brutalism Input */
+.input-brutal {
+  border: 3px solid black;
+  border-radius: 8px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.input-brutal:focus {
+  background-color: #FFB800;
+  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 1);
+  outline: none;
+}
+
+/* Neo Brutalism Badge */
+.badge-brutal {
+  border: 2px solid black;
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Neo Brutalism Typography */
+.text-brutal {
+  font-family: "'Space Grotesk', 'Inter', sans-serif";
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Neo Brutalism Colors */
+.bg-brutal-yellow {
+  background-color: #FFB800;
+}
+
+.bg-brutal-orange {
+  background-color: #FF5722;
+}
+
+.bg-brutal-pink {
+  background-color: #FF1493;
+}
+
+.bg-brutal-dark {
+  background-color: #2D2D2D;
 }
 
 /* ============================================
@@ -339,7 +802,7 @@ html, body {
     font-size: 2.5rem;
     line-height: 1.2;
   }
-  
+
   .section-title {
     font-size: 1.875rem;
     line-height: 1.3;
@@ -351,7 +814,7 @@ html, body {
     font-size: 4rem;
     line-height: 1.1;
   }
-  
+
   .section-title {
     font-size: 2.5rem;
     line-height: 1.2;
@@ -378,6 +841,7 @@ html, body {
     backdrop-filter: blur(8px);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
+
   to {
     background-color: rgba(35, 35, 35, 0.95);
     backdrop-filter: blur(16px);
@@ -390,6 +854,7 @@ html, body {
   from {
     transform: scale(1);
   }
+
   to {
     transform: scale(0.85);
   }
@@ -397,13 +862,16 @@ html, body {
 
 /* Glow Effect cho Active Link */
 @keyframes glowPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     text-shadow: 0 0 8px rgba(250, 204, 21, 0.5),
-                 0 0 16px rgba(250, 204, 21, 0.3);
+      0 0 16px rgba(250, 204, 21, 0.3);
   }
+
   50% {
     text-shadow: 0 0 12px rgba(250, 204, 21, 0.7),
-                 0 0 24px rgba(250, 204, 21, 0.5);
+      0 0 24px rgba(250, 204, 21, 0.5);
   }
 }
 
@@ -412,6 +880,7 @@ html, body {
   0% {
     background-position: -200% center;
   }
+
   100% {
     background-position: 200% center;
   }
@@ -423,6 +892,7 @@ html, body {
     opacity: 0;
     transform: translateX(-50%) translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -435,6 +905,7 @@ html, body {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -443,9 +914,12 @@ html, body {
 
 /* Gradient Border Animation */
 @keyframes gradientBorder {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -469,7 +943,7 @@ html, body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3),
-              0 0 40px rgba(250, 204, 21, 0.1);
+    0 0 40px rgba(250, 204, 21, 0.1);
   animation: headerScrollIn 0.4s ease-out forwards;
 }
 
@@ -489,12 +963,10 @@ html, body {
 
 /* Shimmer Hover Effect */
 .shimmer-hover {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(250, 204, 21, 0.2) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(250, 204, 21, 0.2) 50%,
+      transparent 100%);
   background-size: 200% 100%;
   animation: shimmerHover 3s infinite;
 }
@@ -534,14 +1006,12 @@ html, body {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(250, 204, 21, 0.5) 25%,
-    rgba(251, 146, 60, 0.5) 50%,
-    rgba(250, 204, 21, 0.5) 75%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(250, 204, 21, 0.5) 25%,
+      rgba(251, 146, 60, 0.5) 50%,
+      rgba(250, 204, 21, 0.5) 75%,
+      transparent 100%);
   background-size: 200% 100%;
   animation: gradientBorder 3s ease infinite;
   opacity: 0.6;
@@ -560,11 +1030,9 @@ html, body {
   left: -4px;
   right: -4px;
   bottom: -4px;
-  background: radial-gradient(
-    circle at center,
-    rgba(250, 204, 21, 0.15) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle at center,
+      rgba(250, 204, 21, 0.15) 0%,
+      transparent 70%);
   opacity: 0;
   transition: opacity 0.3s ease;
   border-radius: 8px;
@@ -620,7 +1088,7 @@ html, body {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
-  
+
   .header-scrolled {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -632,6 +1100,7 @@ html, body {
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
+
   .header-glass,
   .header-scrolled,
   .logo-animated,
@@ -640,7 +1109,7 @@ html, body {
     animation: none !important;
     transition: none !important;
   }
-  
+
   .link-active-glow {
     animation: none !important;
   }
@@ -655,6 +1124,7 @@ html, body {
   from {
     width: 0%;
   }
+
   to {
     width: 100%;
   }
@@ -662,9 +1132,12 @@ html, body {
 
 /* Social Icon Glow */
 @keyframes socialIconGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     filter: drop-shadow(0 0 0px rgba(250, 204, 21, 0));
   }
+
   50% {
     filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.6));
   }
@@ -672,9 +1145,12 @@ html, body {
 
 /* Footer Quote Card Glow */
 @keyframes quoteCardGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0px rgba(250, 204, 21, 0);
   }
+
   50% {
     box-shadow: 0 0 20px rgba(250, 204, 21, 0.1);
   }
@@ -686,11 +1162,10 @@ html, body {
 
 /* Footer Glass Background */
 .footer-glass {
-  background: linear-gradient(to bottom right, 
-    rgba(17, 24, 39, 0.85),
-    rgba(31, 41, 55, 0.85),
-    rgba(17, 24, 39, 0.85)
-  );
+  background: linear-gradient(to bottom right,
+      rgba(17, 24, 39, 0.85),
+      rgba(31, 41, 55, 0.85),
+      rgba(17, 24, 39, 0.85));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -767,6 +1242,7 @@ html, body {
     backdrop-filter: blur(8px);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
+
   to {
     background-color: rgba(35, 35, 35, 0.95);
     backdrop-filter: blur(16px);
@@ -779,6 +1255,7 @@ html, body {
   from {
     transform: scale(1);
   }
+
   to {
     transform: scale(0.85);
   }
@@ -786,13 +1263,16 @@ html, body {
 
 /* Glow Effect cho Active Link */
 @keyframes glowPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     text-shadow: 0 0 8px rgba(250, 204, 21, 0.5),
-                 0 0 16px rgba(250, 204, 21, 0.3);
+      0 0 16px rgba(250, 204, 21, 0.3);
   }
+
   50% {
     text-shadow: 0 0 12px rgba(250, 204, 21, 0.7),
-                 0 0 24px rgba(250, 204, 21, 0.5);
+      0 0 24px rgba(250, 204, 21, 0.5);
   }
 }
 
@@ -801,6 +1281,7 @@ html, body {
   0% {
     background-position: -200% center;
   }
+
   100% {
     background-position: 200% center;
   }
@@ -812,6 +1293,7 @@ html, body {
     opacity: 0;
     transform: translateX(-50%) translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -824,6 +1306,7 @@ html, body {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -832,9 +1315,12 @@ html, body {
 
 /* Gradient Border Animation */
 @keyframes gradientBorder {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -858,7 +1344,7 @@ html, body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3),
-              0 0 40px rgba(250, 204, 21, 0.1);
+    0 0 40px rgba(250, 204, 21, 0.1);
   animation: headerScrollIn 0.4s ease-out forwards;
 }
 
@@ -878,12 +1364,10 @@ html, body {
 
 /* Shimmer Hover Effect */
 .shimmer-hover {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(250, 204, 21, 0.2) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(250, 204, 21, 0.2) 50%,
+      transparent 100%);
   background-size: 200% 100%;
   animation: shimmerHover 3s infinite;
 }
@@ -923,14 +1407,12 @@ html, body {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(250, 204, 21, 0.5) 25%,
-    rgba(251, 146, 60, 0.5) 50%,
-    rgba(250, 204, 21, 0.5) 75%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(250, 204, 21, 0.5) 25%,
+      rgba(251, 146, 60, 0.5) 50%,
+      rgba(250, 204, 21, 0.5) 75%,
+      transparent 100%);
   background-size: 200% 100%;
   animation: gradientBorder 3s ease infinite;
   opacity: 0.6;
@@ -949,11 +1431,9 @@ html, body {
   left: -4px;
   right: -4px;
   bottom: -4px;
-  background: radial-gradient(
-    circle at center,
-    rgba(250, 204, 21, 0.15) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle at center,
+      rgba(250, 204, 21, 0.15) 0%,
+      transparent 70%);
   opacity: 0;
   transition: opacity 0.3s ease;
   border-radius: 8px;
@@ -1009,7 +1489,7 @@ html, body {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
-  
+
   .header-scrolled {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -1021,6 +1501,7 @@ html, body {
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
+
   .header-glass,
   .header-scrolled,
   .logo-animated,
@@ -1029,7 +1510,7 @@ html, body {
     animation: none !important;
     transition: none !important;
   }
-  
+
   .link-active-glow {
     animation: none !important;
   }

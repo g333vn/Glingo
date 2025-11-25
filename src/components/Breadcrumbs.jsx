@@ -31,14 +31,14 @@ function Breadcrumbs({ paths }) {
               path.onClick ? (
                 <button
                   onClick={path.onClick}
-                  className="text-gray-600 hover:text-yellow-500 bg-transparent border-none cursor-pointer underline transition-colors"
+                  className="text-black hover:text-[#FF5722] bg-transparent border-none cursor-pointer font-black uppercase tracking-wide transition-colors hover:bg-yellow-400 px-2 py-1 rounded-md border-[2px] border-transparent hover:border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                 >
                   {path.name}
                 </button>
               ) : path.handleNavigate ? (
                 <button
                   onClick={path.handleNavigate}
-                  className="text-gray-600 hover:text-yellow-500 bg-transparent border-none cursor-pointer underline transition-colors"
+                  className="text-black hover:text-[#FF5722] bg-transparent border-none cursor-pointer font-black uppercase tracking-wide transition-colors hover:bg-yellow-400 px-2 py-1 rounded-md border-[2px] border-transparent hover:border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                 >
                   {path.name}
                 </button>
@@ -46,7 +46,7 @@ function Breadcrumbs({ paths }) {
                 // ✅ CÓ link → Dùng <a> thông thường (không cảnh báo)
                 <a
                   href={path.link}
-                  className="text-gray-600 hover:text-yellow-500 underline transition-colors"
+                  className="text-black hover:text-[#FF5722] font-black uppercase tracking-wide transition-colors hover:bg-yellow-400 px-2 py-1 rounded-md border-[2px] border-transparent hover:border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                 >
                   {path.name}
                 </a>
@@ -56,7 +56,7 @@ function Breadcrumbs({ paths }) {
               )
             ) : (
               // Trang hiện tại (mục cuối) → Không clickable
-              <span className="text-gray-800 font-semibold">{path.name}</span>
+              <span className="text-black font-black uppercase tracking-wide">{path.name}</span>
             )}
           </li>
         ))}

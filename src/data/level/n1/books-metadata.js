@@ -19,15 +19,20 @@ export const n1BooksMetadata = [
   { id: 'speed-dokkai-n1', title: "N1 読解スピードマスター", imageUrl: "/book_card/n1/speed_master/speed_dokkai_n1.jpg", category: 'N1スピードマスター' },
   { id: 'speed-bunpou-n1', title: "N1 文法スピードマスター", imageUrl: "/book_card/n1/speed_master/speed_bunpou_n1.jpg", category: 'N1スピードマスター' },
   { id: 'speed-goi-n1', title: "N1 語彙スピードマスター", imageUrl: "/book_card/n1/speed_master/speed_goi_n1.jpg", category: 'N1スピードマスター' },
-  { id: 'extra-1', title: "Sách phụ N1-1", imageUrl: "/book_card/placeholder.jpg", category: 'Tài liệu phụ' },
-  { id: 'extra-2', title: "Sách phụ N1-2", imageUrl: "/book_card/placeholder.jpg", category: 'Tài liệu phụ' },
-  { id: 'extra-3', title: "Sách phụ N1-3", imageUrl: "/book_card/placeholder.jpg", category: 'Tài liệu phụ' },
-  { id: 'extra-4', title: "Sách phụ N1-4", imageUrl: "/book_card/placeholder.jpg", category: 'Tài liệu phụ' },
-  { id: 'extra-5', title: "Sách phụ N1-5", imageUrl: "/book_card/placeholder.jpg", category: 'Tài liệu phụ' },
-  { id: 'extra-6', title: "Sách phụ N1-6", imageUrl: "/book_card/placeholder.jpg", category: 'Tài liệu phụ' },
-  { id: 'extra-7', title: "Sách phụ N1-7", imageUrl: "/book_card/placeholder.jpg", category: 'Tài liệu phụ' },
-  { id: 'extra-8', title: "Sách phụ N1-8", imageUrl: "/book_card/placeholder.jpg", category: 'Tài liệu phụ' },
-  { id: 'extra-9', title: "Sách phụ N1-9", imageUrl: "/book_card/placeholder.jpg", category: 'Tài liệu phụ' },
-  { id: 'extra-10', title: "Sách phụ N1-10", imageUrl: "/book_card/placeholder.jpg", category: 'Tài liệu phụ' },
+  { id: 'extra-1', title: "N1 Extra Material 01", imageUrl: null, isComingSoon: true, category: 'Extra Materials' },
+  { id: 'extra-2', title: "N1 Extra Material 02", imageUrl: null, isComingSoon: true, category: 'Extra Materials' },
+  { id: 'extra-3', title: "N1 Extra Material 03", imageUrl: null, isComingSoon: true, category: 'Extra Materials' },
+  { id: 'extra-4', title: "N1 Extra Material 04", imageUrl: null, isComingSoon: true, category: 'Extra Materials' },
+  { id: 'extra-5', title: "N1 Extra Material 05", imageUrl: null, isComingSoon: true, category: 'Extra Materials' },
+  { id: 'extra-6', title: "N1 Extra Material 06", imageUrl: null, isComingSoon: true, category: 'Extra Materials' },
+  { id: 'extra-7', title: "N1 Extra Material 07", imageUrl: null, isComingSoon: true, category: 'Extra Materials' },
+  { id: 'extra-8', title: "N1 Extra Material 08", imageUrl: null, isComingSoon: true, category: 'Extra Materials' },
+  { id: 'extra-9', title: "N1 Extra Material 09", imageUrl: null, isComingSoon: true, category: 'Extra Materials' },
+  { id: 'extra-10', title: "N1 Extra Material 10", imageUrl: null, isComingSoon: true, category: 'Extra Materials' },
+  
+  // ✅ DEMO BOOK - Complete with all hierarchy levels
+  { id: 'demo-complete-001', title: "DEMO: Complete Sample Book", imageUrl: null, isComingSoon: true, category: 'DEMO Sample Series' },
 ];
+
+export default n1BooksMetadata;
 

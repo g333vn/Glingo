@@ -19,15 +19,14 @@ export async function loadQuizData(lessonId) {
       const module = await quizModules[modulePath]();
       return module.default || module;
     } else {
-      throw new Error(`Quiz file not found: ${lessonId}.json`);
+      // ✅ FIXED: Không throw error, chỉ return null để fallback
+      console.log(`📄 Quiz file not found: ${lessonId}.json - will use fallback`);
+      return null;
     }
   } catch (error) {
     console.error(`Failed to load quiz data for ${lessonId}:`, error);
-    // Return default quiz data nếu không tìm thấy
-    return {
-      title: "Bài không tồn tại",
-      questions: []
-    };
+    // Return null để fallback
+    return null;
   }
 }
 

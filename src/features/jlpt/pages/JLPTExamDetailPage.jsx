@@ -1,10 +1,26 @@
-// src/features/jlpt/pages/JLPTExamDetailPage.jsx
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate as useNavigateRouter } from 'react-router-dom';
 import { useExamGuard } from '../../../hooks/useExamGuard.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import { getExamById } from '../../../data/jlpt/jlptData.js';
+import storageManager from '../../../utils/localStorageManager.js';
+import { useLanguage } from '../../../contexts/LanguageContext.jsx';
+
+const STATUS_KEYWORDS = {
+  upcoming: ['sắp', 'upcoming', 'coming', 'soon', 'đang chuẩn bị', '準備', 'まもなく'],
+  finished: ['kết thúc', 'finished', 'ended', 'closed', '終了', '完了'],
+  available: ['có sẵn', 'available', 'ready', 'open', '利用可', '利用可能']
+};
+
+const getStatusType = (status = '') => {
+  const normalized = status?.toString().trim().toLowerCase();
+  if (!normalized) return 'available';
+  if (STATUS_KEYWORDS.upcoming.some(keyword => normalized.includes(keyword))) return 'upcoming';
+  if (STATUS_KEYWORDS.finished.some(keyword => normalized.includes(keyword))) return 'finished';
+  if (STATUS_KEYWORDS.available.some(keyword => normalized.includes(keyword))) return 'available';
+  return 'available';
+};
 
 // Component đồng hồ analog
 const Clock = () => {
@@ -27,7 +43,7 @@ const Clock = () => {
   const hours = currentTime.getHours() % 12;
   const minutes = currentTime.getMinutes();
   const seconds = currentTime.getSeconds();
-  
+
   const hourAngle = (hours * 30) + (minutes * 0.5);
   const minuteAngle = minutes * 6;
   const secondAngle = seconds * 6;
@@ -51,34 +67,34 @@ const Clock = () => {
             />
           );
         })}
-        
+
         <div className="absolute top-1/2 left-1/2 w-4 h-4 bg-gray-800 rounded-full -translate-x-1/2 -translate-y-1/2 z-30" />
-        
+
         <div
           className="absolute left-1/2 top-1/2 w-2 h-16 bg-gray-800 rounded-full origin-bottom transition-transform duration-500 ease-out"
-          style={{ 
+          style={{
             transform: `translateX(-50%) translateY(-100%) rotate(${hourAngle}deg)`,
             transformOrigin: '50% 100%'
           }}
         />
-        
+
         <div
           className="absolute left-1/2 top-1/2 w-1.5 h-24 bg-blue-600 rounded-full origin-bottom transition-transform duration-500 ease-out z-10"
-          style={{ 
+          style={{
             transform: `translateX(-50%) translateY(-100%) rotate(${minuteAngle}deg)`,
             transformOrigin: '50% 100%'
           }}
         />
-        
+
         <div
           className="absolute left-1/2 top-1/2 w-0.5 h-28 bg-pink-500 rounded-full origin-bottom transition-transform duration-1000 ease-linear z-20"
-          style={{ 
+          style={{
             transform: `translateX(-50%) translateY(-100%) rotate(${secondAngle}deg)`,
             transformOrigin: '50% 100%'
           }}
         />
       </div>
-      
+
       <div className="absolute -bottom-8 sm:-bottom-10 left-1/2 -translate-x-1/2 text-sm sm:text-base font-mono text-gray-700 font-semibold">
         {formatTime()}
       </div>
@@ -88,22 +104,30 @@ const Clock = () => {
 
 // Component nút bài thi
 const ExamButton = ({ title, score, bgColor, disabled, onClick }) => {
+  const { t } = useLanguage();
+  const formattedScore = `${score}点`;
+
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`relative ${bgColor} rounded-full px-4 sm:px-6 md:px-8 py-4 sm:py-5 md:py-6 shadow-xl border-2 sm:border-4 border-red-600 
-        transition-all duration-300 w-full sm:w-auto sm:min-w-[200px] md:min-w-[280px]
-        ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 hover:shadow-2xl cursor-pointer'}`}
+      className={`relative ${bgColor} rounded-xl px-2 sm:px-4 border-[3px] border-black 
+        transition-all duration-200 
+        w-full md:w-[340px] h-[160px] md:h-[180px] flex flex-col justify-center items-center
+        ${disabled
+          ? 'opacity-50 cursor-not-allowed shadow-none'
+          : 'hover:translate-x-[-2px] hover:translate-y-[-2px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] cursor-pointer'}`}
     >
-      <div className="text-center">
-        <div className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">{title}</div>
-        <div className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-          ({score}分)
+      <div className="text-center w-full px-2">
+        <div className="text-lg sm:text-xl md:text-2xl font-bold text-black mb-2 min-h-[3.5rem] flex items-center justify-center leading-tight">
+          {title}
+        </div>
+        <div className="text-xl sm:text-2xl md:text-3xl font-black text-black">
+          {formattedScore}
         </div>
       </div>
       {disabled && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/30 rounded-full">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/10 rounded-xl">
           <svg className="w-12 h-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
@@ -116,31 +140,86 @@ const ExamButton = ({ title, score, bgColor, disabled, onClick }) => {
 function JLPTExamDetailPage() {
   const [knowledgeTestCompleted, setKnowledgeTestCompleted] = useState(false);
   const [listeningCompleted, setListeningCompleted] = useState(false);
-  
-  const { levelId, examId } = useParams();
-  const { navigate, WarningModal } = useExamGuard(); // ✅ Sử dụng navigate có cảnh báo
-  
-  const currentExam = getExamById(levelId, examId) || { title: 'Đề thi không tồn tại', date: '', level: 'N1' };
 
-  // Check localStorage
+  const { levelId, examId } = useParams();
+  const { navigate, WarningModal } = useExamGuard();
+  const navigateRouter = useNavigateRouter();
+  const { t } = useLanguage();
+
+  const [currentExam, setCurrentExam] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadExam = async () => {
+      setIsLoading(true);
+      try {
+        const savedExam = await storageManager.getExam(levelId, examId);
+
+        if (savedExam) {
+          console.log('✅ ExamDetailPage: Loaded exam from storage:', savedExam);
+          const examMetadata = {
+            id: examId,
+            title: savedExam.title || `JLPT ${examId}`,
+            date: savedExam.date || examId,
+            status: savedExam.status || 'Có sẵn',
+            imageUrl: savedExam.imageUrl || `/jlpt/${levelId}/${examId}.jpg`,
+            level: savedExam.level || levelId
+          };
+          setCurrentExam(examMetadata);
+        } else {
+          console.log('📁 ExamDetailPage: Loading exam from static file...');
+          const staticExam = getExamById(levelId, examId);
+          if (staticExam) {
+            setCurrentExam(staticExam);
+          } else {
+            setCurrentExam(null);
+          }
+        }
+      } catch (error) {
+        console.error('❌ ExamDetailPage: Error loading exam:', error);
+        const staticExam = getExamById(levelId, examId);
+        setCurrentExam(staticExam || null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadExam();
+  }, [levelId, examId]);
+
+  const examStatusType = getStatusType(currentExam?.status);
+
   useEffect(() => {
     const knowledgeCompleted = localStorage.getItem(`exam-${levelId}-${examId}-knowledge-completed`);
     const listeningCompletedLS = localStorage.getItem(`exam-${levelId}-${examId}-listening-completed`);
-    
+
     setKnowledgeTestCompleted(knowledgeCompleted === 'true');
     setListeningCompleted(listeningCompletedLS === 'true');
   }, [levelId, examId]);
 
-  if (!currentExam || currentExam.status === 'Sắp diễn ra') {
+  if (isLoading) {
     return (
       <div className="w-full pr-0 md:pr-4">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
           <Sidebar />
-          <div className="flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col w-full min-h-app p-8 text-center">
-            <h1 className="text-2xl font-bold text-red-500 mb-4">Đề thi không khả dụng</h1>
-            <p className="text-gray-600 mb-4">Đề thi này chưa có sẵn hoặc chưa diễn ra. Quay về danh sách.</p>
-            <button onClick={() => navigate(`/jlpt/${levelId}`)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-              ← Quay về danh sách
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] p-8 text-center justify-center">
+            <div className="text-xl text-gray-500 font-bold">{t('jlpt.commonTexts.loading')}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentExam || examStatusType === 'upcoming') {
+    return (
+      <div className="w-full pr-0 md:pr-4">
+        <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
+          <Sidebar />
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] p-8 text-center justify-center">
+            <h1 className="text-2xl font-black text-red-500 mb-4">{t('jlpt.detailPage.unavailableTitle')}</h1>
+            <p className="text-gray-600 mb-4 font-medium">{t('jlpt.detailPage.unavailableDesc')}</p>
+            <button onClick={() => navigate(`/jlpt/${levelId}`)} className="px-4 py-2 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide">
+              {t('jlpt.commonTexts.backToList')}
             </button>
           </div>
         </div>
@@ -148,22 +227,26 @@ function JLPTExamDetailPage() {
     );
   }
 
-  // ✅ Breadcrumb paths với navigate có cảnh báo (tất cả đều hoạt động)
+  const isFinished = examStatusType === 'finished';
+
   const breadcrumbPaths = [
-    { name: 'ホーム', onClick: () => navigate('/') },
-    { name: 'JLPT', onClick: () => navigate('/jlpt') },
+    { name: t('common.home') || 'Home', onClick: () => navigate('/') },
+    { name: t('common.jlpt') || 'JLPT', onClick: () => navigate('/jlpt') },
     { name: levelId.toUpperCase(), onClick: () => navigate(`/jlpt/${levelId}`) },
-    { name: currentExam.title } // Trang hiện tại - không có onClick
+    { name: currentExam.title }
   ];
 
   const handleKnowledgeTest = () => {
     navigate(`/jlpt/${levelId}/${examId}/knowledge`);
   };
 
-  // ✅ FIX: Listening button bây giờ sẽ navigate đúng cách
   const handleListeningTest = () => {
     if (knowledgeTestCompleted) {
-      navigate(`/jlpt/${levelId}/${examId}/listening`);
+      const listeningPath = `/jlpt/${levelId}/${examId}/listening`;
+      console.log('🔵 Navigating to listening:', { levelId, examId, listeningPath, currentPath: window.location.pathname });
+      navigateRouter(listeningPath, { replace: false });
+    } else {
+      console.log('⚠️ Knowledge test not completed yet');
     }
   };
 
@@ -179,74 +262,112 @@ function JLPTExamDetailPage() {
     <>
       <div className="w-full pr-0 md:pr-4">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-          
+
           <Sidebar />
 
-          <div className="flex-1 min-w-0 bg-gradient-to-b from-gray-200 to-gray-300 rounded-lg shadow-lg flex flex-col w-full min-h-app">
-            
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
+
             <div className="pt-4 px-6 pb-2">
               <Breadcrumbs paths={breadcrumbPaths} />
             </div>
-            
-            <div className="flex-1 overflow-hidden px-6 py-4 flex flex-col items-center justify-center">
-              
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-6 sm:mb-8 md:mb-12 tracking-tight px-4 text-center">
+
+            <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col items-center justify-center">
+
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black text-black mb-6 sm:mb-8 md:mb-12 tracking-tight px-4 text-center">
                 {currentExam.title}
               </h1>
-              
+
               <div className="mb-12">
                 <Clock />
               </div>
-              
-              <div className="flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 items-center justify-center mb-6 sm:mb-8 w-full px-4">
-                <ExamButton
-                  title="言語、知識、読解"
-                  score={110}
-                  bgColor="bg-gradient-to-br from-yellow-300 to-yellow-400"
-                  disabled={false}
-                  onClick={handleKnowledgeTest}
-                />
-                
-                <ExamButton
-                  title="聴解"
-                  score={60}
-                  bgColor="bg-gradient-to-br from-yellow-300 to-yellow-400"
-                  disabled={!knowledgeTestCompleted}
-                  onClick={handleListeningTest}
-                />
-              </div>
 
-              {!knowledgeTestCompleted && (
-                <p className="text-gray-700 text-center text-base md:text-lg">
-                  ※ 聴解は言語、知識、読解の試験を完了後に受験できます
-                </p>
-              )}
-              
-              {knowledgeTestCompleted && !listeningCompleted && (
-                <p className="text-green-700 font-semibold text-center text-base md:text-lg">
-                  ✓ 言語、知識、読解が完了しました。聴解を受験できます
-                </p>
-              )}
+              {isFinished ? (
+                <div className="flex flex-col gap-4 items-center justify-center mb-6 sm:mb-8 w-full px-4">
+                  <div className="bg-gray-100 rounded-lg border-[3px] border-black p-6 mb-4 text-center max-w-md shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    <p className="text-black text-lg font-bold mb-2">
+                      📅 {t('jlpt.detailPage.finishedTitle')}
+                    </p>
+                    <p className="text-gray-700 text-sm font-medium">
+                      {t('jlpt.detailPage.finishedDesc')}
+                    </p>
+                  </div>
 
-              {bothCompleted && (
-                <div className="mt-8 text-center">
-                  <p className="text-green-700 font-semibold text-center text-base md:text-lg mb-4">
-                    ✓ すべての試験が完了しました。
-                  </p>
-                  <button
-                    onClick={handleViewResults}
-                    className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition"
-                  >
-                    結果を見る
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+                    {bothCompleted && (
+                      <button
+                        onClick={handleViewResults}
+                        className="px-8 py-3 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
+                      >
+                        {t('jlpt.detailPage.viewResults')}
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => navigate(`/jlpt/${levelId}/${examId}/answers`)}
+                      className="px-8 py-3 bg-[#2D2D2D] text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
+                    >
+                      {t('jlpt.detailPage.viewAnswers')}
+                    </button>
+                  </div>
+
+                  {!bothCompleted && (
+                    <p className="text-gray-500 text-sm mt-2 font-medium">
+                      {t('jlpt.detailPage.unfinishedNote')}
+                    </p>
+                  )}
                 </div>
+              ) : (
+                <>
+                  <div className="flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 items-center justify-center mb-6 sm:mb-8 w-full px-4">
+                    <ExamButton
+                      title={t('jlpt.detailPage.knowledgeButton')}
+                      score={110}
+                      bgColor="bg-yellow-400"
+                      disabled={false}
+                      onClick={handleKnowledgeTest}
+                    />
+
+                    <ExamButton
+                      title={t('jlpt.detailPage.listeningButton')}
+                      score={60}
+                      bgColor="bg-yellow-400"
+                      disabled={!knowledgeTestCompleted}
+                      onClick={handleListeningTest}
+                    />
+                  </div>
+
+                  {!knowledgeTestCompleted && (
+                    <p className="text-gray-700 text-center text-base md:text-lg">
+                      {t('jlpt.detailPage.listeningLocked')}
+                    </p>
+                  )}
+
+                  {knowledgeTestCompleted && !listeningCompleted && (
+                    <p className="text-green-700 font-semibold text-center text-base md:text-lg">
+                      ✓ {t('jlpt.detailPage.listeningUnlocked')}
+                    </p>
+                  )}
+
+                  {bothCompleted && (
+                    <div className="mt-8 text-center">
+                      <p className="text-green-700 font-semibold text-center text-base md:text-lg mb-4">
+                        ✓ {t('jlpt.detailPage.allCompleted')}
+                      </p>
+                      <button
+                        onClick={handleViewResults}
+                        className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition"
+                      >
+                        {t('jlpt.detailPage.viewSummary')}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* ✅ Hiển thị Modal cảnh báo từ useExamGuard */}
       {WarningModal}
     </>
   );

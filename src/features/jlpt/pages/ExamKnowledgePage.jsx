@@ -5,6 +5,8 @@ import { useExamGuard } from '../../../hooks/useExamGuard.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import { getExamById } from '../../../data/jlpt/jlptData.js';
 import { getExamQuestions } from '../../../data/jlpt/examQuestionsData.js';
+import storageManager from '../../../utils/localStorageManager.js';
+import { useLanguage } from '../../../contexts/LanguageContext.jsx';
 
 // ✅ Helper: Lock/unlock body scroll
 const useBodyScrollLock = (isLocked) => {
@@ -57,12 +59,14 @@ const CountdownTimer = ({ initialTime, onTimeUp }) => {
 };
 
 // Component câu hỏi
-const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer }) => {
+const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer, t }) => {
   if (!question) return null;
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-8">
-      <div className="text-gray-500 text-sm mb-2">問題 {question.id}</div>
+      <div className="text-gray-500 text-sm mb-2">
+        {t('jlpt.knowledgePage.questionLabel', { number: question.id })}
+      </div>
       <div className="text-lg font-semibold mb-4">{question.question}</div>
       
       {question.passage && (
@@ -116,12 +120,12 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer }) => {
 };
 
 // Component navigation panel
-const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect }) => {
+const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect, t, totalTime }) => {
   return (
     <div className="bg-white rounded-lg shadow-lg p-4">
-      <h3 className="font-bold text-lg mb-4 text-center">言語知識（文字・語彙・文法）・読解</h3>
+      <h3 className="font-bold text-lg mb-4 text-center">{t('jlpt.knowledgePage.navigationTitle')}</h3>
       <div className="text-sm text-gray-600 mb-2 text-center">
-        ⏱ {sections.reduce((acc, s) => acc + s.timeLimit, 0)}分
+        {t('jlpt.knowledgePage.totalTime', { minutes: totalTime })}
       </div>
       
       {sections.map((section) => (
@@ -129,13 +133,14 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect 
           <h4 className="font-semibold text-sm mb-2 text-gray-700">{section.title}</h4>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
             {section.questions.map((q) => {
-              const isAnswered = answers[q.id] !== undefined;
-              const isCurrent = currentQuestion === q.id;
+              const questionKey = String(q.id);
+              const isAnswered = answers[questionKey] !== undefined;
+              const isCurrent = currentQuestion === questionKey;
               
               return (
                 <button
-                  key={q.id}
-                  onClick={() => onQuestionSelect(q.id)}
+                  key={questionKey}
+                  onClick={() => onQuestionSelect(questionKey)}
                   className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded border-2 font-semibold text-xs sm:text-sm transition-all ${
                     isCurrent
                       ? 'border-blue-500 bg-blue-500 text-white'
@@ -154,7 +159,7 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect 
       
       <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
         <div className="flex justify-between mb-1">
-          <span>Đã trả lời:</span>
+          <span>{t('jlpt.knowledgePage.answeredLabel')}</span>
           <span className="font-bold">{Object.keys(answers).length}/{sections.flatMap(s => s.questions).length}</span>
         </div>
       </div>
@@ -165,18 +170,92 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect 
 function ExamKnowledgePage() {
   const { levelId, examId } = useParams();
   const { navigate, WarningModal, clearExamData } = useExamGuard();
-  
-  const currentExam = getExamById(levelId, examId);
-  const examData = getExamQuestions(levelId, examId);
-  
-  const [currentQuestionId, setCurrentQuestionId] = useState(1);
+  const { t } = useLanguage();
+
+  const [currentExam, setCurrentExam] = useState(null);
+  const [examData, setExamData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentQuestionId, setCurrentQuestionId] = useState('1');
   const [answers, setAnswers] = useState({});
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false); // ✅ Modal cảnh báo thiếu câu
   const [unansweredCount, setUnansweredCount] = useState(0);
   
-  // ✅ Lock body scroll when any modal is open
-  useBodyScrollLock(showSubmitModal || showIncompleteWarning);
+  // ✅ REMOVED: Don't lock body scroll - allow scrolling in modal and outside modal
+  // useBodyScrollLock(showSubmitModal || showIncompleteWarning);
+
+  // ✅ Load exam metadata + questions (storage first, fallback static)
+  useEffect(() => {
+    let isMounted = true;
+
+    const normalizeExamData = (data) => {
+      if (!data) return null;
+      return {
+        knowledge: data.knowledge || { sections: [] },
+        reading: data.reading || { sections: [] }
+      };
+    };
+
+    const loadExamData = async () => {
+      setIsLoading(true);
+      try {
+        const savedExam = await storageManager.getExam(levelId, examId);
+
+        if (!isMounted) return;
+
+        if (savedExam) {
+          const examMetadata = {
+            id: examId,
+            title: savedExam.title || `JLPT ${examId}`,
+            date: savedExam.date || examId,
+            status: savedExam.status || 'Có sẵn',
+            imageUrl: savedExam.imageUrl || `/jlpt/${levelId}/${examId}.jpg`,
+            level: savedExam.level || levelId
+          };
+          setCurrentExam(examMetadata);
+          setExamData(normalizeExamData(savedExam));
+        } else {
+          const staticExam = getExamById(levelId, examId);
+          const staticData = getExamQuestions(levelId, examId);
+          setCurrentExam(staticExam || null);
+          setExamData(normalizeExamData(staticData));
+        }
+      } catch (error) {
+        console.error('❌ ExamKnowledgePage: Error loading exam data:', error);
+        if (!isMounted) return;
+        const fallbackExam = getExamById(levelId, examId);
+        const fallbackData = getExamQuestions(levelId, examId);
+        setCurrentExam(fallbackExam || null);
+        setExamData(normalizeExamData(fallbackData));
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadExamData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [levelId, examId]);
+
+  // đảm bảo currentQuestionId tồn tại trong đề thi (đặc biệt với đề import từ admin)
+  useEffect(() => {
+    if (!examData) return;
+    const combinedSections = [
+      ...(examData.knowledge?.sections || []),
+      ...(examData.reading?.sections || [])
+    ];
+    const allQuestions = combinedSections.flatMap(section => section.questions || []);
+    if (allQuestions.length === 0) return;
+
+    const exists = allQuestions.some(q => String(q.id) === String(currentQuestionId));
+    if (!exists) {
+      setCurrentQuestionId(String(allQuestions[0].id));
+    }
+  }, [examData, currentQuestionId]);
 
   // Load answers từ localStorage
   useEffect(() => {
@@ -186,52 +265,106 @@ function ExamKnowledgePage() {
     }
   }, [levelId, examId]);
 
+  // Block browser back (popstate) while taking exam
+  useEffect(() => {
+    // Push a dummy state so that the first back triggers popstate
+    const unblock = () => {
+      window.history.pushState({ exam: true }, '');
+    };
+    unblock();
+    const onPopState = (e) => {
+      const leave = window.confirm(t('jlpt.knowledgePage.leaveConfirm'));
+      if (!leave) {
+        unblock();
+      } else {
+        clearExamData?.();
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, [clearExamData, t]);
+
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+        <p className="text-gray-600">{t('jlpt.commonTexts.loading')}</p>
+      </div>
+    );
+  }
+
   if (!currentExam || !examData) {
     return (
       <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold text-red-500 mb-4">Đề thi không tồn tại</h1>
+        <h1 className="text-2xl font-bold text-red-500 mb-4">{t('jlpt.commonTexts.notFoundTitle')}</h1>
+        <p className="text-gray-600 mb-4">
+          {t('jlpt.commonTexts.notFoundDesc', { examId, level: levelId.toUpperCase() })}
+        </p>
         <button onClick={() => navigate(`/jlpt/${levelId}`)} className="px-4 py-2 bg-blue-500 text-white rounded">
-          ← Quay về
+          {t('jlpt.commonTexts.backToList')}
         </button>
       </div>
     );
   }
 
-  const sections = examData.knowledge.sections;
-  const allQuestions = sections.flatMap(s => s.questions);
-  const currentQuestion = allQuestions.find(q => q.id === currentQuestionId);
-  const currentIndex = allQuestions.findIndex(q => q.id === currentQuestionId);
-  const totalTime = sections.reduce((acc, s) => acc + s.timeLimit, 0);
+  const knowledgeSections = examData.knowledge?.sections || [];
+  const readingSections = examData.reading?.sections || [];
+  const sections = [...knowledgeSections, ...readingSections];
+  const allQuestions = sections.flatMap(s => s.questions || []);
+  const normalizedCurrentId = String(currentQuestionId);
+  const currentQuestion = allQuestions.find(q => String(q.id) === normalizedCurrentId);
+  const currentIndex = allQuestions.findIndex(q => String(q.id) === normalizedCurrentId);
+  const totalTime = sections.reduce((acc, s) => acc + (s.timeLimit || 0), 0);
+
+  if (sections.length === 0 || allQuestions.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <h1 className="text-2xl font-bold text-yellow-600 mb-4">{t('jlpt.knowledgePage.emptyTitle')}</h1>
+        <p className="text-gray-600 mb-4">
+          {t('jlpt.knowledgePage.emptyDesc', { examId, level: levelId.toUpperCase() })}
+        </p>
+        <p className="text-gray-500 mb-4 text-sm">
+          {t('jlpt.knowledgePage.emptyNote')}
+        </p>
+        <button onClick={() => navigate(`/jlpt/${levelId}`)} className="px-4 py-2 bg-blue-500 text-white rounded">
+          {t('jlpt.commonTexts.backToList')}
+        </button>
+      </div>
+    );
+  }
 
   // ✅ Breadcrumb paths với navigate có cảnh báo (tất cả các link đều hoạt động)
   const breadcrumbPaths = [
-    { name: 'ホーム', onClick: () => navigate('/') },
-    { name: 'JLPT', onClick: () => navigate('/jlpt') },
+    { name: t('common.home'), onClick: () => navigate('/') },
+    { name: t('common.jlpt'), onClick: () => navigate('/jlpt') },
     { name: levelId.toUpperCase(), onClick: () => navigate(`/jlpt/${levelId}`) },
     { name: currentExam.title, onClick: () => navigate(`/jlpt/${levelId}/${examId}`) },
-    { name: '言語知識・読解' } // Trang hiện tại - không có onClick
+    { name: t('jlpt.knowledgePage.breadcrumbLabel') } // Trang hiện tại - không có onClick
   ];
 
   const handleSelectAnswer = (answerIndex) => {
-    const newAnswers = { ...answers, [currentQuestionId]: answerIndex };
+    const questionKey = String(currentQuestionId);
+    const newAnswers = { ...answers, [questionKey]: answerIndex };
     setAnswers(newAnswers);
     localStorage.setItem(`exam-${levelId}-${examId}-knowledge`, JSON.stringify(newAnswers));
   };
 
   const handlePrevQuestion = () => {
     if (currentIndex > 0) {
-      setCurrentQuestionId(allQuestions[currentIndex - 1].id);
+      setCurrentQuestionId(String(allQuestions[currentIndex - 1].id));
     }
   };
 
   const handleNextQuestion = () => {
     if (currentIndex < allQuestions.length - 1) {
-      setCurrentQuestionId(allQuestions[currentIndex + 1].id);
+      setCurrentQuestionId(String(allQuestions[currentIndex + 1].id));
     }
   };
 
   const handleTimeUp = () => {
-    alert('Hết giờ làm bài! Bài thi sẽ được tự động nộp.');
+    window.alert(t('jlpt.knowledgePage.timeUpMessage'));
     handleSubmit();
   };
 
@@ -241,7 +374,8 @@ function ExamKnowledgePage() {
     let readingCorrect = 0, readingTotal = 0;
 
     allQuestions.forEach(q => {
-      const isCorrect = answers[q.id] === q.correctAnswer;
+      const questionKey = String(q.id);
+      const isCorrect = answers[questionKey] === q.correctAnswer;
       if (isCorrect) {
         correctCount++;
       }
@@ -292,27 +426,6 @@ function ExamKnowledgePage() {
     setShowSubmitModal(true);
   };
 
-  // Block browser back (popstate) while taking exam
-  useEffect(() => {
-    // Push a dummy state so that the first back triggers popstate
-    const unblock = () => {
-      window.history.pushState({ exam: true }, '');
-    };
-    unblock();
-    const onPopState = (e) => {
-      const leave = window.confirm('Bạn đang làm bài. Rời trang sẽ mất tiến độ. Bạn có chắc muốn thoát?');
-      if (!leave) {
-        unblock();
-      } else {
-        clearExamData?.();
-      }
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => {
-      window.removeEventListener('popstate', onPopState);
-    };
-  }, [clearExamData]);
-
   return (
     <>
       <div className="w-full pr-0 md:pr-4">
@@ -328,10 +441,11 @@ function ExamKnowledgePage() {
 
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               <div className="max-w-4xl mx-auto">
-                <QuestionDisplay
+              <QuestionDisplay
                   question={currentQuestion}
-                  selectedAnswer={answers[currentQuestionId]}
+                  selectedAnswer={answers[normalizedCurrentId]}
                   onSelectAnswer={handleSelectAnswer}
+                  t={t}
                 />
 
                 <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-6">
@@ -340,7 +454,7 @@ function ExamKnowledgePage() {
                     disabled={currentIndex === 0}
                     className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gray-300 text-gray-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-400 transition text-sm sm:text-base"
                   >
-                    ← 前へ
+                    {t('jlpt.knowledgePage.prevButton')}
                   </button>
                   
                   {currentIndex === allQuestions.length - 1 ? (
@@ -348,14 +462,14 @@ function ExamKnowledgePage() {
                       onClick={handleSubmitClick}
                       className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition text-sm sm:text-base"
                     >
-                      提出する
+                      {t('jlpt.knowledgePage.submitButton')}
                     </button>
                   ) : (
                     <button
                       onClick={handleNextQuestion}
                       className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition text-sm sm:text-base"
                     >
-                      次へ →
+                      {t('jlpt.knowledgePage.nextButton')}
                     </button>
                   )}
                 </div>
@@ -366,9 +480,11 @@ function ExamKnowledgePage() {
           <div className="w-full md:w-80 md:sticky md:top-4 mt-4 md:mt-0">
             <NavigationPanel
               sections={sections}
-              currentQuestion={currentQuestionId}
+              currentQuestion={normalizedCurrentId}
               answers={answers}
               onQuestionSelect={setCurrentQuestionId}
+              t={t}
+              totalTime={totalTime}
             />
           </div>
         </div>
@@ -406,20 +522,31 @@ function ExamKnowledgePage() {
                 width: '100%',
                 maxHeight: 'calc(100vh - 4rem)',
                 overflowY: 'auto',
+                overscrollBehavior: 'contain', // ✅ Prevent scroll chaining to body
+              }}
+              onWheel={(e) => {
+                // ✅ Prevent body scroll when scrolling inside modal
+                const element = e.currentTarget;
+                const { scrollTop, scrollHeight, clientHeight } = element;
+                const isAtTop = scrollTop === 0;
+                const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
+                
+                // If can scroll more in modal, prevent body scroll
+                if ((!isAtTop && e.deltaY < 0) || (!isAtBottom && e.deltaY > 0)) {
+                  e.stopPropagation();
+                }
               }}
             >
-              <h2 className="text-xl font-bold mb-4 text-yellow-600">⚠️ CẢNH BÁO: CÒN CÂU CHƯA TRẢ LỜI</h2>
+              <h2 className="text-xl font-bold mb-4 text-yellow-600">{t('jlpt.knowledgePage.incompleteModal.title')}</h2>
               <div className="mb-6">
                 <p className="mb-3">
-                  Bạn còn <strong className="text-red-600">{unansweredCount} câu</strong> chưa trả lời.
+                  {t('jlpt.knowledgePage.incompleteModal.description', { count: unansweredCount })}
                 </p>
                 <p className="mb-3">
-                  • Nếu bấm <strong className="text-red-600">Tiếp tục nộp bài</strong>: 
-                  Các câu chưa trả lời sẽ bị tính là sai.
+                  {t('jlpt.knowledgePage.incompleteModal.submitWarning')}
                 </p>
                 <p className="mb-3">
-                  • Nếu bấm <strong className="text-green-600">Quay lại làm tiếp</strong>: 
-                  Bạn có thể hoàn thành các câu còn lại.
+                  {t('jlpt.knowledgePage.incompleteModal.continueHint')}
                 </p>
               </div>
               <div className="flex justify-end gap-4">
@@ -427,13 +554,13 @@ function ExamKnowledgePage() {
                   onClick={() => setShowIncompleteWarning(false)}
                   className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold"
                 >
-                  Quay lại làm tiếp
+                  {t('jlpt.knowledgePage.incompleteModal.continueButton')}
                 </button>
                 <button
                   onClick={handleConfirmIncompleteSubmit}
                   className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold"
                 >
-                  Tiếp tục nộp bài
+                  {t('jlpt.knowledgePage.incompleteModal.submitButton')}
                 </button>
               </div>
             </div>
@@ -473,22 +600,35 @@ function ExamKnowledgePage() {
                 width: '100%',
                 maxHeight: 'calc(100vh - 4rem)',
                 overflowY: 'auto',
+                overscrollBehavior: 'contain', // ✅ Prevent scroll chaining to body
+              }}
+              onWheel={(e) => {
+                // ✅ Prevent body scroll when scrolling inside modal
+                const element = e.currentTarget;
+                const { scrollTop, scrollHeight, clientHeight } = element;
+                const isAtTop = scrollTop === 0;
+                const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
+                
+                // If can scroll more in modal, prevent body scroll
+                if ((!isAtTop && e.deltaY < 0) || (!isAtBottom && e.deltaY > 0)) {
+                  e.stopPropagation();
+                }
               }}
             >
-              <h2 className="text-xl font-bold mb-4">確認</h2>
-              <p className="mb-6">本当に提出しますか？提出後は変更できません。</p>
+              <h2 className="text-xl font-bold mb-4">{t('jlpt.knowledgePage.submitModal.title')}</h2>
+              <p className="mb-6">{t('jlpt.knowledgePage.submitModal.message')}</p>
               <div className="flex justify-end gap-4">
                 <button
                   onClick={() => setShowSubmitModal(false)}
                   className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
                 >
-                  キャンセル
+                  {t('jlpt.knowledgePage.submitModal.cancelButton')}
                 </button>
                 <button
                   onClick={handleSubmit}
                   className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
                 >
-                  提出する
+                  {t('jlpt.knowledgePage.submitModal.confirmButton')}
                 </button>
               </div>
             </div>

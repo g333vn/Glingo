@@ -15,21 +15,43 @@ class LocalStorageManager {
   constructor() {
     this.storageAvailable = this.checkStorageAvailable();
     this.useIndexedDB = false;
+    this.initPromise = null; // ✅ Lưu promise để có thể await
     this.init();
   }
 
   // Initialize IndexedDB
   async init() {
-    try {
-      this.useIndexedDB = await indexedDBManager.init();
-      if (this.useIndexedDB) {
-        console.log('✅ Using IndexedDB for storage (unlimited capacity)');
-      } else {
-        console.log('⚠️ IndexedDB not available, using localStorage (5-10 MB limit)');
+    // ✅ Nếu đang init thì return promise hiện tại
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    // ✅ Tạo promise mới
+    this.initPromise = (async () => {
+      try {
+        this.useIndexedDB = await indexedDBManager.init();
+        if (this.useIndexedDB) {
+          console.log('✅ Using IndexedDB for storage (unlimited capacity)');
+        } else {
+          console.log('⚠️ IndexedDB not available, using localStorage (5-10 MB limit)');
+        }
+        return this.useIndexedDB;
+      } catch (error) {
+        console.warn('IndexedDB initialization failed, using localStorage:', error);
+        this.useIndexedDB = false;
+        return false;
       }
-    } catch (error) {
-      console.warn('IndexedDB initialization failed, using localStorage:', error);
-      this.useIndexedDB = false;
+    })();
+
+    return this.initPromise;
+  }
+
+  // ✅ Đảm bảo init() hoàn thành trước khi sử dụng
+  async ensureInitialized() {
+    if (this.initPromise) {
+      await this.initPromise;
+    } else {
+      await this.init();
     }
   }
 
@@ -48,6 +70,9 @@ class LocalStorageManager {
 
   // ✅ Get storage info
   async getStorageInfo() {
+    // Ensure IndexedDB is initialized
+    await this.ensureInitialized();
+    
     // Get IndexedDB info (primary)
     if (this.useIndexedDB) {
       const indexedInfo = await indexedDBManager.getStorageInfo();
@@ -56,6 +81,7 @@ class LocalStorageManager {
         const localInfo = this.getLocalStorageInfo();
         return {
           ...indexedInfo,
+          indexedDB: true, // ✅ Explicitly mark IndexedDB as available
           localStorage: localInfo,
           storageType: 'IndexedDB (primary) + localStorage (fallback)'
         };
@@ -63,7 +89,12 @@ class LocalStorageManager {
     }
 
     // Fallback to localStorage only
-    return this.getLocalStorageInfo();
+    const localInfo = this.getLocalStorageInfo();
+    return {
+      ...localInfo,
+      indexedDB: false, // ✅ Explicitly mark IndexedDB as unavailable
+      localStorage: localInfo
+    };
   }
 
   getLocalStorageInfo() {
@@ -118,6 +149,9 @@ class LocalStorageManager {
   // ==================== BOOKS ====================
   
   async getBooks(level) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
     // Try IndexedDB first
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getBooks(level);
@@ -142,6 +176,9 @@ class LocalStorageManager {
   }
 
   async saveBooks(level, books) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
     // Save to IndexedDB (primary)
     if (this.useIndexedDB) {
       const success = await indexedDBManager.saveBooks(level, books);
@@ -166,6 +203,25 @@ class LocalStorageManager {
     return false;
   }
 
+  // ✅ NEW: Clear books data for a level (force refresh)
+  async clearBooks(level) {
+    await this.ensureInitialized();
+    
+    // Clear from IndexedDB
+    if (this.useIndexedDB) {
+      await indexedDBManager.deleteBooks(level);
+    }
+    
+    // Clear from localStorage
+    if (this.storageAvailable) {
+      const key = `adminBooks_${level}`;
+      localStorage.removeItem(key);
+    }
+    
+    console.log(`🗑️ Cleared books data for level: ${level}`);
+    return true;
+  }
+
   async deleteBooks(level) {
     // Delete from IndexedDB
     if (this.useIndexedDB) {
@@ -183,6 +239,9 @@ class LocalStorageManager {
   // ==================== SERIES ====================
   
   async getSeries(level) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
     // Try IndexedDB first
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getSeries(level);
@@ -207,6 +266,9 @@ class LocalStorageManager {
   }
 
   async saveSeries(level, series) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
     // Save to IndexedDB (primary)
     if (this.useIndexedDB) {
       const success = await indexedDBManager.saveSeries(level, series);
@@ -248,6 +310,9 @@ class LocalStorageManager {
   // ==================== CHAPTERS ====================
   
   async getChapters(bookId) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
     // Try IndexedDB first
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getChapters(bookId);
@@ -272,6 +337,9 @@ class LocalStorageManager {
   }
 
   async saveChapters(bookId, chapters) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
     // Save to IndexedDB (primary) - UNLIMITED STORAGE!
     if (this.useIndexedDB) {
       const success = await indexedDBManager.saveChapters(bookId, chapters);
@@ -323,64 +391,66 @@ class LocalStorageManager {
     }
   }
 
-  // ==================== QUIZZES ====================
+  // ==================== LESSONS ====================
   
-  async getQuiz(bookId, chapterId) {
-    // Try IndexedDB first (UNLIMITED STORAGE for large quizzes!)
+  async getLessons(bookId, chapterId) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
+    // Try IndexedDB first
     if (this.useIndexedDB) {
-      const result = await indexedDBManager.getQuiz(bookId, chapterId);
+      const result = await indexedDBManager.getLessons(bookId, chapterId);
       if (result) return result;
     }
 
     // Fallback to localStorage
     if (this.storageAvailable) {
-      const key = `adminQuiz_${bookId}_${chapterId}`;
+      const key = `adminLessons_${bookId}_${chapterId}`;
       const data = localStorage.getItem(key);
       if (data) {
-        const quiz = JSON.parse(data);
-        // Sync to IndexedDB for future use
+        const lessons = JSON.parse(data);
+        // Sync to IndexedDB
         if (this.useIndexedDB) {
-          await indexedDBManager.saveQuiz(bookId, chapterId, quiz);
+          await indexedDBManager.saveLessons(bookId, chapterId, lessons);
         }
-        return quiz;
+        return lessons;
       }
     }
 
     return null;
   }
 
-  async saveQuiz(bookId, chapterId, quiz) {
-    // Save to IndexedDB (primary) - UNLIMITED STORAGE!
-    // This is CRITICAL for 50 questions/chapter (250 MB total)
+  async saveLessons(bookId, chapterId, lessons) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
+    // Save to IndexedDB (primary)
     if (this.useIndexedDB) {
-      const success = await indexedDBManager.saveQuiz(bookId, chapterId, quiz);
+      const success = await indexedDBManager.saveLessons(bookId, chapterId, lessons);
       if (success) {
-        // Try to save to localStorage for backward compatibility
-        // But don't fail if localStorage is full (IndexedDB has it)
+        // Also save to localStorage for backward compatibility
         if (this.storageAvailable) {
           try {
-            const key = `adminQuiz_${bookId}_${chapterId}`;
-            localStorage.setItem(key, JSON.stringify(quiz));
+            const key = `adminLessons_${bookId}_${chapterId}`;
+            localStorage.setItem(key, JSON.stringify(lessons));
           } catch (e) {
-            // localStorage might be full, that's OK - IndexedDB has it
-            console.warn('localStorage full, but quiz saved to IndexedDB');
+            console.warn('localStorage full, but data saved to IndexedDB');
           }
         }
         return true;
       }
     }
 
-    // Fallback to localStorage only (might fail if too large)
+    // Fallback to localStorage only
     if (this.storageAvailable) {
       try {
-        const key = `adminQuiz_${bookId}_${chapterId}`;
-        localStorage.setItem(key, JSON.stringify(quiz));
-        console.log(`✅ Saved quiz to localStorage (${key}, ${quiz.questions?.length || 0} questions)`);
+        const key = `adminLessons_${bookId}_${chapterId}`;
+        localStorage.setItem(key, JSON.stringify(lessons));
+        console.log(`✅ Saved ${lessons.length} lessons to localStorage (${key})`);
         return true;
       } catch (e) {
         if (e.name === 'QuotaExceededError') {
-          console.error('❌ localStorage quota exceeded! Quiz too large. Need IndexedDB.');
-          alert('⚠️ Quiz quá lớn! localStorage không đủ dung lượng. Vui lòng sử dụng IndexedDB.');
+          console.error('❌ localStorage quota exceeded! Consider using IndexedDB.');
         }
         return false;
       }
@@ -389,23 +459,214 @@ class LocalStorageManager {
     return false;
   }
 
-  async deleteQuiz(bookId, chapterId) {
+  async deleteLessons(bookId, chapterId) {
     // Delete from IndexedDB
     if (this.useIndexedDB) {
-      await indexedDBManager.deleteQuiz(bookId, chapterId);
+      await indexedDBManager.deleteLessons(bookId, chapterId);
     }
 
     // Delete from localStorage
     if (this.storageAvailable) {
-      const key = `adminQuiz_${bookId}_${chapterId}`;
+      const key = `adminLessons_${bookId}_${chapterId}`;
       localStorage.removeItem(key);
       console.log(`🗑️ Deleted ${key}`);
+    }
+  }
+
+  // ==================== QUIZZES ====================
+  
+  async getQuiz(bookId, chapterId, lessonId = null) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
+    // Nếu không có lessonId, dùng chapterId làm lessonId (backward compatibility)
+    const finalLessonId = lessonId || chapterId;
+    
+    console.log(`🔍 storageManager.getQuiz(${bookId}, ${chapterId}, ${finalLessonId})`);
+    console.log(`   - useIndexedDB: ${this.useIndexedDB}`);
+    console.log(`   - storageAvailable: ${this.storageAvailable}`);
+    
+    // Try IndexedDB first (UNLIMITED STORAGE for large quizzes!)
+    if (this.useIndexedDB) {
+      const result = await indexedDBManager.getQuiz(bookId, chapterId, finalLessonId);
+      if (result) {
+        console.log(`✅ Found quiz in IndexedDB`);
+        return result;
+      }
+      console.log(`❌ Quiz not found in IndexedDB`);
+    }
+
+    // Fallback to localStorage
+    if (this.storageAvailable) {
+      // Try new format first: adminQuiz_bookId_chapterId_lessonId
+      let key = `adminQuiz_${bookId}_${chapterId}_${finalLessonId}`;
+      let data = localStorage.getItem(key);
+      
+      // Fallback to old format: adminQuiz_bookId_chapterId (backward compatibility)
+      if (!data) {
+        key = `adminQuiz_${bookId}_${chapterId}`;
+        data = localStorage.getItem(key);
+      }
+      
+      if (data) {
+        const quiz = JSON.parse(data);
+        console.log(`✅ Found quiz in localStorage`);
+        // Sync to IndexedDB for future use (with lessonId)
+        if (this.useIndexedDB) {
+          await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, quiz);
+        }
+        return quiz;
+      }
+      console.log(`❌ Quiz not found in localStorage`);
+      
+      // ✅ DEBUG: List all localStorage keys to see what's stored
+      const allKeys = Object.keys(localStorage).filter(k => k.startsWith('adminQuiz_'));
+      console.log(`📋 localStorage: All quiz keys:`, allKeys);
+    }
+
+    console.log(`❌ Quiz not found in any storage`);
+    return null;
+  }
+
+  async saveQuiz(bookId, chapterId, lessonId, quiz) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
+    // Nếu lessonId không được cung cấp, dùng chapterId (backward compatibility)
+    const finalLessonId = lessonId || quiz.lessonId || chapterId;
+    
+    console.log(`💾 storageManager.saveQuiz(${bookId}, ${chapterId}, ${finalLessonId})`);
+    console.log(`   - useIndexedDB: ${this.useIndexedDB}`);
+    console.log(`   - storageAvailable: ${this.storageAvailable}`);
+    console.log(`   - Quiz title: ${quiz.title || 'N/A'}`);
+    console.log(`   - Questions count: ${quiz.questions?.length || 0}`);
+    
+    // Save to IndexedDB (primary) - UNLIMITED STORAGE!
+    // This is CRITICAL for 50 questions/chapter (250 MB total)
+    if (this.useIndexedDB) {
+      console.log(`💾 Attempting to save to IndexedDB...`);
+      const success = await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, quiz);
+      console.log(`   - IndexedDB save result: ${success ? 'SUCCESS' : 'FAILED'}`);
+      if (success) {
+        // Try to save to localStorage for backward compatibility
+        // But don't fail if localStorage is full (IndexedDB has it)
+        if (this.storageAvailable) {
+          try {
+            const key = `adminQuiz_${bookId}_${chapterId}_${finalLessonId}`;
+            localStorage.setItem(key, JSON.stringify(quiz));
+            console.log(`✅ Also saved to localStorage: ${key}`);
+          } catch (e) {
+            // localStorage might be full, that's OK - IndexedDB has it
+            console.warn('⚠️ localStorage full, but quiz saved to IndexedDB');
+          }
+        }
+        console.log(`✅ Quiz saved successfully to IndexedDB`);
+        return true;
+      } else {
+        console.log(`❌ Failed to save to IndexedDB, trying localStorage fallback...`);
+      }
+    }
+
+    // Fallback to localStorage only (might fail if too large)
+    if (this.storageAvailable) {
+      try {
+        const key = `adminQuiz_${bookId}_${chapterId}_${finalLessonId}`;
+        console.log(`💾 Attempting to save to localStorage with key: ${key}`);
+        localStorage.setItem(key, JSON.stringify(quiz));
+        console.log(`✅ Saved quiz to localStorage (${key}, ${quiz.questions?.length || 0} questions)`);
+        return true;
+      } catch (e) {
+        if (e.name === 'QuotaExceededError') {
+          console.error('❌ localStorage quota exceeded! Quiz too large. Need IndexedDB.');
+          alert('⚠️ Quiz quá lớn! localStorage không đủ dung lượng. Vui lòng sử dụng IndexedDB.');
+        } else {
+          console.error('❌ Error saving to localStorage:', e);
+        }
+        return false;
+      }
+    }
+
+    console.error('❌ Cannot save quiz: IndexedDB not available and localStorage not available');
+    return false;
+  }
+
+  async getAllQuizzes() {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+
+    // Try IndexedDB first
+    if (this.useIndexedDB) {
+      const quizzes = await indexedDBManager.getAllQuizzes();
+      if (quizzes && quizzes.length > 0) {
+        return quizzes;
+      }
+    }
+
+    // Fallback to localStorage
+    const allQuizzes = [];
+    if (this.storageAvailable) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('adminQuiz_')) {
+          try {
+            const data = localStorage.getItem(key);
+            if (data) {
+              const quiz = JSON.parse(data);
+              // Extract bookId, chapterId, lessonId from key format
+              // New format: adminQuiz_bookId_chapterId_lessonId
+              // Old format: adminQuiz_bookId_chapterId
+              const parts = key.replace('adminQuiz_', '').split('_');
+              if (parts.length >= 2) {
+                const bookId = parts[0];
+                const chapterId = parts[1];
+                const lessonId = parts.length >= 3 ? parts.slice(2).join('_') : chapterId; // Fallback to chapterId
+                allQuizzes.push({
+                  bookId,
+                  chapterId,
+                  lessonId,
+                  ...quiz
+                });
+              }
+            }
+          } catch (e) {
+            console.warn(`Error parsing quiz from key ${key}:`, e);
+          }
+        }
+      }
+    }
+
+    return allQuizzes;
+  }
+
+  async deleteQuiz(bookId, chapterId, lessonId = null) {
+    // Nếu không có lessonId, dùng chapterId (backward compatibility)
+    const finalLessonId = lessonId || chapterId;
+    
+    // Delete from IndexedDB
+    if (this.useIndexedDB) {
+      await indexedDBManager.deleteQuiz(bookId, chapterId, finalLessonId);
+    }
+
+    // Delete from localStorage (both old and new format)
+    if (this.storageAvailable) {
+      // Delete new format
+      const newKey = `adminQuiz_${bookId}_${chapterId}_${finalLessonId}`;
+      localStorage.removeItem(newKey);
+      
+      // Delete old format (backward compatibility)
+      const oldKey = `adminQuiz_${bookId}_${chapterId}`;
+      localStorage.removeItem(oldKey);
+      
+      console.log(`🗑️ Deleted quiz keys: ${newKey}, ${oldKey}`);
     }
   }
 
   // ==================== JLPT EXAMS ====================
   
   async getExams(level) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
     // Try IndexedDB first
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getExams(level);
@@ -430,6 +691,9 @@ class LocalStorageManager {
   }
 
   async saveExams(level, exams) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
     // Save to IndexedDB (primary)
     if (this.useIndexedDB) {
       const success = await indexedDBManager.saveExams(level, exams);
@@ -466,6 +730,9 @@ class LocalStorageManager {
   }
 
   async getLevelConfig(level) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
     // Try IndexedDB first
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getLevelConfig(level);
@@ -490,6 +757,9 @@ class LocalStorageManager {
   }
 
   async saveLevelConfig(level, config) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
     // Save to IndexedDB (primary)
     if (this.useIndexedDB) {
       const success = await indexedDBManager.saveLevelConfig(level, config);
@@ -526,6 +796,9 @@ class LocalStorageManager {
   }
   
   async getExam(level, examId) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
     // Try IndexedDB first
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getExam(level, examId);
@@ -550,6 +823,9 @@ class LocalStorageManager {
   }
 
   async saveExam(level, examId, examData) {
+    // ✅ Đảm bảo init() hoàn thành trước
+    await this.ensureInitialized();
+    
     // Save to IndexedDB (primary)
     if (this.useIndexedDB) {
       const success = await indexedDBManager.saveExam(level, examId, examData);
@@ -616,6 +892,136 @@ class LocalStorageManager {
 
     // Fallback to localStorage only
     return this.exportAllFromLocalStorage();
+  }
+
+  // ✅ NEW: Export data for a specific level
+  async exportLevel(level) {
+    // Try IndexedDB first
+    if (this.useIndexedDB) {
+      const indexedData = await indexedDBManager.exportLevel(level);
+      if (indexedData) {
+        return indexedData;
+      }
+    }
+
+    // Fallback to localStorage only
+    return this.exportLevelFromLocalStorage(level);
+  }
+
+  // ✅ NEW: Export data by date range
+  async exportByDateRange(startDate, endDate, dataTypes = ['all'], includeRelated = false, includeUsers = false, includeUserPasswords = false) {
+    // Try IndexedDB first (has metadata)
+    if (this.useIndexedDB) {
+      const indexedData = await indexedDBManager.exportByDateRange(startDate, endDate, dataTypes, includeRelated, includeUsers, includeUserPasswords);
+      if (indexedData) {
+        return indexedData;
+      }
+    }
+
+    // Fallback: return null (localStorage doesn't have metadata)
+    console.warn('exportByDateRange requires IndexedDB with metadata. Please use IndexedDB.');
+    return null;
+  }
+
+  // ✅ NEW: Export users
+  exportUsers(includePassword = false) {
+    return indexedDBManager.exportUsers(includePassword);
+  }
+
+  exportLevelFromLocalStorage(level) {
+    const data = {
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      level: level,
+      books: [],
+      series: [],
+      chapters: {},
+      lessons: {},
+      quizzes: {},
+      exams: {},
+      levelConfigs: {}
+    };
+
+    if (!this.storageAvailable) return data;
+
+    // Export books for this level
+    const booksKey = `adminBooks_${level}`;
+    const books = localStorage.getItem(booksKey);
+    if (books) {
+      try {
+        data.books = JSON.parse(books);
+      } catch (e) {
+        console.warn(`Failed to parse books for ${level}:`, e);
+      }
+    }
+
+    // Export series for this level
+    const seriesKey = `adminSeries_${level}`;
+    const series = localStorage.getItem(seriesKey);
+    if (series) {
+      try {
+        data.series = JSON.parse(series);
+      } catch (e) {
+        console.warn(`Failed to parse series for ${level}:`, e);
+      }
+    }
+
+    // Export chapters for books in this level
+    if (data.books && Array.isArray(data.books)) {
+      for (const book of data.books) {
+        const chaptersKey = `adminChapters_${book.id}`;
+        const chapters = localStorage.getItem(chaptersKey);
+        if (chapters) {
+          try {
+            data.chapters[book.id] = JSON.parse(chapters);
+          } catch (e) {
+            console.warn(`Failed to parse chapters for ${book.id}:`, e);
+          }
+        }
+      }
+    }
+
+    // Export lessons for books in this level
+    if (data.books && Array.isArray(data.books)) {
+      for (const book of data.books) {
+        // Get chapters first
+        const chapters = data.chapters[book.id] || [];
+        for (const chapter of chapters) {
+          const lessonsKey = `adminLessons_${book.id}_${chapter.id}`;
+          const lessons = localStorage.getItem(lessonsKey);
+          if (lessons) {
+            try {
+              data.lessons[`${book.id}_${chapter.id}`] = JSON.parse(lessons);
+            } catch (e) {
+              console.warn(`Failed to parse lessons for ${book.id}_${chapter.id}:`, e);
+            }
+          }
+        }
+      }
+    }
+
+    // Export quizzes for books in this level
+    if (data.books && Array.isArray(data.books)) {
+      for (const book of data.books) {
+        const chapters = data.chapters[book.id] || [];
+        for (const chapter of chapters) {
+          const lessons = data.lessons[`${book.id}_${chapter.id}`] || [];
+          for (const lesson of lessons) {
+            const quizKey = `adminQuiz_${book.id}_${chapter.id}_${lesson.id}`;
+            const quiz = localStorage.getItem(quizKey);
+            if (quiz) {
+              try {
+                data.quizzes[`${book.id}_${chapter.id}_${lesson.id}`] = JSON.parse(quiz);
+              } catch (e) {
+                console.warn(`Failed to parse quiz for ${book.id}_${chapter.id}_${lesson.id}:`, e);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return data;
   }
 
   exportAllFromLocalStorage() {
@@ -841,6 +1247,85 @@ class LocalStorageManager {
     return count;
   }
 
+  // ✅ NEW: Export a specific Series
+  async exportSeries(level, seriesId) {
+    if (this.useIndexedDB) {
+      return await indexedDBManager.exportSeries(level, seriesId);
+    }
+    // Fallback: Not implemented for localStorage (too complex)
+    return null;
+  }
+
+  // ✅ NEW: Export a specific Book
+  async exportBook(level, bookId) {
+    if (this.useIndexedDB) {
+      return await indexedDBManager.exportBook(level, bookId);
+    }
+    // Fallback: Not implemented for localStorage (too complex)
+    return null;
+  }
+
+  // ✅ NEW: Export a specific Chapter
+  async exportChapter(bookId, chapterId) {
+    if (this.useIndexedDB) {
+      return await indexedDBManager.exportChapter(bookId, chapterId);
+    }
+    // Fallback: Not implemented for localStorage (too complex)
+    return null;
+  }
+
+  // ✅ NEW: Export a specific Lesson
+  async exportLesson(bookId, chapterId, lessonId) {
+    if (this.useIndexedDB) {
+      return await indexedDBManager.exportLesson(bookId, chapterId, lessonId);
+    }
+    // Fallback: Not implemented for localStorage (too complex)
+    return null;
+  }
+
+  // ✅ NEW: Export a specific Quiz
+  async exportQuiz(bookId, chapterId, lessonId) {
+    if (this.useIndexedDB) {
+      return await indexedDBManager.exportQuiz(bookId, chapterId, lessonId);
+    }
+    // Fallback: Not implemented for localStorage (too complex)
+    return null;
+  }
+
+  // ✅ NEW: Export exam functions
+  async exportExam(level, examId) {
+    if (this.useIndexedDB) {
+      return await indexedDBManager.exportExam(level, examId);
+    }
+    // Fallback: Not implemented for localStorage (too complex)
+    return null;
+  }
+
+  async exportExamByYear(level, year) {
+    if (this.useIndexedDB) {
+      return await indexedDBManager.exportExamByYear(level, year);
+    }
+    // Fallback: Not implemented for localStorage (too complex)
+    return null;
+  }
+
+  async exportExamSection(level, examId, sectionType) {
+    if (this.useIndexedDB) {
+      return await indexedDBManager.exportExamSection(level, examId, sectionType);
+    }
+    // Fallback: Not implemented for localStorage (too complex)
+    return null;
+  }
+
+  // ✅ NEW: Import a specific item
+  async importItem(data) {
+    if (this.useIndexedDB) {
+      return await indexedDBManager.importItem(data);
+    }
+    // Fallback: Not implemented for localStorage (too complex)
+    return { success: false, error: 'IndexedDB required for item import' };
+  }
+
   // ==================== COMPRESSION ====================
   
   // Compress data before saving (for large content)
@@ -880,6 +1365,9 @@ export const {
   getChapters,
   saveChapters,
   deleteChapters,
+  getLessons,
+  saveLessons,
+  deleteLessons,
   getQuiz,
   saveQuiz,
   deleteQuiz,
@@ -887,7 +1375,16 @@ export const {
   saveExam,
   deleteExam,
   exportAll,
+  exportLevel,
+  exportSeries,
+  exportBook,
+  exportChapter,
+  exportLesson,
+  exportQuiz,
+  exportByDateRange,
   importAll,
+  importLevel,
+  importItem,
   clearAllAdminData,
   clearAll,
   getStorageInfo

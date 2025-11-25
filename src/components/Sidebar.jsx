@@ -12,7 +12,7 @@ function Sidebar({ selectedCategory, onCategoryClick }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const itemsPerPage = 14;
-  
+
   // ✅ State cho Modal "Sắp diễn ra"
   const [showUpcomingModal, setShowUpcomingModal] = useState(false);
 
@@ -25,28 +25,28 @@ function Sidebar({ selectedCategory, onCategoryClick }) {
 
   const getCurrentTitle = () => {
     const path = location.pathname;
-    
+
     if (path === '/level') return { title: 'LEVEL', link: '/level' };
-    
+
     if (path.startsWith('/level/n1')) return { title: 'N1', link: '/level/n1' };
     if (path.startsWith('/level/n2')) return { title: 'N2', link: '/level/n2' };
     if (path.startsWith('/level/n3')) return { title: 'N3', link: '/level/n3' };
     if (path.startsWith('/level/n4')) return { title: 'N4', link: '/level/n4' };
     if (path.startsWith('/level/n5')) return { title: 'N5', link: '/level/n5' };
-    
+
     if (path === '/jlpt') return { title: 'JLPT', link: '/jlpt' };
-    
+
     if (path.startsWith('/jlpt/n1')) return { title: 'N1 - 試験', link: '/jlpt/n1' };
     if (path.startsWith('/jlpt/n2')) return { title: 'N2 - 試験', link: '/jlpt/n2' };
     if (path.startsWith('/jlpt/n3')) return { title: 'N3 - 試験', link: '/jlpt/n3' };
     if (path.startsWith('/jlpt/n4')) return { title: 'N4 - 試験', link: '/jlpt/n4' };
     if (path.startsWith('/jlpt/n5')) return { title: 'N5 - 試験', link: '/jlpt/n5' };
-    
+
     return { title: 'LEVEL', link: '/level' };
   };
 
   const currentTitle = getCurrentTitle();
-  
+
   const isLevelPage = location.pathname === '/level';
   const isJlptPage = location.pathname === '/jlpt';
 
@@ -92,35 +92,80 @@ function Sidebar({ selectedCategory, onCategoryClick }) {
   const currentItems = menuItems.slice(startIndex, endIndex);
   const totalPages = Math.ceil(menuItems.length / itemsPerPage);
 
-  const PaginationControls = ({ total, current, onChange }) => (
-    totalPages > 1 && (
-      <div className="flex items-center justify-center space-x-1 pt-4">
+  // ✅ Pagination Controls với Ellipsis Logic & Neo Brutalism Style (Compact cho Sidebar)
+  const PaginationControls = ({ total, current, onChange }) => {
+    if (total <= 1) return null;
+
+    const getPageNumbers = () => {
+      const pages = [];
+      // Logic ellipsis tích cực: Kích hoạt khi > 3 trang
+      if (total <= 3) {
+        for (let i = 1; i <= total; i++) pages.push(i);
+      } else {
+        // Total >= 4
+        if (current === 1) {
+          // Trang đầu: 1 2 ... Total (Ẩn trang 3 nếu Total=4)
+          pages.push(1, 2, '...', total);
+        } else if (current === total) {
+          // Trang cuối: 1 ... Total-1 Total (Ẩn trang 2 nếu Total=4)
+          pages.push(1, '...', total - 1, total);
+        } else if (current === 2) {
+          // Trang 2: 1 2 3 ... Total (Nếu Total=4 thì hiện hết 1 2 3 4)
+          if (total === 4) {
+            pages.push(1, 2, 3, 4);
+          } else {
+            pages.push(1, 2, 3, '...', total);
+          }
+        } else if (current === total - 1) {
+          // Trang áp chót: 1 ... Total-2 Total-1 Total (Nếu Total=4 thì hiện hết)
+          if (total === 4) {
+            pages.push(1, 2, 3, 4);
+          } else {
+            pages.push(1, '...', total - 2, total - 1, total);
+          }
+        } else {
+          // Ở giữa: 1 ... Current ... Total
+          pages.push(1, '...', current, '...', total);
+        }
+      }
+      return pages;
+    };
+
+    const pageNumbers = getPageNumbers();
+
+    return (
+      <div className="flex items-center justify-center gap-[2px] pt-4 px-1 w-full">
         <button
           onClick={() => onChange(prev => Math.max(1, prev - 1))}
-          className="px-2 py-1 border border-gray-400 bg-white bg-opacity-80 rounded-md text-xs text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-7 h-7 flex-shrink-0 flex items-center justify-center border-[2px] border-black bg-white rounded text-[10px] font-bold hover:bg-yellow-400 hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none transition-all"
           disabled={current === 1}
         >&lt;</button>
-        {Array.from({ length: total }).map((_, i) => (
-          <button
-            key={i + 1}
-            onClick={() => onChange(i + 1)}
-            className={`px-2 py-1 border rounded-md text-xs ${
-              current === i + 1
-                ? 'border-yellow-400 bg-yellow-400 text-black font-semibold'
-                : 'border-gray-400 bg-white bg-opacity-80 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {i + 1}
-          </button>
+
+        {pageNumbers.map((page, index) => (
+          page === '...' ? (
+            <span key={`ellipsis-${index}`} className="text-black font-bold text-[10px] w-4 text-center">...</span>
+          ) : (
+            <button
+              key={page}
+              onClick={() => onChange(page)}
+              className={`w-7 h-7 flex-shrink-0 flex items-center justify-center border-[2px] rounded text-[10px] font-bold transition-all ${current === page
+                ? 'border-black bg-yellow-400 text-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]'
+                : 'border-black bg-white text-black hover:bg-yellow-400 hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]'
+                }`}
+            >
+              {page}
+            </button>
+          )
         ))}
+
         <button
           onClick={() => onChange(prev => Math.min(total, prev + 1))}
-          className="px-2 py-1 border border-gray-400 bg-white bg-opacity-80 rounded-md text-xs text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-7 h-7 flex-shrink-0 flex items-center justify-center border-[2px] border-black bg-white rounded text-[10px] font-bold hover:bg-yellow-400 hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:shadow-none transition-all"
           disabled={current === total}
-        >次へ &gt;</button>
+        >&gt;</button>
       </div>
-    )
-  );
+    );
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -143,7 +188,7 @@ function Sidebar({ selectedCategory, onCategoryClick }) {
   // ✅ Handler cho Module LEVEL (filter logic)
   const handleLevelCategoryClick = (categoryName) => {
     const newCategory = activeItem === categoryName ? null : categoryName;
-    
+
     if (onCategoryClick) {
       onCategoryClick(newCategory);
     }
@@ -154,12 +199,12 @@ function Sidebar({ selectedCategory, onCategoryClick }) {
   const handleJlptExamClick = (item) => {
     const { id: examId, status } = item;
     const levelId = params.levelId;
-    
+
     // 1. Kiểm tra status "Sắp diễn ra" TRƯỚC
-    const isUpcoming = status === 'Sắp diễn ra' || 
-                       status?.trim() === 'Sắp diễn ra' ||
-                       status?.includes('Sắp');
-    
+    const isUpcoming = status === 'Sắp diễn ra' ||
+      status?.trim() === 'Sắp diễn ra' ||
+      status?.includes('Sắp');
+
     if (isUpcoming) {
       // ✅ Hiện Modal ngay lập tức
       setShowUpcomingModal(true);
@@ -202,7 +247,7 @@ function Sidebar({ selectedCategory, onCategoryClick }) {
     <>
       {/* ✅ Render Warning Modal từ useExamGuard */}
       {WarningModal}
-      
+
       {/* ✅ Modal "Sắp diễn ra" - State-based */}
       <Modal
         title="📅 Đề thi đang chuẩn bị"
@@ -246,11 +291,11 @@ function Sidebar({ selectedCategory, onCategoryClick }) {
         fixed md:sticky 
         top-20 md:top-24
         left-0 
-        h-[calc(100vh-80px)] md:h-[calc(100vh-120px)]
-        max-h-[calc(100vh-80px)] md:max-h-[calc(100vh-120px)]
+        h-[calc(100vh-80px)] md:h-[calc(100vh-96px)]
+        max-h-[calc(100vh-80px)] md:max-h-[calc(100vh-96px)]
         w-56 md:w-56 
-        bg-gray-100/90 backdrop-blur-sm 
-        rounded-lg md:rounded-lg shadow-lg 
+        bg-white 
+        rounded-lg md:rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] 
         flex flex-col overflow-hidden 
         z-50 md:z-10
         transition-transform duration-300 ease-in-out
@@ -288,11 +333,10 @@ function Sidebar({ selectedCategory, onCategoryClick }) {
                   <li key={item.id || item.name} className="border-b border-gray-300">
                     <button
                       onClick={() => handleCategoryClick(item)}
-                      className={`block py-3 px-3 text-sm transition-colors duration-200 rounded-sm text-center w-full ${
-                        isActive
-                          ? 'bg-yellow-400 text-black font-semibold'
-                          : 'text-gray-700 hover:bg-gray-200/50'
-                      }`}
+                      className={`block py-3 px-3 text-sm transition-colors duration-200 rounded-sm text-center w-full ${isActive
+                        ? 'bg-yellow-400 text-black font-semibold'
+                        : 'text-gray-700 hover:bg-gray-200/50'
+                        }`}
                     >
                       {item.name}
                     </button>
@@ -328,4 +372,4 @@ function Sidebar({ selectedCategory, onCategoryClick }) {
   );
 }
 
-export default Sidebar;
+export default Sidebar; 

@@ -6,7 +6,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import { getExamById } from '../../../data/jlpt/jlptData.js';
+import storageManager from '../../../utils/localStorageManager.js';
 import ReactModal from 'react-modal';
+import { useLanguage } from '../../../contexts/LanguageContext.jsx';
 
 ReactModal.setAppElement('#root');
 
@@ -79,9 +81,11 @@ const AnimatedNumber = ({ value, duration = 2000 }) => {
 function JLPTExamResultPage() {
   const { levelId, examId } = useParams();
   const navigate = useNavigate();
-  const currentExam = getExamById(levelId, examId);
+  const { t } = useLanguage();
   
-  if (!currentExam) return <div>Đề thi không tồn tại</div>;
+  // ✅ UPDATED: Load exam metadata từ storage trước, fallback về static file
+  const [currentExam, setCurrentExam] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [scores, setScores] = useState({ knowledge: 0, reading: 0, listening: 0, total: 0 });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -95,6 +99,54 @@ function JLPTExamResultPage() {
     readingCorrect: 0, readingTotal: 0,
     listeningCorrect: 0, listeningTotal: 0 
   });
+
+  // ✅ UPDATED: Load exam data từ storage hoặc static file
+  useEffect(() => {
+    const loadExam = async () => {
+      setIsLoading(true);
+      try {
+        // 1. Thử load từ storage trước (admin created exams)
+        const savedExam = await storageManager.getExam(levelId, examId);
+        
+        if (savedExam) {
+          // Có dữ liệu trong storage
+          console.log('✅ ExamResultPage: Loaded exam from storage:', savedExam);
+          
+          // Extract exam metadata từ savedExam
+          const examMetadata = {
+            id: examId,
+            title: savedExam.title || `JLPT ${examId}`,
+            date: savedExam.date || examId,
+            status: savedExam.status || 'Có sẵn',
+            imageUrl: savedExam.imageUrl || `/jlpt/${levelId}/${examId}.jpg`,
+            level: savedExam.level || levelId
+          };
+          
+          setCurrentExam(examMetadata);
+        } else {
+          // 2. Fallback về static file
+          console.log('📁 ExamResultPage: Loading exam from static file...');
+          const staticExam = getExamById(levelId, examId);
+          
+          if (staticExam) {
+            setCurrentExam(staticExam);
+          } else {
+            // Không tìm thấy ở cả 2 nơi
+            setCurrentExam(null);
+          }
+        }
+      } catch (error) {
+        console.error('❌ ExamResultPage: Error loading exam:', error);
+        // Fallback về static file
+        const staticExam = getExamById(levelId, examId);
+        setCurrentExam(staticExam || null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadExam();
+  }, [levelId, examId]);
 
   useEffect(() => {
     const knowledgeBreakdown = JSON.parse(localStorage.getItem(`exam-${levelId}-${examId}-knowledge-breakdown`)) || { knowledge: 0, reading: 0, totals: { knowledge: 0, reading: 0 } };
@@ -179,12 +231,45 @@ function JLPTExamResultPage() {
     navigate(`/jlpt/${levelId}/${examId}/answers`);
   };
 
-  const breadcrumbPaths = [
-    { name: 'ホーム', onClick: () => handleNavigateWithConfirm('/') },
-    { name: 'JLPT', onClick: () => handleNavigateWithConfirm('/jlpt') },
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="w-full pr-0 md:pr-4">
+        <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
+          <Sidebar />
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden p-8 text-center">
+            <div className="text-xl text-gray-500">{t('jlpt.resultPage.loading')}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not found state
+  if (!currentExam) {
+    return (
+      <div className="w-full pr-0 md:pr-4">
+        <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
+          <Sidebar />
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden p-8 text-center">
+            <h1 className="text-2xl font-bold text-red-500 mb-4">{t('jlpt.resultPage.notFoundTitle')}</h1>
+            <p className="text-gray-600 mb-4">{t('jlpt.resultPage.notFoundDesc', { examId, level: levelId.toUpperCase() })}</p>
+            <button onClick={() => navigate(`/jlpt/${levelId}`)} className="px-4 py-2 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide">
+              {t('jlpt.resultPage.backButton')}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Đảm bảo currentExam đã có trước khi tạo breadcrumbPaths
+  const breadcrumbPaths = currentExam ? [
+    { name: t('common.home'), onClick: () => handleNavigateWithConfirm('/') },
+    { name: t('common.jlpt'), onClick: () => handleNavigateWithConfirm('/jlpt') },
     { name: levelId.toUpperCase(), onClick: () => handleNavigateWithConfirm(`/jlpt/${levelId}`) },
-    { name: currentExam.title }
-  ];
+    { name: currentExam.title || `JLPT ${examId}` }
+  ] : [];
 
   return (
     <>
@@ -287,27 +372,27 @@ function JLPTExamResultPage() {
       <div className="w-full pr-0 md:pr-4">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
           <Sidebar />
-          <div className="flex-1 bg-gradient-to-b from-gray-200 to-gray-300 rounded-lg shadow-lg flex flex-col w-full min-h-app">
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
             <div className="pt-4 px-4 md:px-6 pb-2">
               <Breadcrumbs paths={breadcrumbPaths} />
             </div>
             <div className="flex-1 px-2 sm:px-4 md:px-6 py-3 sm:py-4 flex flex-col items-center justify-center overflow-y-auto">
               {/* ✨ Animated Title */}
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 sm:mb-6 md:mb-8 lg:mb-12 text-center animate-slideUp px-4">
-                {currentExam.title} - 結果
+                {currentExam?.title || `JLPT ${examId}`} - {t('jlpt.resultPage.title')}
               </h1>
 
               {/* ✨ Animated Layout - ✅ FIXED PERFECT ALIGNMENT */}
               <div className="flex flex-col md:flex-row gap-4 sm:gap-6 items-center md:items-stretch mb-6 sm:mb-8 w-full max-w-4xl px-4">
                 {/* ✨ Pass/Fail Card */}
                 <div 
-                  className={`rounded-xl shadow-md flex flex-col items-center justify-between w-full md:w-64 h-64 sm:h-72 md:h-80 glass-effect hover-lift animate-slideUp ${!isPass ? 'animate-shake' : ''}`}
+                  className={`rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center justify-between w-full md:w-64 h-64 sm:h-72 md:h-80 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp ${!isPass ? 'animate-shake' : ''}`}
                   style={{ animationDelay: '0.1s', animationFillMode: 'both' }}
                 >
                   <div className="flex-1 flex items-center justify-center pt-4 sm:pt-6">
                     <div className={`flex items-center justify-center w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 border-4 rounded-full text-2xl sm:text-3xl md:text-4xl font-bold transition-all duration-500 ${isPass ? 'border-red-500 text-red-500 animate-pulse-slow' : 'border-gray-400 text-gray-500'}`}>
                       <div className={isPass ? 'animate-spin-slow' : ''}>
-                        {isPass ? '合格' : '不合格'}
+                        {isPass ? t('jlpt.resultPage.pass') : t('jlpt.resultPage.fail')}
                       </div>
                     </div>
                   </div>
@@ -320,43 +405,43 @@ function JLPTExamResultPage() {
                 <div className="flex flex-col gap-4 w-full md:flex-1 justify-between">
                   {/* 語彙・知識 */}
                   <div 
-                    className="rounded-xl shadow-md w-full h-20 sm:h-24 flex flex-row items-center justify-between px-4 sm:px-6 glass-effect hover-lift gradient-border animate-slideUp"
+                    className="rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full h-20 sm:h-24 flex flex-row items-center justify-between px-4 sm:px-6 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp"
                     style={{ animationDelay: '0.2s', animationFillMode: 'both' }}
                   >
                     <div className="flex flex-col items-start">
-                      <span className="text-sm sm:text-base font-semibold text-gray-700">語彙・知識</span>
+                      <span className="text-sm sm:text-base font-semibold text-gray-700">{t('jlpt.resultPage.knowledgeLabel')}</span>
                       <span className="text-xs text-gray-500">({breakdown.knowledgeCorrect}/{breakdown.knowledgeTotal})</span>
                     </div>
                     <span className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                      <AnimatedNumber value={scores.knowledge} duration={1500} />点
+                      <AnimatedNumber value={scores.knowledge} duration={1500} />{t('jlpt.resultPage.points')}
                     </span>
                   </div>
 
                   {/* 読解 */}
                   <div 
-                    className="rounded-xl shadow-md w-full h-20 sm:h-24 flex flex-row items-center justify-between px-4 sm:px-6 glass-effect hover-lift gradient-border animate-slideUp"
+                    className="rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full h-20 sm:h-24 flex flex-row items-center justify-between px-4 sm:px-6 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp"
                     style={{ animationDelay: '0.3s', animationFillMode: 'both' }}
                   >
                     <div className="flex flex-col items-start">
-                      <span className="text-sm sm:text-base font-semibold text-gray-700">読解</span>
+                      <span className="text-sm sm:text-base font-semibold text-gray-700">{t('jlpt.resultPage.readingLabel')}</span>
                       <span className="text-xs text-gray-500">({breakdown.readingCorrect}/{breakdown.readingTotal})</span>
                     </div>
                     <span className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
-                      <AnimatedNumber value={scores.reading} duration={1500} />点
+                      <AnimatedNumber value={scores.reading} duration={1500} />{t('jlpt.resultPage.points')}
                     </span>
                   </div>
 
                   {/* 聴解 */}
                   <div 
-                    className="rounded-xl shadow-md w-full h-20 sm:h-24 flex flex-row items-center justify-between px-4 sm:px-6 glass-effect hover-lift gradient-border animate-slideUp"
+                    className="rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full h-20 sm:h-24 flex flex-row items-center justify-between px-4 sm:px-6 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp"
                     style={{ animationDelay: '0.4s', animationFillMode: 'both' }}
                   >
                     <div className="flex flex-col items-start">
-                      <span className="text-sm sm:text-base font-semibold text-gray-700">聴解</span>
+                      <span className="text-sm sm:text-base font-semibold text-gray-700">{t('jlpt.resultPage.listeningLabel')}</span>
                       <span className="text-xs text-gray-500">({breakdown.listeningCorrect}/{breakdown.listeningTotal})</span>
                     </div>
                     <span className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                      <AnimatedNumber value={scores.listening} duration={1500} />点
+                      <AnimatedNumber value={scores.listening} duration={1500} />{t('jlpt.resultPage.points')}
                     </span>
                   </div>
                 </div>
@@ -367,24 +452,24 @@ function JLPTExamResultPage() {
                 {/* View Answers Button */}
                 <button
                   onClick={handleViewAnswers}
-                  className="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-2xl text-sm sm:text-base w-full transform hover:scale-105 btn-glow"
+                  className="bg-green-500 text-white font-black px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-sm sm:text-base w-full uppercase tracking-wide hover:translate-x-[-2px] hover:translate-y-[-2px]"
                 >
-                  📝 解答・解説を見る
+                  {t('jlpt.resultPage.viewAnswersButton')}
                 </button>
                 
                 {/* Retry & Exit Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center w-full">
                   <button
                     onClick={() => setShowConfirmModal(true)}
-                    className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 text-sm sm:text-base flex-1 transform hover:scale-105 btn-glow"
+                    className="bg-[#FFB800] text-black font-black px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-sm sm:text-base flex-1 uppercase tracking-wide hover:translate-x-[-2px] hover:translate-y-[-2px]"
                   >
-                    🔄 もう一度受験する
+                    {t('jlpt.resultPage.retakeButton')}
                   </button>
                   <button
                     onClick={() => handleNavigateWithConfirm(`/jlpt/${levelId}`)}
-                    className="bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 text-sm sm:text-base flex-1 transform hover:scale-105 btn-glow"
+                    className="bg-[#2D2D2D] text-white font-black px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-sm sm:text-base flex-1 uppercase tracking-wide hover:translate-x-[-2px] hover:translate-y-[-2px]"
                   >
-                    📋 試験一覧へ
+                    {t('jlpt.resultPage.examListButton')}
                   </button>
                 </div>
               </div>
@@ -398,28 +483,28 @@ function JLPTExamResultPage() {
         isOpen={showExitModal}
         onRequestClose={() => setShowExitModal(false)}
         shouldCloseOnOverlayClick={true}
-        className="bg-white rounded-lg shadow-xl p-6 max-w-md mx-4 md:mx-auto mt-32 animate-slideUp"
+        className="bg-white rounded-lg border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-md mx-4 md:mx-auto mt-32"
         overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4"
       >
         <div className="flex items-center gap-2 mb-4">
           <svg className="w-6 h-6 text-yellow-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14M12 2a10 10 0 100 20 10 10 0 000-20z" />
           </svg>
-          <h2 className="text-xl font-bold">確認</h2>
+          <h2 className="text-xl font-bold">{t('jlpt.resultPage.exitModal.title')}</h2>
         </div>
-        <p className="mb-6 text-gray-700">本当に終了しますか？データは削除されます。</p>
+        <p className="mb-6 text-gray-700">{t('jlpt.resultPage.exitModal.message')}</p>
         <div className="flex justify-end gap-4">
           <button 
             onClick={() => setShowExitModal(false)} 
-            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition-all duration-300 transform hover:scale-105"
+            className="px-4 py-2 bg-gray-300 text-black rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
           >
-            キャンセル
+            {t('jlpt.resultPage.exitModal.cancelButton')}
           </button>
           <button 
             onClick={handleExitConfirmed} 
-            className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105"
+            className="px-4 py-2 bg-red-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
           >
-            確認
+            {t('jlpt.resultPage.exitModal.confirmButton')}
           </button>
         </div>
       </ReactModal>
@@ -429,28 +514,28 @@ function JLPTExamResultPage() {
         isOpen={showConfirmModal}
         onRequestClose={() => setShowConfirmModal(false)}
         shouldCloseOnOverlayClick={true}
-        className="bg-white rounded-lg shadow-xl p-6 max-w-md mx-4 md:mx-auto mt-32 animate-slideUp"
+        className="bg-white rounded-lg border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-md mx-4 md:mx-auto mt-32"
         overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4"
       >
         <div className="flex items-center gap-2 mb-4">
           <svg className="w-6 h-6 text-yellow-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14M12 2a10 10 0 100 20 10 10 0 000-20z" />
           </svg>
-          <h2 className="text-xl font-bold">確認</h2>
+          <h2 className="text-xl font-bold">{t('jlpt.resultPage.retakeModal.title')}</h2>
         </div>
-        <p className="mb-6 text-gray-700">もう一度受験しますか？データは削除されます。</p>
+        <p className="mb-6 text-gray-700">{t('jlpt.resultPage.retakeModal.message')}</p>
         <div className="flex justify-end gap-4">
           <button 
             onClick={() => setShowConfirmModal(false)} 
-            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition-all duration-300 transform hover:scale-105"
+            className="px-4 py-2 bg-gray-300 text-black rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
           >
-            キャンセル
+            {t('jlpt.resultPage.retakeModal.cancelButton')}
           </button>
           <button 
             onClick={handleRetakeConfirmed} 
-            className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105"
+            className="px-4 py-2 bg-red-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
           >
-            確認
+            {t('jlpt.resultPage.retakeModal.confirmButton')}
           </button>
         </div>
       </ReactModal>

@@ -8,7 +8,9 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import { getExamById } from '../../../data/jlpt/jlptData.js';
 import { getExamQuestions } from '../../../data/jlpt/examQuestionsData.js';
 import { getListeningQuestions } from '../../../data/jlpt/listeningQuestionsData.js';
+import storageManager from '../../../utils/localStorageManager.js';
 import ReactModal from 'react-modal';
+import { useLanguage } from '../../../contexts/LanguageContext.jsx';
 
 // ✅ NEW: Import dictionary components
 import { DictionaryButton, DictionaryPopup, useDictionaryDoubleClick } from '../../../components/api_translate/index.js';
@@ -18,6 +20,7 @@ ReactModal.setAppElement('#root');
 // Quick Answer Key component
 const QuickAnswerKey = ({ knowledgeQuestions, listeningQuestions, knowledgeAnswers, listeningAnswers }) => {
   const [isOpen, setIsOpen] = useState(true);
+  const { t } = useLanguage();
 
   const indexToLetter = (index) => {
     const letters = ['A', 'B', 'C', 'D'];
@@ -46,18 +49,18 @@ const QuickAnswerKey = ({ knowledgeQuestions, listeningQuestions, knowledgeAnswe
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md mb-6 overflow-hidden border-2 border-blue-300">
+    <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mb-6 overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-4 flex items-center justify-between hover:from-blue-600 hover:to-purple-600 transition-colors"
+        className="w-full bg-blue-500 text-white px-6 py-4 flex items-center justify-between border-b-[3px] border-black hover:bg-[#FF5722] transition-all duration-200 font-black uppercase tracking-wide"
       >
         <div className="flex items-center gap-3">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
           <div className="text-left">
-            <h2 className="text-xl font-bold">📋 Đáp án tóm tắt / Quick Answer Key</h2>
-            <p className="text-sm opacity-90">✓ Xanh = Đúng | ✗ Đỏ = Sai | (A) = Đáp án đúng</p>
+            <h2 className="text-xl font-bold">{t('jlpt.answersPage.quickKeyTitle')}</h2>
+            <p className="text-sm opacity-90">{t('jlpt.answersPage.quickKeySubtitle')}</p>
           </div>
         </div>
         <svg 
@@ -74,10 +77,12 @@ const QuickAnswerKey = ({ knowledgeQuestions, listeningQuestions, knowledgeAnswe
         <div className="p-6 bg-gray-50">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Part 1: Knowledge/Reading */}
-            <div className="bg-white rounded-lg p-4 shadow">
+            <div className="bg-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4">
               <h3 className="text-lg font-bold mb-3 text-blue-700 flex items-center gap-2">
-                <span className="bg-blue-500 text-white px-2 py-1 rounded">Part 1</span>
-                言語知識・読解
+                <span className="bg-blue-500 text-white px-2 py-1 rounded-md border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-black uppercase">
+                  {t('jlpt.answersPage.part1Label')}
+                </span>
+                {t('jlpt.answersPage.part1Title')}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {knowledgeQuestions.map((q) => (
@@ -92,10 +97,12 @@ const QuickAnswerKey = ({ knowledgeQuestions, listeningQuestions, knowledgeAnswe
             </div>
 
             {/* Part 2: Listening */}
-            <div className="bg-white rounded-lg p-4 shadow">
+            <div className="bg-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4">
               <h3 className="text-lg font-bold mb-3 text-purple-700 flex items-center gap-2">
-                <span className="bg-purple-500 text-white px-2 py-1 rounded">Part 2</span>
-                聴解
+                <span className="bg-purple-500 text-white px-2 py-1 rounded-md border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-black uppercase">
+                  {t('jlpt.answersPage.part2Label')}
+                </span>
+                {t('jlpt.answersPage.part2Title')}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {listeningQuestions.map((q) => {
@@ -116,16 +123,16 @@ const QuickAnswerKey = ({ knowledgeQuestions, listeningQuestions, knowledgeAnswe
           {/* Legend */}
           <div className="mt-4 pt-4 border-t border-gray-200 flex flex-wrap gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <span className="inline-block px-2 py-1 rounded bg-green-100 text-green-700 font-semibold">1-A</span>
-              <span className="text-gray-600">= Câu 1, chọn A (Đúng)</span>
+              <span className="inline-block px-2 py-1 rounded-md border-[2px] border-black bg-green-500 text-white font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">1-A</span>
+              <span className="text-gray-600">{t('jlpt.answersPage.legendCorrect', { id: '1', option: 'A' })}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-block px-2 py-1 rounded bg-red-100 text-red-700 font-semibold">2-B (A)</span>
-              <span className="text-gray-600">= Câu 2, chọn B sai, đáp án đúng là A</span>
+              <span className="inline-block px-2 py-1 rounded-md border-[2px] border-black bg-red-500 text-white font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">2-B (A)</span>
+              <span className="text-gray-600">{t('jlpt.answersPage.legendWrong', { id: '2', option: 'B', answer: 'A' })}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-block px-2 py-1 rounded bg-gray-200 text-gray-600 font-semibold">3--</span>
-              <span className="text-gray-600">= Câu 3 chưa trả lời</span>
+              <span className="inline-block px-2 py-1 rounded-md border-[2px] border-black bg-gray-300 text-black font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">3--</span>
+              <span className="text-gray-600">{t('jlpt.answersPage.legendUnanswered', { id: '3' })}</span>
             </div>
           </div>
         </div>
@@ -139,6 +146,7 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
   // ✅ UPDATED: Ref cho TOÀN BỘ card để tra từ mọi nơi (sau khi xem đáp án)
   const cardRef = useRef(null);
   useDictionaryDoubleClick(cardRef);
+  const { t } = useLanguage();
 
   const isCorrect = userAnswer === question.correctAnswer;
   const isListening = section === 'listening';
@@ -147,26 +155,28 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
     // ✅ UPDATED: Wrap toàn bộ card với ref và select-text
     <div 
       ref={cardRef}
-      className={`bg-white rounded-lg shadow-md p-6 mb-4 border-l-4 select-text ${
+      className={`bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 mb-4 select-text ${
         isCorrect ? 'border-green-500' : 'border-red-500'
       }`}
     >
       {/* Header với số câu và trạng thái */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-white text-sm sm:text-base md:text-lg ${
+          <div className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-black text-white text-sm sm:text-base md:text-lg border-[3px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
             isCorrect ? 'bg-green-500' : 'bg-red-500'
           }`}>
             {index}
           </div>
           <span className="text-gray-600 text-sm">
-            {isListening ? `問題${question.number} (${question.subNumber}番)` : `問題${question.id}`}
+            {isListening
+              ? t('jlpt.answersPage.listeningQuestionLabel', { number: question.number, sub: question.subNumber || question.number })
+              : t('jlpt.answersPage.knowledgeQuestionLabel', { number: question.id })}
           </span>
         </div>
-        <div className={`px-4 py-1 rounded-full text-sm font-semibold ${
-          isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        <div className={`px-4 py-1 rounded-md border-[2px] border-black text-sm font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
+          isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
         }`}>
-          {isCorrect ? '✓ 正解' : '✗ 不正解'}
+          {isCorrect ? t('jlpt.answersPage.statusCorrect') : t('jlpt.answersPage.statusIncorrect')}
         </div>
       </div>
 
@@ -230,10 +240,10 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
                   {option}
                 </span>
                 {isCorrectAnswer && (
-                  <span className="ml-auto text-green-600 font-bold">✓ 正解</span>
+                  <span className="ml-auto text-green-600 font-bold">{t('jlpt.answersPage.statusCorrect')}</span>
                 )}
                 {isUserChoice && !isCorrectAnswer && (
-                  <span className="ml-auto text-red-600 font-bold">あなたの答え</span>
+                  <span className="ml-auto text-red-600 font-bold">{t('jlpt.answersPage.userAnswerLabel')}</span>
                 )}
               </div>
             </div>
@@ -247,10 +257,10 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
           <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span className="font-bold text-blue-800">解説</span>
+          <span className="font-bold text-blue-800">{t('jlpt.answersPage.explanationLabel')}</span>
         </div>
         <p className="text-gray-700 leading-relaxed">
-          {question.explanation || '解説は準備中です。'}
+          {question.explanation || t('jlpt.answersPage.explanationMissing')}
         </p>
       </div>
     </div>
@@ -260,26 +270,31 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
 // Component thống kê tổng quan
 const ScoreSummary = ({ knowledgeScore, listeningScore, totalQuestions, correctAnswers }) => {
   const percentage = Math.round((correctAnswers / totalQuestions) * 100);
+  const { t } = useLanguage();
   
   return (
-    <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg shadow-lg p-6 mb-6 text-white">
-      <h2 className="text-2xl font-bold mb-4">解答結果</h2>
+    <div className="bg-blue-500 rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 mb-6 text-white">
+      <h2 className="text-2xl font-bold mb-4">{t('jlpt.answersPage.scoreHeading')}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
-          <div className="text-sm opacity-90 mb-1">正解数</div>
+        <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-4 backdrop-blur-sm">
+          <div className="text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreCorrect')}</div>
           <div className="text-2xl sm:text-3xl font-bold">{correctAnswers}/{totalQuestions}</div>
         </div>
-        <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
-          <div className="text-sm opacity-90 mb-1">正解率</div>
+        <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-4 backdrop-blur-sm">
+          <div className="text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreAccuracy')}</div>
           <div className="text-2xl sm:text-3xl font-bold">{percentage}%</div>
         </div>
-        <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
-          <div className="text-sm opacity-90 mb-1">言語知識・読解</div>
-          <div className="text-2xl sm:text-3xl font-bold">{knowledgeScore}点</div>
+        <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-4 backdrop-blur-sm">
+          <div className="text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreKnowledge')}</div>
+          <div className="text-2xl sm:text-3xl font-bold">
+            {t('jlpt.answersPage.scoreValue', { score: knowledgeScore })}
+          </div>
         </div>
-        <div className="bg-white/20 rounded-lg p-4 backdrop-blur-sm">
-          <div className="text-sm opacity-90 mb-1">聴解</div>
-          <div className="text-2xl sm:text-3xl font-bold">{listeningScore}点</div>
+        <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-4 backdrop-blur-sm">
+          <div className="text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreListening')}</div>
+          <div className="text-2xl sm:text-3xl font-bold">
+            {t('jlpt.answersPage.scoreValue', { score: listeningScore })}
+          </div>
         </div>
       </div>
     </div>
@@ -289,10 +304,13 @@ const ScoreSummary = ({ knowledgeScore, listeningScore, totalQuestions, correctA
 function ExamAnswersPage() {
   const { levelId, examId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   
-  const currentExam = getExamById(levelId, examId);
-  const knowledgeData = getExamQuestions(levelId, examId);
-  const listeningData = getListeningQuestions(levelId, examId);
+  // ✅ UPDATED: Load exam data từ storage trước, fallback về static file
+  const [currentExam, setCurrentExam] = useState(null);
+  const [knowledgeData, setKnowledgeData] = useState(null);
+  const [listeningData, setListeningData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [knowledgeAnswers, setKnowledgeAnswers] = useState({});
   const [listeningAnswers, setListeningAnswers] = useState({});
@@ -301,6 +319,107 @@ function ExamAnswersPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [pendingPath, setPendingPath] = useState('');
+
+  // ✅ UPDATED: Load exam data từ storage hoặc static file
+  useEffect(() => {
+    const loadExamData = async () => {
+      setIsLoading(true);
+      try {
+        // 1. Thử load từ storage trước (admin created exams)
+        const savedExam = await storageManager.getExam(levelId, examId);
+        
+        if (savedExam) {
+          // Có dữ liệu trong storage
+          console.log('✅ ExamAnswersPage: Loaded exam from storage:', savedExam);
+          
+          // Extract exam metadata từ savedExam
+          const examMetadata = {
+            id: examId,
+            title: savedExam.title || `JLPT ${examId}`,
+            date: savedExam.date || examId,
+            status: savedExam.status || 'Có sẵn',
+            imageUrl: savedExam.imageUrl || `/jlpt/${levelId}/${examId}.jpg`,
+            level: savedExam.level || levelId
+          };
+          
+          setCurrentExam(examMetadata);
+          
+          // ✅ FIX: Transform knowledge data (bao gồm cả reading sections)
+          if (savedExam.knowledge && savedExam.knowledge.sections) {
+            // ✅ Kết hợp knowledge và reading sections (theo format JLPT: 言語知識・読解)
+            const knowledgeSections = savedExam.knowledge.sections || [];
+            const readingSections = savedExam.reading?.sections || [];
+            const combinedSections = [...knowledgeSections, ...readingSections];
+            
+            console.log('📊 ExamAnswersPage: Loading sections:', {
+              knowledgeSectionsCount: knowledgeSections.length,
+              readingSectionsCount: readingSections.length,
+              totalSections: combinedSections.length,
+              knowledgeQuestions: knowledgeSections.reduce((acc, s) => acc + (s.questions?.length || 0), 0),
+              readingQuestions: readingSections.reduce((acc, s) => acc + (s.questions?.length || 0), 0)
+            });
+            
+            setKnowledgeData({
+              knowledge: {
+                sections: combinedSections // ✅ Kết hợp cả 2 loại sections
+              }
+            });
+          }
+          
+          // Transform listening data
+          if (savedExam.listening && savedExam.listening.sections) {
+            setListeningData({
+              sections: savedExam.listening.sections.map(section => ({
+                id: section.id,
+                title: section.title,
+                instruction: section.instruction || '',
+                timeLimit: section.timeLimit || 0,
+                questions: (section.questions || []).map(q => ({
+                  number: q.number || String(q.id).padStart(2, '0'),
+                  subNumber: q.subNumber || q.id,
+                  category: q.category || 'listening',
+                  audioUrl: q.audioUrl || '',
+                  options: q.options || [],
+                  correctAnswer: q.correctAnswer,
+                  explanation: q.explanation || ''
+                }))
+              }))
+            });
+          }
+        } else {
+          // 2. Fallback về static file
+          console.log('📁 ExamAnswersPage: Loading exam from static file...');
+          const staticExam = getExamById(levelId, examId);
+          const staticKnowledgeData = getExamQuestions(levelId, examId);
+          const staticListeningData = getListeningQuestions(levelId, examId);
+          
+          if (staticExam && staticKnowledgeData && staticListeningData) {
+            setCurrentExam(staticExam);
+            setKnowledgeData(staticKnowledgeData);
+            setListeningData(staticListeningData);
+          } else {
+            // Không tìm thấy ở cả 2 nơi
+            setCurrentExam(null);
+            setKnowledgeData(null);
+            setListeningData(null);
+          }
+        }
+      } catch (error) {
+        console.error('❌ ExamAnswersPage: Error loading exam data:', error);
+        // Fallback về static file
+        const staticExam = getExamById(levelId, examId);
+        const staticKnowledgeData = getExamQuestions(levelId, examId);
+        const staticListeningData = getListeningQuestions(levelId, examId);
+        setCurrentExam(staticExam || null);
+        setKnowledgeData(staticKnowledgeData || null);
+        setListeningData(staticListeningData || null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadExamData();
+  }, [levelId, examId]);
 
   // Load user answers và scores
   useEffect(() => {
@@ -315,20 +434,43 @@ function ExamAnswersPage() {
     if (savedListeningScore) setListeningScore(parseInt(savedListeningScore));
   }, [levelId, examId]);
 
-  if (!currentExam || !knowledgeData || !listeningData) {
+  // Loading state
+  if (isLoading) {
     return (
-      <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold text-red-500 mb-4">データが見つかりません</h1>
-        <button onClick={() => navigate(`/jlpt/${levelId}`)} className="px-4 py-2 bg-blue-500 text-white rounded">
-          ← 戻る
-        </button>
+      <div className="w-full pr-0 md:pr-4">
+        <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
+          <Sidebar />
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden p-8 text-center">
+            <div className="text-xl text-gray-500">{t('jlpt.commonTexts.loading')}</div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  const knowledgeQuestions = knowledgeData.knowledge.sections.flatMap(s => s.questions);
+  // Not found state
+  if (!currentExam || !knowledgeData || !listeningData) {
+    return (
+      <div className="w-full pr-0 md:pr-4">
+        <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
+          <Sidebar />
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden p-8 text-center">
+            <h1 className="text-2xl font-bold text-red-500 mb-4">{t('jlpt.commonTexts.notFoundTitle')}</h1>
+            <p className="text-gray-600 mb-4">
+              {t('jlpt.commonTexts.notFoundDesc', { examId, level: levelId.toUpperCase() })}
+            </p>
+            <button onClick={() => navigate(`/jlpt/${levelId}`)} className="px-4 py-2 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide">
+              {t('jlpt.commonTexts.backToList')}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const knowledgeQuestions = knowledgeData.knowledge.sections.flatMap(s => s.questions || []);
   const listeningQuestions = listeningData.sections.flatMap(s => 
-    s.questions.map(q => ({ ...q, sectionId: s.id }))
+    (s.questions || []).map(q => ({ ...q, sectionId: s.id }))
   );
   const allQuestions = [...knowledgeQuestions, ...listeningQuestions];
   
@@ -374,12 +516,12 @@ function ExamAnswersPage() {
   };
 
   const breadcrumbPaths = [
-    { name: 'ホーム', onClick: () => handleNavigateWithConfirm('/') },
-    { name: 'JLPT', onClick: () => handleNavigateWithConfirm('/jlpt') },
+    { name: t('common.home') || 'Home', onClick: () => handleNavigateWithConfirm('/') },
+    { name: t('common.jlpt') || 'JLPT', onClick: () => handleNavigateWithConfirm('/jlpt') },
     { name: levelId.toUpperCase(), onClick: () => handleNavigateWithConfirm(`/jlpt/${levelId}`) },
     { name: currentExam.title, onClick: () => handleNavigateWithConfirm(`/jlpt/${levelId}/${examId}`) },
-    { name: '結果', onClick: () => navigate(`/jlpt/${levelId}/${examId}/result`) },
-    { name: '解答・解説' }
+    { name: t('jlpt.answersPage.breadcrumbResult'), onClick: () => navigate(`/jlpt/${levelId}/${examId}/result`) },
+    { name: t('jlpt.answersPage.breadcrumbAnswers') }
   ];
 
   return (
@@ -392,11 +534,11 @@ function ExamAnswersPage() {
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
           <Sidebar />
           
-          <div className="flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col w-full">
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
             <div className="p-4 sm:p-5 md:p-6 border-b border-gray-300">
               <Breadcrumbs paths={breadcrumbPaths} />
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-3 sm:mt-4">
-                {currentExam.title} - 解答・解説
+                {`${currentExam.title} ${t('jlpt.answersPage.titleSuffix')}`}
               </h1>
             </div>
 
@@ -418,8 +560,10 @@ function ExamAnswersPage() {
 
                 <div className="mb-6 sm:mb-8">
                   <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
-                    <span className="bg-blue-500 text-white px-2 sm:px-3 py-1 rounded text-sm sm:text-base">Part 1</span>
-                    <span className="text-base sm:text-lg md:text-xl">言語知識・読解</span>
+                    <span className="bg-blue-500 text-white px-2 sm:px-3 py-1 rounded text-sm sm:text-base">
+                      {t('jlpt.answersPage.part1Label')}
+                    </span>
+                    <span className="text-base sm:text-lg md:text-xl">{t('jlpt.answersPage.part1Title')}</span>
                   </h2>
                   {knowledgeQuestions.map((q, idx) => (
                     <AnswerCard
@@ -434,8 +578,10 @@ function ExamAnswersPage() {
 
                 <div className="mb-6 sm:mb-8">
                   <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
-                    <span className="bg-purple-500 text-white px-2 sm:px-3 py-1 rounded text-sm sm:text-base">Part 2</span>
-                    <span className="text-base sm:text-lg md:text-xl">聴解</span>
+                    <span className="bg-purple-500 text-white px-2 sm:px-3 py-1 rounded text-sm sm:text-base">
+                      {t('jlpt.answersPage.part2Label')}
+                    </span>
+                    <span className="text-base sm:text-lg md:text-xl">{t('jlpt.answersPage.part2Title')}</span>
                   </h2>
                   {listeningQuestions.map((q, idx) => {
                     const questionKey = `${q.sectionId}-${q.number}`;
@@ -456,19 +602,19 @@ function ExamAnswersPage() {
                     onClick={() => navigate(`/jlpt/${levelId}/${examId}/result`)}
                     className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
                   >
-                    ← 結果画面に戻る
+                    {t('jlpt.answersPage.buttons.backToResults')}
                   </button>
                   <button
                     onClick={() => setShowConfirmModal(true)}
                     className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
                   >
-                    🔄 もう一度受験する
+                    {t('jlpt.answersPage.buttons.retake')}
                   </button>
                   <button
                     onClick={() => handleNavigateWithConfirm(`/jlpt/${levelId}`)}
                     className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
                   >
-                    📋 試験一覧へ
+                    {t('jlpt.answersPage.buttons.examList')}
                   </button>
                 </div>
               </div>
@@ -482,28 +628,30 @@ function ExamAnswersPage() {
         isOpen={showExitModal}
         onRequestClose={() => setShowExitModal(false)}
         shouldCloseOnOverlayClick={true}
-        className="bg-white rounded-lg shadow-xl p-6 max-w-md mx-4 md:mx-auto mt-32"
+        className="bg-white rounded-lg border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-md mx-4 md:mx-auto mt-32"
         overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4"
       >
         <div className="flex items-center gap-2 mb-4">
-          <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14M12 2a10 10 0 100 20 10 10 0 000-20z" />
+          <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14M12 2a10 10 0 100 20 10 10 0 000-20z" />
           </svg>
-          <h2 className="text-xl font-bold">確認</h2>
+          <h2 className="text-xl font-black uppercase tracking-wide" style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}>
+            {t('jlpt.modals.confirmTitle')}
+          </h2>
         </div>
-        <p className="mb-6 text-gray-700">本当に終了しますか？データは削除されます。</p>
-        <div className="flex justify-end gap-4">
+        <p className="mb-6 text-gray-800 font-semibold">{t('jlpt.modals.exitMessage')}</p>
+        <div className="flex justify-end gap-3">
           <button 
             onClick={() => setShowExitModal(false)} 
-            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition-all duration-300 transform hover:scale-105"
+            className="px-4 py-2 bg-white text-black rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
           >
-            キャンセル
+            {t('jlpt.modals.cancel')}
           </button>
           <button 
             onClick={handleExitConfirmed} 
-            className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105"
+            className="px-4 py-2 bg-red-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
           >
-            確認
+            {t('jlpt.modals.confirm')}
           </button>
         </div>
       </ReactModal>
@@ -513,28 +661,30 @@ function ExamAnswersPage() {
         isOpen={showConfirmModal}
         onRequestClose={() => setShowConfirmModal(false)}
         shouldCloseOnOverlayClick={true}
-        className="bg-white rounded-lg shadow-xl p-6 max-w-md mx-4 md:mx-auto mt-32"
+        className="bg-white rounded-lg border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 max-w-md mx-4 md:mx-auto mt-32"
         overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4"
       >
         <div className="flex items-center gap-2 mb-4">
-          <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14M12 2a10 10 0 100 20 10 10 0 000-20z" />
+          <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14M12 2a10 10 0 100 20 10 10 0 000-20z" />
           </svg>
-          <h2 className="text-xl font-bold">確認</h2>
+          <h2 className="text-xl font-black uppercase tracking-wide" style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}>
+            {t('jlpt.modals.confirmTitle')}
+          </h2>
         </div>
-        <p className="mb-6 text-gray-700">もう一度受験しますか？データは削除されます。</p>
-        <div className="flex justify-end gap-4">
+        <p className="mb-6 text-gray-800 font-semibold">{t('jlpt.modals.retakeMessage')}</p>
+        <div className="flex justify-end gap-3">
           <button 
             onClick={() => setShowConfirmModal(false)} 
-            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition-all duration-300 transform hover:scale-105"
+            className="px-4 py-2 bg-white text-black rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
           >
-            キャンセル
+            {t('jlpt.modals.cancel')}
           </button>
           <button 
             onClick={handleRetakeConfirmed} 
-            className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105"
+            className="px-4 py-2 bg-red-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
           >
-            確認
+            {t('jlpt.modals.confirm')}
           </button>
         </div>
       </ReactModal>

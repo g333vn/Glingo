@@ -5,3 +5,5 @@ export { DictionaryProvider, useDictionary } from './DictionaryContext.jsx';
 export { default as DictionaryPopup } from './DictionaryPopup.jsx';
 export { default as DictionaryButton } from './DictionaryButton.jsx';
 export { useDictionaryDoubleClick } from './useDictionaryDoubleClick.jsx';
+export { default as SavedWordsDrawer } from './SavedWordsDrawer.jsx';
+export { default as SavedWordItem } from './SavedWordItem.jsx';

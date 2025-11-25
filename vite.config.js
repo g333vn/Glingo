@@ -14,5 +14,9 @@ export default defineConfig({
       '@hooks': path.resolve(__dirname, 'src/hooks'),
       '@services': path.resolve(__dirname, 'src/services')
     }
+  },
+  server: {
+    // ✅ Cấu hình để xử lý SPA routing - redirect tất cả routes về index.html
+    historyApiFallback: true
   }
 })

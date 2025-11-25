@@ -1,19 +1,18 @@
 // src/components/Modal.jsx
-// ✅ Standard Modal Component - Theo quy chuẩn UX/UI hiện đại
-// Tham khảo: Material Design, Apple HIG, Nielsen Norman Group
+// ✨ NEO BRUTALISM + JAPANESE AESTHETIC MODAL
 
 import React, { useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 
 /**
- * Modal Component - Tuân thủ các tiêu chuẩn UX/UI:
+ * Modal Component - Neo Brutalism Style:
  * 
  * 1. POSITIONING: Center cả vertical và horizontal
  * 2. ACCESSIBILITY: ESC to close, Click outside to close, Focus trap
- * 3. ANIMATIONS: Smooth fade in/out transitions
+ * 3. ANIMATIONS: Smooth transitions với hard shadows
  * 4. RESPONSIVE: Mobile-first, adaptive sizing
  * 5. SCROLL: Body scroll lock, modal internal scroll
- * 6. VISUAL: Modern design với depth và spacing hợp lý
+ * 6. VISUAL: Neo Brutalism design với thick borders và hard shadows
  */
 
 function Modal({ 
@@ -34,7 +33,6 @@ function Modal({
       const originalOverflow = document.body.style.overflow;
       const originalPaddingRight = document.body.style.paddingRight;
       
-      // Prevent scroll jump by adding padding equal to scrollbar width
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
       document.body.style.paddingRight = `${scrollbarWidth}px`;
@@ -78,14 +76,14 @@ function Modal({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(2px)',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
         zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
         overflowY: 'auto',
+        overflowX: 'hidden',
       }}
       onClick={handleBackdropClick}
       role="dialog"
@@ -97,7 +95,8 @@ function Modal({
         style={{
           backgroundColor: 'white',
           borderRadius: '12px',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          border: '4px solid black',
+          boxShadow: '8px 8px 0px 0px rgba(0,0,0,1)',
           maxWidth,
           width: '100%',
           maxHeight: 'calc(100vh - 2rem)',
@@ -105,10 +104,12 @@ function Modal({
           position: 'relative',
           display: 'flex',
           flexDirection: 'column',
+          overflowX: 'hidden',
+          minWidth: 0,
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ✅ 4. HEADER với Close Button */}
+        {/* ✅ 4. HEADER với Close Button - NEO BRUTALISM */}
         {(title || showCloseButton) && (
           <div
             style={{
@@ -116,8 +117,9 @@ function Modal({
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '1.25rem 1.5rem',
-              borderBottom: '1px solid #e5e7eb',
+              borderBottom: '3px solid black',
               flexShrink: 0,
+              backgroundColor: '#FFB800',
             }}
           >
             {title && (
@@ -125,9 +127,13 @@ function Modal({
                 id="modal-title"
                 style={{
                   fontSize: '1.25rem',
-                  fontWeight: '600',
-                  color: '#1f2937',
+                  fontWeight: '900',
+                  color: 'black',
                   margin: 0,
+                  fontFamily: "'Space Grotesk', 'Inter', 'Segoe UI', 'Roboto', sans-serif",
+                  textTransform: 'none',
+                  letterSpacing: '0.02em',
+                  lineHeight: '1.4',
                 }}
               >
                 {title}
@@ -139,22 +145,28 @@ function Modal({
                 style={{
                   marginLeft: 'auto',
                   padding: '0.5rem',
-                  borderRadius: '0.375rem',
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  color: '#6b7280',
+                  borderRadius: '6px',
+                  border: '3px solid black',
+                  backgroundColor: 'white',
+                  color: 'black',
                   cursor: 'pointer',
                   fontSize: '1.5rem',
                   lineHeight: 1,
+                  fontWeight: '900',
                   transition: 'all 0.2s',
+                  boxShadow: '3px 3px 0px 0px rgba(0,0,0,1)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f3f4f6';
-                  e.currentTarget.style.color = '#1f2937';
+                  e.currentTarget.style.backgroundColor = '#FF5722';
+                  e.currentTarget.style.color = 'white';
+                  e.currentTarget.style.boxShadow = '4px 4px 0px 0px rgba(0,0,0,1)';
+                  e.currentTarget.style.transform = 'translate(-2px, -2px)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#6b7280';
+                  e.currentTarget.style.backgroundColor = 'white';
+                  e.currentTarget.style.color = 'black';
+                  e.currentTarget.style.boxShadow = '3px 3px 0px 0px rgba(0,0,0,1)';
+                  e.currentTarget.style.transform = 'translate(0, 0)';
                 }}
                 aria-label="Close modal"
                 title="Close (ESC)"
@@ -170,8 +182,10 @@ function Modal({
           style={{
             padding: '1.5rem',
             overflowY: 'auto',
+            overflowX: 'hidden',
             flex: 1,
             WebkitOverflowScrolling: 'touch',
+            minWidth: 0,
           }}
         >
           {children}
@@ -183,4 +197,3 @@ function Modal({
 }
 
 export default Modal;
-

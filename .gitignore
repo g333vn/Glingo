@@ -6,11 +6,21 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+error.log
 
+# Dependencies
 node_modules
+package-lock.json
+
+# Build outputs
 dist
 dist-ssr
 *.local
+
+# Environment variables
+.env
+.env.local
+.env.*.local
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +32,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Backup files (optional - uncomment if you don't want to commit backups)
+# data/backups/
+# data/exports/
+# data/imports/
+
+# Test coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
