@@ -19,6 +19,8 @@ import { DictionaryButton, DictionaryPopup, useDictionaryDoubleClick } from '../
 
 // ✅ PHASE 3: Import SRS Widget
 import SRSWidget from '../../../components/SRSWidget.jsx';
+import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
+import LessonPageSkeleton from '../../../components/skeletons/LessonPageSkeleton.jsx';
 
 // Tab constants
 const TABS = {
@@ -372,22 +374,11 @@ function LessonPage() {
       <>
         <DictionaryButton />
         <DictionaryPopup />
-        <div className="w-full pr-0 md:pr-4">
-          <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-            <Sidebar 
-              selectedCategory={currentBookCategory}
-              onCategoryClick={handleCategoryClick}
-            />
-            <div className="flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col min-h-app">
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Đang tải bài học...</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <LoadingSpinner label="Đang tải bài học..." icon="📚" />
+        <LessonPageSkeleton
+          currentBookCategory={currentBookCategory}
+          onCategoryClick={handleCategoryClick}
+        />
       </>
     );
   }
@@ -405,7 +396,8 @@ function LessonPage() {
             onCategoryClick={handleCategoryClick}
           />
           
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col 
+                          md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
             {/* Breadcrumbs */}
             <div className="pt-3 px-5 pb-2 flex-shrink-0">
               <Breadcrumbs paths={breadcrumbPaths} />
@@ -451,8 +443,8 @@ function LessonPage() {
             </div>
             
             {/* Content Area */}
-            <div ref={contentRef} className="flex-1 overflow-y-auto">
-              <div className="px-5 pt-4 pb-6 min-h-full flex flex-col">
+            <div ref={contentRef} className="flex-1 md:overflow-y-auto">
+              <div className="px-4 pt-4 pb-6 md:px-5 min-h-full flex flex-col">
                 {activeTab === TABS.THEORY ? (
                   <div className="flex flex-col">
                   {pdfUrl ? (

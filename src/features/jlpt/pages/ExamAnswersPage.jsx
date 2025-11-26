@@ -11,6 +11,7 @@ import { getListeningQuestions } from '../../../data/jlpt/listeningQuestionsData
 import storageManager from '../../../utils/localStorageManager.js';
 import ReactModal from 'react-modal';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
+import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
 
 // ✅ NEW: Import dictionary components
 import { DictionaryButton, DictionaryPopup, useDictionaryDoubleClick } from '../../../components/api_translate/index.js';
@@ -437,14 +438,10 @@ function ExamAnswersPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="w-full pr-0 md:pr-4">
-        <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-          <Sidebar />
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden p-8 text-center">
-            <div className="text-xl text-gray-500">{t('jlpt.commonTexts.loading')}</div>
-          </div>
-        </div>
-      </div>
+      <LoadingSpinner
+        label={t('jlpt.commonTexts.loading')}
+        icon="📝"
+      />
     );
   }
 

@@ -338,22 +338,26 @@ const router = createBrowserRouter([
         ]
       },
       // ========== DEV/EXAMPLE ROUTES ==========
-      {
-        path: 'examples/translation',
-        element: <TranslationExample />
-      },
-      {
-        path: 'test-i18n',
-        element: <LanguageTestComponent />
-      },
-      {
-        path: 'test-i18n-simple',
-        element: <SimpleTranslationTest />
-      },
-      {
-        path: 'debug-i18n',
-        element: <DebugTranslationTest />
-      },
+      ...(import.meta.env.DEV
+        ? [
+            {
+              path: 'examples/translation',
+              element: <TranslationExample />
+            },
+            {
+              path: 'test-i18n',
+              element: <LanguageTestComponent />
+            },
+            {
+              path: 'test-i18n-simple',
+              element: <SimpleTranslationTest />
+            },
+            {
+              path: 'debug-i18n',
+              element: <DebugTranslationTest />
+            }
+          ]
+        : []),
       // ========== 404 ==========
       {
         path: '*',

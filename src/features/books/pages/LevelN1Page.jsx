@@ -199,14 +199,15 @@ function LevelN1Page() {
           categories={categories}
         />
 
-        <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
+        <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full 
+                        md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
           {/* Breadcrumbs - Fixed at top */}
           <div className="pt-4 px-6 pb-2">
             <Breadcrumbs paths={breadcrumbPaths} />
           </div>
 
-          {/* Fixed content area - No scroll (đồng bộ với JLPTLevelN1Page) */}
-          <div className="flex-1 overflow-hidden px-6 py-4">
+          {/* Content area */}
+          <div className="flex-1 px-4 py-4 md:px-6 md:py-4 md:overflow-hidden">
             {filteredBooks.length === 0 ? (
               // Empty state
               <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -218,8 +219,9 @@ function LevelN1Page() {
               </div>
             ) : (
               <div
-                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 h-full transition-opacity duration-150 ${isTransitioning ? 'opacity-50' : 'opacity-100'
-                  }`}
+                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 transition-opacity duration-150 ${
+                  isTransitioning ? 'opacity-50' : 'opacity-100'
+                }`}
               >
                 {gridItems.map((book, index) => (
                   <div key={book?.id || `empty-${index}`} className="flex items-start">

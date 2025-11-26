@@ -7,6 +7,7 @@ import { getExamById } from '../../../data/jlpt/jlptData.js';
 import { getListeningQuestions } from '../../../data/jlpt/listeningQuestionsData.js';
 import storageManager from '../../../utils/localStorageManager.js';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
+import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
 
 // ✅ Helper: Lock/unlock body scroll
 const useBodyScrollLock = (isLocked) => {
@@ -515,10 +516,10 @@ function ExamListeningPage() {
   // ✅ Early returns - PHẢI đặt SAU tất cả hooks
   if (isLoading) {
     return (
-      <div className="p-8 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <p className="text-gray-600">Đang tải đề thi...</p>
-      </div>
+      <LoadingSpinner
+        label={t('jlpt.listeningPage.loading') || 'Đang tải đề thi...'}
+        icon="🎧"
+      />
     );
   }
 

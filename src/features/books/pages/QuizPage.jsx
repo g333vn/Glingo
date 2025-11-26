@@ -25,6 +25,7 @@ import { addLessonQuizScore, getLessonQuizScores } from '../../../utils/lessonPr
 // ✅ NEW: Import dictionary components
 import { DictionaryButton, DictionaryPopup, useDictionaryDoubleClick } from '../../../components/api_translate/index.js';
 import { getSettings } from '../../../utils/settingsManager.js';
+import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
 
 function QuizPage() {
   const { levelId, bookId, chapterId, lessonId } = useParams();
@@ -188,39 +189,44 @@ function QuizPage() {
     navigate(`/level/${levelId}`);
   };
   
-  // Loading state
-  if (isLoading || !currentQuiz || !currentQuiz.questions || currentQuiz.questions.length === 0) {
+  // Loading state / not found
+  if (isLoading) {
     return (
-      <div className="w-full pr-0 md:pr-4">
-        <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-          <Sidebar 
-            selectedCategory={currentBookCategory}
-            onCategoryClick={handleCategoryClick}
-          />
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
-            <div className="flex-1 flex items-center justify-center overflow-y-auto">
-              <div className="text-center bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-8 m-6">
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Đang tải quiz...</p>
-                  </>
-                ) : (
-                  <>
-                    <h2 className="text-xl font-bold text-red-500 mb-4">Quiz không tồn tại</h2>
-                    <button 
-                      onClick={() => navigate(`/level/${levelId}/${bookId}`)}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
-                    >
-                      ← Quay về
-                    </button>
-                  </>
-                )}
+      <>
+        <DictionaryButton />
+        <DictionaryPopup />
+        <LoadingSpinner label={t('quiz.loading') || 'Đang tải quiz...'} icon="❓" />
+      </>
+    );
+  }
+
+  if (!currentQuiz || !currentQuiz.questions || currentQuiz.questions.length === 0) {
+    return (
+      <>
+        <DictionaryButton />
+        <DictionaryPopup />
+        <div className="w-full pr-0 md:pr-4">
+          <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
+            <Sidebar 
+              selectedCategory={currentBookCategory}
+              onCategoryClick={handleCategoryClick}
+            />
+            <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
+              <div className="flex-1 flex items-center justify-center overflow-y-auto">
+                <div className="text-center bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-8 m-6">
+                  <h2 className="text-xl font-bold text-red-500 mb-4">{t('quiz.notFoundTitle') || 'Quiz không tồn tại'}</h2>
+                  <button 
+                    onClick={() => navigate(`/level/${levelId}/${bookId}`)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
+                  >
+                    ← {t('common.back') || 'Quay về'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 

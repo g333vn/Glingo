@@ -6,6 +6,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { openDB } from 'idb';
 import { calculateMasteryLevel, getDueCardsCount } from '../services/progressTracker.js';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
+import { createNotification } from '../utils/notificationManager.js';
+import LoadingSpinner from '../components/LoadingSpinner.jsx';
+import UserDashboardSkeleton from '../components/skeletons/UserDashboardSkeleton.jsx';
 
 /**
  * UserDashboard Component
@@ -14,6 +18,7 @@ import { useLanguage } from '../contexts/LanguageContext.jsx';
 function UserDashboard() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [allDecks, setAllDecks] = useState([]);
   const [overallStats, setOverallStats] = useState({
@@ -28,7 +33,8 @@ function UserDashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [isStreakExpanded, setIsStreakExpanded] = useState(true);
 
-  const userId = 'user-001'; // TODO: Get from auth context
+  // Prefer authenticated user ID when available, fallback to demo ID for compatibility
+  const userId = user?.id || 'user-001'; // TODO: Remove fallback when auth is fully integrated
 
   useEffect(() => {
     loadDashboard();
@@ -52,6 +58,7 @@ function UserDashboard() {
       let totalMasteredCount = 0;
       let totalMasterySum = 0;
       let deckCount = 0;
+      let decksWithDueCount = 0;
 
       for (const group of allLessonGroups) {
         if (group.lessons && Array.isArray(group.lessons)) {
@@ -69,6 +76,10 @@ function UserDashboard() {
 
               totalDueCount += dueCount;
               totalMasterySum += mastery;
+
+              if (dueCount > 0) {
+                decksWithDueCount += 1;
+              }
 
               // Count mastered cards (approximation)
               const masteredCount = Math.round((cardCount * mastery) / 100);
@@ -140,6 +151,37 @@ function UserDashboard() {
         totalReviews: userReviews.length
       });
 
+      // ==============================
+      // SRS REVIEW REMINDER NOTIFICATION
+      // ==============================
+      // When there are due cards, also push a notification to the user's notification box.
+      // To avoid spamming, send at most one reminder per user per day.
+      if (user && totalDueCount > 0 && decksWithDueCount > 0) {
+        try {
+          const today = new Date().toISOString().slice(0, 10);
+          const reminderKey = `srs_review_notif_${user.id}_${today}`;
+
+          if (!localStorage.getItem(reminderKey)) {
+            createNotification({
+              title: t('dashboard.reviewTime.title') || 'Đã đến giờ ôn tập!',
+              message:
+                t('dashboard.reviewTime.message', {
+                  count: totalDueCount,
+                  deckCount: decksWithDueCount
+                }) || `Bạn có ${totalDueCount} thẻ đang chờ từ ${decksWithDueCount} deck`,
+              type: 'warning',
+              targetUsers: [user.id],
+              targetRoles: [],
+              expiresAt: null
+            });
+
+            localStorage.setItem(reminderKey, '1');
+          }
+        } catch (notifError) {
+          console.error('❌ Failed to create SRS review reminder notification:', notifError);
+        }
+      }
+
       setIsLoading(false);
 
       console.log('✅ Dashboard loaded:', {
@@ -156,19 +198,12 @@ function UserDashboard() {
   };
 
   if (isLoading) {
+    // Kết hợp spinner trung tâm + skeleton layout cho trải nghiệm mượt hơn
     return (
-      <div className="w-full pr-0 md:pr-4">
-        <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-2 sm:mt-4">
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] overflow-hidden">
-            <div className="flex-1 flex items-center justify-center overflow-y-auto">
-              <div className="text-center bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-6 md:p-8 m-3 sm:m-4 md:m-6">
-                <div className="text-5xl sm:text-6xl md:text-7xl mb-3 sm:mb-4 animate-pulse">📊</div>
-                <p className="text-lg sm:text-xl md:text-2xl font-black text-gray-900">{t('dashboard.loading')}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <>
+        <LoadingSpinner label={t('dashboard.loading')} icon="📊" />
+        <UserDashboardSkeleton />
+      </>
     );
   }
 

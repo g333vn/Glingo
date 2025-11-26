@@ -357,8 +357,9 @@ function BookDetailPage() {
           onCategoryClick={handleCategoryClick}
         />
 
-        {/* Main Content - HEIGHT MATCH SIDEBAR */}
-        <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
+        {/* Main Content - sticky chỉ trên màn hình lớn để mobile scroll tự nhiên */}
+        <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full 
+                        md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
           
           {/* ========== BREADCRUMBS - Compact ========== */}
           <div className="pt-3 px-5 pb-2 flex-shrink-0">
@@ -383,7 +384,7 @@ function BookDetailPage() {
           )}
 
           {/* ========== LESSON CARDS GRID - Optimized (240px cards, gap-6, max 10 items) ========== */}
-          <div className="flex-1 px-5 py-4 overflow-y-auto">
+          <div className="flex-1 px-4 py-4 md:px-5 md:py-4 md:overflow-y-auto">
             {gridItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-500">
                 <div className="text-6xl mb-4">📚</div>

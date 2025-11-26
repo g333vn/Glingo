@@ -213,14 +213,14 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
             </div>
           </button>
 
-          {/* Desktop Links - Centered & Balanced */}
+          {/* Desktop Links - Centered & Balanced (chỉ hiển thị từ lg trở lên để tablet dọc dùng menu mobile) */}
           <div 
             lang="en"
             style={{ 
               fontFamily: "'Space Grotesk', 'Inter', sans-serif",
               contain: 'layout style'
             }}
-            className="hidden md:flex items-center gap-2 lg:gap-3 flex-1 justify-center max-w-2xl mx-auto"
+            className="hidden lg:flex items-center gap-2 lg:gap-3 flex-1 justify-center max-w-2xl mx-auto"
           >
             {/* Home */}
             <button
@@ -357,8 +357,8 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
             </button>
           </div>
 
-          {/* Right Side - Clean & Compact */}
-          <div className="hidden md:flex items-center gap-2 lg:gap-3 flex-shrink-0">
+          {/* Right Side - Clean & Compact (ẩn trên tablet dọc, chỉ hiện từ lg) */}
+          <div className="hidden lg:flex items-center gap-2 lg:gap-3 flex-shrink-0">
             {/* Language Switcher - 3D Waving Flag */}
             <LanguageSwitcher />
 
@@ -516,8 +516,8 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
             )}
           </div>
 
-          {/* Mobile Menu Button - Simplified */}
-          <div className="md:hidden flex items-center gap-1.5 sm:gap-2">
+          {/* Mobile Menu Button - Simplified (hiển thị cho màn hình nhỏ hơn lg, bao gồm tablet dọc) */}
+          <div className="lg:hidden flex items-center gap-1.5 sm:gap-2">
             {/* Language Switcher - Mobile (3 Flags) */}
             <LanguageSwitcher />
             
@@ -553,13 +553,13 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
           </div>
         </nav>
 
-        {/* Mobile Menu - NEO BRUTALISM */}
+        {/* Mobile Menu - NEO BRUTALISM (áp dụng cho < lg, bao gồm tablet dọc) */}
         {isMobileMenuOpen && (
           <div
             ref={mobileMenuRef}
             lang="en"
             style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
-            className="md:hidden absolute left-0 right-0 top-full bg-[#2D2D2D] px-4 py-4 flex flex-col gap-2 max-h-[70vh] overflow-y-auto border-t-[4px] border-black shadow-[0_4px_0px_0px_rgba(0,0,0,1)]"
+            className="lg:hidden absolute left-0 right-0 top-full bg-[#2D2D2D] px-4 py-4 flex flex-col gap-2 max-h-[70vh] overflow-y-auto border-t-[4px] border-black shadow-[0_4px_0px_0px_rgba(0,0,0,1)]"
           >
             {/* Home */}
             <button

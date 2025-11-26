@@ -13,6 +13,7 @@ import {
   calculateMasteryLevel
 } from '../services/progressTracker.js';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
+import LoadingSpinner from '../components/LoadingSpinner.jsx';
 
 /**
  * StatisticsDashboard Component
@@ -120,18 +121,10 @@ function StatisticsDashboard() {
 
   if (isLoading) {
     return (
-      <div className="w-full pr-0 md:pr-4">
-        <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
-            <div className="flex-1 flex items-center justify-center overflow-y-auto">
-              <div className="text-center bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-8 m-6">
-                <div className="text-6xl mb-4 animate-pulse">📊</div>
-                <p className="text-xl font-black text-gray-900">Loading statistics...</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <LoadingSpinner
+        label="Loading statistics..."
+        icon="📊"
+      />
     );
   }
 

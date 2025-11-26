@@ -19,6 +19,24 @@ import { migrateLegacyLesson } from '../../types/lessonTypes.js';
 function ContentManagementPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
+
+  // Helper để tạo message "lưu thành công" an toàn.
+  // Nếu key i18n bị thiếu và t() trả về chính cái key, ta fallback sang message đơn giản.
+  const getSaveSuccessMessage = (details) => {
+    const key = 'contentManagement.success.saveSuccess';
+    const translated = t(key, { details });
+
+    if (translated === key) {
+      const genericSuccess =
+        t('notifications.type.success') ||
+        t('common.success') ||
+        'Saved successfully!';
+
+      return `${genericSuccess}\n\n${details}`;
+    }
+
+    return translated;
+  };
   const navigate = useNavigate();
   const [selectedLevel, setSelectedLevel] = useState('n1');
   
@@ -628,13 +646,11 @@ function ContentManagementPage() {
       setIsSavingBook(false);
       
       // Success toast
-      alert(t('contentManagement.success.saveSuccess', {
-        details: t('contentManagement.success.bookDetails', {
+      alert(getSaveSuccessMessage(t('contentManagement.success.bookDetails', {
           id: bookForm.id,
           title: bookForm.title,
           series: bookForm.category || t('contentManagement.empty.noCategory')
-        })
-      }));
+        })));
     } catch (error) {
       console.error('Error saving book:', error);
       setIsSavingBook(false);
@@ -783,13 +799,13 @@ function ContentManagementPage() {
       setEditingChapter(null);
       setChapterForm({ id: '', title: '' });
       
-      alert(t('contentManagement.success.saveSuccess', {
-        details: t('contentManagement.success.chapterDetails', {
+      alert(getSaveSuccessMessage(
+        t('contentManagement.success.chapterDetails', {
           action: editingChapter ? t('contentManagement.messages.chapterUpdated') : t('contentManagement.messages.chapterAdded'),
           id: chapterForm.id,
           title: chapterForm.title
         }) + `\n   - Sách: ${selectedBook.title}`
-      }));
+      ));
       
       // Refresh books to update chapter count
       loadBooks();
@@ -990,14 +1006,14 @@ function ContentManagementPage() {
         // Refresh overview
         setOverviewRefreshTrigger(prev => prev + 1);
         
-        alert(t('contentManagement.success.saveSuccess', {
-          details: t('contentManagement.success.lessonDetails', {
+        alert(getSaveSuccessMessage(
+          t('contentManagement.success.lessonDetails', {
             action: editingLesson ? t('contentManagement.messages.lessonUpdated') : t('contentManagement.messages.lessonAdded'),
             id: finalLessonData.id,
             title: finalLessonData.title,
             type: finalLessonData.contentType || 'grammar'
           }) + `\n   - SRS: ${finalLessonData.srs?.enabled ? 'BẬT ✅' : 'TẮT'}\n   - Sách: ${selectedBook.title}\n   - Chapter: ${selectedChapter.title}`
-        }));
+        ));
       } else {
         alert(t('contentManagement.messages.saveError', { item: 'lesson' }));
       }
@@ -1168,13 +1184,13 @@ function ContentManagementPage() {
       setShowQuizForm(false);
       setEditingQuiz(null);
       
-      alert(t('contentManagement.success.saveSuccess', {
-        details: t('contentManagement.success.quizDetails', {
+      alert(getSaveSuccessMessage(
+        t('contentManagement.success.quizDetails', {
           action: editingQuiz ? t('contentManagement.messages.quizUpdated') : t('contentManagement.messages.quizAdded'),
           title: quizForm.title,
           count: quizForm.questions?.length || 0
         }) + `\n   - Sách: ${selectedBook?.title}\n   - Chapter: ${selectedChapter?.title}\n   - Lesson: ${selectedLesson?.title || selectedLesson?.id}`
-      }));
+      ));
     } else {
       alert(t('contentManagement.messages.saveError', { item: t('common.quiz') }));
     }
