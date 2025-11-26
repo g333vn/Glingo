@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
+    "@supabase/supabase-js": "^2.85.0",
     "antd": "^5.28.0",
     "idb": "^8.0.3",
     "lucide-react": "^0.553.0",

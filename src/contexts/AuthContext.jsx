@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { login as loginUser, register as registerUser } from '../data/users.js';
 import { trackUserActivity } from '../utils/analyticsTracker.js';
+import { getCurrentUser as getSupabaseUser, getUserProfile as getSupabaseUserProfile, signOut as supabaseSignOut } from '../services/authService.js';
 
 const AuthContext = createContext(null);
 
@@ -66,20 +67,63 @@ export function AuthProvider({ children }) {
 
   // ✅ Load user on mount (chỉ 1 lần)
   useEffect(() => {
-    const savedUser = localStorage.getItem('authUser');
-    if (savedUser) {
+    let isMounted = true;
+
+    async function loadInitialUser() {
       try {
-        const parsedUser = JSON.parse(savedUser);
-        console.log('[AUTH] User loaded from authUser:', { id: parsedUser.id, username: parsedUser.username, role: parsedUser.role });
-        
-        const syncedUser = syncUserFromAdminUsers(parsedUser);
-        setUser(syncedUser);
-      } catch (error) {
-        console.error('[AUTH] Error loading user:', error);
-        localStorage.removeItem('authUser');
+        // 1) Ưu tiên user từ localStorage (auth cũ)
+        const savedUser = localStorage.getItem('authUser');
+        if (savedUser) {
+          try {
+            const parsedUser = JSON.parse(savedUser);
+            console.log('[AUTH] User loaded from authUser:', { id: parsedUser.id, username: parsedUser.username, role: parsedUser.role });
+            
+            const syncedUser = syncUserFromAdminUsers(parsedUser);
+            if (isMounted) {
+              setUser(syncedUser);
+            }
+            return;
+          } catch (error) {
+            console.error('[AUTH] Error loading user from authUser:', error);
+            localStorage.removeItem('authUser');
+          }
+        }
+
+        // 2) Nếu không có authUser → thử khôi phục session từ Supabase
+        const { success, user: supabaseUser } = await getSupabaseUser();
+        if (success && supabaseUser && isMounted) {
+          console.log('[AUTH][Supabase] Session found on mount:', {
+            id: supabaseUser.id,
+            email: supabaseUser.email,
+          });
+
+          // Lấy profile (role, display_name)
+          const { success: profileOk, profile } = await getSupabaseUserProfile(supabaseUser.id);
+
+          const mappedUser = {
+            id: supabaseUser.id,
+            username: supabaseUser.email,
+            name: profile?.display_name || supabaseUser.email,
+            email: supabaseUser.email,
+            role: profile?.role || 'user',
+          };
+
+          setUser(mappedUser);
+          // Lưu vào authUser để các phần khác sử dụng chung format
+          localStorage.setItem('authUser', JSON.stringify(mappedUser));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
-    setIsLoading(false);
+
+    loadInitialUser();
+
+    return () => {
+      isMounted = false;
+    };
   }, [syncUserFromAdminUsers]);
 
   // ✅ Listen for localStorage changes từ other tabs
@@ -174,13 +218,23 @@ export function AuthProvider({ children }) {
   };
 
   // Logout function
-  const logout = () => {
+  const logout = async () => {
     // 📊 Track logout activity before clearing user
     if (user) {
       trackUserActivity(user.id, user.username, 'logout', {
         role: user.role,
         timestamp: new Date().toISOString()
       });
+
+      // Nếu user hiện tại là tài khoản Supabase (id là UUID string) → gọi signOut để xóa session trên backend
+      try {
+        if (typeof user.id === 'string') {
+          await supabaseSignOut();
+          console.log('[AUTH][Supabase] signOut called successfully');
+        }
+      } catch (err) {
+        console.error('[AUTH][Supabase] Error during signOut:', err);
+      }
     }
     
     setUser(null);

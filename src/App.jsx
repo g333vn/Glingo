@@ -16,6 +16,10 @@ import { LanguageProvider } from './contexts/LanguageContext.jsx';
 
 // ✅ NEW: Import JLPT Dictionary initialization
 import { initJLPTDictionary } from './services/api_translate/dictionaryService.js';
+// Supabase dev helper
+import { testSupabaseConnection } from './services/authService.js';
+// Global app settings (maintenance)
+import { getGlobalMaintenanceMode } from './services/appSettingsService.js';
 
 // ✅ NEW: Import ToastProvider
 import { ToastProvider } from './components/ToastNotification.jsx';
@@ -37,12 +41,16 @@ function AppContent() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [settings, setSettings] = useState(getSettings());
+  const [globalMaintenance, setGlobalMaintenance] = useState(null);
 
   const isAdmin = user && user.role === 'admin';
-  const maintenanceMode = settings?.system?.maintenanceMode;
+  const localMaintenance = settings?.system?.maintenanceMode;
+  // Ưu tiên maintenance global từ Supabase; nếu null thì fallback local
+  const effectiveMaintenance =
+    globalMaintenance === null ? localMaintenance : globalMaintenance;
   const isLoginRoute = location.pathname.startsWith('/login');
   // Show maintenance page for all non-admin users except on login route
-  const showMaintenanceForUser = maintenanceMode && !isAdmin && !isLoginRoute;
+  const showMaintenanceForUser = effectiveMaintenance && !isAdmin && !isLoginRoute;
   
   const handleOpenLoginModal = () => { setShowLoginModal(true); };
   const handleCloseLoginModal = () => { setShowLoginModal(false); };
@@ -89,6 +97,29 @@ function AppContent() {
         console.error('❌ [App] Failed to load JLPT Dictionary:', error);
       });
   }, []); // Empty deps array = run once on mount
+
+  // ✅ NEW: Load global maintenance flag từ Supabase
+  useEffect(() => {
+    async function fetchMaintenance() {
+      const { success, maintenance } = await getGlobalMaintenanceMode();
+      if (success) {
+        setGlobalMaintenance(maintenance);
+        console.log('[App][Maintenance] Global maintenance_mode =', maintenance);
+      }
+    }
+    fetchMaintenance();
+
+    // Optional: poll lại mỗi 60s để bắt trạng thái mới từ Supabase UI
+    const interval = setInterval(fetchMaintenance, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ✅ DEV ONLY: Test Supabase connection on app start
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      testSupabaseConnection();
+    }
+  }, []);
 
   return (
           <div className="flex flex-col min-h-screen relative overflow-x-hidden">

@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
+import { signIn as supabaseSignIn, getUserProfile } from '../services/authService.js';
 
 function LoginPage() {
   const { t } = useLanguage();
@@ -14,7 +15,7 @@ function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   
-  const { login, user } = useAuth();
+  const { login, user, updateUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -27,27 +28,71 @@ function LoginPage() {
     setError('');
     setIsLoading(true);
 
-    const result = login(username, password);
-    
-    if (result.success) {
-      // ✅ FIX: Always redirect to home after login
-      // This prevents confusion when different users login from different pages
-      // User can navigate to their desired page after login
-      const loggedInUser = result.user || user;
-      
-      console.log('[LOGIN] Login successful, redirecting to home:', {
-        userRole: loggedInUser?.role,
-        username: loggedInUser?.username
-      });
-      
-      // Always go to home, regardless of previous page
-      navigate('/', { replace: true });
-    } else {
-      setError(result.error || t('auth.loginFailed'));
-      setPassword('');
+    try {
+      // 🔹 Nếu user nhập email (có ký tự @) thì ưu tiên thử login bằng Supabase
+      if (username.includes('@')) {
+        const { success, data, error } = await supabaseSignIn({
+          email: username,
+          password,
+        });
+
+        if (success) {
+          // Lấy profile (role, display_name) từ bảng profiles
+          const userId = data?.user?.id;
+          const { success: profileOk, profile, error: profileError } = await getUserProfile(userId);
+
+          // Map dữ liệu Supabase thành user object mà app đang dùng
+          const supabaseUserForApp = {
+            id: userId,
+            username: data?.user?.email,
+            name: profile?.display_name || data?.user?.email,
+            email: data?.user?.email,
+            role: profile?.role || 'user',
+          };
+
+          // Cập nhật AuthContext để toàn app nhận diện user này
+          updateUser(supabaseUserForApp);
+
+          // eslint-disable-next-line no-console
+          console.log('[LOGIN][Supabase] Login successful:', {
+            id: data?.user?.id,
+            email: data?.user?.email,
+            profile: profileOk
+              ? { role: profile?.role, display_name: profile?.display_name }
+              : 'No profile or error',
+            profileError: profileError?.message,
+          });
+          navigate('/', { replace: true });
+          setIsLoading(false);
+          return;
+        }
+
+        // Nếu Supabase login fail, hiển thị lỗi và dừng (không fallback sang local user)
+        setError(error?.message || t('auth.loginFailed'));
+        setPassword('');
+        setIsLoading(false);
+        return;
+      }
+
+      // 🔹 Trường hợp username không phải email → dùng hệ thống login cũ (local)
+      const result = login(username, password);
+
+      if (result.success) {
+        const loggedInUser = result.user || user;
+
+        console.log('[LOGIN] Login successful, redirecting to home:', {
+          userRole: loggedInUser?.role,
+          username: loggedInUser?.username,
+        });
+
+        navigate('/', { replace: true });
+      } else {
+        setError(result.error || t('auth.loginFailed'));
+        setPassword('');
+      }
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (

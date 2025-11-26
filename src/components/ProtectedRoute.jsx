@@ -4,10 +4,12 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { useToast } from './ToastNotification.jsx';
 
 function ProtectedRoute({ children, requiredPermission, requiredRole, adminOnly, editorOnly, editorOrAdmin }) {
   const { user, hasPermission, isLoading } = useAuth();
   const location = useLocation();
+  const { warning } = useToast();
 
   // Loading state
   if (isLoading) {
@@ -26,120 +28,35 @@ function ProtectedRoute({ children, requiredPermission, requiredRole, adminOnly,
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  const redirectWithMessage = (message) => {
+    warning(message);
+    return <Navigate to="/" replace />;
+  };
+
   // Check editorOnly requirement
   // ✅ FIX: Admin should also have access to editor routes
   if (editorOnly && user.role !== 'editor' && user.role !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-          <div className="text-5xl mb-4">🚫</div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            Không có quyền truy cập
-          </h1>
-          <p className="text-gray-600 mb-4">
-            Bạn cần quyền <strong>editor</strong> hoặc <strong>admin</strong> để truy cập trang này.
-          </p>
-          <a
-            href="/"
-            className="text-blue-600 hover:underline"
-          >
-            ← Quay về trang chủ
-          </a>
-        </div>
-      </div>
-    );
+    return redirectWithMessage('Bạn đã đăng nhập nhưng không có quyền editor/admin để truy cập trang này.');
   }
 
   // Check editorOrAdmin requirement
   if (editorOrAdmin && user.role !== 'editor' && user.role !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-          <div className="text-5xl mb-4">🚫</div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            Không có quyền truy cập
-          </h1>
-          <p className="text-gray-600 mb-4">
-            Bạn cần quyền <strong>editor</strong> hoặc <strong>admin</strong> để truy cập trang này.
-          </p>
-          <a
-            href="/"
-            className="text-blue-600 hover:underline"
-          >
-            ← Quay về trang chủ
-          </a>
-        </div>
-      </div>
-    );
+    return redirectWithMessage('Bạn đã đăng nhập nhưng không có quyền editor/admin để truy cập trang này.');
   }
 
   // Check adminOnly requirement
   if (adminOnly && user.role !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-          <div className="text-5xl mb-4">🚫</div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            Không có quyền truy cập
-          </h1>
-          <p className="text-gray-600 mb-4">
-            Bạn cần quyền <strong>admin</strong> để truy cập trang này.
-          </p>
-          <a
-            href="/"
-            className="text-blue-600 hover:underline"
-          >
-            ← Quay về trang chủ
-          </a>
-        </div>
-      </div>
-    );
+    return redirectWithMessage('Bạn đã đăng nhập nhưng không có quyền admin để truy cập trang này.');
   }
 
   // Check role requirement
   if (requiredRole && user.role !== requiredRole) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-          <div className="text-5xl mb-4">🚫</div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            Không có quyền truy cập
-          </h1>
-          <p className="text-gray-600 mb-4">
-            Bạn cần quyền <strong>{requiredRole}</strong> để truy cập trang này.
-          </p>
-          <a
-            href="/"
-            className="text-blue-600 hover:underline"
-          >
-            ← Quay về trang chủ
-          </a>
-        </div>
-      </div>
-    );
+    return redirectWithMessage(`Bạn đã đăng nhập nhưng không có quyền ${requiredRole} để truy cập trang này.`);
   }
 
   // Check permission requirement
   if (requiredPermission && !hasPermission(requiredPermission)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-          <div className="text-5xl mb-4">🚫</div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            Không có quyền truy cập
-          </h1>
-          <p className="text-gray-600 mb-4">
-            Bạn không có quyền truy cập tính năng này.
-          </p>
-          <a
-            href="/"
-            className="text-blue-600 hover:underline"
-          >
-            ← Quay về trang chủ
-          </a>
-        </div>
-      </div>
-    );
+    return redirectWithMessage('Bạn đã đăng nhập nhưng không có quyền truy cập tính năng này.');
   }
 
   // User has required role/permission
