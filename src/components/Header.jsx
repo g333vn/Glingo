@@ -202,7 +202,21 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                 className="h-full w-full object-contain drop-shadow-lg"
               />
             </div>
-            {/* Logo text - Hidden on mobile, shown on md+ */}
+            {/* Logo text - Mobile (guest) */}
+            {!user && (
+              <div className="flex flex-col md:hidden min-w-0">
+                <span
+                  className="font-black text-xs sm:text-sm text-white whitespace-nowrap truncate transition-colors duration-200 group-hover:text-yellow-300 leading-tight"
+                  style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}
+                >
+                  {settings.system.platformName}
+                </span>
+                <span className="text-[9px] sm:text-[10px] text-yellow-300 font-semibold uppercase tracking-wide truncate">
+                  {settings.system.platformTagline}
+                </span>
+              </div>
+            )}
+            {/* Logo text - Desktop/Tablet */}
             <div className="hidden md:flex flex-col">
               <span className="font-black text-sm md:text-base lg:text-lg text-white whitespace-nowrap transition-colors duration-200 group-hover:text-yellow-400 leading-tight" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
                 {settings.system.platformName}
