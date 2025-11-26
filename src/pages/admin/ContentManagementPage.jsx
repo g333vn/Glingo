@@ -2494,7 +2494,6 @@ function ContentManagementPage() {
                       if (quizForm.title && selectedBook && selectedChapter && selectedLesson) {
                         try {
                           const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
-                          const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
                           await storageManager.saveQuiz(
                             selectedBook.id,
                             selectedChapter.id,
