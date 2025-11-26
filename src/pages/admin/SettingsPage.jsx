@@ -14,17 +14,27 @@ import SettingsSection from '../../components/settings/SettingsSection.jsx';
 
 function SettingsPage() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const [settings, setSettings] = useState(getSettings());
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState(null);
+  const [platformDescriptionInput, setPlatformDescriptionInput] = useState('');
 
   // Load settings on mount
   useEffect(() => {
     const loadedSettings = getSettings();
     setSettings(loadedSettings);
-  }, []);
+    
+    // Initialize platformDescriptionInput from current settings
+    const desc = loadedSettings.system.platformDescription;
+    if (typeof desc === 'object' && desc !== null) {
+      // Get text from current language or fallback to vi
+      setPlatformDescriptionInput(desc[currentLanguage] || desc.vi || desc.en || desc.ja || '');
+    } else if (typeof desc === 'string') {
+      setPlatformDescriptionInput(desc);
+    }
+  }, [currentLanguage]);
 
   // Update setting helper
   const updateSetting = (category, key, value) => {
@@ -38,15 +48,93 @@ function SettingsPage() {
     setHasChanges(true);
   };
 
+  // Translate text using Google Translate API
+  const translateText = async (text, targetLang, sourceLang = 'auto') => {
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      return text;
+    }
+
+    if (sourceLang !== 'auto' && targetLang === sourceLang) {
+      return text;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    try {
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Translation failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data && data[0] && data[0][0] && data[0][0][0]) {
+        return data[0][0][0];
+      }
+
+      return text;
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.warn(`[Translate] Timeout translating to ${targetLang}`);
+      } else {
+        console.warn(`[Translate] Error translating to ${targetLang}:`, error);
+      }
+      return text;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
+
   // Save settings
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
     setSaveMessage(null);
 
     try {
-      const success = saveSettings(settings);
+      // Auto-translate platformDescription if input has changed
+      let finalSettings = { ...settings };
+      
+      if (platformDescriptionInput.trim()) {
+        // Detect source language
+        let sourceLang = 'auto';
+        if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(platformDescriptionInput)) {
+          sourceLang = 'ja';
+        } else if (/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/.test(platformDescriptionInput)) {
+          sourceLang = 'vi';
+        } else {
+          sourceLang = 'en';
+        }
+
+        // Translate to all 3 languages
+        const [viText, enText, jaText] = await Promise.all([
+          sourceLang === 'vi' ? Promise.resolve(platformDescriptionInput) : translateText(platformDescriptionInput, 'vi', sourceLang),
+          sourceLang === 'en' ? Promise.resolve(platformDescriptionInput) : translateText(platformDescriptionInput, 'en', sourceLang),
+          sourceLang === 'ja' ? Promise.resolve(platformDescriptionInput) : translateText(platformDescriptionInput, 'ja', sourceLang)
+        ]);
+
+        finalSettings.system.platformDescription = {
+          vi: viText || platformDescriptionInput,
+          en: enText || platformDescriptionInput,
+          ja: jaText || platformDescriptionInput
+        };
+        
+        console.log('[Settings] Platform Description saved:', finalSettings.system.platformDescription);
+      } else {
+        // If input is empty, keep existing description or set to empty object
+        if (!finalSettings.system.platformDescription || typeof finalSettings.system.platformDescription !== 'object') {
+          finalSettings.system.platformDescription = { vi: '', en: '', ja: '' };
+        }
+      }
+
+      const success = saveSettings(finalSettings);
       
       if (success) {
+        setSettings(finalSettings);
         setHasChanges(false);
         setSaveMessage({ type: 'success', text: t('settings.messages.saveSuccess') });
         
@@ -207,18 +295,28 @@ function SettingsPage() {
             />
           </div>
 
-          {/* Platform Description */}
+          {/* Platform Description - Single input with auto-translation */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-              {t('settings.system.platformDescription')}
+              {t('settings.system.platformDescription')} <span className="text-xs text-gray-500 normal-case">(🇻🇳 🇬🇧 🇯🇵 Auto-translate)</span>
             </label>
             <textarea
-              value={settings.system.platformDescription}
-              onChange={(e) => updateSetting('system', 'platformDescription', e.target.value)}
-              rows={3}
+              value={platformDescriptionInput}
+              onChange={(e) => {
+                setPlatformDescriptionInput(e.target.value);
+                setHasChanges(true);
+              }}
+              rows={4}
               className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] resize-y"
-              placeholder={t('settings.system.platformDescriptionPlaceholder')}
+              placeholder={currentLanguage === 'vi' 
+                ? 'Nhập mô tả platform (sẽ tự động dịch sang 3 ngôn ngữ khi lưu)...'
+                : currentLanguage === 'ja'
+                ? 'プラットフォームの説明を入力（保存時に3言語に自動翻訳されます）...'
+                : 'Enter platform description (will auto-translate to 3 languages on save)...'}
             />
+            <p className="text-xs text-gray-500 mt-2">
+              💡 Nhập text một lần, hệ thống sẽ tự động dịch sang 3 ngôn ngữ (🇻🇳 🇬🇧 🇯🇵) khi bạn lưu cài đặt
+            </p>
           </div>
 
           {/* Contact Email */}
@@ -258,12 +356,6 @@ function SettingsPage() {
               onChange={(value) => updateSetting('system', 'debugMode', value)}
             />
             
-            <ToggleSwitch
-              label={t('settings.system.analyticsTracking')}
-              description={t('settings.system.analyticsTrackingDesc')}
-              checked={settings.system.analyticsEnabled}
-              onChange={(value) => updateSetting('system', 'analyticsEnabled', value)}
-            />
           </div>
         </div>
         </SettingsSection>
@@ -325,37 +417,7 @@ function SettingsPage() {
             </div>
           </div>
 
-          {/* Session Timeout */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-              {t('settings.users.sessionTimeout')}
-            </label>
-            <select
-              value={settings.users.sessionTimeout}
-              onChange={(e) => updateSetting('users', 'sessionTimeout', parseInt(e.target.value))}
-              className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]"
-            >
-              <option value={1800000}>{t('settings.users.session30min')}</option>
-              <option value={3600000}>{t('settings.users.session1hour')}</option>
-              <option value={7200000}>{t('settings.users.session2hours')}</option>
-              <option value={86400000}>{t('settings.users.session24hours')}</option>
-              <option value={0}>{t('settings.users.sessionUnlimited')}</option>
-            </select>
-            <p className="text-xs text-gray-500 mt-1">
-              💡 {t('settings.users.sessionTimeoutHint')}
-            </p>
-          </div>
-
-          {/* Toggles */}
-          <div className="pt-4 border-t-[2px] border-gray-200">
-            <ToggleSwitch
-              label={t('settings.users.autoLogout')}
-              description={t('settings.users.autoLogoutDesc')}
-              checked={settings.users.autoLogoutInactive}
-              onChange={(value) => updateSetting('users', 'autoLogoutInactive', value)}
-              disabled={true}
-            />
-          </div>
+          {/* (Session timeout & auto-logout settings were removed as not needed in current version) */}
         </div>
         </SettingsSection>
 
@@ -367,42 +429,6 @@ function SettingsPage() {
         defaultOpen={true}
       >
         <div className="space-y-4">
-          {/* Quiz Time Limit */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-              {t('settings.content.quizTimeLimit')}
-            </label>
-            <input
-              type="number"
-              min="5"
-              max="180"
-              value={settings.content.defaultQuizTimeLimit}
-              onChange={(e) => updateSetting('content', 'defaultQuizTimeLimit', parseInt(e.target.value))}
-              className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              💡 {t('settings.content.quizTimeLimitHint')}
-            </p>
-          </div>
-
-          {/* Passing Score */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
-              {t('settings.content.passingScore')}
-            </label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              value={settings.content.defaultPassingScore}
-              onChange={(e) => updateSetting('content', 'defaultPassingScore', parseInt(e.target.value))}
-              className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              💡 {t('settings.content.passingScoreHint')}
-            </p>
-          </div>
-
           {/* Max Retry Attempts */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
@@ -410,15 +436,31 @@ function SettingsPage() {
             </label>
             <select
               value={settings.content.maxRetryAttempts}
-              onChange={(e) => updateSetting('content', 'maxRetryAttempts', parseInt(e.target.value) || -1)}
+              onChange={(e) => updateSetting('content', 'maxRetryAttempts', parseInt(e.target.value))}
               className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]"
-              disabled={!settings.content.allowRetry}
             >
               <option value={1}>{t('settings.content.retry1')}</option>
               <option value={3}>{t('settings.content.retry3')}</option>
               <option value={5}>{t('settings.content.retry5')}</option>
               <option value={-1}>{t('settings.content.retryUnlimited')}</option>
+              <option value={0}>{t('settings.content.retryNoRetry')}</option>
+              <option value={-2}>{t('settings.content.retryCustom')}</option>
             </select>
+            {settings.content.maxRetryAttempts === -2 && (
+              <div className="mt-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={settings.content.maxRetryAttemptsCustom || 1}
+                  onChange={(e) => updateSetting('content', 'maxRetryAttemptsCustom', parseInt(e.target.value) || 1)}
+                  className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 {t('settings.content.retryCustomHint') || 'Nhập số lần tối đa cho phép (tối đa khuyến nghị: 50 lần).'} 
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Toggles */}
@@ -428,13 +470,6 @@ function SettingsPage() {
               description={t('settings.content.showAnswersDesc')}
               checked={settings.content.showAnswersAfterCompletion}
               onChange={(value) => updateSetting('content', 'showAnswersAfterCompletion', value)}
-            />
-            
-            <ToggleSwitch
-              label={t('settings.content.allowRetry')}
-              description={t('settings.content.allowRetryDesc')}
-              checked={settings.content.allowRetry}
-              onChange={(value) => updateSetting('content', 'allowRetry', value)}
             />
           </div>
         </div>

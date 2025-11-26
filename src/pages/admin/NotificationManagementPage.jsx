@@ -219,6 +219,72 @@ function NotificationManagementPage() {
     }
   };
 
+  // Helper function to translate notification title and message based on pattern matching
+  const translateNotification = (notification) => {
+    const title = notification.title || '';
+    const message = notification.message || '';
+    
+    // Extract streak number from message if present
+    let streak = '';
+    const numberMatch = message.match(/(\d+)\s*(ngày|days|日)/i);
+    streak = numberMatch ? numberMatch[1] : '';
+    
+    // Pattern matching for streak notifications
+    // Warning notification
+    if (title.includes('Nhắc nhở học tập') || title.includes('Study Reminder') || title.includes('学習リマインダー') ||
+        title.includes('⚠️') && (title.includes('Nhắc nhở') || title.includes('Reminder')) ||
+        message.includes('bỏ lỡ 1 ngày học') || message.includes('missed 1 day') || message.includes('1日学習を逃')) {
+      return {
+        title: t('streakNotifications.messages.warning.title') || title,
+        message: t('streakNotifications.messages.warning.message') || message
+      };
+    }
+    
+    // Reset notification
+    if (title.includes('Streak đã bị reset') || title.includes('Streak Reset') || title.includes('ストリークリセット') ||
+        title.includes('💔') && (title.includes('Streak') || title.includes('reset')) ||
+        message.includes('reset về 0') || message.includes('reset to 0') || message.includes('0にリセット')) {
+      return {
+        title: t('streakNotifications.messages.reset.title') || title,
+        message: t('streakNotifications.messages.reset.message') || message
+      };
+    }
+    
+    // Daily encouragement
+    if ((title.includes('Duy trì streak') || title.includes('Maintain Streak') || title.includes('ストリークを維持') ||
+        (title.includes('🔥') && (title.includes('Duy trì') || title.includes('Maintain')))) ||
+        ((message.includes('học liên tục') || message.includes('studied continuously') || message.includes('連続で学習')) &&
+        !message.includes('đạt') && !message.includes('reached') && !message.includes('達成'))) {
+      let translatedMessage = t('streakNotifications.messages.daily.message') || message;
+      if (streak) {
+        translatedMessage = translatedMessage.replace('{streak}', streak);
+      }
+      return {
+        title: t('streakNotifications.messages.daily.title') || title,
+        message: translatedMessage
+      };
+    }
+    
+    // Milestone notification
+    if (title.includes('Mốc quan trọng') || title.includes('Important Milestone') || title.includes('重要なマイルストーン') ||
+        title.includes('🏆') && (title.includes('Mốc') || title.includes('Milestone')) ||
+        (message.includes('đạt') && message.includes('ngày học liên tục')) || 
+        (message.includes('reached') && message.includes('consecutive study days')) ||
+        (message.includes('達成') && message.includes('連続で学習'))) {
+      let translatedMessage = t('streakNotifications.messages.milestone.message') || message;
+      if (streak) {
+        translatedMessage = translatedMessage.replace('{streak}', streak);
+      }
+      return {
+        title: t('streakNotifications.messages.milestone.title') || title,
+        message: translatedMessage
+      };
+    }
+    
+    // If no pattern matches, return original
+    return { title, message };
+  };
+
   // ========== STREAK TEMPLATES HANDLERS ==========
   const loadTemplates = () => {
     const loaded = getStreakTemplates();
@@ -351,14 +417,16 @@ function NotificationManagementPage() {
                       </td>
                     </tr>
                   ) : (
-                    notifications.map((notif) => (
+                    notifications.map((notif) => {
+                      const translated = translateNotification(notif);
+                      return (
                       <tr key={notif.id} className="hover:bg-gray-50">
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-bold text-gray-900">
-                          {notif.title}
+                          {translated.title}
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3">
                           <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold rounded border-[2px] ${getNotificationTypeColor(notif.type)}`}>
-                            {notif.type}
+                            {t(`notifications.type.${notif.type}`) || notif.type}
                           </span>
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs text-gray-600">
@@ -404,7 +472,8 @@ function NotificationManagementPage() {
                           </div>
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -428,6 +497,8 @@ function NotificationManagementPage() {
               {Object.keys(templates).map((key) => {
                 const template = templates[key];
                 const isEditing = editingKey === key;
+                // Use translated version for preview (keep original for editing)
+                const translatedTemplate = translateNotification(template);
 
                 return (
                   <div
@@ -547,10 +618,10 @@ function NotificationManagementPage() {
                             </div>
                             <div className="flex-1">
                               <h4 className="font-black text-xs sm:text-sm text-black uppercase tracking-wide mb-1">
-                                {template.title || t('streakNotifications.preview.title') || 'Tiêu đề'}
+                                {translatedTemplate.title || t('streakNotifications.preview.title') || 'Tiêu đề'}
                               </h4>
                               <p className="text-xs text-gray-700 font-semibold">
-                                {template.message || t('streakNotifications.preview.message') || 'Nội dung thông báo...'}
+                                {translatedTemplate.message || t('streakNotifications.preview.message') || 'Nội dung thông báo...'}
                               </p>
                             </div>
                           </div>

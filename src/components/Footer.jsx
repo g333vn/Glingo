@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext.jsx';
 import { getSettings } from '../utils/settingsManager.js';
 
 function Footer() {
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const currentYear = new Date().getFullYear();
   const [settings, setSettings] = useState(getSettings());
 
@@ -25,6 +25,13 @@ function Footer() {
       window.removeEventListener('settingsUpdated', handleSettingsUpdate);
     };
   }, []);
+
+  // Re-render when language changes to update platformDescription
+  useEffect(() => {
+    // Force re-render by updating settings (this will trigger re-render with new currentLanguage)
+    const currentSettings = getSettings();
+    setSettings(currentSettings);
+  }, [currentLanguage]);
 
   return (
     <footer className="relative overflow-hidden mt-0">
@@ -49,11 +56,19 @@ function Footer() {
                 </span>
               </div>
               <p className="text-gray-300 text-sm leading-relaxed font-medium">
-                {settings?.system?.platformDescription && settings.system.platformDescription.trim() ? (
-                  settings.system.platformDescription
-                ) : (
-                  t('home.tagline')
-                )}
+                {(() => {
+                  const desc = settings?.system?.platformDescription;
+                  if (typeof desc === 'object' && desc !== null) {
+                    // New format: object with vi, en, ja
+                    // Priority: currentLanguage -> vi -> en -> ja -> fallback
+                    const text = desc[currentLanguage] || desc.vi || desc.en || desc.ja;
+                    return text || t('home.tagline');
+                  } else if (typeof desc === 'string' && desc.trim()) {
+                    // Old format: string (backward compatibility)
+                    return desc;
+                  }
+                  return t('home.tagline');
+                })()}
               </p>
             </div>
 

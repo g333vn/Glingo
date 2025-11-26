@@ -1,7 +1,7 @@
 // src/components/NotificationBell.jsx
 // 🔔 Notification Bell Component - Display notifications in header
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
 import {
@@ -52,30 +52,37 @@ function NotificationBell() {
       loadNotifications();
     }, 60 * 60 * 1000); // Every hour
 
-    // Close dropdown when clicking outside
+    return () => {
+      window.removeEventListener('notificationsUpdated', handleUpdate);
+      clearInterval(cleanupInterval);
+    };
+  }, [user]);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (isOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
 
     return () => {
-      window.removeEventListener('notificationsUpdated', handleUpdate);
-      clearInterval(cleanupInterval);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [user]);
+  }, [isOpen]);
 
-  const handleNotificationClick = (notification) => {
+  const handleNotificationClick = useCallback((notification) => {
     if (user) {
       markAsRead(notification.id, user);
       setUnreadCount(prev => Math.max(0, prev - 1));
     }
-  };
+  }, [user]);
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = useCallback(() => {
     if (user) {
       markAllAsRead(user);
       // Reload notifications to update UI
@@ -84,9 +91,9 @@ function NotificationBell() {
       setAllNotifications(userNotifs);
       setUnreadCount(unread);
     }
-  };
+  }, [user]);
 
-  const getNotificationIcon = (type) => {
+  const getNotificationIcon = useCallback((type) => {
     const typeLower = (type || '').toLowerCase();
     switch (typeLower) {
       case 'success':
@@ -100,9 +107,9 @@ function NotificationBell() {
       default:
         return '📢'; // Custom type icon
     }
-  };
+  }, []);
 
-  const getNotificationColor = (type) => {
+  const getNotificationColor = useCallback((type) => {
     const typeLower = (type || '').toLowerCase();
     switch (typeLower) {
       case 'success':
@@ -116,10 +123,10 @@ function NotificationBell() {
       default:
         return 'bg-purple-50 border-purple-400'; // Custom type color
     }
-  };
+  }, []);
 
   // Helper function to translate notification messages based on pattern matching
-  const translateNotification = (notification) => {
+  const translateNotification = useCallback((notification) => {
     const title = notification.title || '';
     const message = notification.message || '';
     
@@ -185,7 +192,7 @@ function NotificationBell() {
     
     // If no pattern matches, return original
     return { title, message };
-  };
+  }, [t]);
 
   // Filter notifications by time and search term
   const filteredNotifications = useMemo(() => {
@@ -229,6 +236,14 @@ function NotificationBell() {
     return filtered;
   }, [allNotifications, timeFilter, searchTerm]);
 
+  // Memoize translated notifications to avoid re-translating on every render
+  const translatedNotifications = useMemo(() => {
+    return filteredNotifications.map(notif => ({
+      ...notif,
+      translated: translateNotification(notif)
+    }));
+  }, [filteredNotifications, translateNotification]);
+
   if (!user) return null;
 
   return (
@@ -258,8 +273,7 @@ function NotificationBell() {
       )}
 
       {/* Dropdown */}
-      {isOpen && (
-        <div className="fixed md:absolute right-2 md:right-0 top-20 md:top-full mt-0 md:mt-2 w-[calc(100vw-1rem)] md:w-80 lg:w-96 max-w-[calc(100vw-1rem)] md:max-w-none bg-white rounded-lg border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-[60] max-h-[calc(100vh-6rem)] md:max-h-[600px] flex flex-col">
+      <div className={`fixed md:absolute right-2 md:right-0 top-20 md:top-full mt-0 md:mt-2 w-[calc(100vw-1rem)] md:w-80 lg:w-96 max-w-[calc(100vw-1rem)] md:max-w-none bg-white rounded-lg border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-[60] max-h-[calc(100vh-6rem)] md:max-h-[600px] flex flex-col transition-opacity duration-200 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none invisible'}`}>
           {/* Header - Neo Brutalism Style */}
           <div className="flex items-center justify-between p-4 bg-yellow-400 border-b-[3px] border-black">
             <h3 className="font-black text-lg text-black uppercase tracking-wide">
@@ -354,9 +368,8 @@ function NotificationBell() {
               </div>
             ) : (
               <div className="divide-y divide-black">
-                {filteredNotifications.map((notif) => {
+                {translatedNotifications.map((notif) => {
                   const isRead = user && notif.readBy && notif.readBy.includes(user.id);
-                  const translated = translateNotification(notif);
                   
                   return (
                     <div
@@ -381,14 +394,14 @@ function NotificationBell() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 mb-1">
                             <h4 className="font-black text-sm text-black uppercase tracking-wide">
-                              {translated.title}
+                              {notif.translated.title}
                             </h4>
                             {!isRead && (
                               <span className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0 mt-1 border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"></span>
                             )}
                           </div>
                           <p className="text-xs text-gray-700 mb-2 leading-relaxed font-semibold">
-                            {translated.message}
+                            {notif.translated.message}
                           </p>
                           <div className="flex items-center gap-2 mb-2">
                             <div className={`inline-block px-2 py-1 rounded-lg border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${getNotificationColor(notif.type)}`}>
@@ -421,7 +434,6 @@ function NotificationBell() {
             )}
           </div>
         </div>
-      )}
     </div>
   );
 }

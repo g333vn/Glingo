@@ -1,12 +1,39 @@
 import React, { useEffect, useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext.jsx';
+import { getSettings } from '../utils/settingsManager.js';
 
 function HomePage() {
+  const { t, currentLanguage } = useLanguage();
   const [isVisible, setIsVisible] = useState(false);
-  const [quoteHover, setQuoteHover] = useState(false);
+  const [settings, setSettings] = useState(getSettings());
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  // Listen for settings updates
+  useEffect(() => {
+    const handleSettingsUpdate = (event) => {
+      setSettings(event.detail);
+    };
+    
+    window.addEventListener('settingsUpdated', handleSettingsUpdate);
+    
+    // Also check on mount in case settings changed while page was not active
+    const currentSettings = getSettings();
+    setSettings(currentSettings);
+    
+    return () => {
+      window.removeEventListener('settingsUpdated', handleSettingsUpdate);
+    };
+  }, []);
+
+  // Re-render when language changes to update platformDescription
+  useEffect(() => {
+    // Force re-render by updating settings (this will trigger re-render with new currentLanguage)
+    const currentSettings = getSettings();
+    setSettings(currentSettings);
+  }, [currentLanguage]);
 
   return (
     <div className="min-h-screen p-2 sm:p-4 md:p-6 relative">
@@ -14,84 +41,6 @@ function HomePage() {
       <div className="absolute top-1/4 left-10 w-40 h-40 bg-yellow-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
       <div className="absolute top-1/3 right-20 w-40 h-40 bg-orange-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
       <div className="absolute bottom-1/4 left-1/3 w-40 h-40 bg-red-300 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-4000"></div>
-
-      {/* Japanese Quote - Vintage Scroll Style */}
-      <div 
-        className="quote-scroll hidden xl:block absolute top-4 right-2 md:top-12 md:right-16 z-10"
-        onMouseEnter={() => setQuoteHover(true)}
-        onMouseLeave={() => setQuoteHover(false)}
-      >
-        <div className={`relative transition-all duration-700 ${quoteHover ? 'scale-105 rotate-1' : 'scale-100 rotate-0'}`}>
-          <div className="absolute -top-1 md:-top-2 left-1/2 transform -translate-x-1/2 w-4/5 h-1 md:h-2 bg-gradient-to-r from-stone-800 via-stone-700 to-stone-800 rounded-full shadow-md"></div>
-          <div className="absolute -top-1.5 md:-top-3 left-1/2 transform -translate-x-1/2 w-3/4 h-0.5 md:h-1 bg-stone-900 rounded-full opacity-60"></div>
-          <div className="absolute -top-4 md:-top-8 left-1/2 transform -translate-x-1/2 w-0.5 h-3 md:h-6 bg-stone-700 opacity-50"></div>
-          
-          <div className="relative overflow-hidden rounded-lg shadow-2xl">
-            <div className="relative bg-gradient-to-br from-stone-200 via-amber-100/60 to-stone-300 px-3 py-4 md:px-6 md:py-8 backdrop-blur-sm">
-              <div className="absolute inset-0 bg-gradient-to-b from-stone-400/10 via-transparent to-amber-900/10"></div>
-              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-800 via-transparent to-transparent"></div>
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-stone-400/20 to-transparent"></div>
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-stone-400/20 to-transparent"></div>
-              
-              <div className="absolute top-2 right-2 md:top-3 md:right-3 w-6 h-6 md:w-8 md:h-8 bg-red-800/70 rounded-sm transform rotate-6 shadow-md flex items-center justify-center opacity-70">
-                <div className="w-4 h-4 md:w-6 md:h-6 border border-red-400/30 rounded-sm flex items-center justify-center">
-                  <span className="text-[8px] md:text-[10px] text-red-200/80 font-bold">学</span>
-                </div>
-              </div>
-
-              <div className="relative flex flex-row gap-2 md:gap-6">
-                <div className="relative">
-                  <h1 
-                    className={`text-lg md:text-3xl leading-relaxed md:leading-loose tracking-wider transition-all duration-700 ${
-                      quoteHover ? 'text-stone-900' : 'text-stone-800/80'
-                    }`}
-                    style={{ 
-                      writingMode: 'vertical-rl',
-                      fontFamily: "'Kaisei Decol', 'Yuji Syuku', 'Noto Serif JP', 'MS Mincho', serif",
-                      letterSpacing: '0.2em',
-                      fontWeight: '500',
-                      textShadow: '0.5px 0.5px 1px rgba(0,0,0,0.15)'
-                    }}
-                  >
-                    天は人の上に人を造らず
-                  </h1>
-                </div>
-
-                <div className="relative">
-                  <h1 
-                    className={`text-lg md:text-3xl leading-relaxed md:leading-loose tracking-wider transition-all duration-700 ${
-                      quoteHover ? 'text-stone-900' : 'text-stone-800/80'
-                    }`}
-                    style={{ 
-                      writingMode: 'vertical-rl',
-                      fontFamily: "'Kaisei Decol', 'Yuji Syuku', 'Noto Serif JP', 'MS Mincho', serif",
-                      letterSpacing: '0.2em',
-                      fontWeight: '500',
-                      textShadow: '0.5px 0.5px 1px rgba(0,0,0,0.15)'
-                    }}
-                  >
-                    人の下に人を造らず
-                  </h1>
-                </div>
-              </div>
-
-              {quoteHover && (
-                <>
-                  <div className="absolute bottom-2 left-4 w-px h-3 bg-gradient-to-b from-stone-700 to-transparent opacity-15"></div>
-                  <div className="absolute top-1/3 right-5 w-px h-2 bg-gradient-to-b from-stone-700 to-transparent opacity-10"></div>
-                </>
-              )}
-            </div>
-
-            <div className="absolute inset-0 rounded-lg shadow-inner pointer-events-none opacity-20"></div>
-          </div>
-
-          <div className="absolute -bottom-1 md:-bottom-2 left-1/2 transform -translate-x-1/2 w-4/5 h-1 md:h-2 bg-gradient-to-r from-stone-800 via-stone-700 to-stone-800 rounded-full shadow-md"></div>
-          <div className="absolute -bottom-1.5 md:-bottom-3 left-1/2 transform -translate-x-1/2 w-3/4 h-0.5 md:h-1 bg-stone-900 rounded-full opacity-60"></div>
-          
-          <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;500;700&family=Yuji+Syuku&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet" />
-        </div>
-      </div>
 
       {/* MAIN CONTAINER */}
       <div className="mx-auto bg-white/90 backdrop-blur-xl rounded-[3rem] shadow-2xl overflow-hidden max-w-6xl border-2 border-white/50 relative z-0">
@@ -110,13 +59,20 @@ function HomePage() {
                 Learn Your Approach
               </h1>
 
-              <p className="text-xl md:text-2xl text-gray-800 mb-4 font-bold drop-shadow">
-                Học tiếng Nhật mọi lúc mọi nơi
-              </p>
-              <p className="text-lg md:text-xl text-gray-700 mb-12 flex items-center justify-center gap-2 font-semibold">
-                <span className="text-2xl">💚</span>
-                <span>100% miễn phí</span>
-                <span className="text-2xl">💚</span>
+              <p className="text-xl md:text-2xl text-gray-800 mb-12 font-bold drop-shadow">
+                {(() => {
+                  const desc = settings?.system?.platformDescription;
+                  if (typeof desc === 'object' && desc !== null) {
+                    // New format: object with vi, en, ja
+                    // Priority: currentLanguage -> vi -> en -> ja -> fallback
+                    const text = desc[currentLanguage] || desc.vi || desc.en || desc.ja;
+                    return text || t('home.tagline');
+                  } else if (typeof desc === 'string' && desc.trim()) {
+                    // Old format: string (backward compatibility)
+                    return desc;
+                  }
+                  return t('home.tagline');
+                })()}
               </p>
 
               <div className={`flex flex-col sm:flex-row gap-6 justify-center items-stretch mb-12 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -126,9 +82,9 @@ function HomePage() {
                 >
                   <span className="text-2xl relative z-10">📚</span>
                   <span className="relative z-10 text-center">
-                    Bắt đầu học ngay
+                    {t('home.startLearning')}
                     <br />
-                    <span className="text-sm font-normal opacity-90">Start Learning</span>
+                    <span className="text-sm font-normal opacity-90">{t('home.startLearningSubtitle')}</span>
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </a>
@@ -139,9 +95,9 @@ function HomePage() {
                 >
                   <span className="text-2xl relative z-10">📝</span>
                   <span className="relative z-10 text-center">
-                    Luyện đề JLPT
+                    {t('home.practiceJLPT')}
                     <br />
-                    <span className="text-sm font-normal opacity-90">Practice JLPT</span>
+                    <span className="text-sm font-normal opacity-90">{t('home.practiceJLPTSubtitle')}</span>
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </a>
@@ -167,7 +123,7 @@ function HomePage() {
                     </span>
                     
                     <span className="font-bold text-lg bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 bg-clip-text text-transparent group-hover:from-purple-700 group-hover:via-pink-700 group-hover:to-red-700 transition-all duration-300">
-                      My Story
+                      {t('home.myStory')}
                     </span>
                     
                     <span className="text-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 bg-clip-text text-transparent group-hover:translate-x-2 group-hover:scale-125 transition-all duration-300">
@@ -183,28 +139,32 @@ function HomePage() {
               </div>
 
               <div className={`grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 transition-all duration-1000 delay-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                {/* 1. JLPT Tests */}
                 <div className="group bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-yellow-300">
                   <div className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">📝</div>
-                  <h3 className="font-bold text-gray-900 mb-1 text-lg">JLPT Tests</h3>
-                  <p className="text-sm text-gray-700 font-medium">N1-N5</p>
+                  <h3 className="font-bold text-gray-900 mb-1 text-lg">{t('home.jlptTests')}</h3>
+                  <p className="text-sm text-gray-700 font-medium">{t('home.jlptTestsDesc')}</p>
                 </div>
 
+                {/* 2. Comprehensive Content */}
                 <div className="group bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-orange-300">
                   <div className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">📚</div>
-                  <h3 className="font-bold text-gray-900 mb-1 text-lg">LEVEL System</h3>
-                  <p className="text-sm text-gray-700 font-medium">Đa dạng</p>
+                  <h3 className="font-bold text-gray-900 mb-1 text-lg">{t('home.comprehensiveContent')}</h3>
+                  <p className="text-sm text-gray-700 font-medium">{t('home.comprehensiveContentDesc')}</p>
                 </div>
 
+                {/* 3. Smart Flashcards */}
                 <div className="group bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-blue-300">
-                  <div className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">🔍</div>
-                  <h3 className="font-bold text-gray-900 mb-1 text-lg">Tra từ nhanh</h3>
-                  <p className="text-sm text-gray-700 font-medium">Nhật-Việt-Anh</p>
+                  <div className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">🎴</div>
+                  <h3 className="font-bold text-gray-900 mb-1 text-lg">{t('home.smartFlashcards')}</h3>
+                  <p className="text-sm text-gray-700 font-medium">{t('home.smartFlashcardsDesc')}</p>
                 </div>
 
+                {/* 4. Study Streak */}
                 <div className="group bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-green-300">
-                  <div className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">🌙</div>
-                  <h3 className="font-bold text-gray-900 mb-1 text-lg">24/7 Access</h3>
-                  <p className="text-sm text-gray-700 font-medium">Mọi lúc</p>
+                  <div className="text-4xl mb-3 group-hover:scale-125 transition-transform duration-300">🔥</div>
+                  <h3 className="font-bold text-gray-900 mb-1 text-lg">{t('home.studyStreak')}</h3>
+                  <p className="text-sm text-gray-700 font-medium">{t('home.studyStreakDesc')}</p>
                 </div>
               </div>
             </div>

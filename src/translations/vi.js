@@ -67,6 +67,7 @@ const vi = {
         userMenu: {
             dashboard: 'Dashboard',
             dashboardDesc: 'Tiến độ học tập',
+            dashboardLocked: 'Bị khóa - Không có quyền truy cập',
             myProfile: 'My Profile',
             adminPanel: 'Admin Panel',
             adminPanelDesc: 'Quản trị hệ thống',
@@ -87,6 +88,17 @@ const vi = {
             stayButton: 'Tiếp tục làm bài',
             confirmButton: 'Đăng xuất'
         }
+    },
+
+    // ============================================================================
+    // MAINTENANCE PAGE
+    // ============================================================================
+    maintenance: {
+        title: 'Hệ thống đang bảo trì',
+        message: 'Chúng tôi đang bảo trì và nâng cấp hệ thống để phục vụ bạn tốt hơn. Vui lòng quay lại sau ít phút.',
+        contact: 'Nếu cần hỗ trợ khẩn cấp, vui lòng liên hệ',
+        loggedInNonAdmin: 'Bạn đang đăng nhập với tài khoản không phải admin. Trong thời gian bảo trì, chỉ admin mới có thể sử dụng hệ thống.',
+        note: 'Admin vẫn có thể truy cập khu vực quản trị để giám sát và hoàn tất bảo trì.'
     },
 
     // ============================================================================
@@ -159,7 +171,10 @@ const vi = {
         wrongAnswers: 'Sai',
         listeningQuestion: 'Câu hỏi nghe',
         playAudioToAnswer: 'Nghe audio và chọn đáp án đúng',
-        browserNotSupport: 'Trình duyệt không hỗ trợ audio.'
+        browserNotSupport: 'Trình duyệt không hỗ trợ audio.',
+        retry: 'Làm lại',
+        retryRemaining: 'Lần làm: {{used}} / {{max}}',
+        retryLimitReached: 'Bạn đã dùng hết {{max}} lần làm lại được phép.'
     },
 
     // ============================================================================
@@ -480,13 +495,13 @@ const vi = {
         practiceJLPTSubtitle: 'Practice JLPT',
         myStory: 'My Story',
         jlptTests: 'JLPT Tests',
-        jlptTestsDesc: 'N1-N5',
-        levelSystem: 'LEVEL System',
-        levelSystemDesc: 'Comprehensive',
-        dictionary: 'Quick Dictionary',
-        dictionaryDesc: 'JP-VI-EN',
-        access24: '24/7 Access',
-        access24Desc: 'Anytime'
+        jlptTestsDesc: 'N1-N5 Mock Tests',
+        comprehensiveContent: 'Nội Dung Đa Dạng',
+        comprehensiveContentDesc: 'Shinkanzen, TRY, GENKI...',
+        smartFlashcards: 'Smart Flashcards',
+        smartFlashcardsDesc: 'Thuật toán SRS - Học thông minh',
+        studyStreak: 'Study Streak',
+        studyStreakDesc: 'Theo dõi tiến độ & động lực'
     },
 
     // ============================================================================
@@ -849,7 +864,63 @@ const vi = {
         ctaText: 'Mình ở đây 24/7, nếu có vấn đề gì hay đơn giản là bạn muốn thêm giáo trình gì đừng ngại hãy liên lạc với mình nhé! 🚀',
         communityProject: 'Dự án phi lợi nhuận - phục vụ cộng đồng học tiếng Nhật',
         backToHome: 'Quay về trang chủ',
-        quoteTranslation: 'Heaven does not create one person above or below another'
+        quoteTranslation: 'Heaven does not create one person above or below another',
+        features: {
+            srs: {
+                title: 'Smart Flashcards',
+                badge: 'SRS Algorithm',
+                description: 'Học thông minh với thuật toán Spaced Repetition System - học đúng lúc, nhớ lâu hơn',
+                point1: '✅ Thuật toán SM-2 tối ưu',
+                point2: '✅ Tự động lên lịch ôn tập',
+                point3: '✅ Theo dõi tiến độ chi tiết',
+                cta: 'Xem Dashboard →'
+            },
+            jlpt: {
+                title: 'JLPT Tests',
+                badge: 'N1-N5',
+                description: 'Đề thi thử JLPT đầy đủ từ N1 đến N5, mô phỏng kỳ thi thật',
+                point1: '✅ Đề thi đầy đủ N1-N5',
+                point2: '✅ Mô phỏng kỳ thi thật',
+                point3: '✅ Xem đáp án chi tiết',
+                cta: 'Luyện Đề Ngay →'
+            },
+            roadmap: {
+                title: 'LEVEL System',
+                badge: 'Đa Dạng',
+                description: 'Giáo trình đa dạng: Shinkanzen Master, TRY, GENKI và nhiều giáo trình khác',
+                point1: '✅ Shinkanzen, TRY, GENKI',
+                point2: '✅ Nội dung phong phú',
+                point3: '✅ Học theo trình độ',
+                cta: 'Xem LEVEL →'
+            },
+            dictionary: {
+                title: 'Tra Từ Nhanh',
+                badge: 'JP-VI-EN',
+                description: 'Tra từ điển nhanh chóng với 3 ngôn ngữ: Nhật - Việt - Anh',
+                point1: '✅ Tra từ nhanh chóng',
+                point2: '✅ 3 ngôn ngữ: Nhật-Việt-Anh',
+                point3: '✅ Lưu từ yêu thích',
+                cta: 'Đang phát triển'
+            },
+            dashboard: {
+                title: 'Progress Dashboard',
+                badge: 'Thống Kê',
+                description: 'Theo dõi tiến độ học tập, thống kê chi tiết và biểu đồ trực quan',
+                point1: '✅ Thống kê chi tiết',
+                point2: '✅ Biểu đồ trực quan',
+                point3: '✅ Theo dõi tiến độ',
+                cta: 'Xem Dashboard →'
+            },
+            streak: {
+                title: 'Study Streak',
+                badge: 'Động Lực',
+                description: 'Duy trì chuỗi ngày học liên tục, tạo động lực học tập mỗi ngày',
+                point1: '✅ Theo dõi streak hàng ngày',
+                point2: '✅ Tạo động lực học tập',
+                point3: '✅ Thành tích cá nhân',
+                cta: 'Xem Streak →'
+            }
+        }
     },
 
     // ============================================================================
@@ -1278,7 +1349,9 @@ const vi = {
                 manageLessons: 'Quản lý Bài học',
                 manageExams: 'Quản lý Đề thi',
                 backupRestore: 'Backup & Restore',
-                settings: 'Cài đặt'
+                settings: 'Cài đặt',
+                newControl: 'Quản lý quyền truy cập',
+                notifications: 'Quản lý thông báo'
             },
             comingSoon: 'Soon'
         }
@@ -2482,6 +2555,9 @@ const vi = {
             retry3: '3 lần',
             retry5: '5 lần',
             retryUnlimited: 'Không giới hạn',
+            retryNoRetry: '0 lần (Không cho làm lại)',
+            retryCustom: 'Tùy chọn (nhập số lần)',
+            retryCustomHint: 'Nhập số lần tối đa user được phép làm lại quiz (khuyến nghị ≤ 50 lần).',
             showAnswers: 'Show Answers After Completion',
             showAnswersDesc: 'Hiển thị đáp án sau khi hoàn thành quiz',
             allowRetry: 'Allow Retry',
@@ -2516,6 +2592,239 @@ const vi = {
             allSaved: '✅ Tất cả thay đổi đã được lưu',
             saving: 'Đang lưu...',
             save: 'Lưu Settings'
+        }
+    },
+
+    // ============================================================================
+    // NOTIFICATIONS - Hệ thống thông báo (dropdown)
+    // ============================================================================
+    notifications: {
+        title: 'Thông báo',
+        markAllRead: 'Đánh dấu tất cả đã đọc',
+        search: '🔍 Tìm kiếm (tiêu đề, nội dung)...',
+        clearSearch: 'Xóa tìm kiếm',
+        empty: 'Không có thông báo nào',
+        filter: {
+            all: 'Tất cả',
+            today: 'Hôm nay',
+            thisWeek: 'Tuần này',
+            thisMonth: 'Tháng này'
+        },
+        type: {
+            success: 'Thành công',
+            warning: 'Cảnh báo',
+            error: 'Lỗi',
+            info: 'Thông tin'
+        },
+        admin: {
+            title: 'Quản lý thông báo',
+            subtitle: 'Gửi thông báo hệ thống và quản lý template tự động',
+            tabs: {
+                system: 'Thông báo hệ thống',
+                streak: 'Thông báo tự động'
+            },
+            cleanup: 'Dọn dẹp',
+            create: 'Tạo mới',
+            empty: 'Chưa có thông báo nào',
+            noTargets: 'Không gửi tới ai',
+            deleteConfirm: 'Bạn có chắc muốn xóa thông báo này?',
+            fillRequired: 'Vui lòng điền đầy đủ tiêu đề và nội dung!',
+            selectTargets: 'Vui lòng chọn ít nhất một user hoặc role để gửi thông báo!',
+            cleanupSuccess: 'Đã xóa {count} thông báo hết hạn!',
+            editTitle: 'Chỉnh sửa thông báo',
+            createTitle: 'Tạo thông báo mới',
+            send: 'Gửi',
+            addType: 'Thêm loại',
+            addTypeTitle: 'Thêm loại thông báo mới',
+            add: 'Thêm',
+            fillTypeRequired: 'Vui lòng điền đầy đủ giá trị và nhãn!',
+            typeExists: 'Loại này đã tồn tại!',
+            typeAdded: 'Đã thêm loại mới!',
+            typeAddError: 'Lỗi khi thêm loại!',
+            deleteType: 'Xóa loại',
+            deleteTypeConfirm: 'Xóa loại này?',
+            table: {
+                title: 'Tiêu đề',
+                type: 'Loại',
+                target: 'Đối tượng',
+                created: 'Ngày tạo',
+                actions: 'Thao tác',
+                users: 'Users:',
+                roles: 'Roles:'
+            },
+            form: {
+                title: 'Tiêu đề *',
+                titlePlaceholder: 'Nhập tiêu đề thông báo...',
+                message: 'Nội dung *',
+                messagePlaceholder: 'Nhập nội dung thông báo...',
+                type: 'Loại thông báo',
+                typePlaceholder: 'Chọn hoặc nhập loại thông báo...',
+                typeHint: 'Chọn từ dropdown, click icon, hoặc nhập loại tùy chỉnh',
+                targetUsers: 'Gửi cho Users (tick vào để gửi)',
+                targetRoles: 'Gửi cho Roles (tick vào để gửi)',
+                searchUsers: '🔍 Tìm kiếm user (username, tên, email)...',
+                noUsersFound: 'Không tìm thấy user nào',
+                expiresAt: 'Hết hạn (để trống = không hết hạn)',
+                typeValue: 'Giá trị (value) *',
+                typeValueHint: 'Chỉ dùng chữ thường, số và dấu gạch ngang',
+                typeLabel: 'Nhãn hiển thị (label) *',
+                typeIcon: 'Icon (emoji)',
+                typeColor: 'Màu',
+                colorOptions: {
+                    purple: 'Purple',
+                    blue: 'Blue',
+                    green: 'Green',
+                    yellow: 'Yellow',
+                    red: 'Red'
+                }
+            }
+        }
+    },
+
+    // ============================================================================
+    // STREAK NOTIFICATIONS - Thông báo streak học tập
+    // ============================================================================
+    streakNotifications: {
+        messages: {
+            warning: {
+                title: '⚠️ Nhắc nhở học tập',
+                message: 'Bạn đã bỏ lỡ 1 ngày học! Hãy quay lại học ngay hôm nay để duy trì streak nhé! 🔥'
+            },
+            reset: {
+                title: '💔 Streak đã bị reset',
+                message: 'Streak của bạn đã bị reset về 0. Đừng nản lòng! Hãy bắt đầu lại ngay hôm nay để xây dựng streak mới! 💪'
+            },
+            daily: {
+                title: '🔥 Duy trì streak!',
+                message: 'Tuyệt vời! Bạn đã học liên tục {streak} ngày! Tiếp tục phát huy nhé! 🎉'
+            },
+            milestone: {
+                title: '🏆 Mốc quan trọng!',
+                message: 'WOW! Bạn đã đạt {streak} ngày học liên tục! Đây là một thành tích tuyệt vời! Bạn đang xây dựng một thói quen học tập bền vững. Hãy tiếp tục duy trì và chinh phục những mốc cao hơn! 🌟💪🔥'
+            }
+        },
+        templates: {
+            warning: 'Cảnh báo (1 ngày không học)',
+            reset: 'Reset (2+ ngày không học)',
+            daily: 'Khích lệ hàng ngày',
+            milestone: 'Mốc quan trọng (mỗi 5 ngày)'
+        },
+        descriptions: {
+            warning: 'Gửi khi user bỏ lỡ 1 ngày học',
+            reset: 'Gửi khi streak bị reset (2+ ngày không học)',
+            daily: 'Gửi mỗi ngày khi user học (trừ ngày milestone)',
+            milestone: 'Gửi mỗi 5 ngày (5, 10, 15, 20, ...)'
+        },
+        form: {
+            title: 'Tiêu đề *',
+            titlePlaceholder: 'Nhập tiêu đề...',
+            message: 'Nội dung *',
+            messagePlaceholder: 'Nhập nội dung...',
+            variables: 'Có thể dùng {streak} để hiển thị số ngày streak',
+            type: 'Loại',
+            typeOptions: {
+                info: 'Info',
+                success: 'Success',
+                warning: 'Warning',
+                error: 'Error'
+            }
+        },
+        preview: {
+            title: 'Tiêu đề',
+            message: 'Nội dung thông báo...'
+        },
+        edit: 'Chỉnh sửa',
+        saveSuccess: 'Đã lưu thành công!',
+        saveError: 'Lỗi khi lưu!',
+        resetSuccess: 'Đã reset về mặc định!',
+        resetError: 'Lỗi khi reset!',
+        resetToDefault: 'Reset về mặc định',
+        resetConfirm: 'Reset về mặc định?',
+        resetConfirmMessage: 'Tất cả các template sẽ được reset về giá trị mặc định. Bạn có chắc chắn?',
+        reset: 'Reset'
+    },
+
+    // ============================================================================
+    // ACCESS CONTROL - Quản lý quyền truy cập
+    // ============================================================================
+    accessControl: {
+        title: 'Quản lý quyền truy cập',
+        subtitle: 'Quản lý quyền truy cập cho các module LEVEL và JLPT',
+        edit: 'Chỉnh sửa',
+        save: 'Lưu',
+        cancel: 'Hủy',
+        resetModule: 'Reset Module',
+        resetConfirm: 'Bạn có chắc chắn muốn reset cấu hình module {module}?',
+        blocked: 'Bị chặn',
+        module: {
+            level: 'LEVEL',
+            jlpt: 'JLPT'
+        },
+        info: {
+            title: 'Thông tin về Quản lý quyền truy cập',
+            point1: 'Quyền truy cập có thể được cấu hình ở 2 cấp độ: Module-level (áp dụng cho toàn bộ module) và Level-specific (áp dụng cho từng level cụ thể)',
+            point2: 'Level-specific sẽ override module-level nếu được cấu hình',
+            point3: 'Admin luôn có quyền truy cập đầy đủ, không bị ảnh hưởng bởi cấu hình này',
+            point4: 'Có 4 loại quyền truy cập: All (tất cả), Role (theo vai trò), User (theo user cụ thể), None (chặn tất cả)'
+        },
+        moduleLevel: {
+            title: 'Cấu hình Module-level',
+            current: 'Hiện tại',
+            description: 'Cấu hình này áp dụng cho toàn bộ module. Các level cụ thể có thể override cấu hình này.',
+            editTitle: 'Chỉnh sửa cấu hình Module-level: {module}',
+            usersBlocked: 'users được phép'
+        },
+        editTitle: 'Chỉnh sửa quyền truy cập: {module} - {level}',
+        accessType: {
+            all: 'Tất cả',
+            role: 'Theo vai trò',
+            user: 'Theo user',
+            none: 'Chặn tất cả'
+        },
+        role: {
+            guest: 'Khách',
+            editor: 'Biên tập viên',
+            user: 'Người dùng',
+            admin: 'Quản trị viên'
+        },
+        table: {
+            level: 'Level',
+            accessType: 'Loại quyền truy cập',
+            allowedRoles: 'Vai trò được phép',
+            allowedUsers: 'Users được phép',
+            actions: 'Thao tác'
+        },
+        form: {
+            accessType: 'Loại quyền truy cập',
+            allowedRoles: 'Vai trò được phép',
+            allowedUsers: 'Users được phép',
+            searchUsers: 'Tìm kiếm user...'
+        },
+        adminNote: 'Lưu ý: Admin luôn có quyền truy cập đầy đủ, không bị ảnh hưởng bởi cấu hình này'
+    },
+
+    // ============================================================================
+    // DASHBOARD ACCESS - Quyền truy cập Dashboard
+    // ============================================================================
+    dashboardAccess: {
+        title: 'Quyền truy cập Dashboard',
+        subtitle: 'Quản lý quyền truy cập cho User Dashboard',
+        reset: 'Reset',
+        resetConfirm: 'Bạn có chắc chắn muốn reset cấu hình Dashboard về mặc định?',
+        resetSuccess: 'Đã reset cấu hình Dashboard thành công!',
+        saveSuccess: 'Đã lưu cấu hình thành công!',
+        currentStatus: 'Trạng thái hiện tại',
+        locked: 'Đã khóa',
+        unlocked: 'Đã mở khóa',
+        users: 'users',
+        editTitle: 'Chỉnh sửa quyền truy cập Dashboard',
+        defaultLocked: 'Khóa Dashboard mặc định',
+        defaultLockedDesc: 'Khi bật, Dashboard sẽ bị khóa cho tất cả users trừ Admin và các users/roles được phép',
+        allowedRoles: 'Vai trò được phép',
+        allowedUsers: 'Users được phép',
+        adminNote: 'Lưu ý: Admin luôn có quyền truy cập đầy đủ, không bị ảnh hưởng bởi cấu hình này',
+        info: {
+            point1: 'Khi Dashboard bị khóa, chỉ Admin và các users/roles được phép mới có thể truy cập'
         }
     }
 };

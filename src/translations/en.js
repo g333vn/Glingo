@@ -67,6 +67,7 @@ const en = {
     userMenu: {
       dashboard: 'Dashboard',
       dashboardDesc: 'Learning progress',
+      dashboardLocked: 'Locked - No access permission',
       myProfile: 'My Profile',
       adminPanel: 'Admin Panel',
       adminPanelDesc: 'System administration',
@@ -87,6 +88,17 @@ const en = {
       stayButton: 'Continue test',
       confirmButton: 'Logout'
     }
+  },
+
+  // ============================================================================
+  // MAINTENANCE PAGE
+  // ============================================================================
+  maintenance: {
+    title: 'System under maintenance',
+    message: 'We are currently maintaining and upgrading the system to serve you better. Please come back in a few minutes.',
+    contact: 'For urgent support, please contact',
+    loggedInNonAdmin: 'You are logged in with a non-admin account. During maintenance, only admins can use the system.',
+    note: 'Admins can still access the admin area to monitor and complete the maintenance process.'
   },
 
 
@@ -160,7 +172,10 @@ const en = {
     wrongAnswers: 'Wrong',
     listeningQuestion: 'Listening Question',
     playAudioToAnswer: 'Listen to the audio and choose the correct answer',
-    browserNotSupport: 'Browser does not support audio.'
+    browserNotSupport: 'Browser does not support audio.',
+    retry: 'Retry',
+    retryRemaining: 'Attempts: {{used}} / {{max}}',
+    retryLimitReached: 'You have used all {{max}} allowed retries.'
   },
 
 
@@ -447,13 +462,13 @@ const en = {
     practiceJLPTSubtitle: 'Test Preparation',
     myStory: 'My Story',
     jlptTests: 'JLPT Tests',
-    jlptTestsDesc: 'N1-N5',
-    levelSystem: 'LEVEL System',
-    levelSystemDesc: 'Comprehensive',
-    dictionary: 'Quick Dictionary',
-    dictionaryDesc: 'JP-VI-EN',
-    access24: '24/7 Access',
-    access24Desc: 'Anytime'
+    jlptTestsDesc: 'N1-N5 Mock Tests',
+    comprehensiveContent: 'Rich Content',
+    comprehensiveContentDesc: 'Shinkanzen, TRY, GENKI...',
+    smartFlashcards: 'Smart Flashcards',
+    smartFlashcardsDesc: 'SRS Algorithm - Learn Smart',
+    studyStreak: 'Study Streak',
+    studyStreakDesc: 'Track Progress & Motivation'
   },
 
   dashboard: {
@@ -801,7 +816,63 @@ const en = {
     ctaText: 'I\'m here 24/7. If you have any issues or simply want to add more textbooks, don\'t hesitate to contact me! 🚀',
     communityProject: 'Non-profit project - serving the Japanese learning community',
     backToHome: 'Back to Home',
-    quoteTranslation: 'Heaven does not create one person above or below another'
+    quoteTranslation: 'Heaven does not create one person above or below another',
+    features: {
+      srs: {
+        title: 'Smart Flashcards',
+        badge: 'SRS Algorithm',
+        description: 'Learn smart with Spaced Repetition System algorithm - study at the right time, remember longer',
+        point1: '✅ Optimized SM-2 algorithm',
+        point2: '✅ Auto-scheduled reviews',
+        point3: '✅ Detailed progress tracking',
+        cta: 'View Dashboard →'
+      },
+      jlpt: {
+        title: 'JLPT Tests',
+        badge: 'N1-N5',
+        description: 'Complete JLPT mock tests from N1 to N5, simulating real exams',
+        point1: '✅ Full N1-N5 tests',
+        point2: '✅ Real exam simulation',
+        point3: '✅ Detailed answer keys',
+        cta: 'Practice Now →'
+      },
+      roadmap: {
+        title: 'LEVEL System',
+        badge: 'Comprehensive',
+        description: 'Various textbooks: Shinkanzen Master, TRY, GENKI and many more',
+        point1: '✅ Shinkanzen, TRY, GENKI',
+        point2: '✅ Rich content',
+        point3: '✅ Level-based learning',
+        cta: 'View LEVEL →'
+      },
+      dictionary: {
+        title: 'Quick Dictionary',
+        badge: 'JP-VI-EN',
+        description: 'Quick dictionary lookup with 3 languages: Japanese - Vietnamese - English',
+        point1: '✅ Fast word lookup',
+        point2: '✅ 3 languages: JP-VI-EN',
+        point3: '✅ Save favorite words',
+        cta: 'Coming Soon'
+      },
+      dashboard: {
+        title: 'Progress Dashboard',
+        badge: 'Statistics',
+        description: 'Track learning progress, detailed statistics and visual charts',
+        point1: '✅ Detailed statistics',
+        point2: '✅ Visual charts',
+        point3: '✅ Progress tracking',
+        cta: 'View Dashboard →'
+      },
+      streak: {
+        title: 'Study Streak',
+        badge: 'Motivation',
+        description: 'Maintain consecutive study days, create daily learning motivation',
+        point1: '✅ Daily streak tracking',
+        point2: '✅ Learning motivation',
+        point3: '✅ Personal achievements',
+        cta: 'View Streak →'
+      }
+    }
   },
 
   search: {
@@ -1303,7 +1374,9 @@ const en = {
                 manageLessons: 'Manage Lessons',
                 manageExams: 'Manage Exams',
                 backupRestore: 'Backup & Restore',
-                settings: 'Settings'
+                settings: 'Settings',
+                newControl: 'Access Control',
+                notifications: 'Notification Management'
             },
             comingSoon: 'Soon'
         }
@@ -2505,6 +2578,9 @@ const en = {
             retry3: '3 times',
             retry5: '5 times',
             retryUnlimited: 'Unlimited',
+            retryNoRetry: '0 times (No retry allowed)',
+            retryCustom: 'Custom (enter number)',
+            retryCustomHint: 'Enter the maximum number of times users can retake a quiz (recommended ≤ 50).',
             showAnswers: 'Show Answers After Completion',
             showAnswersDesc: 'Display answers after completing quiz',
             allowRetry: 'Allow Retry',
@@ -2540,7 +2616,240 @@ const en = {
             saving: 'Saving...',
             save: 'Save Settings'
         }
+    },
+
+  // ============================================================================
+  // NOTIFICATIONS - Notification system (dropdown)
+  // ============================================================================
+  notifications: {
+    title: 'Notifications',
+    markAllRead: 'Mark all as read',
+    search: '🔍 Search (title, content)...',
+    clearSearch: 'Clear search',
+    empty: 'No notifications',
+    filter: {
+      all: 'All',
+      today: 'Today',
+      thisWeek: 'This Week',
+      thisMonth: 'This Month'
+    },
+    type: {
+      success: 'Success',
+      warning: 'Warning',
+      error: 'Error',
+      info: 'Info'
+    },
+    admin: {
+      title: 'Notification Management',
+      subtitle: 'Send system notifications and manage automatic templates',
+      tabs: {
+        system: 'System Notifications',
+        streak: 'Automatic Notifications'
+      },
+      cleanup: 'Cleanup',
+      create: 'Create New',
+      empty: 'No notifications yet',
+      noTargets: 'Not sent to anyone',
+      deleteConfirm: 'Are you sure you want to delete this notification?',
+      fillRequired: 'Please fill in both title and message!',
+      selectTargets: 'Please select at least one user or role to send the notification!',
+      cleanupSuccess: 'Deleted {count} expired notifications!',
+      editTitle: 'Edit Notification',
+      createTitle: 'Create New Notification',
+      send: 'Send',
+      addType: 'Add Type',
+      addTypeTitle: 'Add New Notification Type',
+      add: 'Add',
+      fillTypeRequired: 'Please fill in both value and label!',
+      typeExists: 'This type already exists!',
+      typeAdded: 'New type added!',
+      typeAddError: 'Error adding type!',
+      deleteType: 'Delete Type',
+      deleteTypeConfirm: 'Delete this type?',
+      table: {
+        title: 'Title',
+        type: 'Type',
+        target: 'Target',
+        created: 'Created',
+        actions: 'Actions',
+        users: 'Users:',
+        roles: 'Roles:'
+      },
+      form: {
+        title: 'Title *',
+        titlePlaceholder: 'Enter notification title...',
+        message: 'Message *',
+        messagePlaceholder: 'Enter notification message...',
+        type: 'Notification Type',
+        typePlaceholder: 'Select or enter notification type...',
+        typeHint: 'Select from dropdown, click icon, or enter custom type',
+        targetUsers: 'Send to Users (check to send)',
+        targetRoles: 'Send to Roles (check to send)',
+        searchUsers: '🔍 Search users (username, name, email)...',
+        noUsersFound: 'No users found',
+        expiresAt: 'Expires At (leave empty = no expiration)',
+        typeValue: 'Value *',
+        typeValueHint: 'Use only lowercase letters, numbers and hyphens',
+        typeLabel: 'Display Label *',
+        typeIcon: 'Icon (emoji)',
+        typeColor: 'Color',
+        colorOptions: {
+          purple: 'Purple',
+          blue: 'Blue',
+          green: 'Green',
+          yellow: 'Yellow',
+          red: 'Red'
+        }
+      }
     }
+  },
+
+  // ============================================================================
+  // STREAK NOTIFICATIONS - Study streak notifications
+  // ============================================================================
+  streakNotifications: {
+    messages: {
+      warning: {
+        title: '⚠️ Study Reminder',
+        message: 'You have missed 1 day of study! Come back and study today to maintain your streak! 🔥'
+      },
+      reset: {
+        title: '💔 Streak Reset',
+        message: 'Your streak has been reset to 0. Don\'t give up! Start again today to build a new streak! 💪'
+      },
+      daily: {
+        title: '🔥 Maintain Streak!',
+        message: 'Great! You have studied continuously for {streak} days! Keep it up! 🎉'
+      },
+      milestone: {
+        title: '🏆 Important Milestone!',
+        message: 'WOW! You have reached {streak} consecutive study days! This is an amazing achievement! You are building a sustainable study habit. Keep maintaining and conquer higher milestones! 🌟💪🔥'
+      }
+    },
+    templates: {
+      warning: 'Warning (1 day missed)',
+      reset: 'Reset (2+ days missed)',
+      daily: 'Daily Encouragement',
+      milestone: 'Important Milestone (every 5 days)'
+    },
+    descriptions: {
+      warning: 'Sent when user misses 1 day of study',
+      reset: 'Sent when streak is reset (2+ days without study)',
+      daily: 'Sent every day when user studies (except milestone days)',
+      milestone: 'Sent every 5 days (5, 10, 15, 20, ...)'
+    },
+    form: {
+      title: 'Title *',
+      titlePlaceholder: 'Enter title...',
+      message: 'Message *',
+      messagePlaceholder: 'Enter message...',
+      variables: 'You can use {streak} to display the streak number',
+      type: 'Type',
+      typeOptions: {
+        info: 'Info',
+        success: 'Success',
+        warning: 'Warning',
+        error: 'Error'
+      }
+    },
+    preview: {
+      title: 'Title',
+      message: 'Notification message...'
+    },
+    edit: 'Edit',
+    saveSuccess: 'Saved successfully!',
+    saveError: 'Error saving!',
+    resetSuccess: 'Reset to default!',
+    resetError: 'Error resetting!',
+    resetToDefault: 'Reset to Default',
+    resetConfirm: 'Reset to default?',
+    resetConfirmMessage: 'All templates will be reset to default values. Are you sure?',
+    reset: 'Reset'
+  },
+
+  // ============================================================================
+  // ACCESS CONTROL - Access Control Management
+  // ============================================================================
+  accessControl: {
+    title: 'Access Control Management',
+    subtitle: 'Manage access permissions for LEVEL and JLPT modules',
+    edit: 'Edit',
+    save: 'Save',
+    cancel: 'Cancel',
+    resetModule: 'Reset Module',
+    resetConfirm: 'Are you sure you want to reset the {module} module configuration?',
+    blocked: 'Blocked',
+    module: {
+      level: 'LEVEL',
+      jlpt: 'JLPT'
+    },
+    info: {
+      title: 'About Access Control Management',
+      point1: 'Access permissions can be configured at 2 levels: Module-level (applies to entire module) and Level-specific (applies to specific levels)',
+      point2: 'Level-specific will override module-level if configured',
+      point3: 'Admin always has full access, not affected by this configuration',
+      point4: 'There are 4 access types: All (everyone), Role (by role), User (by specific user), None (block all)'
+    },
+    moduleLevel: {
+      title: 'Module-level Configuration',
+      current: 'Current',
+      description: 'This configuration applies to the entire module. Specific levels can override this configuration.',
+      editTitle: 'Edit Module-level Configuration: {module}',
+      usersBlocked: 'users allowed'
+    },
+    editTitle: 'Edit Access Permission: {module} - {level}',
+    accessType: {
+      all: 'All',
+      role: 'By Role',
+      user: 'By User',
+      none: 'Block All'
+    },
+    role: {
+      guest: 'Guest',
+      editor: 'Editor',
+      user: 'User',
+      admin: 'Administrator'
+    },
+    table: {
+      level: 'Level',
+      accessType: 'Access Type',
+      allowedRoles: 'Allowed Roles',
+      allowedUsers: 'Allowed Users',
+      actions: 'Actions'
+    },
+    form: {
+      accessType: 'Access Type',
+      allowedRoles: 'Allowed Roles',
+      allowedUsers: 'Allowed Users',
+      searchUsers: 'Search users...'
+    },
+    adminNote: 'Note: Admin always has full access, not affected by this configuration'
+  },
+
+  // ============================================================================
+  // DASHBOARD ACCESS - Dashboard Access Control
+  // ============================================================================
+  dashboardAccess: {
+    title: 'Dashboard Access Control',
+    subtitle: 'Manage access permissions for User Dashboard',
+    reset: 'Reset',
+    resetConfirm: 'Are you sure you want to reset Dashboard configuration to default?',
+    resetSuccess: 'Dashboard configuration has been reset successfully!',
+    saveSuccess: 'Configuration saved successfully!',
+    currentStatus: 'Current Status',
+    locked: 'Locked',
+    unlocked: 'Unlocked',
+    users: 'users',
+    editTitle: 'Edit Dashboard Access Permission',
+    defaultLocked: 'Lock Dashboard by default',
+    defaultLockedDesc: 'When enabled, Dashboard will be locked for all users except Admin and allowed users/roles',
+    allowedRoles: 'Allowed Roles',
+    allowedUsers: 'Allowed Users',
+    adminNote: 'Note: Admin always has full access, not affected by this configuration',
+    info: {
+      point1: 'When Dashboard is locked, only Admin and allowed users/roles can access it'
+    }
+  }
 };
 
 export default en;

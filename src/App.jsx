@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Header from './components/Header.jsx'; 
 import Footer from './components/Footer.jsx'; 
 import LoginModal from './components/LoginModal.jsx';
@@ -9,7 +9,7 @@ import LoginModal from './components/LoginModal.jsx';
 import { DictionaryProvider } from './components/api_translate/index.js';
 
 // ✅ NEW: Import AuthProvider
-import { AuthProvider } from './contexts/AuthContext.jsx';
+import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 
 // ✅ NEW: Import LanguageProvider
 import { LanguageProvider } from './contexts/LanguageContext.jsx';
@@ -23,15 +23,46 @@ import { ToastProvider } from './components/ToastNotification.jsx';
 // ✅ NEW: Import GlobalSearch
 import GlobalSearch from './components/GlobalSearch.jsx';
 
+// Maintenance
+import MaintenancePage from './pages/MaintenancePage.jsx';
+import { getSettings } from './utils/settingsManager.js';
+import { initDebugConsoleFilter } from './utils/debugLogger.js';
+
 const backgroundImageUrl = '/background/main.jpg';
 
-function App() {
+// Inner app content that can use hooks like useAuth
+function AppContent() {
+  const { user } = useAuth();
+  const location = useLocation();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
+  const [settings, setSettings] = useState(getSettings());
+
+  const isAdmin = user && user.role === 'admin';
+  const maintenanceMode = settings?.system?.maintenanceMode;
+  const isLoginRoute = location.pathname.startsWith('/login');
+  // Show maintenance page for all non-admin users except on login route
+  const showMaintenanceForUser = maintenanceMode && !isAdmin && !isLoginRoute;
   
   const handleOpenLoginModal = () => { setShowLoginModal(true); };
   const handleCloseLoginModal = () => { setShowLoginModal(false); };
   
+  // Listen for settings changes (from Settings page)
+  useEffect(() => {
+    // Initialize debug console filter once
+    initDebugConsoleFilter();
+
+    const handler = (event) => {
+      if (event?.detail) {
+        setSettings(event.detail);
+      } else {
+        setSettings(getSettings());
+      }
+    };
+    window.addEventListener('settingsUpdated', handler);
+    return () => window.removeEventListener('settingsUpdated', handler);
+  }, []);
+
   // ✅ Preload background image for better performance
   useEffect(() => {
     const img = new Image();
@@ -60,14 +91,6 @@ function App() {
   }, []); // Empty deps array = run once on mount
 
   return (
-    // ✅ NEW: Wrap với AuthProvider (outermost)
-    <AuthProvider>
-      {/* ✅ NEW: Wrap với LanguageProvider */}
-      <LanguageProvider>
-        {/* ✅ NEW: Wrap với ToastProvider */}
-        <ToastProvider>
-          {/* ✅ EXISTING: Wrap với DictionaryProvider */}
-          <DictionaryProvider>
           <div className="flex flex-col min-h-screen relative overflow-x-hidden">
           {/* ✅ OPTIMIZED: bg-scroll + conditional loading for performance - Cover screen, prioritize showing important parts */}
           <div
@@ -93,14 +116,18 @@ function App() {
             style={{ mixBlendMode: 'normal' }}
           />
           
-          <Header onUserIconClick={handleOpenLoginModal} />
+          <Header onUserIconClick={handleOpenLoginModal} isMaintenanceLock={showMaintenanceForUser} />
 
-          <main className="flex-1 relative pt-6 pb-12 overflow-x-hidden">
-            <div className="relative z-0 flex justify-center items-start px-3 sm:px-4">
-              <div className="w-full max-w-7xl mx-auto">
-                <Outlet />
+          <main className="flex-1 relative pt-20 md:pt-24 pb-12 overflow-x-hidden">
+            {showMaintenanceForUser ? (
+              <MaintenancePage />
+            ) : (
+              <div className="relative z-0 flex justify-center items-start px-3 sm:px-4">
+                <div className="w-full max-w-7xl mx-auto">
+                  <Outlet />
+                </div>
               </div>
-            </div>
+            )}
           </main>
 
           <Footer />
@@ -110,6 +137,17 @@ function App() {
           {/* Global Search */}
           <GlobalSearch />
           </div>
+  );
+}
+
+// Outer wrapper that provides contexts
+function App() {
+  return (
+    <AuthProvider>
+      <LanguageProvider>
+        <ToastProvider>
+          <DictionaryProvider>
+            <AppContent />
           </DictionaryProvider>
         </ToastProvider>
       </LanguageProvider>

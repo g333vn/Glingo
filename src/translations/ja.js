@@ -67,6 +67,7 @@ const ja = {
     userMenu: {
       dashboard: 'ダッシュボード',
       dashboardDesc: '学習進捗',
+      dashboardLocked: 'ロック - アクセス権限なし',
       myProfile: 'マイプロフィール',
       adminPanel: '管理パネル',
       adminPanelDesc: 'システム管理',
@@ -87,6 +88,17 @@ const ja = {
       stayButton: '試験を続ける',
       confirmButton: 'ログアウト'
     }
+  },
+
+  // ============================================================================
+  // MAINTENANCE PAGE
+  // ============================================================================
+  maintenance: {
+    title: 'メンテナンス中',
+    message: 'ただいまシステムのメンテナンスとアップグレードを行っています。しばらくしてから再度アクセスしてください。',
+    contact: '至急のご用件は、こちらまでご連絡ください',
+    loggedInNonAdmin: '管理者以外のアカウントでログインしています。メンテナンス中は管理者のみシステムを利用できます。',
+    note: '管理者は引き続き管理画面にアクセスして、メンテナンス状況を確認できます。'
   },
 
 
@@ -150,7 +162,10 @@ const ja = {
     wrongAnswers: '不正解',
     listeningQuestion: '聴解問題',
     playAudioToAnswer: '音声を聞いて正しい答えを選んでください',
-    browserNotSupport: 'ブラウザはオーディオをサポートしていません。'
+    browserNotSupport: 'ブラウザはオーディオをサポートしていません。',
+    retry: '再試行',
+    retryRemaining: '試行回数: {{used}} / {{max}}',
+    retryLimitReached: '許可された {{max}} 回の再試行をすべて使用しました。'
   },
 
 
@@ -437,13 +452,13 @@ const ja = {
     practiceJLPTSubtitle: '試験対策',
     myStory: 'マイストーリー',
     jlptTests: 'JLPTテスト',
-    jlptTestsDesc: 'N1-N5',
-    levelSystem: 'レベルシステム',
-    levelSystemDesc: '多様',
-    dictionary: '辞書検索',
-    dictionaryDesc: '日-越-英',
-    access24: '24時間アクセス',
-    access24Desc: 'いつでも'
+    jlptTestsDesc: 'N1-N5模擬試験',
+    comprehensiveContent: '豊富なコンテンツ',
+    comprehensiveContentDesc: '新完全マスター、TRY、GENKI...',
+    smartFlashcards: 'スマートフラッシュカード',
+    smartFlashcardsDesc: 'SRSアルゴリズム - 効率的学習',
+    studyStreak: '学習ストリーク',
+    studyStreakDesc: '進捗とモチベーション管理'
   },
 
   dashboard: {
@@ -791,7 +806,63 @@ const ja = {
     ctaText: '24時間対応しています。問題があったり、教科書を追加したい場合は、遠慮なくご連絡ください！🚀',
     communityProject: '非営利プロジェクト - 日本語学習コミュニティへのサービス',
     backToHome: 'ホームに戻る',
-    quoteTranslation: '天は人の上に人を造らず人の下に人を造らず'
+    quoteTranslation: '天は人の上に人を造らず人の下に人を造らず',
+    features: {
+      srs: {
+        title: 'スマートフラッシュカード',
+        badge: 'SRSアルゴリズム',
+        description: '間隔反復システムアルゴリズムで効率的に学習 - 適切なタイミングで学習し、長く記憶',
+        point1: '✅ 最適化されたSM-2アルゴリズム',
+        point2: '✅ 自動復習スケジュール',
+        point3: '✅ 詳細な進捗追跡',
+        cta: 'ダッシュボードを見る →'
+      },
+      jlpt: {
+        title: 'JLPTテスト',
+        badge: 'N1-N5',
+        description: 'N1からN5まで完全なJLPT模擬試験、実際の試験をシミュレート',
+        point1: '✅ N1-N5完全テスト',
+        point2: '✅ 実際の試験シミュレーション',
+        point3: '✅ 詳細な解答',
+        cta: '今すぐ練習 →'
+      },
+      roadmap: {
+        title: 'レベルシステム',
+        badge: '多様',
+        description: '新完全マスター、TRY、GENKIなど多様な教科書',
+        point1: '✅ 新完全マスター、TRY、GENKI',
+        point2: '✅ 豊富なコンテンツ',
+        point3: '✅ レベル別学習',
+        cta: 'レベルを見る →'
+      },
+      dictionary: {
+        title: '辞書検索',
+        badge: '日-越-英',
+        description: '日本語、ベトナム語、英語の3言語で素早く辞書検索',
+        point1: '✅ 高速単語検索',
+        point2: '✅ 3言語: 日-越-英',
+        point3: '✅ お気に入り単語保存',
+        cta: '準備中'
+      },
+      dashboard: {
+        title: '進捗ダッシュボード',
+        badge: '統計',
+        description: '学習進捗、詳細統計、視覚的なチャートを追跡',
+        point1: '✅ 詳細統計',
+        point2: '✅ 視覚的チャート',
+        point3: '✅ 進捗追跡',
+        cta: 'ダッシュボードを見る →'
+      },
+      streak: {
+        title: '学習ストリーク',
+        badge: 'モチベーション',
+        description: '連続学習日数を維持し、毎日の学習モチベーションを作成',
+        point1: '✅ 毎日のストリーク追跡',
+        point2: '✅ 学習モチベーション',
+        point3: '✅ 個人の成果',
+        cta: 'ストリークを見る →'
+      }
+    }
   },
 
   search: {
@@ -1286,7 +1357,9 @@ const ja = {
                 manageLessons: 'レッスン管理',
                 manageExams: '試験管理',
                 backupRestore: 'バックアップと復元',
-                settings: '設定'
+                settings: '設定',
+                newControl: 'アクセス制御',
+                notifications: '通知管理'
             },
             comingSoon: 'Soon'
         }
@@ -2491,6 +2564,9 @@ const ja = {
             retry3: '3回',
             retry5: '5回',
             retryUnlimited: '無制限',
+            retryNoRetry: '0回（再試行不可）',
+            retryCustom: 'カスタム（回数を入力）',
+            retryCustomHint: 'ユーザーがクイズを再受験できる最大回数を入力してください（推奨 50 回以下）。',
             showAnswers: '完了後に回答を表示',
             showAnswersDesc: 'クイズ完了後に回答を表示',
             allowRetry: '再試行を許可',
@@ -2525,6 +2601,239 @@ const ja = {
             allSaved: '✅ すべての変更が保存されました',
             saving: '保存中...',
             save: '設定を保存'
+        }
+    },
+
+    // ============================================================================
+    // NOTIFICATIONS - 通知システム（ドロップダウン）
+    // ============================================================================
+    notifications: {
+        title: '通知',
+        markAllRead: 'すべて既読にする',
+        search: '🔍 検索（タイトル、内容）...',
+        clearSearch: '検索をクリア',
+        empty: '通知がありません',
+        filter: {
+            all: 'すべて',
+            today: '今日',
+            thisWeek: '今週',
+            thisMonth: '今月'
+        },
+        type: {
+            success: '成功',
+            warning: '警告',
+            error: 'エラー',
+            info: '情報'
+        },
+        admin: {
+            title: '通知管理',
+            subtitle: 'システム通知を送信し、自動テンプレートを管理',
+            tabs: {
+                system: 'システム通知',
+                streak: '自動通知'
+            },
+            cleanup: 'クリーンアップ',
+            create: '新規作成',
+            empty: '通知がまだありません',
+            noTargets: '誰にも送信されていません',
+            deleteConfirm: 'この通知を削除してもよろしいですか？',
+            fillRequired: 'タイトルとメッセージの両方を入力してください！',
+            selectTargets: '通知を送信するには、少なくとも1人のユーザーまたは役割を選択してください！',
+            cleanupSuccess: '{count}件の期限切れ通知を削除しました！',
+            editTitle: '通知を編集',
+            createTitle: '新しい通知を作成',
+            send: '送信',
+            addType: 'タイプを追加',
+            addTypeTitle: '新しい通知タイプを追加',
+            add: '追加',
+            fillTypeRequired: '値とラベルの両方を入力してください！',
+            typeExists: 'このタイプは既に存在します！',
+            typeAdded: '新しいタイプを追加しました！',
+            typeAddError: 'タイプの追加中にエラーが発生しました！',
+            deleteType: 'タイプを削除',
+            deleteTypeConfirm: 'このタイプを削除しますか？',
+            table: {
+                title: 'タイトル',
+                type: 'タイプ',
+                target: '対象',
+                created: '作成日',
+                actions: '操作',
+                users: 'ユーザー:',
+                roles: '役割:'
+            },
+            form: {
+                title: 'タイトル *',
+                titlePlaceholder: '通知タイトルを入力...',
+                message: 'メッセージ *',
+                messagePlaceholder: '通知メッセージを入力...',
+                type: '通知タイプ',
+                typePlaceholder: '通知タイプを選択または入力...',
+                typeHint: 'ドロップダウンから選択、アイコンをクリック、またはカスタムタイプを入力',
+                targetUsers: 'ユーザーに送信（チェックして送信）',
+                targetRoles: '役割に送信（チェックして送信）',
+                searchUsers: '🔍 ユーザーを検索（ユーザー名、名前、メール）...',
+                noUsersFound: 'ユーザーが見つかりません',
+                expiresAt: '有効期限（空欄 = 期限なし）',
+                typeValue: '値 *',
+                typeValueHint: '小文字、数字、ハイフンのみ使用',
+                typeLabel: '表示ラベル *',
+                typeIcon: 'アイコン（絵文字）',
+                typeColor: '色',
+                colorOptions: {
+                    purple: 'Purple',
+                    blue: 'Blue',
+                    green: 'Green',
+                    yellow: 'Yellow',
+                    red: 'Red'
+                }
+            }
+        }
+    },
+
+    // ============================================================================
+    // STREAK NOTIFICATIONS - 学習ストリーク通知
+    // ============================================================================
+    streakNotifications: {
+        messages: {
+            warning: {
+                title: '⚠️ 学習リマインダー',
+                message: '1日学習を逃しました！今日すぐに戻って学習し、ストリークを維持しましょう！ 🔥'
+            },
+            reset: {
+                title: '💔 ストリークリセット',
+                message: 'ストリークが0にリセットされました。諦めないで！今日から新しいストリークを築き始めましょう！ 💪'
+            },
+            daily: {
+                title: '🔥 ストリークを維持！',
+                message: '素晴らしい！{streak}日間連続で学習しています！この調子で続けましょう！ 🎉'
+            },
+            milestone: {
+                title: '🏆 重要なマイルストーン！',
+                message: 'WOW！{streak}日間連続で学習を達成しました！これは素晴らしい成果です！持続可能な学習習慣を築いています。維持を続け、より高いマイルストーンを征服しましょう！ 🌟💪🔥'
+            }
+        },
+        templates: {
+            warning: '警告（1日学習を逃した）',
+            reset: 'リセット（2日以上学習を逃した）',
+            daily: '毎日の励まし',
+            milestone: '重要なマイルストーン（5日ごと）'
+        },
+        descriptions: {
+            warning: 'ユーザーが1日学習を逃したときに送信',
+            reset: 'ストリークがリセットされたときに送信（2日以上学習なし）',
+            daily: 'ユーザーが学習する毎日送信（マイルストーンの日を除く）',
+            milestone: '5日ごとに送信（5、10、15、20、...）'
+        },
+        form: {
+            title: 'タイトル *',
+            titlePlaceholder: 'タイトルを入力...',
+            message: 'メッセージ *',
+            messagePlaceholder: 'メッセージを入力...',
+            variables: '{streak}を使用してストリーク数を表示できます',
+            type: 'タイプ',
+            typeOptions: {
+                info: 'Info',
+                success: 'Success',
+                warning: 'Warning',
+                error: 'Error'
+            }
+        },
+        preview: {
+            title: 'タイトル',
+            message: '通知メッセージ...'
+        },
+        edit: '編集',
+        saveSuccess: '正常に保存されました！',
+        saveError: '保存エラー！',
+        resetSuccess: 'デフォルトにリセットされました！',
+        resetError: 'リセットエラー！',
+        resetToDefault: 'デフォルトにリセット',
+        resetConfirm: 'デフォルトにリセットしますか？',
+        resetConfirmMessage: 'すべてのテンプレートがデフォルト値にリセットされます。よろしいですか？',
+        reset: 'リセット'
+    },
+
+    // ============================================================================
+    // ACCESS CONTROL - アクセス制御管理
+    // ============================================================================
+    accessControl: {
+        title: 'アクセス制御管理',
+        subtitle: 'LEVELとJLPTモジュールのアクセス権限を管理',
+        edit: '編集',
+        save: '保存',
+        cancel: 'キャンセル',
+        resetModule: 'モジュールをリセット',
+        resetConfirm: '{module}モジュールの設定をリセットしてもよろしいですか？',
+        blocked: 'ブロック済み',
+        module: {
+            level: 'LEVEL',
+            jlpt: 'JLPT'
+        },
+        info: {
+            title: 'アクセス制御管理について',
+            point1: 'アクセス権限は2つのレベルで設定できます：モジュールレベル（モジュール全体に適用）とレベル固有（特定のレベルに適用）',
+            point2: 'レベル固有の設定は、設定されている場合、モジュールレベルの設定を上書きします',
+            point3: '管理者は常に完全なアクセス権を持ち、この設定の影響を受けません',
+            point4: '4つのアクセスタイプがあります：All（すべて）、Role（役割別）、User（特定ユーザー）、None（すべてブロック）'
+        },
+        moduleLevel: {
+            title: 'モジュールレベルの設定',
+            current: '現在',
+            description: 'この設定はモジュール全体に適用されます。特定のレベルはこの設定を上書きできます。',
+            editTitle: 'モジュールレベルの設定を編集: {module}',
+            usersBlocked: '許可されたユーザー'
+        },
+        editTitle: 'アクセス権限を編集: {module} - {level}',
+        accessType: {
+            all: 'すべて',
+            role: '役割別',
+            user: 'ユーザー別',
+            none: 'すべてブロック'
+        },
+        role: {
+            guest: 'ゲスト',
+            editor: '編集者',
+            user: 'ユーザー',
+            admin: '管理者'
+        },
+        table: {
+            level: 'レベル',
+            accessType: 'アクセスタイプ',
+            allowedRoles: '許可された役割',
+            allowedUsers: '許可されたユーザー',
+            actions: '操作'
+        },
+        form: {
+            accessType: 'アクセスタイプ',
+            allowedRoles: '許可された役割',
+            allowedUsers: '許可されたユーザー',
+            searchUsers: 'ユーザーを検索...'
+        },
+        adminNote: '注意: 管理者は常に完全なアクセス権を持ち、この設定の影響を受けません'
+    },
+
+    // ============================================================================
+    // DASHBOARD ACCESS - ダッシュボードアクセス制御
+    // ============================================================================
+    dashboardAccess: {
+        title: 'ダッシュボードアクセス制御',
+        subtitle: 'ユーザーダッシュボードのアクセス権限を管理',
+        reset: 'リセット',
+        resetConfirm: 'ダッシュボード設定をデフォルトにリセットしてもよろしいですか？',
+        resetSuccess: 'ダッシュボード設定が正常にリセットされました！',
+        saveSuccess: '設定が正常に保存されました！',
+        currentStatus: '現在のステータス',
+        locked: 'ロック済み',
+        unlocked: 'ロック解除',
+        users: 'ユーザー',
+        editTitle: 'ダッシュボードアクセス権限を編集',
+        defaultLocked: 'デフォルトでダッシュボードをロック',
+        defaultLockedDesc: '有効にすると、管理者と許可されたユーザー/役割を除くすべてのユーザーに対してダッシュボードがロックされます',
+        allowedRoles: '許可された役割',
+        allowedUsers: '許可されたユーザー',
+        adminNote: '注意: 管理者は常に完全なアクセス権を持ち、この設定の影響を受けません',
+        info: {
+            point1: 'ダッシュボードがロックされている場合、管理者と許可されたユーザー/役割のみがアクセスできます'
         }
     }
 };

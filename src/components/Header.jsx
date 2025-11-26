@@ -11,7 +11,7 @@ import StreakCounter from './StreakCounter.jsx';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
 import NotificationBell from './NotificationBell.jsx';
 
-function Header({ onUserIconClick }) {
+function Header({ onUserIconClick, isMaintenanceLock = false }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { navigate: examNavigate, WarningModal, shouldShowWarning, clearExamData } = useExamGuard();
@@ -179,7 +179,7 @@ function Header({ onUserIconClick }) {
           MozOsxFontSmoothing: 'grayscale'
         }}
         className={`
-          sticky top-0 z-50 
+          fixed top-0 left-0 right-0 z-50 
           transition-all duration-300
           ${isScrolled 
             ? 'bg-[#2D2D2D] md:bg-[#2D2D2D]/95 md:backdrop-blur-sm shadow-[0_4px_0px_0px_rgba(0,0,0,1)]' 
@@ -363,10 +363,10 @@ function Header({ onUserIconClick }) {
             <LanguageSwitcher />
 
             {/* Notification Bell */}
-            {user && <NotificationBell />}
+            {user && !isMaintenanceLock && <NotificationBell />}
 
             {/* Streak Counter */}
-            {user && <StreakCounter />}
+            {user && !isMaintenanceLock && <StreakCounter />}
             
             {/* User Menu - Very compact */}
             {user ? (
@@ -522,10 +522,10 @@ function Header({ onUserIconClick }) {
             <LanguageSwitcher />
             
             {/* Notification Bell - Mobile */}
-            {user && <NotificationBell />}
+            {user && !isMaintenanceLock && <NotificationBell />}
             
             {/* Streak (if logged in) */}
-            {user && <StreakCounter />}
+            {user && !isMaintenanceLock && <StreakCounter />}
             
             {/* User Avatar - Mobile (if logged in) */}
             {user && (

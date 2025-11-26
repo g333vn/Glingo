@@ -202,42 +202,44 @@ function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               
               {/* Card 1: SRS - Purple Gradient */}
-              <div className="group relative rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
+              <div className="group relative rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-5 sm:p-6 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
                 <div className="relative z-10">
-                  {/* Icon */}
-                  <div className="text-5xl sm:text-6xl mb-4 group-hover:scale-110 group-hover:rotate-5 transition-transform duration-300">🧠</div>
+                  {/* Compact View - Always Visible */}
+                  <div className="flex items-center gap-3 mb-4">
+                    {/* Icon */}
+                    <div className="text-4xl sm:text-5xl group-hover:scale-110 group-hover:rotate-5 transition-transform duration-300 flex-shrink-0">🧠</div>
+                    
+                    {/* Title + Badge */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg sm:text-xl font-black text-white mb-1 uppercase tracking-wide truncate">{t('about.features.srs.title')}</h3>
+                      <span className="inline-block px-2 py-0.5 bg-white/20 backdrop-blur-sm border-[2px] border-white/30 rounded-md text-white text-xs font-bold">
+                        {t('about.features.srs.badge')}
+                      </span>
+                    </div>
+                  </div>
                   
-                  {/* Title */}
-                  <h3 className="text-xl sm:text-2xl font-black text-white mb-2 uppercase tracking-wide">{t('about.features.srs.title')}</h3>
-                  
-                  {/* Badge */}
-                  <span className="inline-block px-3 py-1 mb-4 bg-white/20 backdrop-blur-sm border-[2px] border-white/30 rounded-md text-white text-xs sm:text-sm font-bold">
-                    {t('about.features.srs.badge')}
-                  </span>
-                  
-                  {/* Description */}
-                  <p className="text-white/90 text-sm sm:text-base mb-4 leading-relaxed">
-                    {t('about.features.srs.description')}
-                  </p>
-                  
-                  {/* Key Points */}
-                  <ul className="space-y-2 mb-6">
-                    <li className="text-white/90 text-xs sm:text-sm flex items-start gap-2">
-                      <span className="flex-shrink-0">{t('about.features.srs.point1')}</span>
-                    </li>
-                    <li className="text-white/90 text-xs sm:text-sm flex items-start gap-2">
-                      <span className="flex-shrink-0">{t('about.features.srs.point2')}</span>
-                    </li>
-                    <li className="text-white/90 text-xs sm:text-sm flex items-start gap-2">
-                      <span className="flex-shrink-0">{t('about.features.srs.point3')}</span>
-                    </li>
-                  </ul>
+                  {/* Expandable Content - Hidden by default, shown on hover */}
+                  <div className="max-h-0 opacity-0 group-hover:max-h-[400px] group-hover:opacity-100 overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out">
+                    <div className="pt-2">
+                      {/* Description */}
+                      <p className="text-white/90 text-sm mb-4 leading-relaxed">
+                        {t('about.features.srs.description')}
+                      </p>
+                      
+                      {/* Key Points */}
+                      <ul className="space-y-2 mb-4">
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.srs.point1')}</li>
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.srs.point2')}</li>
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.srs.point3')}</li>
+                      </ul>
+                    </div>
+                  </div>
                   
                   {/* CTA Button */}
                   <button 
                     onClick={() => navigate('/dashboard')}
-                    className="w-full bg-white/20 backdrop-blur-sm border-[2px] border-white/30 text-white px-4 py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-white/30 hover:translate-x-1 transition-all duration-300 cursor-pointer"
+                    className="w-full bg-white/20 backdrop-blur-sm border-[2px] border-white/30 text-white px-3 py-2 rounded-lg font-bold text-xs sm:text-sm hover:bg-white/30 hover:translate-x-1 transition-all duration-300 cursor-pointer"
                   >
                     {t('about.features.srs.cta')}
                   </button>
@@ -245,25 +247,37 @@ function AboutPage() {
               </div>
 
               {/* Card 2: JLPT - Pink-Red Gradient */}
-              <div className="group relative rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
+              <div className="group relative rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-5 sm:p-6 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
                 <div className="relative z-10">
-                  <div className="text-5xl sm:text-6xl mb-4 group-hover:scale-110 group-hover:rotate-5 transition-transform duration-300">📝</div>
-                  <h3 className="text-xl sm:text-2xl font-black text-white mb-2 uppercase tracking-wide">{t('about.features.jlpt.title')}</h3>
-                  <span className="inline-block px-3 py-1 mb-4 bg-white/20 backdrop-blur-sm border-[2px] border-white/30 rounded-md text-white text-xs sm:text-sm font-bold">
-                    {t('about.features.jlpt.badge')}
-                  </span>
-                  <p className="text-white/90 text-sm sm:text-base mb-4 leading-relaxed">
-                    {t('about.features.jlpt.description')}
-                  </p>
-                  <ul className="space-y-2 mb-6">
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.jlpt.point1')}</li>
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.jlpt.point2')}</li>
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.jlpt.point3')}</li>
-                  </ul>
+                  {/* Compact View */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="text-4xl sm:text-5xl group-hover:scale-110 group-hover:rotate-5 transition-transform duration-300 flex-shrink-0">📝</div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg sm:text-xl font-black text-white mb-1 uppercase tracking-wide truncate">{t('about.features.jlpt.title')}</h3>
+                      <span className="inline-block px-2 py-0.5 bg-white/20 backdrop-blur-sm border-[2px] border-white/30 rounded-md text-white text-xs font-bold">
+                        {t('about.features.jlpt.badge')}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Expandable Content */}
+                  <div className="max-h-0 opacity-0 group-hover:max-h-[400px] group-hover:opacity-100 overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out">
+                    <div className="pt-2">
+                      <p className="text-white/90 text-sm mb-4 leading-relaxed">
+                        {t('about.features.jlpt.description')}
+                      </p>
+                      <ul className="space-y-2 mb-4">
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.jlpt.point1')}</li>
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.jlpt.point2')}</li>
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.jlpt.point3')}</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
                   <button 
                     onClick={() => navigate('/jlpt')}
-                    className="w-full bg-white/20 backdrop-blur-sm border-[2px] border-white/30 text-white px-4 py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-white/30 hover:translate-x-1 transition-all duration-300 cursor-pointer"
+                    className="w-full bg-white/20 backdrop-blur-sm border-[2px] border-white/30 text-white px-3 py-2 rounded-lg font-bold text-xs sm:text-sm hover:bg-white/30 hover:translate-x-1 transition-all duration-300 cursor-pointer"
                   >
                     {t('about.features.jlpt.cta')}
                   </button>
@@ -271,25 +285,37 @@ function AboutPage() {
               </div>
 
               {/* Card 3: Roadmap - Blue Gradient */}
-              <div className="group relative rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
+              <div className="group relative rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-5 sm:p-6 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
                 <div className="relative z-10">
-                  <div className="text-5xl sm:text-6xl mb-4 group-hover:scale-110 group-hover:rotate-5 transition-transform duration-300">🗺️</div>
-                  <h3 className="text-xl sm:text-2xl font-black text-white mb-2 uppercase tracking-wide">{t('about.features.roadmap.title')}</h3>
-                  <span className="inline-block px-3 py-1 mb-4 bg-white/20 backdrop-blur-sm border-[2px] border-white/30 rounded-md text-white text-xs sm:text-sm font-bold">
-                    {t('about.features.roadmap.badge')}
-                  </span>
-                  <p className="text-white/90 text-sm sm:text-base mb-4 leading-relaxed">
-                    {t('about.features.roadmap.description')}
-                  </p>
-                  <ul className="space-y-2 mb-6">
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.roadmap.point1')}</li>
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.roadmap.point2')}</li>
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.roadmap.point3')}</li>
-                  </ul>
+                  {/* Compact View */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="text-4xl sm:text-5xl group-hover:scale-110 group-hover:rotate-5 transition-transform duration-300 flex-shrink-0">🗺️</div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg sm:text-xl font-black text-white mb-1 uppercase tracking-wide truncate">{t('about.features.roadmap.title')}</h3>
+                      <span className="inline-block px-2 py-0.5 bg-white/20 backdrop-blur-sm border-[2px] border-white/30 rounded-md text-white text-xs font-bold">
+                        {t('about.features.roadmap.badge')}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Expandable Content */}
+                  <div className="max-h-0 opacity-0 group-hover:max-h-[400px] group-hover:opacity-100 overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out">
+                    <div className="pt-2">
+                      <p className="text-white/90 text-sm mb-4 leading-relaxed">
+                        {t('about.features.roadmap.description')}
+                      </p>
+                      <ul className="space-y-2 mb-4">
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.roadmap.point1')}</li>
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.roadmap.point2')}</li>
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.roadmap.point3')}</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
                   <button 
                     onClick={() => navigate('/level')}
-                    className="w-full bg-white/20 backdrop-blur-sm border-[2px] border-white/30 text-white px-4 py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-white/30 hover:translate-x-1 transition-all duration-300 cursor-pointer"
+                    className="w-full bg-white/20 backdrop-blur-sm border-[2px] border-white/30 text-white px-3 py-2 rounded-lg font-bold text-xs sm:text-sm hover:bg-white/30 hover:translate-x-1 transition-all duration-300 cursor-pointer"
                   >
                     {t('about.features.roadmap.cta')}
                   </button>
@@ -297,26 +323,38 @@ function AboutPage() {
               </div>
 
               {/* Card 4: Dictionary - Green Gradient */}
-              <div className="group relative rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
+              <div className="group relative rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-5 sm:p-6 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }}>
                 <div className="relative z-10">
-                  <div className="text-5xl sm:text-6xl mb-4 group-hover:scale-110 group-hover:rotate-5 transition-transform duration-300">📖</div>
-                  <h3 className="text-xl sm:text-2xl font-black text-white mb-2 uppercase tracking-wide">{t('about.features.dictionary.title')}</h3>
-                  <span className="inline-block px-3 py-1 mb-4 bg-white/20 backdrop-blur-sm border-[2px] border-white/30 rounded-md text-white text-xs sm:text-sm font-bold">
-                    {t('about.features.dictionary.badge')}
-                  </span>
-                  <p className="text-white/90 text-sm sm:text-base mb-4 leading-relaxed">
-                    {t('about.features.dictionary.description')}
-                  </p>
-                  <ul className="space-y-2 mb-6">
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.dictionary.point1')}</li>
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.dictionary.point2')}</li>
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.dictionary.point3')}</li>
-                  </ul>
+                  {/* Compact View */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="text-4xl sm:text-5xl group-hover:scale-110 group-hover:rotate-5 transition-transform duration-300 flex-shrink-0">📖</div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg sm:text-xl font-black text-white mb-1 uppercase tracking-wide truncate">{t('about.features.dictionary.title')}</h3>
+                      <span className="inline-block px-2 py-0.5 bg-white/20 backdrop-blur-sm border-[2px] border-white/30 rounded-md text-white text-xs font-bold">
+                        {t('about.features.dictionary.badge')}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Expandable Content */}
+                  <div className="max-h-0 opacity-0 group-hover:max-h-[400px] group-hover:opacity-100 overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out">
+                    <div className="pt-2">
+                      <p className="text-white/90 text-sm mb-4 leading-relaxed">
+                        {t('about.features.dictionary.description')}
+                      </p>
+                      <ul className="space-y-2 mb-4">
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.dictionary.point1')}</li>
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.dictionary.point2')}</li>
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.dictionary.point3')}</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
                   {/* Dictionary - No specific route, button remains non-clickable */}
                   <button 
                     disabled
-                    className="w-full bg-white/20 backdrop-blur-sm border-[2px] border-white/30 text-white px-4 py-3 rounded-lg font-bold text-sm sm:text-base opacity-75 cursor-not-allowed"
+                    className="w-full bg-white/20 backdrop-blur-sm border-[2px] border-white/30 text-white px-3 py-2 rounded-lg font-bold text-xs sm:text-sm opacity-75 cursor-not-allowed"
                   >
                     {t('about.features.dictionary.cta')}
                   </button>
@@ -324,25 +362,37 @@ function AboutPage() {
               </div>
 
               {/* Card 5: Dashboard - Pink-Yellow Gradient */}
-              <div className="group relative rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
+              <div className="group relative rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-5 sm:p-6 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }}>
                 <div className="relative z-10">
-                  <div className="text-5xl sm:text-6xl mb-4 group-hover:scale-110 group-hover:rotate-5 transition-transform duration-300">📊</div>
-                  <h3 className="text-xl sm:text-2xl font-black text-white mb-2 uppercase tracking-wide">{t('about.features.dashboard.title')}</h3>
-                  <span className="inline-block px-3 py-1 mb-4 bg-white/20 backdrop-blur-sm border-[2px] border-white/30 rounded-md text-white text-xs sm:text-sm font-bold">
-                    {t('about.features.dashboard.badge')}
-                  </span>
-                  <p className="text-white/90 text-sm sm:text-base mb-4 leading-relaxed">
-                    {t('about.features.dashboard.description')}
-                  </p>
-                  <ul className="space-y-2 mb-6">
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.dashboard.point1')}</li>
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.dashboard.point2')}</li>
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.dashboard.point3')}</li>
-                  </ul>
+                  {/* Compact View */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="text-4xl sm:text-5xl group-hover:scale-110 group-hover:rotate-5 transition-transform duration-300 flex-shrink-0">📊</div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg sm:text-xl font-black text-white mb-1 uppercase tracking-wide truncate">{t('about.features.dashboard.title')}</h3>
+                      <span className="inline-block px-2 py-0.5 bg-white/20 backdrop-blur-sm border-[2px] border-white/30 rounded-md text-white text-xs font-bold">
+                        {t('about.features.dashboard.badge')}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Expandable Content */}
+                  <div className="max-h-0 opacity-0 group-hover:max-h-[400px] group-hover:opacity-100 overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out">
+                    <div className="pt-2">
+                      <p className="text-white/90 text-sm mb-4 leading-relaxed">
+                        {t('about.features.dashboard.description')}
+                      </p>
+                      <ul className="space-y-2 mb-4">
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.dashboard.point1')}</li>
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.dashboard.point2')}</li>
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.dashboard.point3')}</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
                   <button 
                     onClick={() => navigate('/dashboard')}
-                    className="w-full bg-white/20 backdrop-blur-sm border-[2px] border-white/30 text-white px-4 py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-white/30 hover:translate-x-1 transition-all duration-300 cursor-pointer"
+                    className="w-full bg-white/20 backdrop-blur-sm border-[2px] border-white/30 text-white px-3 py-2 rounded-lg font-bold text-xs sm:text-sm hover:bg-white/30 hover:translate-x-1 transition-all duration-300 cursor-pointer"
                   >
                     {t('about.features.dashboard.cta')}
                   </button>
@@ -350,25 +400,37 @@ function AboutPage() {
               </div>
 
               {/* Card 6: Streak - Orange Gradient */}
-              <div className="group relative rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
+              <div className="group relative rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-5 sm:p-6 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-300 hover:-translate-y-2 overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, #ff9a56 0%, #ff6a00 100%)' }}>
                 <div className="relative z-10">
-                  <div className="text-5xl sm:text-6xl mb-4 group-hover:scale-110 group-hover:rotate-5 transition-transform duration-300">🔥</div>
-                  <h3 className="text-xl sm:text-2xl font-black text-white mb-2 uppercase tracking-wide">{t('about.features.streak.title')}</h3>
-                  <span className="inline-block px-3 py-1 mb-4 bg-white/20 backdrop-blur-sm border-[2px] border-white/30 rounded-md text-white text-xs sm:text-sm font-bold">
-                    {t('about.features.streak.badge')}
-                  </span>
-                  <p className="text-white/90 text-sm sm:text-base mb-4 leading-relaxed">
-                    {t('about.features.streak.description')}
-                  </p>
-                  <ul className="space-y-2 mb-6">
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.streak.point1')}</li>
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.streak.point2')}</li>
-                    <li className="text-white/90 text-xs sm:text-sm">{t('about.features.streak.point3')}</li>
-                  </ul>
+                  {/* Compact View */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="text-4xl sm:text-5xl group-hover:scale-110 group-hover:rotate-5 transition-transform duration-300 flex-shrink-0">🔥</div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg sm:text-xl font-black text-white mb-1 uppercase tracking-wide truncate">{t('about.features.streak.title')}</h3>
+                      <span className="inline-block px-2 py-0.5 bg-white/20 backdrop-blur-sm border-[2px] border-white/30 rounded-md text-white text-xs font-bold">
+                        {t('about.features.streak.badge')}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Expandable Content */}
+                  <div className="max-h-0 opacity-0 group-hover:max-h-[400px] group-hover:opacity-100 overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out">
+                    <div className="pt-2">
+                      <p className="text-white/90 text-sm mb-4 leading-relaxed">
+                        {t('about.features.streak.description')}
+                      </p>
+                      <ul className="space-y-2 mb-4">
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.streak.point1')}</li>
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.streak.point2')}</li>
+                        <li className="text-white/90 text-xs sm:text-sm">{t('about.features.streak.point3')}</li>
+                      </ul>
+                    </div>
+                  </div>
+                  
                   <button 
                     onClick={() => navigate('/dashboard')}
-                    className="w-full bg-white/20 backdrop-blur-sm border-[2px] border-white/30 text-white px-4 py-3 rounded-lg font-bold text-sm sm:text-base hover:bg-white/30 hover:translate-x-1 transition-all duration-300 cursor-pointer"
+                    className="w-full bg-white/20 backdrop-blur-sm border-[2px] border-white/30 text-white px-3 py-2 rounded-lg font-bold text-xs sm:text-sm hover:bg-white/30 hover:translate-x-1 transition-all duration-300 cursor-pointer"
                   >
                     {t('about.features.streak.cta')}
                   </button>

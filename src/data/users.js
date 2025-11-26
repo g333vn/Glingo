@@ -218,7 +218,11 @@ export function getUsers() {
       } catch (e) {
         console.error('[GETUSERS] ❌ ERROR parsing adminUsers JSON:', e);
         console.error('[GETUSERS] Raw adminUsers value:', savedUsers.substring(0, 200));
-        throw e; // Re-throw để không fallback
+        // If parsing fails, initialize with default users
+        console.warn('[GETUSERS] Initializing adminUsers with default users due to parse error');
+        const defaultUsersWithoutPassword = users.map(({ password, ...user }) => user);
+        localStorage.setItem('adminUsers', JSON.stringify(defaultUsersWithoutPassword));
+        parsed = defaultUsersWithoutPassword;
       }
       
       // ✅ DEBUG: Log để kiểm tra
@@ -386,8 +390,15 @@ export function getUsers() {
       console.log('[GETUSERS] ✅ Returning mergedUsers, count:', mergedUsers.length);
       return mergedUsers;
     } else {
-      // ✅ DEBUG: No savedUsers in localStorage
-      console.warn('[GETUSERS] ⚠️ No adminUsers found in localStorage, using default users');
+      // ✅ DEBUG: No savedUsers in localStorage - Initialize with default users
+      console.warn('[GETUSERS] ⚠️ No adminUsers found in localStorage, initializing with default users');
+      
+      // ✅ CRITICAL: Initialize adminUsers with default users (without passwords)
+      const defaultUsersWithoutPassword = users.map(({ password, ...user }) => user);
+      localStorage.setItem('adminUsers', JSON.stringify(defaultUsersWithoutPassword));
+      console.log('[GETUSERS] ✅ Initialized adminUsers with', defaultUsersWithoutPassword.length, 'default users');
+      
+      // Now proceed with the fallback logic to return users with passwords
     }
   } catch (error) {
     console.error('[GETUSERS] ❌ ERROR loading users from localStorage:', error);

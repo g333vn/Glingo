@@ -20,10 +20,11 @@ import { useLanguage } from '../../../contexts/LanguageContext.jsx';
 import { loadQuizData } from '../../../data/level/n1/shinkanzen-n1-bunpou/quizzes/quiz-loader.js';
 
 // ✅ NEW: Import progress tracker
-import { addLessonQuizScore } from '../../../utils/lessonProgressTracker.js';
+import { addLessonQuizScore, getLessonQuizScores } from '../../../utils/lessonProgressTracker.js';
 
 // ✅ NEW: Import dictionary components
 import { DictionaryButton, DictionaryPopup, useDictionaryDoubleClick } from '../../../components/api_translate/index.js';
+import { getSettings } from '../../../utils/settingsManager.js';
 
 function QuizPage() {
   const { levelId, bookId, chapterId, lessonId } = useParams();
@@ -285,6 +286,23 @@ function QuizPage() {
     const isPass = percentage >= 60;
     const wrong = score.total - score.correct;
 
+    // === Retry control based on global settings ===
+    const settings = getSettings();
+    const contentSettings = settings.content || {};
+    let maxAttemptsSetting = contentSettings.maxRetryAttempts;
+    // -2: use custom, 0: no retry, -1 or undefined: unlimited
+    if (maxAttemptsSetting === -2) {
+      maxAttemptsSetting = contentSettings.maxRetryAttemptsCustom || -1;
+    }
+    const scores = getLessonQuizScores(bookId, finalChapterId, finalLessonId);
+    const attemptsSoFar = scores.length; // includes current attempt
+    const noRetry = maxAttemptsSetting === 0;
+    const unlimited = !noRetry && (!maxAttemptsSetting || maxAttemptsSetting < 0);
+    const remainingAttempts = (unlimited || noRetry)
+      ? null
+      : Math.max(0, maxAttemptsSetting - attemptsSoFar);
+    const canRetry = !noRetry && (unlimited || remainingAttempts > 0);
+
     return (
       <>
         {/* ✅ NEW: Dictionary components */}
@@ -403,19 +421,32 @@ function QuizPage() {
                         </p>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <button 
-                          onClick={handleRetryQuiz} 
-                          className="px-6 py-3 bg-red-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
-                        >
-                          <span className="relative z-10 flex items-center justify-center gap-2">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            Try Again
-                          </span>
-                          <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
-                        </button>
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                        {canRetry && (
+                          <button 
+                            onClick={handleRetryQuiz} 
+                            className="px-6 py-3 bg-red-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
+                          >
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                              {t('quiz.retry') || 'Try Again'}
+                            </span>
+                            <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
+                          </button>
+                        )}
+
+                        {!unlimited && !noRetry && (
+                          <p className="text-xs text-gray-700 font-semibold text-center sm:text-left">
+                            {remainingAttempts > 0
+                              ? (t('quiz.retryRemaining', { used: attemptsSoFar, max: maxAttemptsSetting }) ||
+                                 `Lần làm: ${attemptsSoFar}/${maxAttemptsSetting}`)
+                              : (t('quiz.retryLimitReached', { max: maxAttemptsSetting }) ||
+                                 `Bạn đã dùng hết ${maxAttemptsSetting} lần làm lại được phép.`)
+                            }
+                          </p>
+                        )}
 
                         <button 
                           onClick={handleNextLesson} 
@@ -442,6 +473,11 @@ function QuizPage() {
   }
 
   // Normal Quiz Screen
+  // Read content settings (answers visibility) once per render
+  const settings = getSettings();
+  const contentSettings = settings.content || {};
+  const showAnswersSetting = contentSettings.showAnswersAfterCompletion !== false;
+
   return (
     <>
       {/* ✅ NEW: Dictionary components */}
@@ -538,12 +574,16 @@ function QuizPage() {
                       </>
                     )}
                   </div>
-                  <p className="text-sm text-white mb-2 font-black">
-                    <strong>{t('lesson.correctAnswer')}:</strong> {currentQuestion.correct}
-                  </p>
-                  <p className="text-sm text-white font-black">
-                    <strong>{t('lesson.explanation')}:</strong> {currentQuestion.explanation}
-                  </p>
+                  {showAnswersSetting && (
+                    <>
+                      <p className="text-sm text-white mb-2 font-black">
+                        <strong>{t('lesson.correctAnswer')}:</strong> {currentQuestion.correct}
+                      </p>
+                      <p className="text-sm text-white font-black">
+                        <strong>{t('lesson.explanation')}:</strong> {currentQuestion.explanation}
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
 

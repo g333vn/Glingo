@@ -9,26 +9,25 @@ const DEFAULT_SETTINGS = {
   system: {
     platformName: "Learn Your Approach",
     platformTagline: "Japanese Learning Platform",
-    platformDescription: "Nền tảng học tiếng Nhật chuyên nghiệp với JLPT mock tests và tài liệu học tập đa dạng",
+    platformDescription: {
+      vi: "Nền tảng học tiếng Nhật chuyên nghiệp với JLPT mock tests và tài liệu học tập đa dạng",
+      en: "Professional Japanese learning platform with JLPT mock tests and diverse learning materials",
+      ja: "JLPT模擬試験と多様な学習資料を備えたプロフェッショナルな日本語学習プラットフォーム"
+    },
     contactEmail: "admin@example.com",
     maintenanceMode: false,
     registrationEnabled: true,
-    debugMode: false,
-    analyticsEnabled: true
+    debugMode: false
   },
   users: {
     defaultRole: "user", // 'user' | 'editor' | 'admin'
     passwordMinLength: 6,
-    passwordMaxLength: 50,
-    sessionTimeout: 3600000, // 1 hour in milliseconds
-    autoLogoutInactive: false
+    passwordMaxLength: 50
   },
   content: {
-    defaultQuizTimeLimit: 30, // minutes
-    defaultPassingScore: 60, // percentage
     showAnswersAfterCompletion: true,
-    allowRetry: true,
-    maxRetryAttempts: 3
+    maxRetryAttempts: 3,
+    maxRetryAttemptsCustom: 3
   },
   seed: {
     demoUsersEnabled: true,
@@ -59,6 +58,22 @@ export function getSettings() {
     const saved = localStorage.getItem('systemSettings');
     if (saved) {
       const parsed = JSON.parse(saved);
+      
+      // Migration: Convert old string platformDescription to object format
+      if (parsed.system && typeof parsed.system.platformDescription === 'string') {
+        const oldDescription = parsed.system.platformDescription;
+        parsed.system.platformDescription = {
+          vi: oldDescription,
+          en: oldDescription,
+          ja: oldDescription
+        };
+        // Debug only
+        // eslint-disable-next-line no-console
+        console.log('[SETTINGS] Migrated platformDescription from string to object format');
+        // Save migrated settings
+        localStorage.setItem('systemSettings', JSON.stringify(parsed));
+      }
+      
       // Deep merge with defaults to ensure all keys exist
       return deepMerge(DEFAULT_SETTINGS, parsed);
     }
@@ -87,6 +102,8 @@ export function getSetting(category, key) {
 export function saveSettings(settings) {
   try {
     localStorage.setItem('systemSettings', JSON.stringify(settings));
+    // Debug only
+    // eslint-disable-next-line no-console
     console.log('[SETTINGS] Settings saved successfully');
     
     // Dispatch event for other components to react
@@ -129,6 +146,8 @@ export function updateSetting(category, key, value) {
 export function resetSettings() {
   try {
     localStorage.removeItem('systemSettings');
+    // Debug only
+    // eslint-disable-next-line no-console
     console.log('[SETTINGS] Settings reset to defaults');
     
     window.dispatchEvent(new CustomEvent('settingsUpdated', { 
