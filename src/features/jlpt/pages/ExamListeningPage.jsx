@@ -7,6 +7,8 @@ import { getExamById } from '../../../data/jlpt/jlptData.js';
 import { getListeningQuestions } from '../../../data/jlpt/listeningQuestionsData.js';
 import storageManager from '../../../utils/localStorageManager.js';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
+import { useAuth } from '../../../contexts/AuthContext.jsx';
+import { saveLearningProgress } from '../../../services/learningProgressService.js';
 import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
 
 // ✅ Helper: Lock/unlock body scroll
@@ -334,6 +336,7 @@ function ExamListeningPage() {
   const { navigate, WarningModal, clearExamData } = useExamGuard();
   const navigateRouter = useNavigateRouter(); // ✅ Thêm navigate trực tiếp từ React Router
   const { t } = useLanguage(); // ✅ Added useLanguage for localization
+  const { user } = useAuth();
 
   // ✅ Debug: Log params để kiểm tra
   useEffect(() => {
@@ -645,6 +648,27 @@ function ExamListeningPage() {
 
     localStorage.setItem(`exam-${levelId}-${examId}-listening-score`, score);
     localStorage.setItem(`exam-${levelId}-${examId}-listening-completed`, 'true');
+
+    // ✅ NEW: Lưu progress vào Supabase nếu user đã đăng nhập
+    if (user && typeof user.id === 'string') {
+      saveLearningProgress({
+        userId: user.id,
+        type: 'exam_attempt',
+        levelId: levelId,
+        examId: examId,
+        status: 'completed',
+        score: listeningCorrect,
+        total: listeningTotal,
+        attempts: 1,
+        metadata: {
+          listeningCorrect,
+          listeningTotal,
+          scorePercentage: score
+        }
+      }).catch(err => {
+        console.error('[ExamListening] Error saving progress to Supabase:', err);
+      });
+    }
 
     // ✅ Sử dụng navigateRouter trực tiếp để đảm bảo navigation hoạt động đúng
     const detailPath = `/jlpt/${levelId}/${examId}`;

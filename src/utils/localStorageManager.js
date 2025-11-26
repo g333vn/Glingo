@@ -1,14 +1,17 @@
 // src/utils/localStorageManager.js
-// 💾 Unified Storage Manager - IndexedDB (primary) + localStorage (fallback)
+// 💾 Unified Storage Manager - Supabase (cloud) + IndexedDB (cache) + localStorage (fallback)
 // ✅ Supports unlimited storage via IndexedDB (>100 MB)
+// ✅ Cloud sync via Supabase
 
 import indexedDBManager from './indexedDBManager.js';
+import * as contentService from '../services/contentService.js';
 
 /**
  * Storage Strategy:
- * 1. Try IndexedDB first (unlimited storage)
- * 2. Fallback to localStorage (5-10 MB limit)
- * 3. Sync between both for backward compatibility
+ * 1. Try Supabase first (cloud, multi-device sync)
+ * 2. Fallback to IndexedDB (local cache, unlimited storage)
+ * 3. Fallback to localStorage (5-10 MB limit)
+ * 4. Sync between all for backward compatibility
  */
 
 class LocalStorageManager {
@@ -152,13 +155,32 @@ class LocalStorageManager {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
-    // Try IndexedDB first
+    // 1. Try Supabase first (cloud)
+    try {
+      const { success, data } = await contentService.getBooks(level);
+      if (success && data && data.length > 0) {
+        // Cache to IndexedDB for offline support
+        if (this.useIndexedDB) {
+          await indexedDBManager.saveBooks(level, data);
+        }
+        // Also cache to localStorage
+        if (this.storageAvailable) {
+          const key = `adminBooks_${level}`;
+          localStorage.setItem(key, JSON.stringify(data));
+        }
+        return data;
+      }
+    } catch (err) {
+      console.warn('[StorageManager] Supabase getBooks failed, trying local:', err);
+    }
+    
+    // 2. Try IndexedDB (local cache)
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getBooks(level);
       if (result) return result;
     }
 
-    // Fallback to localStorage
+    // 3. Fallback to localStorage
     if (this.storageAvailable) {
       const key = `adminBooks_${level}`;
       const data = localStorage.getItem(key);
@@ -175,11 +197,26 @@ class LocalStorageManager {
     return null;
   }
 
-  async saveBooks(level, books) {
+  async saveBooks(level, books, userId = null) {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
-    // Save to IndexedDB (primary)
+    // 1. Save to Supabase if userId provided (admin)
+    if (userId) {
+      try {
+        // Save each book to Supabase
+        for (const book of books) {
+          const result = await contentService.saveBook({ ...book, level }, userId);
+          if (!result.success) {
+            console.warn('[StorageManager] Failed to save book to Supabase:', book.id, result.error);
+          }
+        }
+      } catch (err) {
+        console.warn('[StorageManager] Supabase saveBooks failed, continuing with local save:', err);
+      }
+    }
+    
+    // 2. Save to IndexedDB (local cache)
     if (this.useIndexedDB) {
       const success = await indexedDBManager.saveBooks(level, books);
       if (success) {
@@ -192,7 +229,7 @@ class LocalStorageManager {
       }
     }
 
-    // Fallback to localStorage only
+    // 3. Fallback to localStorage only
     if (this.storageAvailable) {
       const key = `adminBooks_${level}`;
       localStorage.setItem(key, JSON.stringify(books));
@@ -309,17 +346,38 @@ class LocalStorageManager {
 
   // ==================== CHAPTERS ====================
   
-  async getChapters(bookId) {
+  async getChapters(bookId, level = null) {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
-    // Try IndexedDB first
+    // 1. Try Supabase first if level provided
+    if (level) {
+      try {
+        const { success, data } = await contentService.getChapters(bookId, level);
+        if (success && data && data.length > 0) {
+          // Cache to IndexedDB
+          if (this.useIndexedDB) {
+            await indexedDBManager.saveChapters(bookId, data);
+          }
+          // Cache to localStorage
+          if (this.storageAvailable) {
+            const key = `adminChapters_${bookId}`;
+            localStorage.setItem(key, JSON.stringify(data));
+          }
+          return data;
+        }
+      } catch (err) {
+        console.warn('[StorageManager] Supabase getChapters failed, trying local:', err);
+      }
+    }
+    
+    // 2. Try IndexedDB (local cache)
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getChapters(bookId);
       if (result) return result;
     }
 
-    // Fallback to localStorage
+    // 3. Fallback to localStorage
     if (this.storageAvailable) {
       const key = `adminChapters_${bookId}`;
       const data = localStorage.getItem(key);
@@ -336,11 +394,23 @@ class LocalStorageManager {
     return null;
   }
 
-  async saveChapters(bookId, chapters) {
+  async saveChapters(bookId, chapters, level = null, userId = null) {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
-    // Save to IndexedDB (primary) - UNLIMITED STORAGE!
+    // 1. Save to Supabase if level and userId provided
+    if (level && userId) {
+      try {
+        const result = await contentService.saveChapters(bookId, level, chapters, userId);
+        if (!result.success) {
+          console.warn('[StorageManager] Failed to save chapters to Supabase:', result.error);
+        }
+      } catch (err) {
+        console.warn('[StorageManager] Supabase saveChapters failed, continuing with local save:', err);
+      }
+    }
+    
+    // 2. Save to IndexedDB (local cache)
     if (this.useIndexedDB) {
       const success = await indexedDBManager.saveChapters(bookId, chapters);
       if (success) {
@@ -358,7 +428,7 @@ class LocalStorageManager {
       }
     }
 
-    // Fallback to localStorage only
+    // 3. Fallback to localStorage only
     if (this.storageAvailable) {
       try {
         const key = `adminChapters_${bookId}`;
@@ -393,17 +463,38 @@ class LocalStorageManager {
 
   // ==================== LESSONS ====================
   
-  async getLessons(bookId, chapterId) {
+  async getLessons(bookId, chapterId, level = null) {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
-    // Try IndexedDB first
+    // 1. Try Supabase first if level provided
+    if (level) {
+      try {
+        const { success, data } = await contentService.getLessons(bookId, chapterId, level);
+        if (success && data && data.length > 0) {
+          // Cache to IndexedDB
+          if (this.useIndexedDB) {
+            await indexedDBManager.saveLessons(bookId, chapterId, data);
+          }
+          // Cache to localStorage
+          if (this.storageAvailable) {
+            const key = `adminLessons_${bookId}_${chapterId}`;
+            localStorage.setItem(key, JSON.stringify(data));
+          }
+          return data;
+        }
+      } catch (err) {
+        console.warn('[StorageManager] Supabase getLessons failed, trying local:', err);
+      }
+    }
+    
+    // 2. Try IndexedDB (local cache)
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getLessons(bookId, chapterId);
       if (result) return result;
     }
 
-    // Fallback to localStorage
+    // 3. Fallback to localStorage
     if (this.storageAvailable) {
       const key = `adminLessons_${bookId}_${chapterId}`;
       const data = localStorage.getItem(key);
@@ -420,11 +511,23 @@ class LocalStorageManager {
     return null;
   }
 
-  async saveLessons(bookId, chapterId, lessons) {
+  async saveLessons(bookId, chapterId, lessons, level = null, userId = null) {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
-    // Save to IndexedDB (primary)
+    // 1. Save to Supabase if level and userId provided
+    if (level && userId) {
+      try {
+        const result = await contentService.saveLessons(bookId, chapterId, level, lessons, userId);
+        if (!result.success) {
+          console.warn('[StorageManager] Failed to save lessons to Supabase:', result.error);
+        }
+      } catch (err) {
+        console.warn('[StorageManager] Supabase saveLessons failed, continuing with local save:', err);
+      }
+    }
+    
+    // 2. Save to IndexedDB (local cache)
     if (this.useIndexedDB) {
       const success = await indexedDBManager.saveLessons(bookId, chapterId, lessons);
       if (success) {
@@ -441,7 +544,7 @@ class LocalStorageManager {
       }
     }
 
-    // Fallback to localStorage only
+    // 3. Fallback to localStorage only
     if (this.storageAvailable) {
       try {
         const key = `adminLessons_${bookId}_${chapterId}`;
@@ -475,7 +578,7 @@ class LocalStorageManager {
 
   // ==================== QUIZZES ====================
   
-  async getQuiz(bookId, chapterId, lessonId = null) {
+  async getQuiz(bookId, chapterId, lessonId = null, level = null) {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
@@ -483,10 +586,30 @@ class LocalStorageManager {
     const finalLessonId = lessonId || chapterId;
     
     console.log(`🔍 storageManager.getQuiz(${bookId}, ${chapterId}, ${finalLessonId})`);
-    console.log(`   - useIndexedDB: ${this.useIndexedDB}`);
-    console.log(`   - storageAvailable: ${this.storageAvailable}`);
     
-    // Try IndexedDB first (UNLIMITED STORAGE for large quizzes!)
+    // 1. Try Supabase first if level provided
+    if (level) {
+      try {
+        const { success, data } = await contentService.getQuiz(bookId, chapterId, finalLessonId, level);
+        if (success && data) {
+          // Cache to IndexedDB
+          if (this.useIndexedDB) {
+            await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, data);
+          }
+          // Cache to localStorage
+          if (this.storageAvailable) {
+            const key = `adminQuiz_${bookId}_${chapterId}_${finalLessonId}`;
+            localStorage.setItem(key, JSON.stringify(data));
+          }
+          console.log(`✅ Found quiz in Supabase`);
+          return data;
+        }
+      } catch (err) {
+        console.warn('[StorageManager] Supabase getQuiz failed, trying local:', err);
+      }
+    }
+    
+    // 2. Try IndexedDB (local cache)
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getQuiz(bookId, chapterId, finalLessonId);
       if (result) {
@@ -496,7 +619,7 @@ class LocalStorageManager {
       console.log(`❌ Quiz not found in IndexedDB`);
     }
 
-    // Fallback to localStorage
+    // 3. Fallback to localStorage
     if (this.storageAvailable) {
       // Try new format first: adminQuiz_bookId_chapterId_lessonId
       let key = `adminQuiz_${bookId}_${chapterId}_${finalLessonId}`;
@@ -518,17 +641,13 @@ class LocalStorageManager {
         return quiz;
       }
       console.log(`❌ Quiz not found in localStorage`);
-      
-      // ✅ DEBUG: List all localStorage keys to see what's stored
-      const allKeys = Object.keys(localStorage).filter(k => k.startsWith('adminQuiz_'));
-      console.log(`📋 localStorage: All quiz keys:`, allKeys);
     }
 
     console.log(`❌ Quiz not found in any storage`);
     return null;
   }
 
-  async saveQuiz(bookId, chapterId, lessonId, quiz) {
+  async saveQuiz(bookId, chapterId, lessonId, quiz, level = null, userId = null) {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
@@ -536,13 +655,30 @@ class LocalStorageManager {
     const finalLessonId = lessonId || quiz.lessonId || chapterId;
     
     console.log(`💾 storageManager.saveQuiz(${bookId}, ${chapterId}, ${finalLessonId})`);
-    console.log(`   - useIndexedDB: ${this.useIndexedDB}`);
-    console.log(`   - storageAvailable: ${this.storageAvailable}`);
     console.log(`   - Quiz title: ${quiz.title || 'N/A'}`);
     console.log(`   - Questions count: ${quiz.questions?.length || 0}`);
     
-    // Save to IndexedDB (primary) - UNLIMITED STORAGE!
-    // This is CRITICAL for 50 questions/chapter (250 MB total)
+    // 1. Save to Supabase if level and userId provided
+    if (level && userId) {
+      try {
+        const result = await contentService.saveQuiz({
+          ...quiz,
+          bookId,
+          chapterId,
+          lessonId: finalLessonId,
+          level
+        }, userId);
+        if (!result.success) {
+          console.warn('[StorageManager] Failed to save quiz to Supabase:', result.error);
+        } else {
+          console.log(`✅ Saved quiz to Supabase`);
+        }
+      } catch (err) {
+        console.warn('[StorageManager] Supabase saveQuiz failed, continuing with local save:', err);
+      }
+    }
+    
+    // 2. Save to IndexedDB (local cache)
     if (this.useIndexedDB) {
       console.log(`💾 Attempting to save to IndexedDB...`);
       const success = await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, quiz);
@@ -567,7 +703,7 @@ class LocalStorageManager {
       }
     }
 
-    // Fallback to localStorage only (might fail if too large)
+    // 3. Fallback to localStorage only (might fail if too large)
     if (this.storageAvailable) {
       try {
         const key = `adminQuiz_${bookId}_${chapterId}_${finalLessonId}`;

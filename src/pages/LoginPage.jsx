@@ -6,6 +6,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
 import { signIn as supabaseSignIn, getUserProfile } from '../services/authService.js';
+import { fullSync } from '../services/dataSyncService.js';
 
 function LoginPage() {
   const { t } = useLanguage();
@@ -52,6 +53,17 @@ function LoginPage() {
 
           // Cập nhật AuthContext để toàn app nhận diện user này
           updateUser(supabaseUserForApp);
+
+          // ✅ NEW: Auto sync data khi đăng nhập thành công
+          fullSync(userId).then(result => {
+            if (result.success) {
+              console.log('[LOGIN][Sync] Data synced successfully:', result);
+            } else {
+              console.warn('[LOGIN][Sync] Sync completed with errors:', result.errors);
+            }
+          }).catch(err => {
+            console.error('[LOGIN][Sync] Error syncing data:', err);
+          });
 
           // eslint-disable-next-line no-console
           console.log('[LOGIN][Supabase] Login successful:', {

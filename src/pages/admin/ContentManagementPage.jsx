@@ -190,7 +190,10 @@ function ContentManagementPage() {
       return (a.title || '').localeCompare(b.title || '');
     });
     setBooks(sortedBooks);
-    await storageManager.saveBooks(selectedLevel, sortedBooks);
+    
+    // ✅ Save to Supabase if user is admin and has UUID
+    const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+    await storageManager.saveBooks(selectedLevel, sortedBooks, userId);
   };
 
   // ✅ UPDATED: Save series (async) - Sắp xếp theo tên và thêm metadata
@@ -425,7 +428,7 @@ function ContentManagementPage() {
     }
   };
 
-  // ✅ NEW: Audio upload handler (for quiz questions)
+  // ✅ NEW: Audio upload handler (for quiz questions) - Updated to use Supabase Storage
   const handleAudioUpload = async (file, questionIndex) => {
     if (!file) return;
     
@@ -447,58 +450,27 @@ function ContentManagementPage() {
     setUploadingAudioIndex(questionIndex);
     
     try {
-      const reader = new FileReader();
+      // ✅ Upload to Supabase Storage
+      const { uploadAudio, generateFilePath } = await import('../../services/fileUploadService.js');
+      const path = generateFilePath('quiz', file.name);
       
-      reader.onload = (e) => {
-        const base64 = e.target.result;
-        
-        // Generate path
-        const timestamp = Date.now();
-        const ext = file.name.split('.').pop();
-        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const audioPath = `/audio/quiz/${timestamp}_${safeName}`;
-        
-        // Save to localStorage
-        try {
-          localStorage.setItem(`audio_${timestamp}`, JSON.stringify({
-            path: audioPath,
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            data: base64,
-            uploadedAt: new Date().toISOString()
-          }));
-          
-          // Update question audioUrl
-          const newQuestions = [...quizForm.questions];
-          newQuestions[questionIndex].audioUrl = audioPath;
-          setQuizForm({ ...quizForm, questions: newQuestions });
-          
-          setTimeout(() => {
-            setIsUploadingAudio(false);
-            setUploadingAudioIndex(-1);
-            alert(t('contentManagement.upload.audioUploadSuccess', { name: file.name, size: (file.size / 1024).toFixed(2) }));
-          }, 300);
-          
-        } catch (error) {
-          console.error('Error saving audio:', error);
-          alert(t('contentManagement.upload.audioSaveError'));
-          setIsUploadingAudio(false);
-          setUploadingAudioIndex(-1);
-        }
-      };
+      const result = await uploadAudio(file, path);
       
-      reader.onerror = () => {
-        alert('❌ Lỗi khi đọc file!');
+      if (result.success) {
+        // Update question audioUrl with Supabase URL
+        const newQuestions = [...quizForm.questions];
+        newQuestions[questionIndex].audioUrl = result.url;
+        setQuizForm({ ...quizForm, questions: newQuestions });
+        
         setIsUploadingAudio(false);
         setUploadingAudioIndex(-1);
-      };
-      
-      reader.readAsDataURL(file);
-      
+        alert(t('contentManagement.upload.audioUploadSuccess', { name: file.name, size: (file.size / 1024).toFixed(2) }));
+      } else {
+        throw new Error(result.error?.message || 'Upload failed');
+      }
     } catch (error) {
       console.error('Upload error:', error);
-      alert(t('contentManagement.upload.audioUploadError'));
+      alert(t('contentManagement.upload.audioUploadError') + ': ' + error.message);
       setIsUploadingAudio(false);
       setUploadingAudioIndex(-1);
     }
@@ -538,63 +510,33 @@ function ContentManagementPage() {
     setUploadProgress(0);
     
     try {
-      const reader = new FileReader();
+      // ✅ Upload to Supabase Storage
+      const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
+      const path = generateFilePath('book', file.name);
       
-      reader.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const progress = Math.round((e.loaded / e.total) * 100);
-          setUploadProgress(progress);
-        }
-      };
+      // Simulate progress (Supabase doesn't provide progress events)
+      setUploadProgress(50);
       
-      reader.onload = (e) => {
-        const base64 = e.target.result;
+      const result = await uploadImage(file, path);
+      
+      if (result.success) {
+        // Update form with Supabase URL
+        setBookForm({ ...bookForm, imageUrl: result.url });
         
-        // Generate path
-        const timestamp = Date.now();
-        const ext = file.name.split('.').pop();
-        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const imagePath = `/book_card/uploaded/${timestamp}_${safeName}`;
-        
-        // Save to localStorage (temporary)
-        try {
-          localStorage.setItem(`image_${timestamp}`, JSON.stringify({
-            path: imagePath,
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            data: base64,
-            uploadedAt: new Date().toISOString()
-          }));
-          
-          // Update form
-          setBookForm({ ...bookForm, imageUrl: imagePath });
-          
-          setUploadProgress(100);
-          setTimeout(() => {
-            setIsUploadingImage(false);
-            setUploadProgress(0);
-            alert(t('contentManagement.upload.imageUploadSuccess', { name: file.name, size: (file.size / 1024).toFixed(2), path: imagePath }));
-          }, 500);
-          
-        } catch (error) {
-          console.error('Error saving image:', error);
-          alert(t('contentManagement.upload.imageSaveError'));
+        setUploadProgress(100);
+        setTimeout(() => {
           setIsUploadingImage(false);
-        }
-      };
-      
-      reader.onerror = () => {
-        alert('❌ Lỗi khi đọc file!');
-        setIsUploadingImage(false);
-      };
-      
-      reader.readAsDataURL(file);
-      
+          setUploadProgress(0);
+          alert(t('contentManagement.upload.imageUploadSuccess', { name: file.name, size: (file.size / 1024).toFixed(2), path: result.url }));
+        }, 500);
+      } else {
+        throw new Error(result.error?.message || 'Upload failed');
+      }
     } catch (error) {
       console.error('Upload error:', error);
-      alert(t('contentManagement.upload.imageUploadError'));
+      alert(t('contentManagement.upload.imageUploadError') + ': ' + error.message);
       setIsUploadingImage(false);
+      setUploadProgress(0);
     }
   };
 
@@ -786,7 +728,8 @@ function ContentManagementPage() {
     });
 
     // Save to IndexedDB (unlimited storage!) or localStorage
-    const success = await storageManager.saveChapters(selectedBook.id, chapters);
+    const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+    const success = await storageManager.saveChapters(selectedBook.id, chapters, selectedLevel, userId);
     
     if (success) {
       // Update local state
@@ -828,7 +771,8 @@ function ContentManagementPage() {
     }
 
     chapters = chapters.filter(ch => ch.id !== chapter.id);
-    const success = await storageManager.saveChapters(book.id, chapters);
+      const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+      const success = await storageManager.saveChapters(book.id, chapters, selectedLevel, userId);
     
     if (success) {
       // Update local state
@@ -990,7 +934,8 @@ function ContentManagementPage() {
         return a.id.localeCompare(b.id);
       });
 
-      const success = await storageManager.saveLessons(selectedBook.id, selectedChapter.id, lessons);
+      const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+      const success = await storageManager.saveLessons(selectedBook.id, selectedChapter.id, lessons, selectedLevel, userId);
       
       if (success) {
         const key = `${selectedBook.id}_${selectedChapter.id}`;
@@ -1032,7 +977,8 @@ function ContentManagementPage() {
     if (!lessons) lessons = [];
 
     lessons = lessons.filter(l => l.id !== lesson.id);
-    const success = await storageManager.saveLessons(book.id, chapter.id, lessons);
+    const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+    const success = await storageManager.saveLessons(book.id, chapter.id, lessons, selectedLevel, userId);
     
     if (success) {
       const key = `${book.id}_${chapter.id}`;
@@ -1167,11 +1113,14 @@ function ContentManagementPage() {
       questions: quizForm.questions
     };
 
+    const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
     const success = await storageManager.saveQuiz(
       selectedBook?.id,
       selectedChapter?.id,
       selectedLesson?.id,
-      quizData
+      quizData,
+      selectedLevel,
+      userId
     );
     
     if (success) {
@@ -2544,6 +2493,8 @@ function ContentManagementPage() {
                       // Save draft first (if valid)
                       if (quizForm.title && selectedBook && selectedChapter && selectedLesson) {
                         try {
+                          const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+                          const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
                           await storageManager.saveQuiz(
                             selectedBook.id,
                             selectedChapter.id,
@@ -2554,7 +2505,9 @@ function ContentManagementPage() {
                               bookId: selectedBook.id,
                               chapterId: selectedChapter.id,
                               lessonId: selectedLesson.id
-                            }
+                            },
+                            selectedLevel,
+                            userId
                           );
                         } catch (error) {
                           console.error('Error saving draft:', error);

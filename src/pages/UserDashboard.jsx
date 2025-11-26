@@ -8,8 +8,11 @@ import { calculateMasteryLevel, getDueCardsCount } from '../services/progressTra
 import { useLanguage } from '../contexts/LanguageContext.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { createNotification } from '../utils/notificationManager.js';
+import { getUserProgress } from '../services/learningProgressService.js';
+import { getUserExamResults } from '../services/examResultsService.js';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import UserDashboardSkeleton from '../components/skeletons/UserDashboardSkeleton.jsx';
+import DataSyncButton from '../components/DataSyncButton.jsx';
 
 /**
  * UserDashboard Component
@@ -32,6 +35,21 @@ function UserDashboard() {
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [isStreakExpanded, setIsStreakExpanded] = useState(true);
+  
+  // ✅ NEW: Supabase progress data
+  const [supabaseProgress, setSupabaseProgress] = useState({
+    lessons: [],
+    quizzes: [],
+    exams: []
+  });
+  const [examResults, setExamResults] = useState([]);
+  const [supabaseStats, setSupabaseStats] = useState({
+    completedLessons: 0,
+    completedQuizzes: 0,
+    passedExams: 0,
+    averageQuizScore: 0,
+    averageExamScore: 0
+  });
 
   // Prefer authenticated user ID when available, fallback to demo ID for compatibility
   const userId = user?.id || 'user-001'; // TODO: Remove fallback when auth is fully integrated
@@ -179,6 +197,59 @@ function UserDashboard() {
           }
         } catch (notifError) {
           console.error('❌ Failed to create SRS review reminder notification:', notifError);
+        }
+      }
+
+      // ✅ NEW: Load Supabase progress if user is authenticated
+      if (user && typeof user.id === 'string') {
+        try {
+          const [progressResult, examResultsResult] = await Promise.all([
+            getUserProgress(user.id),
+            getUserExamResults(user.id)
+          ]);
+
+          if (progressResult.success && progressResult.data) {
+            const allProgress = progressResult.data;
+            const lessons = allProgress.filter(p => p.type === 'lesson_complete' && p.status === 'completed');
+            const quizzes = allProgress.filter(p => p.type === 'quiz_attempt' && p.status === 'completed');
+            const exams = allProgress.filter(p => p.type === 'exam_attempt' && p.status === 'completed');
+
+            setSupabaseProgress({ lessons, quizzes, exams });
+
+            // Calculate stats
+            const quizScores = quizzes
+              .filter(q => q.score !== null && q.total !== null)
+              .map(q => (q.score / q.total) * 100);
+            const averageQuizScore = quizScores.length > 0
+              ? Math.round(quizScores.reduce((a, b) => a + b, 0) / quizScores.length)
+              : 0;
+
+            setSupabaseStats({
+              completedLessons: lessons.length,
+              completedQuizzes: quizzes.length,
+              passedExams: 0, // Will be updated from examResults
+              averageQuizScore,
+              averageExamScore: 0 // Will be updated from examResults
+            });
+          }
+
+          if (examResultsResult.success && examResultsResult.data) {
+            setExamResults(examResultsResult.data);
+            
+            const passedExams = examResultsResult.data.filter(e => e.is_passed).length;
+            const examScores = examResultsResult.data.map(e => e.total_score);
+            const averageExamScore = examScores.length > 0
+              ? Math.round(examScores.reduce((a, b) => a + b, 0) / examScores.length)
+              : 0;
+
+            setSupabaseStats(prev => ({
+              ...prev,
+              passedExams,
+              averageExamScore
+            }));
+          }
+        } catch (supabaseError) {
+          console.error('❌ Failed to load Supabase progress:', supabaseError);
         }
       }
 
@@ -386,6 +457,165 @@ function UserDashboard() {
             </div>
           </div>
         </div>
+
+        {/* ✅ NEW: Supabase Learning Progress Section */}
+        {user && typeof user.id === 'string' && (
+          <div className="bg-white rounded-xl border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden mb-4 sm:mb-6 md:mb-8">
+            <div className="bg-green-400 border-b-[4px] border-black p-3 sm:p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 flex items-center gap-2 sm:gap-3">
+                    <span>📊</span>
+                    <span>Tiến độ học tập (Supabase)</span>
+                  </h2>
+                  <p className="text-xs sm:text-sm md:text-base text-gray-900 mt-1 font-bold">
+                    Đồng bộ trên tất cả thiết bị
+                  </p>
+                </div>
+                <div className="flex-shrink-0">
+                  <DataSyncButton variant="full" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-3 sm:p-4 md:p-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+                <div className="bg-green-100 rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-3 sm:p-4">
+                  <div className="text-xs sm:text-sm text-gray-600 mb-1">Lessons</div>
+                  <div className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900">
+                    {supabaseStats.completedLessons}
+                  </div>
+                </div>
+                <div className="bg-blue-100 rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-3 sm:p-4">
+                  <div className="text-xs sm:text-sm text-gray-600 mb-1">Quizzes</div>
+                  <div className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900">
+                    {supabaseStats.completedQuizzes}
+                  </div>
+                </div>
+                <div className="bg-purple-100 rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-3 sm:p-4">
+                  <div className="text-xs sm:text-sm text-gray-600 mb-1">Điểm Quiz TB</div>
+                  <div className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900">
+                    {supabaseStats.averageQuizScore}%
+                  </div>
+                </div>
+                <div className="bg-orange-100 rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-3 sm:p-4">
+                  <div className="text-xs sm:text-sm text-gray-600 mb-1">Exams đậu</div>
+                  <div className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900">
+                    {supabaseStats.passedExams} / {examResults.length}
+                  </div>
+                </div>
+              </div>
+
+              {/* Exam Results Table */}
+              {examResults.length > 0 && (
+                <div className="mb-4 sm:mb-6">
+                  <h3 className="text-lg sm:text-xl font-black text-gray-900 mb-2 sm:mb-3">📝 Kết quả JLPT Exam</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs sm:text-sm">
+                      <thead>
+                        <tr className="border-b-2 border-black bg-gray-100">
+                          <th className="text-left p-2 font-black">Level</th>
+                          <th className="text-left p-2 font-black">Exam</th>
+                          <th className="text-center p-2 font-black">Tổng</th>
+                          <th className="text-center p-2 font-black">Kết quả</th>
+                          <th className="text-left p-2 font-black">Ngày</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {examResults.slice(0, 5).map((exam, idx) => (
+                          <tr key={idx} className="border-b border-gray-200">
+                            <td className="p-2 font-bold">{exam.level_id?.toUpperCase()}</td>
+                            <td className="p-2">{exam.exam_id}</td>
+                            <td className="p-2 text-center font-bold">{exam.total_score} / 180</td>
+                            <td className="p-2 text-center">
+                              <span className={`px-2 py-1 rounded-lg text-xs font-bold ${
+                                exam.is_passed 
+                                  ? 'bg-green-500 text-white' 
+                                  : 'bg-red-500 text-white'
+                              }`}>
+                                {exam.is_passed ? '✅' : '❌'}
+                              </span>
+                            </td>
+                            <td className="p-2 text-gray-600">
+                              {exam.completed_at ? new Date(exam.completed_at).toLocaleDateString('vi-VN') : 'N/A'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Recent Quiz Attempts */}
+              {supabaseProgress.quizzes.length > 0 && (
+                <div className="mb-4 sm:mb-6">
+                  <h3 className="text-lg sm:text-xl font-black text-gray-900 mb-2 sm:mb-3">🎯 Quiz gần đây</h3>
+                  <div className="space-y-2">
+                    {supabaseProgress.quizzes.slice(0, 5).map((quiz, idx) => {
+                      const percentage = quiz.total > 0 
+                        ? Math.round((quiz.score / quiz.total) * 100) 
+                        : 0;
+                      return (
+                        <div key={idx} className="border-2 border-black rounded-lg p-2 sm:p-3 bg-white">
+                          <div className="flex justify-between items-center">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-xs sm:text-sm truncate">
+                                {quiz.book_id} / {quiz.chapter_id} / {quiz.lesson_id}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                {quiz.completed_at ? new Date(quiz.completed_at).toLocaleDateString('vi-VN') : 'N/A'}
+                              </div>
+                            </div>
+                            <div className="text-right ml-2">
+                              <div className="text-lg sm:text-xl font-black">
+                                {quiz.score} / {quiz.total}
+                              </div>
+                              <div className={`text-xs sm:text-sm font-bold ${
+                                percentage >= 80 ? 'text-green-600' :
+                                percentage >= 60 ? 'text-blue-600' :
+                                'text-red-600'
+                              }`}>
+                                {percentage}%
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Completed Lessons */}
+              {supabaseProgress.lessons.length > 0 ? (
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black text-gray-900 mb-2 sm:mb-3">📚 Lessons đã hoàn thành</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {supabaseProgress.lessons.slice(0, 6).map((lesson, idx) => (
+                      <div key={idx} className="border-2 border-black rounded-lg p-2 sm:p-3 bg-white">
+                        <div className="font-bold text-xs sm:text-sm truncate">
+                          {lesson.book_id} / {lesson.chapter_id} / {lesson.lesson_id}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {lesson.completed_at ? new Date(lesson.completed_at).toLocaleDateString('vi-VN') : 'N/A'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4 sm:py-6">
+                  <div className="text-4xl sm:text-5xl mb-2">📭</div>
+                  <p className="text-sm sm:text-base text-gray-600 font-bold">
+                    Chưa có progress nào. Bắt đầu học để xem tiến độ ở đây!
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Action Banner */}
         {overallStats.totalDue > 0 && (

@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { login as loginUser, register as registerUser } from '../data/users.js';
 import { trackUserActivity } from '../utils/analyticsTracker.js';
 import { getCurrentUser as getSupabaseUser, getUserProfile as getSupabaseUserProfile, signOut as supabaseSignOut } from '../services/authService.js';
+import { fullSync } from '../services/dataSyncService.js';
 
 const AuthContext = createContext(null);
 
@@ -111,6 +112,14 @@ export function AuthProvider({ children }) {
           setUser(mappedUser);
           // Lưu vào authUser để các phần khác sử dụng chung format
           localStorage.setItem('authUser', JSON.stringify(mappedUser));
+
+          // ✅ NEW: Auto sync data khi user đăng nhập với Supabase account
+          if (typeof mappedUser.id === 'string' && mappedUser.id.length > 20) {
+            // UUID format (Supabase user)
+            fullSync(mappedUser.id).catch(err => {
+              console.error('[AUTH] Error syncing data:', err);
+            });
+          }
         }
       } finally {
         if (isMounted) {

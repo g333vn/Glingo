@@ -13,6 +13,7 @@ import storageManager from '../../../utils/localStorageManager.js';
 import { setLessonCompletion, getLessonCompletion, updateStudyStreak } from '../../../utils/lessonProgressTracker.js';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
 import { useAuth } from '../../../contexts/AuthContext.jsx';
+import { saveLearningProgress, getLessonProgress } from '../../../services/learningProgressService.js';
 
 // ✅ Import dictionary components
 import { DictionaryButton, DictionaryPopup, useDictionaryDoubleClick } from '../../../components/api_translate/index.js';
@@ -121,8 +122,21 @@ function LessonPage() {
             setHtmlContent(resolvedHtml);
           }
           
-          // Load lesson completion status using progress tracker
-          const completed = getLessonCompletion(bookId, finalChapterId, finalLessonId);
+          // Load lesson completion status
+          // ✅ NEW: Ưu tiên đọc từ Supabase nếu user đã đăng nhập
+          let completed = false;
+          if (user && typeof user.id === 'string') {
+            const { success, data: progress } = await getLessonProgress(user.id, bookId, finalChapterId, finalLessonId);
+            if (success && progress && progress.status === 'completed') {
+              completed = true;
+            } else {
+              // Fallback to localStorage
+              completed = getLessonCompletion(bookId, finalChapterId, finalLessonId);
+            }
+          } else {
+            // User chưa đăng nhập, đọc từ localStorage
+            completed = getLessonCompletion(bookId, finalChapterId, finalLessonId);
+          }
           setIsLessonCompleted(completed);
         } else {
           // Fallback: create basic lesson info
@@ -243,6 +257,24 @@ function LessonPage() {
     // Update study streak if marking as completed
     if (newStatus) {
       updateStudyStreak(user);
+      
+      // ✅ NEW: Lưu progress vào Supabase nếu user đã đăng nhập
+      if (user && typeof user.id === 'string') {
+        saveLearningProgress({
+          userId: user.id,
+          type: 'lesson_complete',
+          bookId: bookId,
+          chapterId: finalChapterId,
+          lessonId: finalLessonId,
+          status: 'completed',
+          metadata: {
+            levelId: levelId,
+            completedAt: new Date().toISOString()
+          }
+        }).catch(err => {
+          console.error('[LessonPage] Error saving progress to Supabase:', err);
+        });
+      }
     }
   };
   

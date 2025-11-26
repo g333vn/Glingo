@@ -7,6 +7,8 @@ import { getExamById } from '../../../data/jlpt/jlptData.js';
 import { getExamQuestions } from '../../../data/jlpt/examQuestionsData.js';
 import storageManager from '../../../utils/localStorageManager.js';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
+import { useAuth } from '../../../contexts/AuthContext.jsx';
+import { saveLearningProgress } from '../../../services/learningProgressService.js';
 import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
 
 // ✅ Helper: Lock/unlock body scroll
@@ -172,6 +174,7 @@ function ExamKnowledgePage() {
   const { levelId, examId } = useParams();
   const { navigate, WarningModal, clearExamData } = useExamGuard();
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   const [currentExam, setCurrentExam] = useState(null);
   const [examData, setExamData] = useState(null);
@@ -404,6 +407,29 @@ function ExamKnowledgePage() {
     
     localStorage.setItem(`exam-${levelId}-${examId}-knowledge-score`, score);
     localStorage.setItem(`exam-${levelId}-${examId}-knowledge-completed`, 'true');
+    
+    // ✅ NEW: Lưu progress vào Supabase nếu user đã đăng nhập
+    if (user && typeof user.id === 'string') {
+      saveLearningProgress({
+        userId: user.id,
+        type: 'exam_attempt',
+        levelId: levelId,
+        examId: examId,
+        status: 'completed',
+        score: totalCorrect,
+        total: totalQuestions,
+        attempts: 1,
+        metadata: {
+          knowledgeCorrect,
+          knowledgeTotal,
+          readingCorrect,
+          readingTotal,
+          scorePercentage: score
+        }
+      }).catch(err => {
+        console.error('[ExamKnowledge] Error saving progress to Supabase:', err);
+      });
+    }
     
     // ✅ Không cần clearExamData vì đã hoàn thành
     window.location.href = `/jlpt/${levelId}/${examId}`;

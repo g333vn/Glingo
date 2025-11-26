@@ -9,6 +9,8 @@ import { getExamById } from '../../../data/jlpt/jlptData.js';
 import storageManager from '../../../utils/localStorageManager.js';
 import ReactModal from 'react-modal';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
+import { useAuth } from '../../../contexts/AuthContext.jsx';
+import { saveExamResult, getExamResult } from '../../../services/examResultsService.js';
 import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
 
 ReactModal.setAppElement('#root');
@@ -83,6 +85,7 @@ function JLPTExamResultPage() {
   const { levelId, examId } = useParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user } = useAuth();
   
   // ✅ UPDATED: Load exam metadata từ storage trước, fallback về static file
   const [currentExam, setCurrentExam] = useState(null);
@@ -150,43 +153,116 @@ function JLPTExamResultPage() {
   }, [levelId, examId]);
 
   useEffect(() => {
-    const knowledgeBreakdown = JSON.parse(localStorage.getItem(`exam-${levelId}-${examId}-knowledge-breakdown`)) || { knowledge: 0, reading: 0, totals: { knowledge: 0, reading: 0 } };
-    const listeningBreakdown = JSON.parse(localStorage.getItem(`exam-${levelId}-${examId}-listening-breakdown`)) || { listening: 0, total: 0 };
+    const loadExamResults = async () => {
+      let knowledgeBreakdown = { knowledge: 0, reading: 0, totals: { knowledge: 0, reading: 0 } };
+      let listeningBreakdown = { listening: 0, total: 0 };
 
-    const knowledgePoints = knowledgeBreakdown.totals.knowledge > 0
-      ? Math.round((knowledgeBreakdown.knowledge / knowledgeBreakdown.totals.knowledge) * SCORING_CONFIG.knowledge.max)
-      : 0;
-    const readingPoints = knowledgeBreakdown.totals.reading > 0
-      ? Math.round((knowledgeBreakdown.reading / knowledgeBreakdown.totals.reading) * SCORING_CONFIG.reading.max)
-      : 0;
-    const listeningPoints = listeningBreakdown.total > 0
-      ? Math.round((listeningBreakdown.listening / listeningBreakdown.total) * SCORING_CONFIG.listening.max)
-      : 0;
+      // ✅ NEW: Đọc từ Supabase nếu user đã đăng nhập
+      if (user && typeof user.id === 'string') {
+        const { success, data: supabaseResult } = await getExamResult(user.id, levelId, examId);
+        
+        if (success && supabaseResult) {
+          // Có dữ liệu từ Supabase, sử dụng nó
+          console.log('[ExamResult] ✅ Loaded from Supabase:', supabaseResult);
+          
+          knowledgeBreakdown = {
+            knowledge: supabaseResult.knowledge_correct || 0,
+            reading: supabaseResult.reading_correct || 0,
+            totals: {
+              knowledge: supabaseResult.knowledge_total || 0,
+              reading: supabaseResult.reading_total || 0
+            }
+          };
+          
+          listeningBreakdown = {
+            listening: supabaseResult.listening_correct || 0,
+            total: supabaseResult.listening_total || 0
+          };
+        } else {
+          // Không có trong Supabase, đọc từ localStorage
+          knowledgeBreakdown = JSON.parse(localStorage.getItem(`exam-${levelId}-${examId}-knowledge-breakdown`)) || knowledgeBreakdown;
+          listeningBreakdown = JSON.parse(localStorage.getItem(`exam-${levelId}-${examId}-listening-breakdown`)) || listeningBreakdown;
+        }
+      } else {
+        // User chưa đăng nhập, đọc từ localStorage
+        knowledgeBreakdown = JSON.parse(localStorage.getItem(`exam-${levelId}-${examId}-knowledge-breakdown`)) || knowledgeBreakdown;
+        listeningBreakdown = JSON.parse(localStorage.getItem(`exam-${levelId}-${examId}-listening-breakdown`)) || listeningBreakdown;
+      }
 
-    const totalScore = knowledgePoints + readingPoints + listeningPoints;
-    setScores({ knowledge: knowledgePoints, reading: readingPoints, listening: listeningPoints, total: totalScore });
+      const knowledgePoints = knowledgeBreakdown.totals.knowledge > 0
+        ? Math.round((knowledgeBreakdown.knowledge / knowledgeBreakdown.totals.knowledge) * SCORING_CONFIG.knowledge.max)
+        : 0;
+      const readingPoints = knowledgeBreakdown.totals.reading > 0
+        ? Math.round((knowledgeBreakdown.reading / knowledgeBreakdown.totals.reading) * SCORING_CONFIG.reading.max)
+        : 0;
+      const listeningPoints = listeningBreakdown.total > 0
+        ? Math.round((listeningBreakdown.listening / listeningBreakdown.total) * SCORING_CONFIG.listening.max)
+        : 0;
 
-    // ✅ Set breakdown for display
-    setBreakdown({
-      knowledgeCorrect: knowledgeBreakdown.knowledge,
-      knowledgeTotal: knowledgeBreakdown.totals.knowledge,
-      readingCorrect: knowledgeBreakdown.reading,
-      readingTotal: knowledgeBreakdown.totals.reading,
-      listeningCorrect: listeningBreakdown.listening,
-      listeningTotal: listeningBreakdown.total
-    });
+      const totalScore = knowledgePoints + readingPoints + listeningPoints;
+      setScores({ knowledge: knowledgePoints, reading: readingPoints, listening: listeningPoints, total: totalScore });
 
-    // Show confetti if pass
-    const passed = totalScore >= SCORING_CONFIG.total.minPass &&
-      knowledgePoints >= SCORING_CONFIG.knowledge.minPass &&
-      readingPoints >= SCORING_CONFIG.reading.minPass &&
-      listeningPoints >= SCORING_CONFIG.listening.minPass;
-    
-    if (passed) {
-      setTimeout(() => setShowConfetti(true), 500);
-      setTimeout(() => setShowConfetti(false), 5000);
-    }
-  }, [levelId, examId]);
+      // ✅ Set breakdown for display
+      setBreakdown({
+        knowledgeCorrect: knowledgeBreakdown.knowledge,
+        knowledgeTotal: knowledgeBreakdown.totals.knowledge,
+        readingCorrect: knowledgeBreakdown.reading,
+        readingTotal: knowledgeBreakdown.totals.reading,
+        listeningCorrect: listeningBreakdown.listening,
+        listeningTotal: listeningBreakdown.total
+      });
+
+      // ✅ NEW: Lưu exam result tổng hợp vào Supabase nếu user đã đăng nhập và có đủ dữ liệu
+      if (user && typeof user.id === 'string' && 
+          knowledgeBreakdown.totals.knowledge > 0 && 
+          listeningBreakdown.total > 0) {
+        
+        const isPassed = totalScore >= SCORING_CONFIG.total.minPass &&
+          knowledgePoints >= SCORING_CONFIG.knowledge.minPass &&
+          readingPoints >= SCORING_CONFIG.reading.minPass &&
+          listeningPoints >= SCORING_CONFIG.listening.minPass;
+
+        // Kiểm tra xem đã lưu chưa (tránh duplicate)
+        const { success: hasExisting, data: existingResult } = await getExamResult(user.id, levelId, examId);
+        
+        if (!hasExisting || !existingResult) {
+          // Chưa có, lưu mới
+          saveExamResult({
+            userId: user.id,
+            levelId: levelId,
+            examId: examId,
+            knowledgeScore: knowledgePoints,
+            readingScore: readingPoints,
+            listeningScore: listeningPoints,
+            totalScore: totalScore,
+            knowledgeCorrect: knowledgeBreakdown.knowledge,
+            knowledgeTotal: knowledgeBreakdown.totals.knowledge,
+            readingCorrect: knowledgeBreakdown.reading,
+            readingTotal: knowledgeBreakdown.totals.reading,
+            listeningCorrect: listeningBreakdown.listening,
+            listeningTotal: listeningBreakdown.total,
+            isPassed: isPassed,
+            timeSpent: null // TODO: Lưu thời gian làm bài nếu có
+          }).catch(err => {
+            console.error('[ExamResult] Error saving exam result to Supabase:', err);
+          });
+        }
+      }
+
+      // Show confetti if pass
+      const passed = totalScore >= SCORING_CONFIG.total.minPass &&
+        knowledgePoints >= SCORING_CONFIG.knowledge.minPass &&
+        readingPoints >= SCORING_CONFIG.reading.minPass &&
+        listeningPoints >= SCORING_CONFIG.listening.minPass;
+      
+      if (passed) {
+        setTimeout(() => setShowConfetti(true), 500);
+        setTimeout(() => setShowConfetti(false), 5000);
+      }
+    };
+
+    loadExamResults();
+  }, [levelId, examId, user]);
 
   const isPass = scores.total >= SCORING_CONFIG.total.minPass &&
     scores.knowledge >= SCORING_CONFIG.knowledge.minPass &&

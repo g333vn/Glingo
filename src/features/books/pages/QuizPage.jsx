@@ -21,6 +21,8 @@ import { loadQuizData } from '../../../data/level/n1/shinkanzen-n1-bunpou/quizze
 
 // ✅ NEW: Import progress tracker
 import { addLessonQuizScore, getLessonQuizScores } from '../../../utils/lessonProgressTracker.js';
+import { useAuth } from '../../../contexts/AuthContext.jsx';
+import { saveLearningProgress } from '../../../services/learningProgressService.js';
 
 // ✅ NEW: Import dictionary components
 import { DictionaryButton, DictionaryPopup, useDictionaryDoubleClick } from '../../../components/api_translate/index.js';
@@ -31,6 +33,7 @@ function QuizPage() {
   const { levelId, bookId, chapterId, lessonId } = useParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user } = useAuth();
   
   // Backward compatibility: nếu không có chapterId, dùng lessonId làm chapterId
   const finalChapterId = chapterId || lessonId;
@@ -269,6 +272,28 @@ function QuizPage() {
       // Quiz completed - save score
       setIsQuizComplete(true);
       addLessonQuizScore(bookId, finalChapterId, finalLessonId, score.correct, score.total);
+      
+      // ✅ NEW: Lưu progress vào Supabase nếu user đã đăng nhập
+      if (user && typeof user.id === 'string') {
+        const percentage = Math.round((score.correct / score.total) * 100);
+        saveLearningProgress({
+          userId: user.id,
+          type: 'quiz_attempt',
+          bookId: bookId,
+          chapterId: finalChapterId,
+          lessonId: finalLessonId,
+          status: 'completed',
+          score: score.correct,
+          total: score.total,
+          attempts: 1,
+          metadata: {
+            percentage: percentage,
+            levelId: levelId
+          }
+        }).catch(err => {
+          console.error('[QuizPage] Error saving progress to Supabase:', err);
+        });
+      }
     }
   };
 
