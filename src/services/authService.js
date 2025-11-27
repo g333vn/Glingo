@@ -65,15 +65,16 @@ export async function getCurrentUser() {
   }
 
   try {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error) {
-      return { success: false, error, user: null };
+    // ✅ Use getSession() instead of getUser() for faster check
+    // getSession() checks local storage first, getUser() makes API call
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      return { success: false, error: sessionError || new Error('No session'), user: null };
     }
 
+    // ✅ If session exists, get user from session (faster than getUser())
+    const user = session.user;
     return { success: true, user };
   } catch (err) {
     // Lỗi khi gọi Supabase → return false

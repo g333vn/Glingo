@@ -139,20 +139,33 @@ export function AuthProvider({ children }) {
         // Vì Supabase session là source of truth cho Supabase users
         let supabaseUser = null;
         let supabaseSuccess = false;
+        let supabaseError = null;
         
         // Kiểm tra xem Supabase có được config không
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
         
         if (supabaseUrl && supabaseAnonKey) {
-          // Supabase được config → thử lấy user
+          // Supabase được config → thử lấy user với timeout
           try {
-            const result = await getSupabaseUser();
+            // ✅ Add timeout để tránh stuck (3 giây)
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Supabase getUser timeout')), 3000)
+            );
+            
+            const result = await Promise.race([
+              getSupabaseUser(),
+              timeoutPromise
+            ]);
+            
             supabaseSuccess = result.success;
             supabaseUser = result.user;
-          } catch (supabaseError) {
-            // Supabase không available hoặc lỗi → bỏ qua, fallback về localStorage
-            console.log('[AUTH] Supabase error, falling back to localStorage:', supabaseError.message);
+            supabaseError = result.error;
+          } catch (err) {
+            // Supabase không available hoặc timeout → bỏ qua, fallback về localStorage
+            supabaseError = err;
+            console.log('[AUTH] Supabase error/timeout, falling back to localStorage:', err.message);
+            // ✅ Không set supabaseSuccess = false ở đây vì có thể session vẫn còn
           }
         } else {
           // Supabase chưa được config → bỏ qua, dùng localStorage
@@ -232,42 +245,58 @@ export function AuthProvider({ children }) {
           try {
             const parsedUser = JSON.parse(savedUser);
             
-            // ✅ CRITICAL: Nếu là Supabase user (UUID) nhưng không có session → logout
-            // CHỈ logout nếu Supabase được config (để tránh logout khi Supabase chưa setup)
+            // ✅ CRITICAL: Nếu là Supabase user (UUID) nhưng không có session
             if (typeof parsedUser.id === 'string' && parsedUser.id.length > 20) {
               // Kiểm tra xem Supabase có được config không
-              try {
-                const supabaseClient = await import('../services/supabaseClient.js').then(m => m.supabase).catch(() => null);
-                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-                const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-                
-                // Nếu Supabase được config nhưng không có session → logout
-                if (supabaseUrl && supabaseKey && supabaseClient) {
-                  console.warn('[AUTH] Supabase user found in localStorage but no active session, logging out...');
-                  try {
-                    localStorage.removeItem('authUser');
-                  } catch (storageError) {
-                    // localStorage không available → bỏ qua
+              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+              const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+              
+              if (supabaseUrl && supabaseKey) {
+                // Supabase được config
+                // ✅ CHỈ logout nếu error rõ ràng là session expired
+                // Nếu timeout hoặc network error → giữ user và để auth state listener xử lý
+                if (supabaseError && !supabaseSuccess) {
+                  const errorMsg = (supabaseError.message || '').toLowerCase();
+                  // Chỉ logout nếu error rõ ràng về session/token expired (không phải timeout)
+                  if (!errorMsg.includes('timeout') && 
+                      (errorMsg.includes('session') || errorMsg.includes('token') || 
+                       errorMsg.includes('expired') || errorMsg.includes('invalid'))) {
+                    console.warn('[AUTH] Supabase session expired, logging out...');
+                    try {
+                      localStorage.removeItem('authUser');
+                    } catch (storageError) {
+                      // localStorage không available → bỏ qua
+                    }
+                    if (isMounted) {
+                      setUser(null);
+                      setIsLoading(false);
+                    }
+                    return;
                   }
-                  if (isMounted) {
-                    setUser(null);
-                    setIsLoading(false);
-                  }
-                  return;
+                  // Nếu là timeout hoặc network error → giữ user (có thể session vẫn còn)
+                  // Auth state listener sẽ xử lý sau
+                  console.log('[AUTH] Supabase user in localStorage, keeping (timeout/network error, will let auth listener handle)');
                 } else {
-                  // Supabase chưa được config → giữ user trong localStorage (fallback)
-                  console.log('[AUTH] Supabase not configured, keeping Supabase user in localStorage as fallback');
+                  // Không có error hoặc đã có session → giữ user
+                  console.log('[AUTH] Supabase user in localStorage, keeping (no error or session exists)');
                 }
-              } catch (checkError) {
-                // Lỗi khi check Supabase config → giữ user (fallback)
-                console.log('[AUTH] Error checking Supabase config, keeping user:', checkError.message);
+              } else {
+                // Supabase chưa được config → giữ user trong localStorage (fallback)
+                console.log('[AUTH] Supabase not configured, keeping Supabase user in localStorage as fallback');
               }
             }
             
-            // ✅ Local user (numeric ID) → load từ localStorage
-            console.log('[AUTH] Local user loaded from authUser:', { id: parsedUser.id, username: parsedUser.username, role: parsedUser.role });
+            // ✅ Load user từ localStorage (có thể là Supabase user hoặc local user)
+            console.log('[AUTH] User loaded from authUser:', { id: parsedUser.id, username: parsedUser.username, role: parsedUser.role });
             
-            const syncedUser = syncUserFromAdminUsers(parsedUser);
+            // ✅ Nếu là Supabase user, không sync từ adminUsers (vì Supabase là source of truth)
+            // Chỉ sync nếu là local user
+            let syncedUser = parsedUser;
+            if (typeof parsedUser.id !== 'string' || parsedUser.id.length <= 20) {
+              // Local user (numeric ID) → sync từ adminUsers
+              syncedUser = syncUserFromAdminUsers(parsedUser);
+            }
+            
             if (isMounted) {
               setUser(syncedUser);
               setIsLoading(false);
@@ -290,8 +319,14 @@ export function AuthProvider({ children }) {
         }
       } catch (error) {
         console.error('[AUTH] Error in loadInitialUser:', error);
+        // ✅ CRITICAL: Luôn set isLoading = false để tránh stuck
         if (isMounted) {
           setUser(null);
+          setIsLoading(false);
+        }
+      } finally {
+        // ✅ CRITICAL: Đảm bảo isLoading luôn được set về false
+        if (isMounted) {
           setIsLoading(false);
         }
       }
