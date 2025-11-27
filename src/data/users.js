@@ -739,3 +739,134 @@ export function register(userData) {
   }
 }
 
+/**
+ * ========================================
+ * SUPABASE USER SYNC FUNCTIONS
+ * ========================================
+ * Đồng bộ users từ Supabase vào localStorage
+ */
+
+/**
+ * Thêm hoặc cập nhật một Supabase user vào localStorage
+ * @param {Object} supabaseUser - User từ Supabase auth
+ * @param {Object} profile - Profile từ bảng profiles (optional)
+ * @returns {Promise<Object>} { success: boolean, user: Object }
+ */
+export function syncSupabaseUserToLocal(supabaseUser, profile = null) {
+  return Promise.resolve().then(() => {
+    try {
+      if (!supabaseUser || !supabaseUser.id || !supabaseUser.email) {
+        console.error('[SYNC_SUPABASE] Invalid Supabase user:', supabaseUser);
+        return { success: false, error: 'Invalid Supabase user data' };
+      }
+
+      const savedUsers = localStorage.getItem('adminUsers');
+      let usersList = savedUsers ? JSON.parse(savedUsers) : [];
+
+      // Kiểm tra xem user đã tồn tại chưa (theo email hoặc UUID)
+      const existingIndex = usersList.findIndex(
+        u => u.email === supabaseUser.email || 
+             (typeof u.id === 'string' && u.id === supabaseUser.id) ||
+             (u.supabaseId === supabaseUser.id)
+      );
+
+      // Tạo user object từ Supabase data
+      const userData = {
+        id: existingIndex >= 0 ? usersList[existingIndex].id : `supabase_${supabaseUser.id.substring(0, 8)}`, // Dùng ID hiện có hoặc tạo mới
+        supabaseId: supabaseUser.id, // Lưu Supabase ID để reference
+        username: supabaseUser.email.split('@')[0], // Dùng phần trước @ làm username
+        email: supabaseUser.email,
+        name: profile?.display_name || supabaseUser.user_metadata?.display_name || supabaseUser.email.split('@')[0],
+        role: profile?.role || 'user',
+        isSupabaseUser: true, // Flag để đánh dấu đây là Supabase user
+        createdAt: supabaseUser.created_at,
+        // Không lưu password vì Supabase quản lý
+      };
+
+      if (existingIndex >= 0) {
+        // Cập nhật user hiện có
+        usersList[existingIndex] = { ...usersList[existingIndex], ...userData };
+        console.log('[SYNC_SUPABASE] Updated existing user:', userData.email);
+      } else {
+        // Thêm user mới
+        usersList.push(userData);
+        console.log('[SYNC_SUPABASE] Added new Supabase user:', userData.email);
+      }
+
+      localStorage.setItem('adminUsers', JSON.stringify(usersList));
+      
+      // Dispatch event để notify các component khác
+      window.dispatchEvent(new CustomEvent('adminUsersUpdated'));
+
+      return { success: true, user: userData };
+    } catch (error) {
+      console.error('[SYNC_SUPABASE] Error syncing user:', error);
+      return { success: false, error: error.message };
+    }
+  });
+}
+
+/**
+ * Đồng bộ tất cả users từ Supabase vào localStorage
+ * Lưu ý: Có thể không lấy được tất cả users nếu RLS chỉ cho phép user xem profile của chính họ
+ * @returns {Object} { success: boolean, synced: number, errors: Array }
+ */
+export async function syncAllSupabaseUsers() {
+  try {
+    // Dynamic import để tránh circular dependency
+    const authService = await import('../services/authService.js');
+    const { getAllProfiles, getCurrentUser, getUserProfile } = authService;
+
+    const result = { success: false, synced: 0, errors: [] };
+
+    // Thử lấy tất cả profiles
+    const { success: profilesOk, profiles } = await getAllProfiles();
+    
+    if (profilesOk && profiles && profiles.length > 0) {
+      // Có thể lấy được profiles → nhưng không có email trong profiles
+      // Chỉ sync user hiện tại (có email từ auth)
+      console.log('[SYNC_SUPABASE] Found', profiles.length, 'profiles, but can only sync current user (email required)');
+      
+      // Lấy user hiện tại để có email
+      const { success: userOk, user: currentUser } = await getCurrentUser();
+      
+      if (userOk && currentUser) {
+        // Tìm profile của user hiện tại
+        const currentProfile = profiles.find(p => p.user_id === currentUser.id);
+        const syncResult = await syncSupabaseUserToLocal(currentUser, currentProfile || null);
+        if (syncResult.success) {
+          result.synced = 1;
+        } else {
+          result.errors.push({ userId: currentUser.id, error: syncResult.error });
+        }
+      } else {
+        result.errors.push({ error: 'No user logged in to sync' });
+      }
+    } else {
+      // Không thể lấy tất cả profiles (RLS restriction)
+      // Chỉ sync user hiện tại
+      console.log('[SYNC_SUPABASE] Cannot fetch all profiles, syncing current user only');
+      const { success: userOk, user: currentUser } = await getCurrentUser();
+      
+      if (userOk && currentUser) {
+        const { success: profileOk, profile } = await getUserProfile(currentUser.id);
+        
+        const syncResult = syncSupabaseUserToLocal(currentUser, profile || null);
+        if (syncResult.success) {
+          result.synced = 1;
+        } else {
+          result.errors.push({ userId: currentUser.id, error: syncResult.error });
+        }
+      } else {
+        result.errors.push({ error: 'No user logged in' });
+      }
+    }
+
+    result.success = result.synced > 0;
+    return result;
+  } catch (error) {
+    console.error('[SYNC_SUPABASE] Error in syncAllSupabaseUsers:', error);
+    return { success: false, synced: 0, errors: [{ error: error.message }] };
+  }
+}
+

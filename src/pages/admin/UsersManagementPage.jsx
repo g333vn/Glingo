@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';
-import { users as initialUsers, roles, saveUserPassword, getUsers as getUsersFromData, addToDeletedUsers, clearDeletedUsers } from '../../data/users.js';
+import { users as initialUsers, roles, saveUserPassword, getUsers as getUsersFromData, addToDeletedUsers, clearDeletedUsers, syncAllSupabaseUsers, syncSupabaseUserToLocal } from '../../data/users.js';
 import { isValidEmail, getEmailErrorMessage } from '../../utils/emailValidator.js';
 import { resetToFactoryDefaults } from '../../utils/seedManager.js';
 
@@ -56,6 +56,9 @@ function UsersManagementPage() {
   const [viewingUser, setViewingUser] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // ✅ NEW: State for Supabase sync
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Load users from localStorage (nếu có) hoặc dùng initialUsers
   useEffect(() => {
@@ -434,6 +437,30 @@ function UsersManagementPage() {
     setShowChangePasswordModal(true);
   };
 
+  // ✅ NEW: Sync users from Supabase
+  const handleSyncFromSupabase = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await syncAllSupabaseUsers();
+      if (result.success) {
+        // Reload users after sync
+        const allUsers = getUsersFromData();
+        setUsers(allUsers);
+        alert(`✅ Đã đồng bộ ${result.synced} user(s) từ Supabase!`);
+      } else {
+        const errorMsg = result.errors.length > 0 
+          ? result.errors.map(e => e.error || e.userId).join(', ')
+          : 'Không thể đồng bộ users từ Supabase';
+        alert(`⚠️ ${errorMsg}\n\nLưu ý: Có thể do RLS (Row Level Security) chỉ cho phép xem profile của chính bạn.`);
+      }
+    } catch (error) {
+      console.error('[SYNC] Error:', error);
+      alert(`❌ Lỗi khi đồng bộ: ${error.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   // Submit password change
   const handleSubmitPasswordChange = (e) => {
     e.preventDefault();
@@ -566,6 +593,24 @@ function UsersManagementPage() {
               <span>🗑️</span>
               <span className="hidden md:inline">{t('userManagement.clearBlacklist')}</span>
             </button>
+          </div>
+        </div>
+
+        {/* Info Note about Supabase Users */}
+        <div className="mb-4 sm:mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <span className="text-2xl">ℹ️</span>
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-sm font-bold text-blue-800 mb-2">Về Supabase Users</h3>
+              <ul className="text-xs sm:text-sm text-blue-700 space-y-1 list-disc list-inside">
+                <li>Users tạo ở Supabase sẽ tự động được đồng bộ vào đây khi họ đăng nhập lần đầu</li>
+                <li>Nút "Sync từ Supabase" sẽ đồng bộ user hiện đang đăng nhập</li>
+                <li>Supabase users được đánh dấu với flag <code className="bg-blue-100 px-1 rounded">isSupabaseUser: true</code></li>
+                <li>Password của Supabase users được quản lý bởi Supabase, không lưu trong localStorage</li>
+              </ul>
+            </div>
           </div>
         </div>
 
@@ -718,13 +763,23 @@ function UsersManagementPage() {
             {t('userManagement.userList')} ({users.length})
           </h2>
           {!showAddForm && (
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-2 text-sm sm:text-base"
-            >
-              <span>➕</span>
-              <span>{t('userManagement.addUser')}</span>
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <button
+                onClick={handleSyncFromSupabase}
+                disabled={isSyncing}
+                className="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold flex items-center justify-center gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span>{isSyncing ? '⏳' : '🔄'}</span>
+                <span>{isSyncing ? 'Đang đồng bộ...' : 'Sync từ Supabase'}</span>
+              </button>
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-2 text-sm sm:text-base"
+              >
+                <span>➕</span>
+                <span>{t('userManagement.addUser')}</span>
+              </button>
+            </div>
           )}
         </div>
 

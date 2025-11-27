@@ -54,6 +54,19 @@ function LoginPage() {
           // Cập nhật AuthContext để toàn app nhận diện user này
           updateUser(supabaseUserForApp);
 
+          // ✅ NEW: Auto sync Supabase user vào localStorage adminUsers
+          import('../data/users.js').then(({ syncSupabaseUserToLocal }) => {
+            syncSupabaseUserToLocal(data.user, profile || null).then(result => {
+              if (result.success) {
+                console.log('[LOGIN] Auto-synced Supabase user to localStorage:', result.user.email);
+              } else {
+                console.warn('[LOGIN] Failed to auto-sync user:', result.error);
+              }
+            });
+          }).catch(err => {
+            console.error('[LOGIN] Error importing sync function:', err);
+          });
+
           // ✅ NEW: Auto sync data khi đăng nhập thành công
           fullSync(userId).then(result => {
             if (result.success) {

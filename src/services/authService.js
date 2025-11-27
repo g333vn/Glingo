@@ -111,6 +111,28 @@ export async function getUserProfile(userId) {
   return { success: true, profile: data };
 }
 
+/**
+ * Lấy tất cả profiles từ Supabase (nếu RLS cho phép)
+ * Note: Có thể không hoạt động nếu RLS chỉ cho phép user xem profile của chính họ
+ */
+export async function getAllProfiles() {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*');
+
+  if (error) {
+    console.warn('[Supabase] Cannot fetch all profiles (RLS restriction?):', error.message);
+    return { success: false, error, profiles: [] };
+  }
+
+  return { success: true, profiles: data || [] };
+  } catch (err) {
+    console.error('[Supabase] Error fetching profiles:', err);
+    return { success: false, error: err, profiles: [] };
+  }
+}
+
 
 
 

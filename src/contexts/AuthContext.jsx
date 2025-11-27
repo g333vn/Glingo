@@ -66,33 +66,67 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // ✅ Listen for Supabase auth state changes
+  useEffect(() => {
+    let subscription = null;
+
+    // Dynamic import để tránh circular dependency
+    import('../services/supabaseClient.js').then(({ supabase }) => {
+      if (!supabase) return;
+
+      const authStateChange = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('[AUTH][Supabase] Auth state changed:', event, session?.user?.email || 'no user');
+
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // User đăng nhập hoặc token được refresh
+          if (session?.user) {
+            const { getUserProfile: getSupabaseUserProfile } = await import('../services/authService.js');
+            const { success: profileOk, profile } = await getSupabaseUserProfile(session.user.id);
+
+            const mappedUser = {
+              id: session.user.id,
+              username: session.user.email,
+              name: profile?.display_name || session.user.email,
+              email: session.user.email,
+              role: profile?.role || 'user',
+            };
+
+            setUser(mappedUser);
+            localStorage.setItem('authUser', JSON.stringify(mappedUser));
+            console.log('[AUTH][Supabase] User updated from auth state change');
+          }
+        } else if (event === 'SIGNED_OUT') {
+          // User đăng xuất
+          setUser(null);
+          localStorage.removeItem('authUser');
+          console.log('[AUTH][Supabase] User signed out');
+        }
+      });
+
+      subscription = authStateChange.data.subscription;
+    }).catch(err => {
+      console.error('[AUTH] Error setting up Supabase auth listener:', err);
+    });
+
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, []);
+
   // ✅ Load user on mount (chỉ 1 lần)
   useEffect(() => {
     let isMounted = true;
 
     async function loadInitialUser() {
       try {
-        // 1) Ưu tiên user từ localStorage (auth cũ)
-        const savedUser = localStorage.getItem('authUser');
-        if (savedUser) {
-          try {
-            const parsedUser = JSON.parse(savedUser);
-            console.log('[AUTH] User loaded from authUser:', { id: parsedUser.id, username: parsedUser.username, role: parsedUser.role });
-            
-            const syncedUser = syncUserFromAdminUsers(parsedUser);
-            if (isMounted) {
-              setUser(syncedUser);
-            }
-            return;
-          } catch (error) {
-            console.error('[AUTH] Error loading user from authUser:', error);
-            localStorage.removeItem('authUser');
-          }
-        }
-
-        // 2) Nếu không có authUser → thử khôi phục session từ Supabase
+        // ✅ CRITICAL: Luôn check Supabase session trước (nếu có)
+        // Vì Supabase session là source of truth cho Supabase users
         const { success, user: supabaseUser } = await getSupabaseUser();
+        
         if (success && supabaseUser && isMounted) {
+          // Có Supabase session → đây là Supabase user
           console.log('[AUTH][Supabase] Session found on mount:', {
             id: supabaseUser.id,
             email: supabaseUser.email,
@@ -113,6 +147,22 @@ export function AuthProvider({ children }) {
           // Lưu vào authUser để các phần khác sử dụng chung format
           localStorage.setItem('authUser', JSON.stringify(mappedUser));
 
+          // ✅ NEW: Auto sync Supabase user vào localStorage adminUsers
+          if (typeof supabaseUser.id === 'string' && supabaseUser.id.length > 20) {
+            // UUID format (Supabase user) - auto sync vào adminUsers
+            import('../data/users.js').then(({ syncSupabaseUserToLocal }) => {
+              syncSupabaseUserToLocal(supabaseUser, profile || null).then(result => {
+                if (result.success) {
+                  console.log('[AUTH] Auto-synced Supabase user to localStorage:', result.user.email);
+                } else {
+                  console.warn('[AUTH] Failed to auto-sync user:', result.error);
+                }
+              });
+            }).catch(err => {
+              console.error('[AUTH] Error importing sync function:', err);
+            });
+          }
+
           // ✅ NEW: Auto sync data khi user đăng nhập với Supabase account
           if (typeof mappedUser.id === 'string' && mappedUser.id.length > 20) {
             // UUID format (Supabase user)
@@ -120,9 +170,55 @@ export function AuthProvider({ children }) {
               console.error('[AUTH] Error syncing data:', err);
             });
           }
+          
+          // ✅ CRITICAL: Set isLoading = false và return ngay
+          if (isMounted) {
+            setIsLoading(false);
+          }
+          return;
         }
-      } finally {
+
+        // ✅ Nếu không có Supabase session → check localStorage (cho local users)
+        const savedUser = localStorage.getItem('authUser');
+        if (savedUser) {
+          try {
+            const parsedUser = JSON.parse(savedUser);
+            
+            // ✅ CRITICAL: Nếu là Supabase user (UUID) nhưng không có session → logout
+            if (typeof parsedUser.id === 'string' && parsedUser.id.length > 20) {
+              console.warn('[AUTH] Supabase user found in localStorage but no active session, logging out...');
+              localStorage.removeItem('authUser');
+              if (isMounted) {
+                setUser(null);
+                setIsLoading(false);
+              }
+              return;
+            }
+            
+            // ✅ Local user (numeric ID) → load từ localStorage
+            console.log('[AUTH] Local user loaded from authUser:', { id: parsedUser.id, username: parsedUser.username, role: parsedUser.role });
+            
+            const syncedUser = syncUserFromAdminUsers(parsedUser);
+            if (isMounted) {
+              setUser(syncedUser);
+              setIsLoading(false);
+            }
+            return;
+          } catch (error) {
+            console.error('[AUTH] Error loading user from authUser:', error);
+            localStorage.removeItem('authUser');
+          }
+        }
+
+        // ✅ Không có user nào → logout state
         if (isMounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('[AUTH] Error in loadInitialUser:', error);
+        if (isMounted) {
+          setUser(null);
           setIsLoading(false);
         }
       }
