@@ -67,7 +67,35 @@ export async function getCurrentUser() {
   try {
     // ✅ Use getSession() instead of getUser() for faster check
     // getSession() checks local storage first, getUser() makes API call
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // ✅ Add retry logic for production (session may take time to restore)
+    let session = null;
+    let sessionError = null;
+    const maxRetries = 3;
+    const retryDelay = 500; // 500ms
+    
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const result = await supabase.auth.getSession();
+        session = result.data?.session;
+        sessionError = result.error;
+        
+        if (session) {
+          // Session found → return immediately
+          break;
+        }
+        
+        // If no session and not last retry, wait a bit
+        if (i < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
+      } catch (err) {
+        sessionError = err;
+        // If error and not last retry, wait and retry
+        if (i < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
+      }
+    }
     
     if (sessionError || !session) {
       return { success: false, error: sessionError || new Error('No session'), user: null };

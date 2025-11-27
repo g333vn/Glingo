@@ -148,9 +148,9 @@ export function AuthProvider({ children }) {
         if (supabaseUrl && supabaseAnonKey) {
           // Supabase được config → thử lấy user với timeout
           try {
-            // ✅ Add timeout để tránh stuck (3 giây)
+            // ✅ Add timeout để tránh stuck (5 giây cho production - có thể chậm hơn)
             const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Supabase getUser timeout')), 3000)
+              setTimeout(() => reject(new Error('Supabase getUser timeout')), 5000)
             );
             
             const result = await Promise.race([
@@ -253,12 +253,14 @@ export function AuthProvider({ children }) {
               
               if (supabaseUrl && supabaseKey) {
                 // Supabase được config
-                // ✅ CHỈ logout nếu error rõ ràng là session expired
-                // Nếu timeout hoặc network error → giữ user và để auth state listener xử lý
+                // ✅ CRITICAL: Trên production, session có thể chưa được restore ngay
+                // → Luôn giữ user trong localStorage và để auth state listener xử lý
+                // Chỉ logout nếu error rõ ràng là session expired (sau khi đã retry)
                 if (supabaseError && !supabaseSuccess) {
                   const errorMsg = (supabaseError.message || '').toLowerCase();
-                  // Chỉ logout nếu error rõ ràng về session/token expired (không phải timeout)
+                  // Chỉ logout nếu error rõ ràng về session/token expired (không phải timeout hoặc "no session")
                   if (!errorMsg.includes('timeout') && 
+                      !errorMsg.includes('no session') &&
                       (errorMsg.includes('session') || errorMsg.includes('token') || 
                        errorMsg.includes('expired') || errorMsg.includes('invalid'))) {
                     console.warn('[AUTH] Supabase session expired, logging out...');
@@ -273,9 +275,9 @@ export function AuthProvider({ children }) {
                     }
                     return;
                   }
-                  // Nếu là timeout hoặc network error → giữ user (có thể session vẫn còn)
-                  // Auth state listener sẽ xử lý sau
-                  console.log('[AUTH] Supabase user in localStorage, keeping (timeout/network error, will let auth listener handle)');
+                  // Nếu là timeout, "no session", hoặc network error → giữ user
+                  // Auth state listener sẽ xử lý sau (có thể session vẫn còn và đang được restore)
+                  console.log('[AUTH] Supabase user in localStorage, keeping (timeout/no session/network error, will let auth listener handle)');
                 } else {
                   // Không có error hoặc đã có session → giữ user
                   console.log('[AUTH] Supabase user in localStorage, keeping (no error or session exists)');
