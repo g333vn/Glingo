@@ -121,11 +121,31 @@ export function AuthProvider({ children }) {
 
     async function loadInitialUser() {
       try {
-        // ✅ CRITICAL: Luôn check Supabase session trước (nếu có)
+        // ✅ CRITICAL: Check Supabase session trước (nếu Supabase được config)
         // Vì Supabase session là source of truth cho Supabase users
-        const { success, user: supabaseUser } = await getSupabaseUser();
+        let supabaseUser = null;
+        let supabaseSuccess = false;
         
-        if (success && supabaseUser && isMounted) {
+        // Kiểm tra xem Supabase có được config không
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        if (supabaseUrl && supabaseAnonKey) {
+          // Supabase được config → thử lấy user
+          try {
+            const result = await getSupabaseUser();
+            supabaseSuccess = result.success;
+            supabaseUser = result.user;
+          } catch (supabaseError) {
+            // Supabase không available hoặc lỗi → bỏ qua, fallback về localStorage
+            console.log('[AUTH] Supabase error, falling back to localStorage:', supabaseError.message);
+          }
+        } else {
+          // Supabase chưa được config → bỏ qua, dùng localStorage
+          console.log('[AUTH] Supabase not configured, using localStorage only');
+        }
+        
+        if (supabaseSuccess && supabaseUser && isMounted) {
           // Có Supabase session → đây là Supabase user
           console.log('[AUTH][Supabase] Session found on mount:', {
             id: supabaseUser.id,
@@ -185,14 +205,31 @@ export function AuthProvider({ children }) {
             const parsedUser = JSON.parse(savedUser);
             
             // ✅ CRITICAL: Nếu là Supabase user (UUID) nhưng không có session → logout
+            // CHỈ logout nếu Supabase được config (để tránh logout khi Supabase chưa setup)
             if (typeof parsedUser.id === 'string' && parsedUser.id.length > 20) {
-              console.warn('[AUTH] Supabase user found in localStorage but no active session, logging out...');
-              localStorage.removeItem('authUser');
-              if (isMounted) {
-                setUser(null);
-                setIsLoading(false);
+              // Kiểm tra xem Supabase có được config không
+              try {
+                const supabaseClient = await import('../services/supabaseClient.js').then(m => m.supabase).catch(() => null);
+                const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+                
+                // Nếu Supabase được config nhưng không có session → logout
+                if (supabaseUrl && supabaseKey && supabaseClient) {
+                  console.warn('[AUTH] Supabase user found in localStorage but no active session, logging out...');
+                  localStorage.removeItem('authUser');
+                  if (isMounted) {
+                    setUser(null);
+                    setIsLoading(false);
+                  }
+                  return;
+                } else {
+                  // Supabase chưa được config → giữ user trong localStorage (fallback)
+                  console.log('[AUTH] Supabase not configured, keeping Supabase user in localStorage as fallback');
+                }
+              } catch (checkError) {
+                // Lỗi khi check Supabase config → giữ user (fallback)
+                console.log('[AUTH] Error checking Supabase config, keeping user:', checkError.message);
               }
-              return;
             }
             
             // ✅ Local user (numeric ID) → load từ localStorage

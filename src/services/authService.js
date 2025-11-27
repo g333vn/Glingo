@@ -55,16 +55,31 @@ export async function signOut() {
  * Lấy thông tin user hiện tại (nếu đã đăng nhập)
  */
 export async function getCurrentUser() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error) {
-    return { success: false, error, user: null };
+  // ✅ Kiểm tra xem Supabase có được config không
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // Supabase chưa được config → return false
+    return { success: false, error: new Error('Supabase not configured'), user: null };
   }
 
-  return { success: true, user };
+  try {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error) {
+      return { success: false, error, user: null };
+    }
+
+    return { success: true, user };
+  } catch (err) {
+    // Lỗi khi gọi Supabase → return false
+    console.warn('[AuthService] Error getting current user:', err.message);
+    return { success: false, error: err, user: null };
+  }
 }
 
 /**
