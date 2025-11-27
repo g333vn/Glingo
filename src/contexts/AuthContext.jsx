@@ -351,41 +351,67 @@ export function AuthProvider({ children }) {
             // ✅ Load user từ localStorage (có thể là Supabase user hoặc local user)
             console.log('[AUTH] User loaded from authUser:', { id: parsedUser.id, username: parsedUser.username, role: parsedUser.role });
             
-            // ✅ Nếu là Supabase user, đợi một chút để auth listener xử lý INITIAL_SESSION
-            if (typeof parsedUser.id === 'string' && parsedUser.id.length > 20) {
-              // Supabase user → đợi auth listener xử lý INITIAL_SESSION
-              console.log('[AUTH] Supabase user in localStorage, waiting for auth listener to handle INITIAL_SESSION...');
-              await new Promise(resolve => setTimeout(resolve, 2000)); // Đợi 2 giây để auth listener xử lý
-              
-              // ✅ Check lại session từ Supabase (auth listener có thể đã restore)
-              try {
-                const { getCurrentUser: getSupabaseUser } = await import('../services/authService.js');
-                const { success, user: currentSupabaseUser } = await getSupabaseUser();
-                if (success && currentSupabaseUser && currentSupabaseUser.id === parsedUser.id) {
-                  console.log('[AUTH] Session restored by auth listener, skipping localStorage load');
-                  if (isMounted) {
-                    setIsLoading(false);
-                  }
-                  return;
-                }
-              } catch (err) {
-                console.log('[AUTH] Error checking session after wait:', err.message);
-                // Tiếp tục load từ localStorage
-              }
-            }
-            
-            // ✅ Nếu là Supabase user, không sync từ adminUsers (vì Supabase là source of truth)
-            // Chỉ sync nếu là local user
+            // ✅ CRITICAL: Set user ngay lập tức từ localStorage để tránh redirect về login
+            // Sau đó mới verify session từ Supabase (nếu là Supabase user)
             let syncedUser = parsedUser;
             if (typeof parsedUser.id !== 'string' || parsedUser.id.length <= 20) {
               // Local user (numeric ID) → sync từ adminUsers
               syncedUser = syncUserFromAdminUsers(parsedUser);
             }
             
+            // ✅ Set user ngay lập tức (không đợi) để ProtectedRoute không redirect
             if (isMounted) {
               setUser(syncedUser);
-              setIsLoading(false);
+              setIsLoading(false); // ✅ CRITICAL: Set isLoading = false ngay để ProtectedRoute không block
             }
+            
+            // ✅ Nếu là Supabase user, verify session sau (async, không block UI)
+            if (typeof parsedUser.id === 'string' && parsedUser.id.length > 20) {
+              // Supabase user → verify session sau (không block)
+              console.log('[AUTH] Supabase user loaded from localStorage, verifying session in background...');
+              
+              // Verify session async (không đợi)
+              (async () => {
+                try {
+                  // Đợi một chút để auth listener xử lý INITIAL_SESSION
+                  await new Promise(resolve => setTimeout(resolve, 1500));
+                  
+                  // Check lại session từ Supabase (auth listener có thể đã restore)
+                  const { getCurrentUser: getSupabaseUser } = await import('../services/authService.js');
+                  const { success, user: currentSupabaseUser } = await getSupabaseUser();
+                  if (success && currentSupabaseUser && currentSupabaseUser.id === parsedUser.id) {
+                    // Session được restore → update user với data mới nhất từ Supabase
+                    const { getUserProfile: getSupabaseUserProfile } = await import('../services/authService.js');
+                    const { success: profileOk, profile } = await getSupabaseUserProfile(currentSupabaseUser.id);
+                    
+                    const updatedUser = {
+                      id: currentSupabaseUser.id,
+                      username: currentSupabaseUser.email,
+                      name: profile?.display_name || currentSupabaseUser.email,
+                      email: currentSupabaseUser.email,
+                      role: profile?.role || 'user',
+                    };
+                    
+                    if (isMounted) {
+                      setUser(updatedUser);
+                      try {
+                        localStorage.setItem('authUser', JSON.stringify(updatedUser));
+                      } catch (storageError) {
+                        console.warn('[AUTH] Cannot save to localStorage:', storageError.message);
+                      }
+                    }
+                    console.log('[AUTH] Session verified and user updated from Supabase');
+                  } else {
+                    // Session không còn → giữ user từ localStorage (có thể là offline mode)
+                    console.log('[AUTH] Session not found, keeping user from localStorage (offline mode?)');
+                  }
+                } catch (err) {
+                  console.log('[AUTH] Error verifying session:', err.message);
+                  // Giữ user từ localStorage
+                }
+              })();
+            }
+            
             return;
           } catch (error) {
             console.error('[AUTH] Error loading user from authUser:', error);
