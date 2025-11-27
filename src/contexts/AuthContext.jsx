@@ -106,7 +106,33 @@ export function AuthProvider({ children }) {
             console.log('[AUTH][Supabase] User updated from auth state change');
           }
         } else if (event === 'SIGNED_OUT') {
-          // User đăng xuất
+          // ✅ CRITICAL: Không logout ngay khi nhận SIGNED_OUT event
+          // Vì có thể là false positive khi reload (session chưa được restore)
+          // Verify session thực sự đã hết trước khi logout
+          console.log('[AUTH][Supabase] SIGNED_OUT event received, verifying session...');
+          
+          // ✅ Đợi lâu hơn và verify nhiều lần để chắc chắn
+          for (let i = 0; i < 3; i++) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Đợi 1 giây mỗi lần
+            
+            // Verify lại session
+            try {
+              const { data: { session: currentSession } } = await supabase.auth.getSession();
+              if (currentSession) {
+                // Session vẫn còn → không logout (có thể là false positive khi reload)
+                console.log('[AUTH][Supabase] Session still exists after', i + 1, 'checks, ignoring SIGNED_OUT event');
+                return;
+              }
+            } catch (err) {
+              console.warn('[AUTH][Supabase] Error checking session:', err);
+              // Nếu có lỗi khi check, không logout (có thể là network issue)
+              if (i < 2) continue; // Retry
+              return; // Sau 3 lần vẫn lỗi → không logout
+            }
+          }
+          
+          // Sau 3 lần check (3 giây), session vẫn không có → logout
+          console.log('[AUTH][Supabase] Session confirmed expired after 3 checks, logging out...');
           setUser(null);
           try {
             localStorage.removeItem('authUser');
@@ -114,6 +140,29 @@ export function AuthProvider({ children }) {
             // localStorage không available → bỏ qua
           }
           console.log('[AUTH][Supabase] User signed out');
+        } else if (event === 'INITIAL_SESSION') {
+          // ✅ Handle INITIAL_SESSION event (khi page load/reload)
+          if (session?.user) {
+            console.log('[AUTH][Supabase] Initial session found on reload');
+            const { getUserProfile: getSupabaseUserProfile } = await import('../services/authService.js');
+            const { success: profileOk, profile } = await getSupabaseUserProfile(session.user.id);
+
+            const mappedUser = {
+              id: session.user.id,
+              username: session.user.email,
+              name: profile?.display_name || session.user.email,
+              email: session.user.email,
+              role: profile?.role || 'user',
+            };
+
+            setUser(mappedUser);
+            try {
+              localStorage.setItem('authUser', JSON.stringify(mappedUser));
+            } catch (storageError) {
+              console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
+            }
+            console.log('[AUTH][Supabase] User restored from initial session');
+          }
         }
       });
 
@@ -130,8 +179,19 @@ export function AuthProvider({ children }) {
   }, []);
 
   // ✅ Load user on mount (chỉ 1 lần)
+  // Note: Auth state listener sẽ handle INITIAL_SESSION event, nhưng vẫn cần fallback
   useEffect(() => {
     let isMounted = true;
+    let authListenerHandled = false; // Flag để track xem auth listener đã handle chưa
+
+    // ✅ Listen for auth listener completion
+    const checkAuthListener = () => {
+      // Đợi một chút để auth listener có thể chạy trước
+      setTimeout(() => {
+        authListenerHandled = true;
+      }, 2000); // 2 giây để auth listener xử lý INITIAL_SESSION
+    };
+    checkAuthListener();
 
     async function loadInitialUser() {
       try {
@@ -290,6 +350,29 @@ export function AuthProvider({ children }) {
             
             // ✅ Load user từ localStorage (có thể là Supabase user hoặc local user)
             console.log('[AUTH] User loaded from authUser:', { id: parsedUser.id, username: parsedUser.username, role: parsedUser.role });
+            
+            // ✅ Nếu là Supabase user, đợi một chút để auth listener xử lý INITIAL_SESSION
+            if (typeof parsedUser.id === 'string' && parsedUser.id.length > 20) {
+              // Supabase user → đợi auth listener xử lý INITIAL_SESSION
+              console.log('[AUTH] Supabase user in localStorage, waiting for auth listener to handle INITIAL_SESSION...');
+              await new Promise(resolve => setTimeout(resolve, 2000)); // Đợi 2 giây để auth listener xử lý
+              
+              // ✅ Check lại session từ Supabase (auth listener có thể đã restore)
+              try {
+                const { getCurrentUser: getSupabaseUser } = await import('../services/authService.js');
+                const { success, user: currentSupabaseUser } = await getSupabaseUser();
+                if (success && currentSupabaseUser && currentSupabaseUser.id === parsedUser.id) {
+                  console.log('[AUTH] Session restored by auth listener, skipping localStorage load');
+                  if (isMounted) {
+                    setIsLoading(false);
+                  }
+                  return;
+                }
+              } catch (err) {
+                console.log('[AUTH] Error checking session after wait:', err.message);
+                // Tiếp tục load từ localStorage
+              }
+            }
             
             // ✅ Nếu là Supabase user, không sync từ adminUsers (vì Supabase là source of truth)
             // Chỉ sync nếu là local user
