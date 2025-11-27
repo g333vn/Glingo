@@ -55,7 +55,12 @@ export function AuthProvider({ children }) {
         
         // Update both state and localStorage
         setUser(syncedUser);
-        localStorage.setItem('authUser', JSON.stringify(syncedUser));
+        try {
+          localStorage.setItem('authUser', JSON.stringify(syncedUser));
+        } catch (storageError) {
+          // localStorage không available (incognito mode) → bỏ qua
+          console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
+        }
         return syncedUser;
       }
       
@@ -92,13 +97,22 @@ export function AuthProvider({ children }) {
             };
 
             setUser(mappedUser);
-            localStorage.setItem('authUser', JSON.stringify(mappedUser));
+            try {
+              localStorage.setItem('authUser', JSON.stringify(mappedUser));
+            } catch (storageError) {
+              // localStorage không available (incognito mode) → bỏ qua
+              console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
+            }
             console.log('[AUTH][Supabase] User updated from auth state change');
           }
         } else if (event === 'SIGNED_OUT') {
           // User đăng xuất
           setUser(null);
-          localStorage.removeItem('authUser');
+          try {
+            localStorage.removeItem('authUser');
+          } catch (storageError) {
+            // localStorage không available → bỏ qua
+          }
           console.log('[AUTH][Supabase] User signed out');
         }
       });
@@ -165,7 +179,13 @@ export function AuthProvider({ children }) {
 
           setUser(mappedUser);
           // Lưu vào authUser để các phần khác sử dụng chung format
-          localStorage.setItem('authUser', JSON.stringify(mappedUser));
+          try {
+            localStorage.setItem('authUser', JSON.stringify(mappedUser));
+          } catch (storageError) {
+            // localStorage không available (incognito mode hoặc disabled)
+            console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
+            // Vẫn tiếp tục, dùng Supabase session làm source of truth
+          }
 
           // ✅ NEW: Auto sync Supabase user vào localStorage adminUsers
           if (typeof supabaseUser.id === 'string' && supabaseUser.id.length > 20) {
@@ -199,7 +219,15 @@ export function AuthProvider({ children }) {
         }
 
         // ✅ Nếu không có Supabase session → check localStorage (cho local users)
-        const savedUser = localStorage.getItem('authUser');
+        let savedUser = null;
+        try {
+          savedUser = localStorage.getItem('authUser');
+        } catch (storageError) {
+          // localStorage không available (incognito mode hoặc disabled)
+          console.warn('[AUTH] Cannot read from localStorage (incognito mode?):', storageError.message);
+          // Tiếp tục với Supabase session hoặc no user
+        }
+        
         if (savedUser) {
           try {
             const parsedUser = JSON.parse(savedUser);
@@ -216,7 +244,11 @@ export function AuthProvider({ children }) {
                 // Nếu Supabase được config nhưng không có session → logout
                 if (supabaseUrl && supabaseKey && supabaseClient) {
                   console.warn('[AUTH] Supabase user found in localStorage but no active session, logging out...');
-                  localStorage.removeItem('authUser');
+                  try {
+                    localStorage.removeItem('authUser');
+                  } catch (storageError) {
+                    // localStorage không available → bỏ qua
+                  }
                   if (isMounted) {
                     setUser(null);
                     setIsLoading(false);
@@ -243,7 +275,11 @@ export function AuthProvider({ children }) {
             return;
           } catch (error) {
             console.error('[AUTH] Error loading user from authUser:', error);
-            localStorage.removeItem('authUser');
+            try {
+              localStorage.removeItem('authUser');
+            } catch (storageError) {
+              // localStorage không available → bỏ qua
+            }
           }
         }
 
@@ -320,7 +356,12 @@ export function AuthProvider({ children }) {
       // ✅ FIX: Đảm bảo role được load đúng từ getUsers()
       // result.user đã có role mới từ getUsers() nên không cần sync thêm
       setUser(result.user);
-      localStorage.setItem('authUser', JSON.stringify(result.user));
+      try {
+        localStorage.setItem('authUser', JSON.stringify(result.user));
+      } catch (storageError) {
+        // localStorage không available (incognito mode) → bỏ qua
+        console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
+      }
       
       // 📊 Track login activity
       trackUserActivity(result.user.id, result.user.username, 'login', {
@@ -339,7 +380,12 @@ export function AuthProvider({ children }) {
     if (result.success) {
       // Auto login after successful registration
       setUser(result.user);
-      localStorage.setItem('authUser', JSON.stringify(result.user));
+      try {
+        localStorage.setItem('authUser', JSON.stringify(result.user));
+      } catch (storageError) {
+        // localStorage không available (incognito mode) → bỏ qua
+        console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
+      }
       
       // 📊 Track registration activity
       trackUserActivity(result.user.id, result.user.username, 'register', {
@@ -356,7 +402,12 @@ export function AuthProvider({ children }) {
   // Update user function
   const updateUser = (updatedUserData) => {
     setUser(updatedUserData);
-    localStorage.setItem('authUser', JSON.stringify(updatedUserData));
+    try {
+      localStorage.setItem('authUser', JSON.stringify(updatedUserData));
+    } catch (storageError) {
+      // localStorage không available (incognito mode) → bỏ qua
+      console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
+    }
   };
 
   // Logout function
@@ -380,7 +431,11 @@ export function AuthProvider({ children }) {
     }
     
     setUser(null);
-    localStorage.removeItem('authUser');
+    try {
+      localStorage.removeItem('authUser');
+    } catch (storageError) {
+      // localStorage không available → bỏ qua
+    }
     // ✅ CRITICAL: KHÔNG xóa adminUsers và userPasswords khi logout
     // Vì đây là dữ liệu của tất cả users trong hệ thống, không phải chỉ của user đang logout
     // Nếu xóa, tất cả users mới được tạo sẽ bị mất!
