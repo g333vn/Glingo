@@ -264,10 +264,13 @@ export function getUsers() {
         // ✅ CRITICAL: Ưu tiên password từ userPasswords (đã được admin/user đổi)
         // Chỉ dùng password mặc định nếu chưa bao giờ đổi password
         // ✅ FIX: Nếu là user mới (không có trong default users), password phải từ userPasswords
+        // ✅ CRITICAL: Supabase users không có password trong localStorage (Supabase quản lý)
+        const isSupabaseUser = savedUser.isSupabaseUser || savedUser.supabaseId || (typeof savedUser.id === 'string' && savedUser.id.startsWith('supabase_'));
         const password = passwordFromStorage || (originalUser ? originalUser.password : '');
         
         // ✅ DEBUG: Log password source - CRITICAL for new users
-        if (!password && !originalUser) {
+        // ✅ Không báo lỗi nếu là Supabase user (họ không có password trong localStorage)
+        if (!password && !originalUser && !isSupabaseUser) {
           console.error(`[GETUSERS] ❌ ERROR: New user ${savedUser.username} (ID: ${savedUser.id}) has no password!`, {
             userId: savedUser.id,
             username: savedUser.username,
@@ -277,6 +280,9 @@ export function getUsers() {
             passwordsMapKeys: Object.keys(passwordsMap)
           });
           console.error(`[GETUSERS] Check if password was saved correctly in userPasswords with key: ${savedUser.id} or ${savedUser.username}`);
+        } else if (isSupabaseUser && !password) {
+          // Supabase user không có password → OK (Supabase quản lý)
+          console.log(`[GETUSERS] Supabase user ${savedUser.username} has no password in localStorage (managed by Supabase)`);
         }
         
         // ✅ DEBUG: Log merge process - Enhanced for debugging
@@ -295,9 +301,10 @@ export function getUsers() {
         
         // ✅ CRITICAL: Giữ nguyên tất cả thông tin từ savedUsers (bao gồm role mới)
         // KHÔNG merge với originalUser để tránh override role/password đã thay đổi
+        // ✅ Supabase users không cần password (Supabase quản lý)
         const mergedUser = { 
           ...savedUser, // ✅ CRITICAL: Giữ nguyên role, name, email từ adminUsers - KHÔNG override
-          password // Chỉ merge password từ userPasswords hoặc mặc định
+          password: isSupabaseUser ? null : password // Supabase users: null, local users: password
         };
         
         // ✅ DEBUG: Verify role is preserved
@@ -537,6 +544,7 @@ export function login(username, password) {
     id: u.id, 
     username: u.username, 
     role: u.role, 
+    isSupabaseUser: u.isSupabaseUser || u.supabaseId || (typeof u.id === 'string' && u.id.startsWith('supabase_')),
     password: u.password ? '***' : 'none',
     passwordLength: u.password ? u.password.length : 0,
     inputPasswordLength: password ? password.length : 0,
@@ -544,22 +552,40 @@ export function login(username, password) {
   })));
   
   // ✅ CRITICAL: Check if user exists but password is empty
+  // ✅ Skip Supabase users (họ login qua Supabase, không qua local login)
   const userExists = usersWithMatchingUsername.length > 0;
   if (userExists) {
     usersWithMatchingUsername.forEach(u => {
+      const isSupabaseUser = u.isSupabaseUser || u.supabaseId || (typeof u.id === 'string' && u.id.startsWith('supabase_'));
       if (!u.password || u.password === '') {
-        console.error('[LOGIN] ❌ ERROR: User found but has NO PASSWORD!', {
-          id: u.id,
-          username: u.username,
-          role: u.role
-        });
-        console.error('[LOGIN] Check if password was saved correctly in userPasswords');
+        if (isSupabaseUser) {
+          // Supabase user không có password → OK (Supabase quản lý)
+          console.log('[LOGIN] Supabase user found (password managed by Supabase):', {
+            id: u.id,
+            username: u.username,
+            role: u.role
+          });
+          console.log('[LOGIN] Note: Supabase users should login via Supabase auth, not local login');
+        } else {
+          // Local user không có password → ERROR
+          console.error('[LOGIN] ❌ ERROR: Local user found but has NO PASSWORD!', {
+            id: u.id,
+            username: u.username,
+            role: u.role
+          });
+          console.error('[LOGIN] Check if password was saved correctly in userPasswords');
+        }
       }
     });
   }
   
+  // ✅ Skip Supabase users trong local login (họ login qua Supabase)
   const user = allUsers.find(
-    u => u.username === username && u.password === password
+    u => {
+      const isSupabaseUser = u.isSupabaseUser || u.supabaseId || (typeof u.id === 'string' && u.id.startsWith('supabase_'));
+      // Chỉ match local users (không phải Supabase users)
+      return !isSupabaseUser && u.username === username && u.password === password;
+    }
   );
   
   if (user) {
