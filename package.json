@@ -17,7 +17,8 @@
     "backup:delete": "node scripts/backup-delete.cjs",
     "backup:delete:dry": "node scripts/backup-delete.cjs --dry-run",
     "i18n:scan": "node scripts/i18n-migration.js scan",
-    "i18n:migrate": "node scripts/i18n-migration.js migrate"
+    "i18n:migrate": "node scripts/i18n-migration.js migrate",
+    "verify:deploy": "node scripts/verify-deployment.js"
   },
   "dependencies": {
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
