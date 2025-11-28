@@ -18,8 +18,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
+    // ✅ Session persistence
     persistSession: true,
     autoRefreshToken: true,
+
+    // ✅ CRITICAL FIX: Explicit storage adapter for production
+    // Ensures session tokens are stored in localStorage even on Vercel/production
+    storage: window?.localStorage,
+
+    // ✅ Custom storage key for better debugging
+    storageKey: 'sb-glingo-auth-token',
+
+    // ✅ Detect OAuth redirects (needed for social logins)
+    detectSessionInUrl: true,
+
+    // ✅ Use PKCE flow (recommended for web apps)
+    flowType: 'pkce',
   },
 });
 
