@@ -22,12 +22,11 @@ export default defineConfig({
   build: {
     // ✅ CRITICAL: Giữ lại console.log trong production build
     // Để [AUTH] logs vẫn hiển thị sau khi deploy
-    minify: 'esbuild', // hoặc 'terser'
-    terserOptions: {
-      compress: {
-        drop_console: false, // ✅ PHẢI là false để giữ console.log
-        drop_debugger: false,
-      }
+    minify: 'esbuild',
+    // ✅ Esbuild options - đảm bảo không remove console.log
+    esbuild: {
+      drop: [], // ✅ KHÔNG drop console hoặc debugger
+      // drop: ['console', 'debugger'] // ❌ KHÔNG dùng dòng này
     },
     rollupOptions: {
       output: {
