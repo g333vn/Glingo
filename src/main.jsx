@@ -4,6 +4,12 @@ import ReactDOM from 'react-dom/client';
 import '@ant-design/v5-patch-for-react-19';
 import { createBrowserRouter, RouterProvider, useParams } from 'react-router-dom';
 
+// ✅ CRITICAL: Import all providers to wrap RouterProvider
+import { AuthProvider } from './contexts/AuthContext.jsx';
+import { LanguageProvider } from './contexts/LanguageContext.jsx';
+import { ToastProvider } from './components/ToastNotification.jsx';
+import { DictionaryProvider } from './components/api_translate/index.js';
+
 import App from './App.jsx';
 import HomePage from './pages/HomePage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
@@ -367,8 +373,18 @@ const router = createBrowserRouter([
   }
 ]);
 
+// ✅ CRITICAL FIX: Wrap RouterProvider with all providers
+// This ensures Router has access to AuthProvider and other contexts
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <LanguageProvider>
+        <ToastProvider>
+          <DictionaryProvider>
+            <RouterProvider router={router} />
+          </DictionaryProvider>
+        </ToastProvider>
+      </LanguageProvider>
+    </AuthProvider>
   </React.StrictMode>,
 );

@@ -5,14 +5,9 @@ import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx'; 
 import LoginModal from './components/LoginModal.jsx';
 
-// ✅ EXISTING: Import DictionaryProvider
-import { DictionaryProvider } from './components/api_translate/index.js';
-
-// ✅ NEW: Import AuthProvider
-import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
-
-// ✅ NEW: Import LanguageProvider
-import { LanguageProvider } from './contexts/LanguageContext.jsx';
+// ✅ NOTE: Providers are now in main.jsx, not here
+// Import useAuth hook (AuthProvider is in main.jsx)
+import { useAuth } from './contexts/AuthContext.jsx';
 
 // ✅ NEW: Import JLPT Dictionary initialization
 import { initJLPTDictionary } from './services/api_translate/dictionaryService.js';
@@ -21,8 +16,7 @@ import { testSupabaseConnection } from './services/authService.js';
 // Global app settings (maintenance)
 import { getGlobalMaintenanceMode } from './services/appSettingsService.js';
 
-// ✅ NEW: Import ToastProvider
-import { ToastProvider } from './components/ToastNotification.jsx';
+// ✅ NOTE: ToastProvider is now in main.jsx
 
 // ✅ NEW: Import GlobalSearch
 import GlobalSearch from './components/GlobalSearch.jsx';
@@ -171,19 +165,10 @@ function AppContent() {
   );
 }
 
-// Outer wrapper that provides contexts
+// ✅ FIX: Providers are now in main.jsx wrapping RouterProvider
+// App component no longer needs to provide contexts
 function App() {
-  return (
-    <AuthProvider>
-      <LanguageProvider>
-        <ToastProvider>
-          <DictionaryProvider>
-            <AppContent />
-          </DictionaryProvider>
-        </ToastProvider>
-      </LanguageProvider>
-    </AuthProvider>
-  );
+  return <AppContent />;
 }
 
 export default App;
