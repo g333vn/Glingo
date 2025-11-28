@@ -114,10 +114,14 @@ export function AuthProvider({ children }) {
             } catch (storageError) {
               console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
             }
+            // ✅ CRITICAL: Set isLoading = false khi restore user từ INITIAL_SESSION
+            setIsLoading(false);
             console.log('[AUTH][Supabase] User restored from initial session');
           } else {
             // Không có session trong INITIAL_SESSION → có thể đã logout thật
             console.log('[AUTH][Supabase] No initial session found');
+            // ✅ CRITICAL: Vẫn set isLoading = false để tránh stuck
+            setIsLoading(false);
           }
         } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           // User đăng nhập hoặc token được refresh
@@ -398,33 +402,48 @@ export function AuthProvider({ children }) {
             // ✅ Set user ngay lập tức (không đợi) để ProtectedRoute không redirect
             if (isMounted) {
               setUser(syncedUser);
-              setIsLoading(false); // ✅ CRITICAL: Set isLoading = false ngay để ProtectedRoute không block
             }
             
-            // ✅ Nếu là Supabase user, verify session sau (async, không block UI)
+            // ✅ Nếu là Supabase user, đợi INITIAL_SESSION event trước khi set isLoading = false
             if (typeof parsedUser.id === 'string' && parsedUser.id.length > 20) {
-              // Supabase user → verify session sau (không block)
-              console.log('[AUTH] Supabase user loaded from localStorage, verifying session in background...');
+              // Supabase user → đợi INITIAL_SESSION event được xử lý
+              console.log('[AUTH] Supabase user loaded from localStorage, waiting for INITIAL_SESSION event...');
               
-              // Verify session async (không đợi)
-              (async () => {
+              // Đợi tối đa 3 giây để INITIAL_SESSION event được fire và xử lý
+              // Trong thời gian này, user đã được set từ localStorage nên ProtectedRoute sẽ không redirect
+              let sessionVerified = false;
+              
+              // Check session ngay lập tức (có thể đã được restore)
+              try {
+                const { supabase } = await import('../services/supabaseClient.js');
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session && session.user && session.user.id === parsedUser.id) {
+                  // Session đã tồn tại → đã được restore
+                  console.log('[AUTH] Session already exists, INITIAL_SESSION may have fired');
+                  sessionVerified = true;
+                }
+              } catch (err) {
+                console.log('[AUTH] Error checking session:', err.message);
+              }
+              
+              // Đợi thêm một chút để INITIAL_SESSION event được fire (nếu chưa)
+              if (!sessionVerified) {
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Đợi 2 giây
+                
+                // Check lại session sau khi đợi
                 try {
-                  // Đợi một chút để auth listener xử lý INITIAL_SESSION
-                  await new Promise(resolve => setTimeout(resolve, 1500));
-                  
-                  // Check lại session từ Supabase (auth listener có thể đã restore)
-                  const { getCurrentUser: getSupabaseUser } = await import('../services/authService.js');
-                  const { success, user: currentSupabaseUser } = await getSupabaseUser();
-                  if (success && currentSupabaseUser && currentSupabaseUser.id === parsedUser.id) {
+                  const { supabase } = await import('../services/supabaseClient.js');
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (session && session.user && session.user.id === parsedUser.id) {
                     // Session được restore → update user với data mới nhất từ Supabase
                     const { getUserProfile: getSupabaseUserProfile } = await import('../services/authService.js');
-                    const { success: profileOk, profile } = await getSupabaseUserProfile(currentSupabaseUser.id);
+                    const { success: profileOk, profile } = await getSupabaseUserProfile(session.user.id);
                     
                     const updatedUser = {
-                      id: currentSupabaseUser.id,
-                      username: currentSupabaseUser.email,
-                      name: profile?.display_name || currentSupabaseUser.email,
-                      email: currentSupabaseUser.email,
+                      id: session.user.id,
+                      username: session.user.email,
+                      name: profile?.display_name || session.user.email,
+                      email: session.user.email,
                       role: profile?.role || 'user',
                     };
                     
@@ -437,15 +456,26 @@ export function AuthProvider({ children }) {
                       }
                     }
                     console.log('[AUTH] Session verified and user updated from Supabase');
+                    sessionVerified = true;
                   } else {
                     // Session không còn → giữ user từ localStorage (có thể là offline mode)
-                    console.log('[AUTH] Session not found, keeping user from localStorage (offline mode?)');
+                    console.log('[AUTH] Session not found after waiting, keeping user from localStorage (offline mode?)');
                   }
                 } catch (err) {
                   console.log('[AUTH] Error verifying session:', err.message);
                   // Giữ user từ localStorage
                 }
-              })();
+              }
+              
+              // ✅ CRITICAL: Set isLoading = false sau khi đã đợi INITIAL_SESSION
+              if (isMounted) {
+                setIsLoading(false);
+              }
+            } else {
+              // Local user → set isLoading = false ngay
+              if (isMounted) {
+                setIsLoading(false);
+              }
             }
             
             return;
