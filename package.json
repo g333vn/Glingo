@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:clean": "powershell -Command \"Remove-Item -Recurse -Force node_modules\\.vite, dist -ErrorAction SilentlyContinue\" && vite",
+    "dev:restart": "powershell -ExecutionPolicy Bypass -File restart-dev.ps1",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
