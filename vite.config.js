@@ -18,5 +18,22 @@ export default defineConfig({
   server: {
     // ✅ Cấu hình để xử lý SPA routing - redirect tất cả routes về index.html
     historyApiFallback: true
+  },
+  build: {
+    // ✅ CRITICAL: Giữ lại console.log trong production build
+    // Để [AUTH] logs vẫn hiển thị sau khi deploy
+    minify: 'esbuild', // hoặc 'terser'
+    terserOptions: {
+      compress: {
+        drop_console: false, // ✅ PHẢI là false để giữ console.log
+        drop_debugger: false,
+      }
+    },
+    rollupOptions: {
+      output: {
+        // Đảm bảo không remove console
+        manualChunks: undefined
+      }
+    }
   }
 })
