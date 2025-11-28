@@ -71,7 +71,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // ✅ FIXED v2: Listen for Supabase auth state changes - ƯU TIÊN INITIAL_SESSION
+  // ✅ FIXED v3: Listen for Supabase auth state changes - ƯU TIÊN INITIAL_SESSION
   useEffect(() => {
     let subscription = null;
     let initialSessionHandled = false;
@@ -163,15 +163,31 @@ export function AuthProvider({ children }) {
             console.log('[AUTH][Supabase] User updated from', event);
           }
         } else if (event === 'SIGNED_OUT') {
-          // ✅ FIXED: Logout NGAY LẬP TỨC - Không delay, không verify
-          console.log('[AUTH][Supabase] SIGNED_OUT event received, logging out immediately...');
-          setUser(null);
-          try {
-            localStorage.removeItem('authUser');
-          } catch (storageError) {
-            // localStorage không available → bỏ qua
-          }
-          console.log('[AUTH][Supabase] User signed out');
+          // ✅ CRITICAL FIX v3: SIGNED_OUT event handling
+          // Khi reload, SIGNED_OUT có thể fire trước INITIAL_SESSION
+          // → Đợi 1.5s để INITIAL_SESSION kip fire, sau đó mới verify & logout
+          console.log('[AUTH][Supabase] SIGNED_OUT event received, verifying session...');
+          
+          setTimeout(async () => {
+            // Verify session thực sự đã hết
+            try {
+              const { data: { session: currentSession } } = await supabase.auth.getSession();
+              if (!currentSession) {
+                console.log('[AUTH][Supabase] Session confirmed expired, logging out');
+                setUser(null);
+                try {
+                  localStorage.removeItem('authUser');
+                } catch (storageError) {
+                  // localStorage không available → bỏ qua
+                }
+              } else {
+                console.log('[AUTH][Supabase] Session still exists, ignoring SIGNED_OUT event (reload detected)');
+              }
+            } catch (err) {
+              console.warn('[AUTH][Supabase] Error verifying session on SIGNED_OUT:', err);
+              // Nếu lỗi, không logout - để safe
+            }
+          }, 1500);
         }
       });
 
