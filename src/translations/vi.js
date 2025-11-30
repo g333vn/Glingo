@@ -716,84 +716,84 @@ const vi = {
             breadcrumbResult: 'Kết quả',
             breadcrumbAnswers: 'Đáp án & Giải thích'
         },
-    knowledgePage: {
-        breadcrumbLabel: 'Ngôn ngữ・Đọc hiểu',
-        navigationTitle: 'Ngôn ngữ (Chữ ・ Từ vựng ・ Ngữ pháp) ・ Đọc hiểu',
-        totalTime: '⏱ {{minutes}} phút',
-        answeredLabel: 'Đã trả lời',
-        questionLabel: 'Câu {{number}}',
-        emptyTitle: 'Đề thi chưa có câu hỏi',
-        emptyDesc: 'Đề thi {{examId}} của level {{level}} chưa có câu hỏi Ngôn ngữ/Đọc hiểu.',
-        emptyNote: 'Vui lòng thêm câu hỏi tại Admin Panel → Quản lý Đề thi → Kiến thức/Đọc hiểu.',
-        timeUpMessage: 'Hết giờ làm bài! Bài thi sẽ được tự động nộp.',
-        leaveConfirm: 'Bạn đang làm bài. Rời trang sẽ mất tiến độ. Bạn có chắc muốn thoát?',
-        prevButton: '← Trước',
-        nextButton: 'Tiếp →',
-        submitButton: 'Nộp bài',
-        incompleteModal: {
-            title: '⚠️ Còn câu chưa trả lời',
-            description: 'Bạn vẫn còn {count} câu chưa trả lời.',
-            submitWarning: 'Nếu nộp ngay, các câu chưa trả lời sẽ bị tính là sai.',
-            continueHint: 'Bạn có thể quay lại để hoàn thành các câu còn lại.',
-            continueButton: 'Quay lại làm tiếp',
-            submitButton: 'Tiếp tục nộp bài'
+        knowledgePage: {
+            breadcrumbLabel: 'Ngôn ngữ・Đọc hiểu',
+            navigationTitle: 'Ngôn ngữ (Chữ ・ Từ vựng ・ Ngữ pháp) ・ Đọc hiểu',
+            totalTime: '⏱ {{minutes}} phút',
+            answeredLabel: 'Đã trả lời',
+            questionLabel: 'Câu {{number}}',
+            emptyTitle: 'Đề thi chưa có câu hỏi',
+            emptyDesc: 'Đề thi {{examId}} của level {{level}} chưa có câu hỏi Ngôn ngữ/Đọc hiểu.',
+            emptyNote: 'Vui lòng thêm câu hỏi tại Admin Panel → Quản lý Đề thi → Kiến thức/Đọc hiểu.',
+            timeUpMessage: 'Hết giờ làm bài! Bài thi sẽ được tự động nộp.',
+            leaveConfirm: 'Bạn đang làm bài. Rời trang sẽ mất tiến độ. Bạn có chắc muốn thoát?',
+            prevButton: '← Trước',
+            nextButton: 'Tiếp →',
+            submitButton: 'Nộp bài',
+            incompleteModal: {
+                title: '⚠️ Còn câu chưa trả lời',
+                description: 'Bạn vẫn còn {count} câu chưa trả lời.',
+                submitWarning: 'Nếu nộp ngay, các câu chưa trả lời sẽ bị tính là sai.',
+                continueHint: 'Bạn có thể quay lại để hoàn thành các câu còn lại.',
+                continueButton: 'Quay lại làm tiếp',
+                submitButton: 'Tiếp tục nộp bài'
+            },
+            submitModal: {
+                title: 'Xác nhận',
+                message: 'Bạn có chắc muốn nộp bài? Sau khi nộp sẽ không thể chỉnh sửa.',
+                cancelButton: 'Hủy',
+                confirmButton: 'Nộp bài'
+            }
         },
-        submitModal: {
-            title: 'Xác nhận',
-            message: 'Bạn có chắc muốn nộp bài? Sau khi nộp sẽ không thể chỉnh sửa.',
-            cancelButton: 'Hủy',
-            confirmButton: 'Nộp bài'
-        }
-    },
-    listeningPage: {
-        breadcrumbLabel: 'Nghe hiểu',
-        navigationTitle: '聴解',
-        totalTime: '⏱ {{minutes}} phút',
-        answeredLabel: 'Đã trả lời',
-        questionLabel: '問題 {{sectionTitle}}',
-        emptyTitle: 'Đề thi chưa có câu hỏi',
-        emptyDesc: 'Đề thi {{examId}} của level {{level}} chưa có câu hỏi Nghe hiểu.',
-        emptyNote: 'Vui lòng thêm câu hỏi tại Admin Panel → Quản lý Đề thi → Nghe hiểu.',
-        timeUpMessage: 'Hết giờ làm bài! Bài thi sẽ được tự động nộp.',
-        leaveConfirm: 'Bạn đang làm bài. Rời trang sẽ mất tiến độ. Bạn có chắc muốn thoát?',
-        prevButton: '← Trước',
-        nextButton: 'Tiếp →',
-        submitButton: 'Nộp bài',
-        submitModal: {
-            title: 'Xác nhận',
-            message: 'Bạn có chắc muốn nộp bài? Sau khi nộp sẽ không thể chỉnh sửa.',
-            cancelButton: 'Hủy',
-            confirmButton: 'Nộp bài'
-        }
-    },
-    resultPage: {
-        loading: 'Đang tải đề thi...',
-        notFoundTitle: 'Đề thi không tồn tại',
-        notFoundDesc: 'Không tìm thấy đề thi {examId} cho level {level}',
-        backButton: '← Quay về',
-        title: 'Kết quả',
-        pass: '合格',
-        fail: '不合格',
-        knowledgeLabel: '語彙・知識',
-        readingLabel: '読解',
-        listeningLabel: '聴解',
-        points: '点',
-        viewAnswersButton: '📝 解答・解説を見る',
-        retakeButton: '🔄 もう一度受験する',
-        examListButton: '📋 試験一覧へ',
-        exitModal: {
-            title: '確認',
-            message: 'Bạn có chắc muốn thoát? Dữ liệu sẽ bị xóa.',
-            cancelButton: 'キャンセル',
-            confirmButton: '確認'
+        listeningPage: {
+            breadcrumbLabel: 'Nghe hiểu',
+            navigationTitle: '聴解',
+            totalTime: '⏱ {{minutes}} phút',
+            answeredLabel: 'Đã trả lời',
+            questionLabel: '問題 {{sectionTitle}}',
+            emptyTitle: 'Đề thi chưa có câu hỏi',
+            emptyDesc: 'Đề thi {{examId}} của level {{level}} chưa có câu hỏi Nghe hiểu.',
+            emptyNote: 'Vui lòng thêm câu hỏi tại Admin Panel → Quản lý Đề thi → Nghe hiểu.',
+            timeUpMessage: 'Hết giờ làm bài! Bài thi sẽ được tự động nộp.',
+            leaveConfirm: 'Bạn đang làm bài. Rời trang sẽ mất tiến độ. Bạn có chắc muốn thoát?',
+            prevButton: '← Trước',
+            nextButton: 'Tiếp →',
+            submitButton: 'Nộp bài',
+            submitModal: {
+                title: 'Xác nhận',
+                message: 'Bạn có chắc muốn nộp bài? Sau khi nộp sẽ không thể chỉnh sửa.',
+                cancelButton: 'Hủy',
+                confirmButton: 'Nộp bài'
+            }
         },
-        retakeModal: {
-            title: '確認',
-            message: 'Bạn có chắc muốn thi lại? Dữ liệu sẽ bị xóa.',
-            cancelButton: 'キャンセル',
-            confirmButton: '確認'
-        }
-    },
+        resultPage: {
+            loading: 'Đang tải đề thi...',
+            notFoundTitle: 'Đề thi không tồn tại',
+            notFoundDesc: 'Không tìm thấy đề thi {examId} cho level {level}',
+            backButton: '← Quay về',
+            title: 'Kết quả',
+            pass: '合格',
+            fail: '不合格',
+            knowledgeLabel: '語彙・知識',
+            readingLabel: '読解',
+            listeningLabel: '聴解',
+            points: '点',
+            viewAnswersButton: '📝 解答・解説を見る',
+            retakeButton: '🔄 もう一度受験する',
+            examListButton: '📋 試験一覧へ',
+            exitModal: {
+                title: '確認',
+                message: 'Bạn có chắc muốn thoát? Dữ liệu sẽ bị xóa.',
+                cancelButton: 'キャンセル',
+                confirmButton: '確認'
+            },
+            retakeModal: {
+                title: '確認',
+                message: 'Bạn có chắc muốn thi lại? Dữ liệu sẽ bị xóa.',
+                cancelButton: 'キャンセル',
+                confirmButton: '確認'
+            }
+        },
         modals: {
             confirmTitle: 'Xác nhận',
             exitMessage: 'Bạn muốn thoát? Dữ liệu tạm sẽ bị xoá.',
@@ -949,6 +949,9 @@ const vi = {
         backToHome: 'Quay về trang chủ',
         loginFailed: 'Đăng nhập thất bại!',
         registerFailed: 'Đăng ký thất bại!',
+        invalidCredentials: 'Tên đăng nhập hoặc mật khẩu không đúng!',
+        registrationSuccess: 'Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.',
+        registrationFailed: 'Đăng ký thất bại. Vui lòng thử lại.',
         passwordMismatch: 'Mật khẩu xác nhận không khớp!',
         registrationDisabled: 'Đăng ký tài khoản hiện đang bị tắt. Vui lòng liên hệ admin!',
         accountNote: 'Tài khoản của bạn sẽ được tạo với quyền',

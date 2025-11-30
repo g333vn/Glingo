@@ -15,39 +15,39 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { navigate: examNavigate, WarningModal, shouldShowWarning, clearExamData } = useExamGuard();
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isLoading } = useAuth();
   const { t } = useLanguage();
   const [settings, setSettings] = useState(getSettings());
-  
+
   // Check if user is editor
   const isEditor = () => {
     return user && user.role === 'editor';
   };
-  
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLevelDropdownOpen, setIsLevelDropdownOpen] = useState(false);
   const [isJlptDropdownOpen, setIsJlptDropdownOpen] = useState(false);
   const [isMobileLevelOpen, setIsMobileLevelOpen] = useState(false);
   const [isMobileJlptOpen, setIsMobileJlptOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  
+
   // Listen for settings updates
   useEffect(() => {
     const handleSettingsUpdate = (event) => {
       setSettings(event.detail);
     };
-    
+
     window.addEventListener('settingsUpdated', handleSettingsUpdate);
-    
+
     // Also check on mount in case settings changed while page was not active
     const currentSettings = getSettings();
     setSettings(currentSettings);
-    
+
     return () => {
       window.removeEventListener('settingsUpdated', handleSettingsUpdate);
     };
   }, []);
-  
+
   // ✨ NEW: Scroll state
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -168,9 +168,9 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
   return (
     <>
       {/* ✨ REDESIGNED HEADER - Clean & Beautiful */}
-      <header 
+      <header
         lang="en"
-        style={{ 
+        style={{
           fontFamily: "'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
           fontFeatureSettings: 'normal',
           fontVariant: 'normal',
@@ -181,8 +181,8 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
         className={`
           fixed top-0 left-0 right-0 z-50 
           transition-all duration-300
-          ${isScrolled 
-            ? 'bg-[#2D2D2D] md:bg-[#2D2D2D]/95 md:backdrop-blur-sm shadow-[0_4px_0px_0px_rgba(0,0,0,1)]' 
+          ${isScrolled
+            ? 'bg-[#2D2D2D] md:bg-[#2D2D2D]/95 md:backdrop-blur-sm shadow-[0_4px_0px_0px_rgba(0,0,0,1)]'
             : 'bg-[#2D2D2D]'
           }
           border-b-[3px] border-black
@@ -228,9 +228,9 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
           </button>
 
           {/* Desktop Links - Centered & Balanced (chỉ hiển thị từ lg trở lên để tablet dọc dùng menu mobile) */}
-          <div 
+          <div
             lang="en"
-            style={{ 
+            style={{
               fontFamily: "'Space Grotesk', 'Inter', sans-serif",
               contain: 'layout style'
             }}
@@ -239,11 +239,10 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
             {/* Home */}
             <button
               onClick={() => handleNavigate('/')}
-              className={`px-3 lg:px-4 py-1.5 lg:py-2 font-bold text-sm lg:text-base uppercase tracking-wide transition-all duration-200 rounded-md ${
-                isActive('/') && location.pathname === '/'
-                  ? 'text-black bg-yellow-400 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
-                  : 'text-white hover:text-yellow-400 hover:bg-white/10 border-[3px] border-transparent hover:border-yellow-400/30'
-              }`}
+              className={`px-3 lg:px-4 py-1.5 lg:py-2 font-bold text-sm lg:text-base uppercase tracking-wide transition-all duration-200 rounded-md ${isActive('/') && location.pathname === '/'
+                ? 'text-black bg-yellow-400 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+                : 'text-white hover:text-yellow-400 hover:bg-white/10 border-[3px] border-transparent hover:border-yellow-400/30'
+                }`}
             >
               Home
             </button>
@@ -256,18 +255,17 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
             >
               <button
                 onClick={() => handleNavigate('/level')}
-                className={`px-3 lg:px-4 py-1.5 lg:py-2 font-bold text-sm lg:text-base uppercase tracking-wide transition-all duration-200 rounded-md flex items-center gap-1.5 ${
-                  isActive('/level')
-                    ? 'text-black bg-yellow-400 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
-                    : 'text-white hover:text-yellow-400 hover:bg-white/10 border-[3px] border-transparent hover:border-yellow-400/30'
-                }`}
+                className={`px-3 lg:px-4 py-1.5 lg:py-2 font-bold text-sm lg:text-base uppercase tracking-wide transition-all duration-200 rounded-md flex items-center gap-1.5 ${isActive('/level')
+                  ? 'text-black bg-yellow-400 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+                  : 'text-white hover:text-yellow-400 hover:bg-white/10 border-[3px] border-transparent hover:border-yellow-400/30'
+                  }`}
               >
                 Level
                 <svg className={`w-3.5 h-3.5 lg:w-4 lg:h-4 transition-transform duration-200 ${isLevelDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              
+
               {isLevelDropdownOpen && (
                 <div className="absolute left-1/2 -translate-x-1/2 top-full pt-2 z-20">
                   <div className="bg-white rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-[2px] border-black py-1.5 px-1 min-w-[100px]">
@@ -283,11 +281,10 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                               alert(t('accessControl.noAccessMessage', { level: level.toUpperCase() }));
                             }
                           }}
-                          className={`block w-full text-center px-3 py-1.5 text-sm font-bold rounded transition-all duration-200 flex items-center justify-center gap-2 ${
-                            hasLevelAccess
-                              ? 'text-black hover:bg-yellow-400'
-                              : 'text-gray-400 cursor-not-allowed opacity-60'
-                          }`}
+                          className={`block w-full text-center px-3 py-1.5 text-sm font-bold rounded transition-all duration-200 flex items-center justify-center gap-2 ${hasLevelAccess
+                            ? 'text-black hover:bg-yellow-400'
+                            : 'text-gray-400 cursor-not-allowed opacity-60'
+                            }`}
                         >
                           {!hasLevelAccess && (
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -311,18 +308,17 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
             >
               <button
                 onClick={() => handleNavigate('/jlpt')}
-                className={`px-3 lg:px-4 py-1.5 lg:py-2 font-bold text-sm lg:text-base uppercase tracking-wide transition-all duration-200 rounded-md flex items-center gap-1.5 ${
-                  isActive('/jlpt')
-                    ? 'text-black bg-yellow-400 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
-                    : 'text-white hover:text-yellow-400 hover:bg-white/10 border-[3px] border-transparent hover:border-yellow-400/30'
-                }`}
+                className={`px-3 lg:px-4 py-1.5 lg:py-2 font-bold text-sm lg:text-base uppercase tracking-wide transition-all duration-200 rounded-md flex items-center gap-1.5 ${isActive('/jlpt')
+                  ? 'text-black bg-yellow-400 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+                  : 'text-white hover:text-yellow-400 hover:bg-white/10 border-[3px] border-transparent hover:border-yellow-400/30'
+                  }`}
               >
                 JLPT
                 <svg className={`w-3.5 h-3.5 lg:w-4 lg:h-4 transition-transform duration-200 ${isJlptDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              
+
               {isJlptDropdownOpen && (
                 <div className="absolute left-1/2 -translate-x-1/2 top-full pt-2 z-20">
                   <div className="bg-white rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-[2px] border-black py-1.5 px-1 min-w-[100px]">
@@ -338,11 +334,10 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                               alert(t('accessControl.noAccessMessage', { level: level.toUpperCase() }));
                             }
                           }}
-                          className={`block w-full text-center px-3 py-1.5 text-sm font-bold rounded transition-all duration-200 flex items-center justify-center gap-2 ${
-                            hasLevelAccess
-                              ? 'text-black hover:bg-yellow-400'
-                              : 'text-gray-400 cursor-not-allowed opacity-60'
-                          }`}
+                          className={`block w-full text-center px-3 py-1.5 text-sm font-bold rounded transition-all duration-200 flex items-center justify-center gap-2 ${hasLevelAccess
+                            ? 'text-black hover:bg-yellow-400'
+                            : 'text-gray-400 cursor-not-allowed opacity-60'
+                            }`}
                         >
                           {!hasLevelAccess && (
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -361,11 +356,10 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
             {/* About */}
             <button
               onClick={() => handleNavigate('/about')}
-              className={`px-3 lg:px-4 py-1.5 lg:py-2 font-bold text-sm lg:text-base uppercase tracking-wide transition-all duration-200 rounded-md ${
-                isActive('/about')
-                  ? 'text-black bg-yellow-400 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
-                  : 'text-white hover:text-yellow-400 hover:bg-white/10 border-[3px] border-transparent hover:border-yellow-400/30'
-              }`}
+              className={`px-3 lg:px-4 py-1.5 lg:py-2 font-bold text-sm lg:text-base uppercase tracking-wide transition-all duration-200 rounded-md ${isActive('/about')
+                ? 'text-black bg-yellow-400 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+                : 'text-white hover:text-yellow-400 hover:bg-white/10 border-[3px] border-transparent hover:border-yellow-400/30'
+                }`}
             >
               About
             </button>
@@ -377,13 +371,13 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
             <LanguageSwitcher />
 
             {/* Notification Bell */}
-            {user && !isMaintenanceLock && <NotificationBell />}
+            {user && !isLoading && !isMaintenanceLock && <NotificationBell />}
 
             {/* Streak Counter */}
-            {user && !isMaintenanceLock && <StreakCounter />}
-            
+            {user && !isLoading && !isMaintenanceLock && <StreakCounter />}
+
             {/* User Menu - Very compact */}
-            {user ? (
+            {user && !isLoading ? (
               <div className="relative group">
                 <button
                   className="flex items-center gap-1.5 lg:gap-2 px-1.5 lg:px-2 py-1 lg:py-1.5 bg-white/10 hover:bg-white/20 rounded-full border-[2px] border-white/30 hover:border-white transition-all duration-200"
@@ -409,7 +403,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                     </span>
                   )}
                 </button>
-                
+
                 {/* Dropdown Menu - Google Style */}
                 <div className="absolute right-0 top-full mt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <div className="bg-white rounded-xl border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden min-w-[260px]">
@@ -439,7 +433,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Menu Items */}
                     <div className="py-2">
                       {/* Dashboard - Check access first */}
@@ -466,7 +460,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                           </div>
                         </button>
                       )}
-                      
+
                       <button
                         onClick={() => handleNavigate('/profile')}
                         className="w-full text-left px-4 py-3 hover:bg-yellow-50 flex items-center gap-3 text-sm font-semibold text-gray-800 transition-colors"
@@ -474,12 +468,12 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                         <span className="text-xl">👤</span>
                         <span>{t('header.userMenu.myProfile')}</span>
                       </button>
-                      
+
                       {/* Divider if admin/editor */}
                       {(isAdmin() || isEditor()) && (
                         <div className="border-t-[2px] border-gray-200 my-2"></div>
                       )}
-                      
+
                       {isAdmin() && (
                         <button
                           onClick={() => handleNavigate('/admin')}
@@ -492,7 +486,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                           </div>
                         </button>
                       )}
-                      
+
                       {isEditor() && (
                         <button
                           onClick={() => handleNavigate('/editor')}
@@ -506,7 +500,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                         </button>
                       )}
                     </div>
-                    
+
                     {/* Logout */}
                     <div className="border-t-[3px] border-gray-200">
                       <button
@@ -534,15 +528,15 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
           <div className="lg:hidden flex items-center gap-1.5 sm:gap-2">
             {/* Language Switcher - Mobile (3 Flags) */}
             <LanguageSwitcher />
-            
+
             {/* Notification Bell - Mobile */}
-            {user && !isMaintenanceLock && <NotificationBell />}
-            
+            {user && !isLoading && !isMaintenanceLock && <NotificationBell />}
+
             {/* Streak (if logged in) */}
-            {user && !isMaintenanceLock && <StreakCounter />}
-            
+            {user && !isLoading && !isMaintenanceLock && <StreakCounter />}
+
             {/* User Avatar - Mobile (if logged in) */}
-            {user && (
+            {user && !isLoading && (
               <button
                 onClick={() => {
                   // Toggle user menu on mobile - could open a dropdown or navigate to profile
@@ -554,7 +548,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                 {(user.name || user.username || 'U').charAt(0).toUpperCase()}
               </button>
             )}
-            
+
             {/* Burger Menu */}
             <button
               ref={burgerButtonRef}
@@ -613,11 +607,10 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                             alert(t('accessControl.noAccessMessage', { level: level.toUpperCase() }));
                           }
                         }}
-                        className={`text-left py-2.5 px-4 rounded-lg transition-all text-sm font-black border-[3px] flex items-center gap-2 ${
-                          hasLevelAccess
-                            ? 'text-white hover:text-black hover:bg-yellow-400 border-transparent hover:border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
-                            : 'text-gray-400 cursor-not-allowed opacity-60 border-transparent'
-                        }`}
+                        className={`text-left py-2.5 px-4 rounded-lg transition-all text-sm font-black border-[3px] flex items-center gap-2 ${hasLevelAccess
+                          ? 'text-white hover:text-black hover:bg-yellow-400 border-transparent hover:border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+                          : 'text-gray-400 cursor-not-allowed opacity-60 border-transparent'
+                          }`}
                       >
                         {!hasLevelAccess && (
                           <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -662,11 +655,10 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                             alert(t('accessControl.noAccessMessage', { level: level.toUpperCase() }));
                           }
                         }}
-                        className={`text-left py-2.5 px-4 rounded-lg transition-all text-sm font-black border-[3px] flex items-center gap-2 ${
-                          hasLevelAccess
-                            ? 'text-white hover:text-black hover:bg-yellow-400 border-transparent hover:border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
-                            : 'text-gray-400 cursor-not-allowed opacity-60 border-transparent'
-                        }`}
+                        className={`text-left py-2.5 px-4 rounded-lg transition-all text-sm font-black border-[3px] flex items-center gap-2 ${hasLevelAccess
+                          ? 'text-white hover:text-black hover:bg-yellow-400 border-transparent hover:border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+                          : 'text-gray-400 cursor-not-allowed opacity-60 border-transparent'
+                          }`}
                       >
                         {!hasLevelAccess && (
                           <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -736,7 +728,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                       <p className="text-xs text-gray-400 mt-1">{t('header.userMenu.dashboardLocked')}</p>
                     </button>
                   )}
-                  
+
                   {/* Divider before admin/editor panels */}
                   {(isAdmin() || isEditor()) && (
                     <div className="my-2 border-t-[2px] border-white/20"></div>
@@ -760,7 +752,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                       </span>
                     </button>
                   )}
-                  
+
                   {/* Editor Panel */}
                   {isEditor() && (
                     <button

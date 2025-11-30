@@ -15,7 +15,9 @@ function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [cooldownUntil, setCooldownUntil] = useState(null);
+
   const { login, user, updateUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,9 +26,31 @@ function LoginPage() {
     setIsVisible(true);
   }, []);
 
+  // ✅ Rate limiting: Check cooldown
+  useEffect(() => {
+    if (cooldownUntil) {
+      const interval = setInterval(() => {
+        if (Date.now() >= cooldownUntil) {
+          setCooldownUntil(null);
+          setLoginAttempts(0);
+          setError('');
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [cooldownUntil]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // ✅ SECURITY: Rate limiting check
+    if (cooldownUntil && Date.now() < cooldownUntil) {
+      const remainingSeconds = Math.ceil((cooldownUntil - Date.now()) / 1000);
+      setError(`Too many failed attempts. Please wait ${remainingSeconds} seconds.`);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -87,13 +111,31 @@ function LoginPage() {
               : 'No profile or error',
             profileError: profileError?.message,
           });
+          // ✅ SECURITY: Clear password from memory
+          setPassword('');
           navigate('/', { replace: true });
           setIsLoading(false);
+          // Reset login attempts on success
+          setLoginAttempts(0);
           return;
         }
 
-        // Nếu Supabase login fail, hiển thị lỗi và dừng (không fallback sang local user)
-        setError(error?.message || t('auth.loginFailed'));
+        // ✅ SECURITY: Generic error message (don't leak user existence info)
+        console.error('[LOGIN][Supabase] Error:', error);
+
+        // Increment failed attempts
+        const newAttempts = loginAttempts + 1;
+        setLoginAttempts(newAttempts);
+
+        // Apply cooldown after 3 failed attempts
+        if (newAttempts >= 3) {
+          const cooldownMs = 30000; // 30 seconds
+          setCooldownUntil(Date.now() + cooldownMs);
+          setError('Too many failed attempts. Please wait 30 seconds.');
+        } else {
+          setError(t('auth.invalidCredentials') || 'Invalid email or password');
+        }
+
         setPassword('');
         setIsLoading(false);
         return;
@@ -110,9 +152,22 @@ function LoginPage() {
           username: loggedInUser?.username,
         });
 
+        // ✅ SECURITY: Clear password
+        setPassword('');
+        setLoginAttempts(0);
         navigate('/', { replace: true });
       } else {
-        setError(result.error || t('auth.loginFailed'));
+        // ✅ SECURITY: Generic error + rate limiting
+        const newAttempts = loginAttempts + 1;
+        setLoginAttempts(newAttempts);
+
+        if (newAttempts >= 3) {
+          const cooldownMs = 30000;
+          setCooldownUntil(Date.now() + cooldownMs);
+          setError('Too many failed attempts. Please wait 30 seconds.');
+        } else {
+          setError(t('auth.invalidCredentials') || 'Invalid username or password');
+        }
         setPassword('');
       }
     } finally {
@@ -125,10 +180,9 @@ function LoginPage() {
       {/* ✨ NEO BRUTALISM Background - Đã loại bỏ backdrop-blur để background rõ hơn */}
 
       {/* ✨ NEO BRUTALISM Main Login Card */}
-      <div 
-        className={`relative z-10 w-full max-w-md transition-all duration-1000 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-        }`}
+      <div
+        className={`relative z-10 w-full max-w-md transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          }`}
       >
         <div className="bg-white rounded-2xl border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 sm:p-10 md:p-12">
           {/* ✨ NEO BRUTALISM Header with Logo */}
@@ -136,7 +190,7 @@ function LoginPage() {
             <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-yellow-400 rounded-full border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-4 sm:mb-6 transform hover:scale-110 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
               <span className="text-4xl sm:text-5xl">🔐</span>
             </div>
-            <h1 
+            <h1
               className="text-3xl sm:text-4xl font-black mb-3 text-black uppercase tracking-wide"
               style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
             >
@@ -233,8 +287,8 @@ function LoginPage() {
           <div className="text-center pt-4">
             <p className="text-gray-700 text-sm sm:text-base">
               {t('auth.noAccount')}{' '}
-              <Link 
-                to="/register" 
+              <Link
+                to="/register"
                 className="text-black font-black hover:text-yellow-600 transition-colors underline decoration-2 underline-offset-2"
               >
                 {t('auth.registerNow')}

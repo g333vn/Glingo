@@ -1,11 +1,15 @@
 // src/pages/RegisterPage.jsx
 // ✨ NEO BRUTALISM + JAPANESE AESTHETIC
+// ✅ UPGRADED: Full Supabase registration support + validation
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
 import { getSetting } from '../utils/settingsManager.js';
+import { signUp as supabaseSignUp, getUserProfile } from '../services/authService.js';
+import { validateEmail, validatePassword, getPasswordStrengthInfo } from '../utils/validation.js';
+import { fullSync } from '../services/dataSyncService.js';
 
 function RegisterPage() {
   const { t } = useLanguage();
@@ -19,13 +23,15 @@ function RegisterPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  
-  const { register } = useAuth();
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [showPasswordHint, setShowPasswordHint] = useState(false);
+
+  const { register, updateUser } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     setIsVisible(true);
-    
+
     // Check if registration is enabled
     const registrationEnabled = getSetting('system', 'registrationEnabled');
     if (registrationEnabled === false) {
@@ -34,10 +40,20 @@ function RegisterPage() {
   }, [t]);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+
+    // Clear error when user types
+    setError('');
+
+    // Update password strength in real-time
+    if (name === 'password') {
+      const { strength } = validatePassword(value);
+      setPasswordStrength(strength);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -45,44 +61,127 @@ function RegisterPage() {
     setError('');
     setIsLoading(true);
 
-    // Validate password confirmation
-    if (formData.password !== formData.confirmPassword) {
-      setError(t('auth.passwordMismatch'));
-      setIsLoading(false);
-      return;
-    }
+    try {
+      // ✅ Validate email format
+      const emailValidation = validateEmail(formData.email);
+      if (!emailValidation.isValid) {
+        setError(emailValidation.error);
+        setIsLoading(false);
+        return;
+      }
 
-    const result = register({
-      username: formData.username,
-      password: formData.password,
-      name: formData.name,
-      email: formData.email
-    });
-    
-    if (result.success) {
-      // Auto login and redirect to home
-      navigate('/', { replace: true });
-    } else {
-      setError(result.error || t('auth.registerFailed'));
+      // ✅ Validate password strength
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        setError(passwordValidation.error);
+        setIsLoading(false);
+        return;
+      }
+
+      // ✅ Validate password confirmation
+      if (formData.password !== formData.confirmPassword) {
+        setError(t('auth.passwordMismatch'));
+        setIsLoading(false);
+        return;
+      }
+
+      // ✅ CRITICAL: Register via Supabase (production auth)
+      if (formData.email && formData.email.includes('@')) {
+        console.log('[REGISTER] Attempting Supabase registration...');
+
+        const { success, data, error: supabaseError } = await supabaseSignUp({
+          email: formData.email,
+          password: formData.password,
+          displayName: formData.name
+        });
+
+        if (success) {
+          console.log('[REGISTER][Supabase] Registration successful:', data.user?.email);
+
+          // ✅ Create user profile
+          const userId = data.user?.id;
+
+          // Map Supabase user to app format
+          const supabaseUserForApp = {
+            id: userId,
+            username: data.user?.email,
+            name: formData.name || data.user?.email,
+            email: data.user?.email,
+            role: 'user', // Default role for new users
+          };
+
+          // Update AuthContext
+          updateUser(supabaseUserForApp);
+
+          // ✅ Auto sync to localStorage
+          import('../data/users.js').then(({ syncSupabaseUserToLocal }) => {
+            syncSupabaseUserToLocal(data.user, null).then(result => {
+              if (result.success) {
+                console.log('[REGISTER] Auto-synced user to localStorage');
+              }
+            });
+          });
+
+          // ✅ Auto sync data
+          fullSync(userId).then(result => {
+            if (result.success) {
+              console.log('[REGISTER][Sync] Data synced successfully');
+            }
+          }).catch(err => {
+            console.warn('[REGISTER][Sync] Error:', err);
+          });
+
+          // Show success message
+          alert(t('auth.registrationSuccess') || 'Registration successful! Please check your email to verify your account.');
+
+          // Navigate to home
+          navigate('/', { replace: true });
+          setIsLoading(false);
+          return;
+        } else {
+          // ✅ SECURITY: Generic error message (don't leak info)
+          console.error('[REGISTER][Supabase] Error:', supabaseError);
+          setError(t('auth.registrationFailed') || 'Registration failed. Please try again.');
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // ❌ Fallback: Local registration (not recommended for production)
+      console.warn('[REGISTER] Using local registration (not email) - not recommended');
+      const result = register({
+        username: formData.username,
+        password: formData.password,
+        name: formData.name,
+        email: formData.email
+      });
+
+      if (result.success) {
+        navigate('/', { replace: true });
+      } else {
+        setError(result.error || t('auth.registerFailed'));
+      }
+    } catch (err) {
+      console.error('[REGISTER] Unexpected error:', err);
+      setError(t('auth.registrationFailed') || 'An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
+
+  // Get password strength info
+  const strengthInfo = getPasswordStrengthInfo(passwordStrength);
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
-      {/* ✨ NEO BRUTALISM Background */}
-
       {/* ✨ NEO BRUTALISM Main Register Card */}
-      <div 
-        className={`relative z-10 w-full max-w-md transition-all duration-1000 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-        }`}
+      <div
+        className={`relative z-10 w-full max-w-md transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          }`}
       >
         <div className="bg-white rounded-2xl border-[4px] border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
           {/* ✨ NEO BRUTALISM Header */}
           <div className="bg-gradient-to-br from-yellow-400 to-orange-400 p-6 sm:p-8 border-b-[4px] border-black">
-            {/* ✨ NEO BRUTALISM Icon */}
             <div className="flex justify-center mb-4">
               <div className="bg-white rounded-full border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-5">
                 <svg className="w-10 h-10 sm:w-12 sm:h-12 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,12 +189,11 @@ function RegisterPage() {
                 </svg>
               </div>
             </div>
-            
-            {/* ✨ NEO BRUTALISM Title */}
-            <h1 
+
+            <h1
               className="text-3xl sm:text-4xl font-black text-center mb-2 uppercase tracking-wider text-black"
               style={{
-                fontFamily: "'Space Grotesk', 'Inter', 'Segoe UI', 'Roboto', sans-serif",
+                fontFamily: "'Space Grotesk', 'Inter', sans-serif",
                 textShadow: '3px 3px 0px rgba(0,0,0,0.15)'
               }}
             >
@@ -119,30 +217,6 @@ function RegisterPage() {
                 </div>
               )}
 
-              {/* Username Input */}
-              <div>
-                <label className="block text-sm sm:text-base font-black uppercase mb-2 text-black tracking-wide">
-                  {t('auth.username')} *
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-black">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                    </svg>
-                  </span>
-                  <input
-                    type="text"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleChange}
-                    required
-                    minLength={3}
-                    placeholder={t('auth.enterUsername')}
-                    className="w-full pl-11 sm:pl-12 pr-4 py-3 sm:py-3.5 text-base sm:text-lg font-bold border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.15)]"
-                  />
-                </div>
-              </div>
-
               {/* Name Input */}
               <div>
                 <label className="block text-sm sm:text-base font-black uppercase mb-2 text-black tracking-wide">
@@ -160,6 +234,7 @@ function RegisterPage() {
                     value={formData.name}
                     onChange={handleChange}
                     required
+                    minLength={2}
                     placeholder={t('auth.enterName')}
                     className="w-full pl-11 sm:pl-12 pr-4 py-3 sm:py-3.5 text-base sm:text-lg font-bold border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.15)]"
                   />
@@ -188,6 +263,9 @@ function RegisterPage() {
                     className="w-full pl-11 sm:pl-12 pr-4 py-3 sm:py-3.5 text-base sm:text-lg font-bold border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.15)]"
                   />
                 </div>
+                <p className="text-xs text-gray-600 mt-1 ml-1">
+                  ✉️ We'll send a verification email
+                </p>
               </div>
 
               {/* Password Input */}
@@ -206,12 +284,52 @@ function RegisterPage() {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
+                    onFocus={() => setShowPasswordHint(true)}
                     required
-                    minLength={6}
+                    minLength={8}
                     placeholder={t('auth.enterPassword')}
                     className="w-full pl-11 sm:pl-12 pr-4 py-3 sm:py-3.5 text-base sm:text-lg font-bold border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.15)]"
                   />
                 </div>
+
+                {/* Password Strength Meter */}
+                {formData.password && (
+                  <div className="mt-2">
+                    <div className="flex gap-1 mb-1">
+                      {[0, 1, 2, 3, 4].map((level) => (
+                        <div
+                          key={level}
+                          className={`h-2 flex-1 rounded-full border-2 border-black transition-all ${level <= passwordStrength ? strengthInfo.color : 'bg-gray-200'
+                            }`}
+                        />
+                      ))}
+                    </div>
+                    <p className={`text-xs font-bold ${strengthInfo.color.replace('bg-', 'text-')}`}>
+                      {strengthInfo.label}
+                    </p>
+                  </div>
+                )}
+
+                {/* Password Requirements */}
+                {showPasswordHint && (
+                  <div className="mt-2 text-xs text-gray-600 space-y-1">
+                    <p className="font-bold">Password must contain:</p>
+                    <ul className="list-none space-y-0.5 ml-2">
+                      <li className={formData.password.length >= 8 ? 'text-green-600 font-bold' : ''}>
+                        {formData.password.length >= 8 ? '✓' : '○'} At least 8 characters
+                      </li>
+                      <li className={/[A-Z]/.test(formData.password) ? 'text-green-600 font-bold' : ''}>
+                        {/[A-Z]/.test(formData.password) ? '✓' : '○'} One uppercase letter
+                      </li>
+                      <li className={/[a-z]/.test(formData.password) ? 'text-green-600 font-bold' : ''}>
+                        {/[a-z]/.test(formData.password) ? '✓' : '○'} One lowercase letter
+                      </li>
+                      <li className={/[0-9]/.test(formData.password) ? 'text-green-600 font-bold' : ''}>
+                        {/[0-9]/.test(formData.password) ? '✓' : '○'} One number
+                      </li>
+                    </ul>
+                  </div>
+                )}
               </div>
 
               {/* Confirm Password Input */}
@@ -231,11 +349,16 @@ function RegisterPage() {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
-                    minLength={6}
+                    minLength={8}
                     placeholder={t('auth.reEnterPassword')}
                     className="w-full pl-11 sm:pl-12 pr-4 py-3 sm:py-3.5 text-base sm:text-lg font-bold border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.15)]"
                   />
                 </div>
+                {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                  <p className="text-xs text-red-600 mt-1 font-bold">
+                    ⚠️ Passwords don't match
+                  </p>
+                )}
               </div>
 
               {/* Submit Button */}
@@ -257,7 +380,7 @@ function RegisterPage() {
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
                     </svg>
-                    {t('auth.registerButton').toUpperCase()}
+                    {t('auth.registerButton')}
                   </>
                 )}
               </button>
@@ -266,8 +389,8 @@ function RegisterPage() {
               <div className="text-center pt-2">
                 <p className="text-gray-700 text-sm sm:text-base">
                   {t('auth.haveAccount')}{' '}
-                  <Link 
-                    to="/login" 
+                  <Link
+                    to="/login"
                     className="text-black font-black hover:text-yellow-600 transition-colors underline decoration-2 underline-offset-2"
                   >
                     {t('auth.loginNow')}
@@ -277,26 +400,9 @@ function RegisterPage() {
             </form>
           </div>
         </div>
-
-        {/* ✨ NEO BRUTALISM Info Note */}
-        <div className="mt-6 bg-blue-400 rounded-lg border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-4">
-          <div className="flex items-start gap-3">
-            <svg className="w-6 h-6 flex-shrink-0 text-black mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-            <div>
-              <p className="text-black font-bold text-sm sm:text-base">
-                ✨ {t('auth.accountNote')} <span className="font-black">{(getSetting('users', 'defaultRole') || t('auth.defaultRole')).toUpperCase()}</span> {t('common.admin').toLowerCase()}.
-              </p>
-              <p className="text-black text-xs sm:text-sm mt-1">
-                {t('auth.contactAdmin')}
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* ✨ NEO BRUTALISM Background Decoration */}
+      {/* Background Decoration */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-10 left-10 w-20 h-20 border-[4px] border-yellow-400 rounded-lg rotate-12 opacity-20"></div>
         <div className="absolute bottom-20 right-20 w-32 h-32 border-[4px] border-orange-400 rounded-full opacity-20"></div>
@@ -307,4 +413,3 @@ function RegisterPage() {
 }
 
 export default RegisterPage;
-
