@@ -4,9 +4,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';
-import { users as initialUsers, roles, saveUserPassword, getUsers as getUsersFromData, addToDeletedUsers, clearDeletedUsers, syncAllSupabaseUsers, syncSupabaseUserToLocal } from '../../data/users.js';
+import { users as initialUsers, roles, saveUserPassword, getUsers as getUsersFromData, addToDeletedUsers, clearDeletedUsers, syncAllSupabaseUsers, syncSupabaseUserToLocal, addToDeletedSupabaseUsers, getDeletedSupabaseUsers } from '../../data/users.js';
 import { isValidEmail, getEmailErrorMessage } from '../../utils/emailValidator.js';
 import { resetToFactoryDefaults } from '../../utils/seedManager.js';
+import * as authService from '../../services/authService.js';
 
 // ✅ Helper: Lock/unlock body scroll
 const useBodyScrollLock = (isLocked) => {
@@ -60,35 +61,84 @@ function UsersManagementPage() {
   // ✅ NEW: State for Supabase sync
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Load users from localStorage (nếu có) hoặc dùng initialUsers
+  // Load users from Supabase - KHÔNG dùng localStorage (để loại bỏ users đã xóa)
   useEffect(() => {
-    console.log('[USERS_MGMT] useEffect running...');
-    try {
-      // ✅ FIX: Sử dụng getUsers() từ users.js để đảm bảo logic nhất quán
-      console.log('[USERS_MGMT] Calling getUsersFromData()...');
-      const allUsers = getUsersFromData();
-      console.log('[USERS_MGMT] getUsersFromData() returned:', allUsers);
-      
-      // ✅ DEBUG: Log users loaded
-      if (allUsers && Array.isArray(allUsers)) {
-        console.log('[USERS_MGMT] Users loaded from getUsers():', allUsers.map(u => ({ id: u.id, username: u.username, role: u.role })));
+    console.log('[USERS_MGMT] 🔄 Component mounted - Loading from Supabase...');
+    
+    (async () => {
+      try {
+        // Step 1: Fetch từ Supabase (Supabase = source of truth)
+        const { success, profiles } = await authService.getAllUserProfiles();
         
-        if (allUsers.length > 0) {
-          setUsers(allUsers);
-          console.log('[USERS_MGMT] Users set successfully');
+        if (!success || !profiles) {
+          console.warn('[USERS_MGMT] ⚠️ Cannot fetch Supabase profiles');
+          // Fallback: Use initial users
+          setUsers(initialUsers);
           return;
         }
-      } else {
-        console.warn('[USERS_MGMT] getUsers() returned invalid data:', allUsers);
+        
+        console.log('[USERS_MGMT] 📊 Supabase profiles:', profiles.length);
+        
+        // Step 2: Rebuild list từ Supabase + Demo users
+        const finalUsers = [];
+        
+        // 2a. Add demo users (từ code, KHÔNG từ localStorage để tránh lưu users đã xóa)
+        for (const demoUser of initialUsers) {
+          const isDemoUser = typeof demoUser.id === 'number' && !demoUser.isSupabaseUser && !demoUser.supabaseId;
+          if (isDemoUser) {
+            finalUsers.push(demoUser);
+            console.log('[USERS_MGMT] ✅ Added demo user:', demoUser.username);
+          }
+        }
+        
+        // 2b. Add Supabase users from profiles (skip deleted ones)
+        const deletedSupabaseEmails = new Set(getDeletedSupabaseUsers().map(e => e.toLowerCase()));
+        
+        for (const profile of profiles) {
+          const emailLower = profile.email?.toLowerCase();
+          
+          // Skip if user is in blacklist
+          if (emailLower && deletedSupabaseEmails.has(emailLower)) {
+            console.log('[USERS_MGMT] ⏭️ Skipping deleted Supabase user:', profile.email);
+            continue;
+          }
+          
+          const newUser = {
+            id: `supabase_${profile.user_id.substring(0, 8)}`,
+            supabaseId: profile.user_id,
+            username: profile.email?.split('@')[0] || `user_${profile.user_id.substring(0, 8)}`,
+            email: profile.email || `user_${profile.user_id.substring(0, 8)}@example.com`,
+            name: profile.display_name || profile.email?.split('@')[0] || 'User',
+            role: profile.role || 'user',
+            isSupabaseUser: true,
+            createdAt: profile.created_at || new Date().toISOString()
+          };
+          finalUsers.push(newUser);
+          console.log('[USERS_MGMT] ✅ Added Supabase user:', profile.email);
+        }
+        
+        console.log('[USERS_MGMT] 📋 Final list:', finalUsers.length, 'users (demo:', 
+          finalUsers.filter(u => typeof u.id === 'number').length, 
+          '+ supabase:', finalUsers.filter(u => u.isSupabaseUser).length, ')');
+        
+        // Step 3: Save to localStorage
+        const usersWithoutPassword = finalUsers.map(({ password, ...user }) => user);
+        localStorage.setItem('adminUsers', JSON.stringify(usersWithoutPassword));
+        window.dispatchEvent(new CustomEvent('adminUsersUpdated', { 
+          detail: { updatedUsers: usersWithoutPassword } 
+        }));
+        
+        // Step 4: Update UI
+        setUsers(finalUsers);
+        
+        console.log('[USERS_MGMT] ✅✅✅ Loaded from Supabase. Final:', finalUsers.length, 'users');
+        
+      } catch (error) {
+        console.error('[USERS_MGMT] ❌ Load error:', error);
+        // Fallback
+        setUsers(initialUsers);
       }
-    } catch (error) {
-      console.error('[USERS_MGMT] Error loading users:', error);
-      console.error('[USERS_MGMT] Error stack:', error.stack);
-    }
-    
-    // Fallback về initialUsers nếu có lỗi hoặc không có data
-    console.log('[USERS_MGMT] Using initialUsers as fallback');
-    setUsers(initialUsers);
+    })();
   }, []);
 
   // Save users to localStorage (lưu password vào key riêng)
@@ -288,6 +338,12 @@ function UsersManagementPage() {
       email: formData.email,
       role: formData.role
     }));
+    
+    // Auto-sync sau khi tạo user
+    console.log('[ADD_USER] Starting auto-sync after add...');
+    setTimeout(() => {
+      autoSyncFromSupabase();
+    }, 500);
   };
 
   // Edit user
@@ -392,41 +448,122 @@ function UsersManagementPage() {
       email: formData.email,
       role: formData.role
     }));
+    
+    // Auto-sync sau khi cập nhật user
+    console.log('[UPDATE_USER] Starting auto-sync after update...');
+    setTimeout(() => {
+      autoSyncFromSupabase();
+    }, 500);
   };
 
   // Delete user
-  const handleDeleteUser = (userId) => {
+  const handleDeleteUser = async (userId) => {
     if (userId === currentUser?.id) {
       alert(t('userManagement.messages.cannotDeleteSelf'));
       return;
     }
-    if (confirm(t('userManagement.messages.confirmDelete'))) {
-      const userToDelete = users.find(u => u.id === userId);
-      const updatedUsers = users.filter(u => u.id !== userId);
-      saveUsers(updatedUsers);
+    
+    const userToDelete = users.find(u => u.id === userId);
+    if (!userToDelete) {
+      alert('❌ Không tìm thấy user để xóa');
+      return;
+    }
+    
+    if (!confirm(t('userManagement.messages.confirmDelete'))) {
+      return;
+    }
+    
+    try {
+      console.log('[DELETE_USER] Starting delete process for:', userToDelete.email);
       
-      // ✅ FIX: Add to deleted users blacklist (prevent demo users from reappearing)
-      addToDeletedUsers(userId);
-      console.log('[DELETE_USER] Added user to blacklist:', userId);
-      
-      // ✅ FIX: Xóa password khỏi userPasswords khi xóa user
-      if (userToDelete) {
-        try {
-          const savedPasswords = localStorage.getItem('userPasswords');
-          if (savedPasswords) {
-            let passwordsMap = JSON.parse(savedPasswords);
-            delete passwordsMap[userToDelete.id];
-            delete passwordsMap[String(userToDelete.id)];
-            delete passwordsMap[userToDelete.username];
-            localStorage.setItem('userPasswords', JSON.stringify(passwordsMap));
-            console.log('[DELETE_USER] Deleted password for:', userToDelete.username);
+      // Step 1: Xóa từ Supabase nếu là Supabase user
+      if (userToDelete?.isSupabaseUser && userToDelete?.supabaseId) {
+        console.log('[DELETE_USER] Deleting Supabase user:', userToDelete.email);
+        
+        // Try deleting by user_id first
+        let result = await authService.deleteUser(userToDelete.supabaseId);
+        
+        // If that fails, try deleting by email (for orphaned profiles)
+        if (!result.success && userToDelete.email) {
+          console.log('[DELETE_USER] Trying to delete by email:', userToDelete.email);
+          result = await authService.deleteUserByEmail(userToDelete.email);
+        }
+        
+        if (result.success) {
+          console.log('[DELETE_USER] ✅ Deleted from Supabase:', userToDelete.email);
+          
+          // Verify deletion by waiting and checking
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Check if profile still exists
+          const { success: checkSuccess, profiles } = await authService.getAllUserProfiles();
+          if (checkSuccess && profiles) {
+            const stillExists = profiles.some(p => 
+              p.user_id === userToDelete.supabaseId || 
+              p.email?.toLowerCase() === userToDelete.email?.toLowerCase()
+            );
+            
+            if (stillExists) {
+              console.warn('[DELETE_USER] ⚠️ User still exists in Supabase after deletion!');
+              alert(`⚠️ User đã được xóa khỏi danh sách local, nhưng vẫn còn trong Supabase.\n\nVui lòng xóa từ Supabase Dashboard → Authentication → Users để xóa hoàn toàn.`);
+            } else {
+              console.log('[DELETE_USER] ✅ Verified: User deleted from Supabase');
+            }
           }
-        } catch (e) {
-          console.error('[DELETE_USER] Error deleting password:', e);
+        } else {
+          console.warn('[DELETE_USER] ⚠️ Error deleting from Supabase:', result.error);
+          alert(`⚠️ Lỗi khi xóa từ Supabase: ${result.error}\n\nUser vẫn có thể bị xóa khỏi danh sách local.\n\nĐể xóa hoàn toàn, vui lòng xóa từ Supabase Dashboard → Authentication → Users.`);
         }
       }
       
+      // Step 2: Xóa từ localStorage (UI state)
+      const updatedUsers = users.filter(u => u.id !== userId);
+      setUsers(updatedUsers); // Update UI immediately
+      
+      // Step 3: Save to localStorage
+      const usersWithoutPassword = updatedUsers.map(({ password, ...user }) => user);
+      localStorage.setItem('adminUsers', JSON.stringify(usersWithoutPassword));
+      window.dispatchEvent(new CustomEvent('adminUsersUpdated', {
+        detail: { updatedUsers: usersWithoutPassword }
+      }));
+      
+      // Step 4: Add to deleted users blacklist
+      if (typeof userId === 'number') {
+        // Demo user
+        addToDeletedUsers(userId);
+        console.log('[DELETE_USER] Added demo user to blacklist:', userId);
+      } else if (userToDelete?.isSupabaseUser && userToDelete?.email) {
+        // Supabase user - add email to blacklist
+        addToDeletedSupabaseUsers(userToDelete.email);
+        console.log('[DELETE_USER] Added Supabase user to blacklist:', userToDelete.email);
+      }
+      
+      // Step 5: Xóa password khỏi userPasswords
+      try {
+        const savedPasswords = localStorage.getItem('userPasswords');
+        if (savedPasswords) {
+          let passwordsMap = JSON.parse(savedPasswords);
+          delete passwordsMap[userToDelete.id];
+          delete passwordsMap[String(userToDelete.id)];
+          delete passwordsMap[userToDelete.username];
+          localStorage.setItem('userPasswords', JSON.stringify(passwordsMap));
+          console.log('[DELETE_USER] Deleted password for:', userToDelete.username);
+        }
+      } catch (e) {
+        console.error('[DELETE_USER] Error deleting password:', e);
+      }
+      
+      // Step 6: Auto-sync từ Supabase để đảm bảo danh sách chính xác
+      console.log('[DELETE_USER] Starting auto-sync after delete...');
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Đợi 1s để Supabase xử lý
+      await autoSyncFromSupabase();
+      
       alert(t('userManagement.messages.deleteSuccess', { username: userToDelete?.username || userId }));
+      console.log('[DELETE_USER] ✅ Delete process completed');
+      
+    } catch (error) {
+      console.error('[DELETE_USER] ❌ Error in delete process:', error);
+      alert(`❌ Lỗi khi xóa user: ${error.message}`);
     }
   };
 
@@ -437,27 +574,75 @@ function UsersManagementPage() {
     setShowChangePasswordModal(true);
   };
 
-  // ✅ NEW: Sync users from Supabase
-  const handleSyncFromSupabase = async () => {
-    setIsSyncing(true);
+  // ✅ Auto-sync với Supabase (gọi sau mỗi quy trình tạo/xóa/cập nhật)
+  const autoSyncFromSupabase = async () => {
     try {
-      const result = await syncAllSupabaseUsers();
-      if (result.success) {
-        // Reload users after sync
-        const allUsers = getUsersFromData();
-        setUsers(allUsers);
-        alert(`✅ Đã đồng bộ ${result.synced} user(s) từ Supabase!`);
-      } else {
-        const errorMsg = result.errors.length > 0 
-          ? result.errors.map(e => e.error || e.userId).join(', ')
-          : 'Không thể đồng bộ users từ Supabase';
-        alert(`⚠️ ${errorMsg}\n\nLưu ý: Có thể do RLS (Row Level Security) chỉ cho phép xem profile của chính bạn.`);
+      console.log('[AUTO-SYNC] Starting auto-sync from Supabase...');
+      
+      const { success, profiles } = await authService.getAllUserProfiles();
+      
+      if (!success || !profiles) {
+        console.warn('[AUTO-SYNC] Cannot fetch profiles from Supabase');
+        return;
       }
+      
+      console.log('[AUTO-SYNC] Fetched', profiles.length, 'profiles from Supabase');
+      
+      // Rebuild list từ Supabase ONLY (Supabase = source of truth)
+      const finalUsers = [];
+      
+      // Add demo users (từ initialUsers, KHÔNG từ localStorage)
+      for (const demoUser of initialUsers) {
+        const isDemoUser = typeof demoUser.id === 'number' && !demoUser.isSupabaseUser && !demoUser.supabaseId;
+        if (isDemoUser) {
+          finalUsers.push(demoUser);
+          console.log('[AUTO-SYNC] ✅ Added demo:', demoUser.username);
+        }
+      }
+      
+      // Add Supabase users from profiles (skip deleted ones)
+      const deletedSupabaseEmails = new Set(getDeletedSupabaseUsers().map(e => e.toLowerCase()));
+      
+      for (const profile of profiles) {
+        const emailLower = profile.email?.toLowerCase();
+        
+        // Skip if user is in blacklist
+        if (emailLower && deletedSupabaseEmails.has(emailLower)) {
+          console.log('[AUTO-SYNC] ⏭️ Skipping deleted Supabase user:', profile.email);
+          continue;
+        }
+        
+        const newUser = {
+          id: `supabase_${profile.user_id.substring(0, 8)}`,
+          supabaseId: profile.user_id,
+          username: profile.email?.split('@')[0] || `user_${profile.user_id.substring(0, 8)}`,
+          email: profile.email || `user_${profile.user_id.substring(0, 8)}@example.com`,
+          name: profile.display_name || profile.email?.split('@')[0] || 'User',
+          role: profile.role || 'user',
+          isSupabaseUser: true,
+          createdAt: profile.created_at || new Date().toISOString()
+        };
+        finalUsers.push(newUser);
+        console.log('[AUTO-SYNC] ✅ Added Supabase:', profile.email);
+      }
+      
+      console.log('[AUTO-SYNC] 📋 Final list:', finalUsers.length, 'users (demo:', 
+        finalUsers.filter(u => typeof u.id === 'number').length,
+        '+ supabase:', profiles.length, ')');
+      
+      // Save to localStorage
+      const usersWithoutPassword = finalUsers.map(({ password, ...user }) => user);
+      localStorage.setItem('adminUsers', JSON.stringify(usersWithoutPassword));
+      window.dispatchEvent(new CustomEvent('adminUsersUpdated', { 
+        detail: { updatedUsers: usersWithoutPassword } 
+      }));
+      
+      // Update UI
+      setUsers(finalUsers);
+      
+      console.log('[AUTO-SYNC] ✅✅✅ Sync completed. Total:', finalUsers.length, 'users');
     } catch (error) {
-      console.error('[SYNC] Error:', error);
-      alert(`❌ Lỗi khi đồng bộ: ${error.message}`);
-    } finally {
-      setIsSyncing(false);
+      console.error('[AUTO-SYNC] ❌ Error:', error);
     }
   };
 
@@ -764,14 +949,6 @@ function UsersManagementPage() {
           </h2>
           {!showAddForm && (
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <button
-                onClick={handleSyncFromSupabase}
-                disabled={isSyncing}
-                className="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold flex items-center justify-center gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span>{isSyncing ? '⏳' : '🔄'}</span>
-                <span>{isSyncing ? 'Đang đồng bộ...' : 'Sync từ Supabase'}</span>
-              </button>
               <button
                 onClick={() => setShowAddForm(true)}
                 className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center justify-center gap-2 text-sm sm:text-base"

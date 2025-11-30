@@ -52,12 +52,16 @@ export function setDashboardAccessConfig(config) {
 
 /**
  * Check if a user has access to dashboard
- * @param {Object} user - User object with id, role
+ * @param {Object} user - User object with id
+ * @param {Object} profile - Profile object with role (optional, can be passed separately)
  * @returns {boolean} True if user has access
  */
-export function hasDashboardAccess(user) {
+export function hasDashboardAccess(user, profile = null) {
+  // Get role from profile if provided, or from user object
+  const userRole = profile?.role || user?.role;
+  
   // Admin always has access
-  if (user?.role === 'admin') {
+  if (userRole === 'admin') {
     return true;
   }
 
@@ -74,7 +78,7 @@ export function hasDashboardAccess(user) {
   }
 
   // Kiểm tra role
-  if (config.allowedRoles.includes(user.role)) {
+  if (userRole && config.allowedRoles.includes(userRole)) {
     return true;
   }
 

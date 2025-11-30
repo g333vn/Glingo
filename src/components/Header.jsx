@@ -10,18 +10,21 @@ import { getSettings } from '../utils/settingsManager.js';
 import StreakCounter from './StreakCounter.jsx';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
 import NotificationBell from './NotificationBell.jsx';
+import { useToast } from './ToastNotification.jsx';
 
 function Header({ onUserIconClick, isMaintenanceLock = false }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { navigate: examNavigate, WarningModal, shouldShowWarning, clearExamData } = useExamGuard();
-  const { user, logout, isAdmin, isLoading } = useAuth();
+  const { user, profile, logout, isAdmin, isLoading } = useAuth();
   const { t } = useLanguage();
+  const { success } = useToast();
   const [settings, setSettings] = useState(getSettings());
 
-  // Check if user is editor
+  // Check if user is editor (not admin)
   const isEditor = () => {
-    return user && user.role === 'editor';
+    const userRole = profile?.role || user?.role;
+    return userRole === 'editor';
   };
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -142,6 +145,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
     setShowLogoutConfirm(false);
     clearExamData?.();
     logout();
+    success(t('auth.logoutSuccess'));
     examNavigate('/');
     handleMobileLinkClick();
   };
@@ -437,7 +441,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                     {/* Menu Items */}
                     <div className="py-2">
                       {/* Dashboard - Check access first */}
-                      {hasDashboardAccess(user) ? (
+                      {hasDashboardAccess(user, profile) ? (
                         <button
                           onClick={() => handleNavigate('/dashboard')}
                           className="w-full text-left px-4 py-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 flex items-center gap-3 text-sm font-semibold text-gray-800 transition-colors border-b border-gray-100"
@@ -708,7 +712,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
                   </button>
 
                   {/* Dashboard - Check access first */}
-                  {hasDashboardAccess(user) ? (
+                  {hasDashboardAccess(user, profile) ? (
                     <button
                       onClick={() => {
                         handleNavigate('/dashboard');

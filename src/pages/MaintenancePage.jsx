@@ -8,10 +8,12 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 
 function MaintenancePage() {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const settings = getSettings();
   const contactEmail = settings?.system?.contactEmail || 'admin@example.com';
-  const isAdmin = user && user.role === 'admin';
+  // Get role from profile (role is in profile, not user)
+  const userRole = profile?.role || user?.role;
+  const isAdmin = userRole === 'admin';
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">

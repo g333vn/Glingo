@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';
 
 function AdminLayout() {
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -166,10 +166,10 @@ function AdminLayout() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs bg-red-500 text-white px-2 py-1 rounded border-[2px] border-black font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                      {user?.role === 'admin' ? t('profile.administrator') : 
-                       user?.role === 'editor' ? t('profile.editor') : 
-                       user?.role === 'user' ? t('profile.user') : 
-                       user?.role?.toUpperCase()}
+                      {(profile?.role || user?.role) === 'admin' ? t('profile.administrator') : 
+                       (profile?.role || user?.role) === 'editor' ? t('profile.editor') : 
+                       (profile?.role || user?.role) === 'user' ? t('profile.user') : 
+                       (profile?.role || user?.role)?.toUpperCase()}
                     </span>
                   </div>
                 </div>

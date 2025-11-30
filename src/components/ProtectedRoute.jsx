@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { useToast } from './ToastNotification.jsx';
 
 function ProtectedRoute({ children, requiredPermission, requiredRole, adminOnly, editorOnly, editorOrAdmin }) {
-  const { user, hasPermission, isLoading } = useAuth();
+  const { user, profile, hasPermission, isLoading } = useAuth();
   const location = useLocation();
   const { warning } = useToast();
 
@@ -28,6 +28,9 @@ function ProtectedRoute({ children, requiredPermission, requiredRole, adminOnly,
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Get role from profile (role is in profile, not user)
+  const userRole = profile?.role || user?.role;
+
   const redirectWithMessage = (message) => {
     warning(message);
     return <Navigate to="/" replace />;
@@ -35,22 +38,22 @@ function ProtectedRoute({ children, requiredPermission, requiredRole, adminOnly,
 
   // Check editorOnly requirement
   // ✅ FIX: Admin should also have access to editor routes
-  if (editorOnly && user.role !== 'editor' && user.role !== 'admin') {
+  if (editorOnly && userRole !== 'editor' && userRole !== 'admin') {
     return redirectWithMessage('Bạn đã đăng nhập nhưng không có quyền editor/admin để truy cập trang này.');
   }
 
   // Check editorOrAdmin requirement
-  if (editorOrAdmin && user.role !== 'editor' && user.role !== 'admin') {
+  if (editorOrAdmin && userRole !== 'editor' && userRole !== 'admin') {
     return redirectWithMessage('Bạn đã đăng nhập nhưng không có quyền editor/admin để truy cập trang này.');
   }
 
   // Check adminOnly requirement
-  if (adminOnly && user.role !== 'admin') {
+  if (adminOnly && userRole !== 'admin') {
     return redirectWithMessage('Bạn đã đăng nhập nhưng không có quyền admin để truy cập trang này.');
   }
 
   // Check role requirement
-  if (requiredRole && user.role !== requiredRole) {
+  if (requiredRole && userRole !== requiredRole) {
     return redirectWithMessage(`Bạn đã đăng nhập nhưng không có quyền ${requiredRole} để truy cập trang này.`);
   }
 

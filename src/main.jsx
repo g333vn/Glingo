@@ -70,6 +70,7 @@ import SimpleTranslationTest from './components/examples/SimpleTranslationTest.j
 import DebugTranslationTest from './components/examples/DebugTranslationTest.jsx';
 
 import './styles/index.css';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 
 // Set --app-vh to fix 100vh issues on mobile browsers
 function setAppVh() {
@@ -377,14 +378,16 @@ const router = createBrowserRouter([
 // This ensures Router has access to AuthProvider and other contexts
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AuthProvider>
-      <LanguageProvider>
-        <ToastProvider>
-          <DictionaryProvider>
-            <RouterProvider router={router} />
-          </DictionaryProvider>
-        </ToastProvider>
-      </LanguageProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <LanguageProvider>
+          <ToastProvider>
+            <DictionaryProvider>
+              <RouterProvider router={router} />
+            </DictionaryProvider>
+          </ToastProvider>
+        </LanguageProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   </React.StrictMode>,
 );

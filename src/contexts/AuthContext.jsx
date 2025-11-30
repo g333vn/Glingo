@@ -1,211 +1,113 @@
 // src/contexts/AuthContext.jsx
-// Context để quản lý authentication state toàn app
-// ✅ FIXED: Logout ngay lập tức, không bị loading vô tận, restore session ổn định
+// 🔐 Authentication Context - Global auth state management
+// Provides: user, login, register, logout, updateProfile, isLoading
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { login as loginUser, register as registerUser } from '../data/users.js';
-import { trackUserActivity } from '../utils/analyticsTracker.js';
-import { getCurrentUser as getSupabaseUser, getUserProfile as getSupabaseUserProfile, signOut as supabaseSignOut } from '../services/authService.js';
-import { fullSync } from '../services/dataSyncService.js';
+import { supabase } from '../services/supabaseClient.js';
+import * as authService from '../services/authService.js';
 
+// Create context
 const AuthContext = createContext(null);
 
+/**
+ * ========================================
+ * AUTH PROVIDER COMPONENT
+ * ========================================
+ */
 export function AuthProvider({ children }) {
+  // State
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // ✅ Hàm sync role từ adminUsers (Single Source of Truth)
-  const syncUserFromAdminUsers = useCallback((currentUser) => {
-    if (!currentUser) return null;
-    
-    try {
-      const savedUsers = localStorage.getItem('adminUsers');
-      if (!savedUsers) return currentUser;
-      
-      const allUsers = JSON.parse(savedUsers);
-      const updatedUser = allUsers.find(
-        u => u.id === currentUser.id || u.username === currentUser.username
-      );
-      
-      if (!updatedUser) {
-        // User đã bị xóa khỏi adminUsers → logout
-        console.warn('[AUTH] User not found in adminUsers, logging out...');
-        localStorage.removeItem('authUser');
-        return null;
-      }
-      
-      // Check nếu role hoặc thông tin khác đã thay đổi
-      if (updatedUser.role !== currentUser.role || 
-          updatedUser.name !== currentUser.name ||
-          updatedUser.email !== currentUser.email) {
-        
-        console.log('[AUTH] User data changed, syncing:', {
-          username: updatedUser.username,
-          oldRole: currentUser.role,
-          newRole: updatedUser.role,
-          oldName: currentUser.name,
-          newName: updatedUser.name
-        });
-        
-        const syncedUser = {
-          ...currentUser,
-          role: updatedUser.role,
-          name: updatedUser.name || currentUser.name,
-          email: updatedUser.email || currentUser.email
-        };
-        
-        // Update both state and localStorage
-        setUser(syncedUser);
-        try {
-          localStorage.setItem('authUser', JSON.stringify(syncedUser));
-        } catch (storageError) {
-          console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
-        }
-        return syncedUser;
-      }
-      
-      return currentUser;
-    } catch (error) {
-      console.error('[AUTH] Error syncing user:', error);
-      return currentUser;
-    }
-  }, []);
-
-  // ✅ FIXED v3: Listen for Supabase auth state changes - ƯU TIÊN INITIAL_SESSION
+  /**
+   * Initialize auth state on mount
+   * Listen for Supabase auth changes
+   */
   useEffect(() => {
     let subscription = null;
-    let initialSessionHandled = false;
 
-    // Dynamic import để tránh circular dependency
-    import('../services/supabaseClient.js').then(({ supabase }) => {
-      if (!supabase) {
-        // Supabase không available → set loading = false
-        setIsLoading(false);
-        return;
-      }
+    const initializeAuth = async () => {
+      try {
+        // Check if Supabase is configured
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      const authStateChange = supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('[AUTH][Supabase] Auth state changed:', event, session?.user?.email || 'no user');
-
-        if (event === 'INITIAL_SESSION') {
-          // ✅ CRITICAL: INITIAL_SESSION là event QUAN TRỌNG NHẤT khi reload
-          initialSessionHandled = true;
-          
-          if (session?.user) {
-            console.log('[AUTH][Supabase] Initial session found on reload');
-            const { getUserProfile: getSupabaseUserProfile } = await import('../services/authService.js');
-            const { success: profileOk, profile } = await getSupabaseUserProfile(session.user.id);
-
-            const mappedUser = {
-              id: session.user.id,
-              username: session.user.email,
-              name: profile?.display_name || session.user.email,
-              email: session.user.email,
-              role: profile?.role || 'user',
-            };
-
-            setUser(mappedUser);
-            try {
-              localStorage.setItem('authUser', JSON.stringify(mappedUser));
-            } catch (storageError) {
-              console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
-            }
-            
-            // ✅ Auto sync Supabase user vào localStorage adminUsers (nếu chưa có)
-            if (typeof session.user.id === 'string' && session.user.id.length > 20) {
-              import('../data/users.js').then(({ syncSupabaseUserToLocal }) => {
-                syncSupabaseUserToLocal(session.user, profile || null).then(result => {
-                  if (result.success) {
-                    console.log('[AUTH] Auto-synced Supabase user to localStorage:', result.user.email);
-                  }
-                }).catch(err => {
-                  console.error('[AUTH] Error syncing user:', err);
-                });
-              }).catch(err => {
-                console.error('[AUTH] Error importing sync function:', err);
-              });
-            }
-            
-            setIsLoading(false);
-            console.log('[AUTH][Supabase] User restored from initial session');
-          } else {
-            // Không có session trong INITIAL_SESSION → user chưa login
-            console.log('[AUTH][Supabase] No initial session found');
-            setUser(null);
-            try {
-              localStorage.removeItem('authUser');
-            } catch (e) {}
-            setIsLoading(false);
-          }
-        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          // ✅ User đăng nhập hoặc token được refresh
-          if (session?.user) {
-            console.log('[AUTH][Supabase] Handling', event, 'event');
-            const { getUserProfile: getSupabaseUserProfile } = await import('../services/authService.js');
-            const { success: profileOk, profile } = await getSupabaseUserProfile(session.user.id);
-
-            const mappedUser = {
-              id: session.user.id,
-              username: session.user.email,
-              name: profile?.display_name || session.user.email,
-              email: session.user.email,
-              role: profile?.role || 'user',
-            };
-
-            setUser(mappedUser);
-            try {
-              localStorage.setItem('authUser', JSON.stringify(mappedUser));
-            } catch (storageError) {
-              console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
-            }
-            // ✅ CRITICAL: Set isLoading = false khi đăng nhập thành công
-            setIsLoading(false);
-            console.log('[AUTH][Supabase] User updated from', event);
-          }
-        } else if (event === 'SIGNED_OUT') {
-          // ✅ CRITICAL FIX v3: SIGNED_OUT event handling
-          // Khi reload, SIGNED_OUT có thể fire trước INITIAL_SESSION
-          // → Đợi 1.5s để INITIAL_SESSION kip fire, sau đó mới verify & logout
-          console.log('[AUTH][Supabase] SIGNED_OUT event received, verifying session...');
-          
-          setTimeout(async () => {
-            // Verify session thực sự đã hết
-            try {
-              const { data: { session: currentSession } } = await supabase.auth.getSession();
-              if (!currentSession) {
-                console.log('[AUTH][Supabase] Session confirmed expired, logging out');
-                setUser(null);
-                try {
-                  localStorage.removeItem('authUser');
-                } catch (storageError) {
-                  // localStorage không available → bỏ qua
-                }
-              } else {
-                console.log('[AUTH][Supabase] Session still exists, ignoring SIGNED_OUT event (reload detected)');
-              }
-            } catch (err) {
-              console.warn('[AUTH][Supabase] Error verifying session on SIGNED_OUT:', err);
-              // Nếu lỗi, không logout - để safe
-            }
-          }, 1500);
-        }
-      });
-
-      subscription = authStateChange.data.subscription;
-      
-      // ✅ CRITICAL: Fallback timeout - nếu INITIAL_SESSION không fire trong 3 giây
-      // → set isLoading = false để tránh stuck
-      setTimeout(() => {
-        if (!initialSessionHandled) {
-          console.warn('[AUTH][Supabase] INITIAL_SESSION timeout after 3s, assuming no session');
+        if (!supabaseUrl || !supabaseAnonKey) {
+          console.log('[AuthContext] Supabase not configured, skipping initialization');
           setIsLoading(false);
+          return;
         }
-      }, 3000);
-    }).catch(err => {
-      console.error('[AUTH] Error setting up Supabase auth listener:', err);
-      // ✅ CRITICAL: Set isLoading = false nếu có lỗi
-      setIsLoading(false);
-    });
+
+        // Get initial session
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          // Load profile with timeout protection
+          try {
+            await Promise.race([
+              loadUserProfile(session.user),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Profile load timeout')), 8000)
+              )
+            ]);
+          } catch (profileError) {
+            console.warn('[AuthContext] Profile load failed or timeout:', profileError);
+            // Still set user even if profile fails
+            setUser({
+              id: session.user.id,
+              email: session.user.email,
+              emailConfirmed: session.user.email_confirmed_at !== null,
+            });
+          }
+        }
+
+        setIsLoading(false);
+
+        // Listen for auth state changes
+        const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+          console.log('[AuthContext] Auth state changed:', event);
+
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            if (session?.user) {
+              // Load profile with timeout protection
+              try {
+                await Promise.race([
+                  loadUserProfile(session.user),
+                  new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Profile load timeout')), 8000)
+                  )
+                ]);
+              } catch (profileError) {
+                console.warn('[AuthContext] Profile load failed or timeout:', profileError);
+                // Still set user even if profile fails
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email,
+                  emailConfirmed: session.user.email_confirmed_at !== null,
+                });
+              }
+            }
+            // Ensure loading is false after sign in
+            setIsLoading(false);
+          } else if (event === 'SIGNED_OUT') {
+            setUser(null);
+            setProfile(null);
+            setError(null);
+            setIsLoading(false);
+          }
+        });
+
+        subscription = data.subscription;
+      } catch (err) {
+        console.error('[AuthContext] Initialization error:', err);
+        setError(err.message);
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
 
     return () => {
       if (subscription) {
@@ -214,266 +116,313 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // ✅ FIXED v2: Load user on mount - CHỈ CHẠY NẾU KHÔNG CÓ SUPABASE
-  useEffect(() => {
-    let isMounted = true;
+  /**
+   * Load user profile from database
+   */
+  const loadUserProfile = useCallback(async (authUser) => {
+    try {
+      if (!authUser?.id) {
+        console.warn('[AuthContext] No authUser.id provided');
+        return;
+      }
 
-    async function loadInitialUser() {
+      // Get profile with timeout to avoid infinite loading
+      const profilePromise = authService.getUserProfile(authUser.id);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile load timeout')), 10000)
+      );
+
+      let profileResult;
       try {
-        // ✅ CRITICAL: Check xem Supabase có được config không
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        
-        if (supabaseUrl && supabaseAnonKey) {
-          // ✅ CRITICAL: Supabase được config
-          // → KHÔNG làm gì ở đây, để INITIAL_SESSION event xử lý
-          // → loadInitialUser chỉ là fallback cho local users (không dùng Supabase)
-          console.log('[AUTH] Supabase is configured, relying on INITIAL_SESSION event...');
-          
-          // ✅ CRITICAL: Chỉ load từ localStorage nếu là LOCAL user (numeric ID)
-          try {
-            const savedUser = localStorage.getItem('authUser');
-            if (savedUser) {
-              const parsedUser = JSON.parse(savedUser);
-              
-              // Check xem có phải local user không (numeric ID)
-              if (typeof parsedUser.id === 'number' || (typeof parsedUser.id === 'string' && parsedUser.id.length <= 20 && !parsedUser.id.includes('-'))) {
-                // Local user → load ngay từ localStorage
-                console.log('[AUTH] Loading local user from localStorage:', parsedUser.username);
-                const syncedUser = syncUserFromAdminUsers(parsedUser);
-                if (isMounted && syncedUser) {
-                  setUser(syncedUser);
-                  setIsLoading(false);
-                }
-                return;
-              } else {
-                // Supabase user (UUID) → để INITIAL_SESSION event xử lý
-                console.log('[AUTH] Found Supabase user in localStorage, waiting for INITIAL_SESSION event...');
-                // KHÔNG set isLoading = false ở đây, để event listener xử lý
-                return;
-              }
-            }
-          } catch (err) {
-            console.warn('[AUTH] Error loading from localStorage:', err);
-          }
-          
-          // Không có user trong localStorage → đợi INITIAL_SESSION
-          return;
-        }
+        profileResult = await Promise.race([profilePromise, timeoutPromise]);
+      } catch (timeoutError) {
+        console.error('[AuthContext] Profile load timeout or error:', timeoutError);
+        // Continue without profile - user can still use the app
+        profileResult = { success: false, profile: null };
+      }
 
-        // ✅ Supabase KHÔNG được config → load từ localStorage (local users only)
-        console.log('[AUTH] Supabase not configured, loading from localStorage...');
-        
-        let savedUser = null;
+      const { success, profile: profileData } = profileResult;
+
+      if (success && profileData) {
+        setProfile(profileData);
+      } else {
+        // Try to create profile if it doesn't exist
         try {
-          savedUser = localStorage.getItem('authUser');
-        } catch (storageError) {
-          console.warn('[AUTH] Cannot read from localStorage (incognito mode?):', storageError.message);
-        }
-        
-        if (savedUser && isMounted) {
-          try {
-            const parsedUser = JSON.parse(savedUser);
-            console.log('[AUTH] User loaded from authUser:', { id: parsedUser.id, username: parsedUser.username, role: parsedUser.role });
-            
-            // Sync user từ adminUsers
-            const syncedUser = syncUserFromAdminUsers(parsedUser);
-            
-            if (isMounted && syncedUser) {
-              setUser(syncedUser);
-              setIsLoading(false);
-            } else if (isMounted) {
-              // User đã bị xóa khỏi adminUsers
-              setUser(null);
-              setIsLoading(false);
-            }
-            return;
-          } catch (error) {
-            console.error('[AUTH] Error loading user from authUser:', error);
-            try {
-              localStorage.removeItem('authUser');
-            } catch (storageError) {
-              // localStorage không available → bỏ qua
-            }
+          await authService.createUserProfile(authUser.id, {
+            display_name: authUser.email?.split('@')[0] || 'User',
+            email: authUser.email,
+            role: 'user',
+          });
+
+          // Try to get profile again
+          const { profile: newProfile } = await authService.getUserProfile(authUser.id);
+          if (newProfile) {
+            setProfile(newProfile);
           }
-        }
-
-        // ✅ Không có user nào → logout state
-        if (isMounted) {
-          setUser(null);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('[AUTH] Error in loadInitialUser:', error);
-        if (isMounted) {
-          setUser(null);
-          setIsLoading(false);
+        } catch (createError) {
+          console.warn('[AuthContext] Could not create profile:', createError);
+          // Continue without profile - user can still use the app
         }
       }
-    }
 
-    loadInitialUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [syncUserFromAdminUsers]);
-
-  // ✅ Listen for localStorage changes từ other tabs
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'adminUsers' && user) {
-        console.log('[AUTH] adminUsers changed (other tab), syncing...');
-        syncUserFromAdminUsers(user);
-      }
-      
-      if (e.key === 'authUser' && e.newValue === null && user) {
-        console.log('[AUTH] authUser removed (other tab), logging out...');
-        setUser(null);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [user, syncUserFromAdminUsers]);
-
-  // ✅ Listen for adminUsers changes trong CÙNG TAB
-  useEffect(() => {
-    const handleAdminUsersUpdate = () => {
-      if (user) {
-        console.log('[AUTH] adminUsers updated (same tab), syncing...');
-        syncUserFromAdminUsers(user);
-      }
-    };
-
-    window.addEventListener('adminUsersUpdated', handleAdminUsersUpdate);
-    return () => window.removeEventListener('adminUsersUpdated', handleAdminUsersUpdate);
-  }, [user, syncUserFromAdminUsers]);
-
-  // ✅ Backup: Periodic sync mỗi 10 giây (fallback)
-  useEffect(() => {
-    if (!user) return;
-    
-    const intervalId = setInterval(() => {
-      syncUserFromAdminUsers(user);
-    }, 10000); // 10 giây
-    
-    return () => clearInterval(intervalId);
-  }, [user, syncUserFromAdminUsers]);
-
-  // Login function
-  const login = (username, password) => {
-    const result = loginUser(username, password);
-    if (result.success) {
-      setUser(result.user);
-      try {
-        localStorage.setItem('authUser', JSON.stringify(result.user));
-      } catch (storageError) {
-        console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
-      }
-      
-      // 📊 Track login activity
-      trackUserActivity(result.user.id, result.user.username, 'login', {
-        role: result.user.role,
-        timestamp: new Date().toISOString()
+      // Set user even if profile failed to load
+      setUser({
+        id: authUser.id,
+        email: authUser.email,
+        emailConfirmed: authUser.email_confirmed_at !== null,
       });
-      
-      return { success: true, user: result.user };
-    }
-    return { success: false, error: result.error };
-  };
 
-  // Register function
-  const register = (userData) => {
-    const result = registerUser(userData);
-    if (result.success) {
-      setUser(result.user);
-      try {
-        localStorage.setItem('authUser', JSON.stringify(result.user));
-      } catch (storageError) {
-        console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
+      setError(null);
+    } catch (err) {
+      console.error('[AuthContext] Error loading profile:', err);
+      setError(err.message);
+      // Still set user even if profile fails
+      if (authUser?.id) {
+        setUser({
+          id: authUser.id,
+          email: authUser.email,
+          emailConfirmed: authUser.email_confirmed_at !== null,
+        });
       }
-      
-      // 📊 Track registration activity
-      trackUserActivity(result.user.id, result.user.username, 'register', {
-        role: result.user.role,
-        email: result.user.email,
-        timestamp: new Date().toISOString()
-      });
-      
-      return { success: true, user: result.user };
     }
-    return { success: false, error: result.error };
-  };
+  }, []);
 
-  // Update user function
-  const updateUser = (updatedUserData) => {
-    setUser(updatedUserData);
+  /**
+   * ========================================
+   * AUTH ACTIONS
+   * ========================================
+   */
+
+  /**
+   * Sign up
+   */
+  const register = useCallback(async (email, password, displayName) => {
     try {
-      localStorage.setItem('authUser', JSON.stringify(updatedUserData));
-    } catch (storageError) {
-      console.warn('[AUTH] Cannot save to localStorage (incognito mode?):', storageError.message);
-    }
-  };
+      setError(null);
+      setIsLoading(true);
 
-  // ✅ FIXED: Logout function - Đơn giản hóa, logout ngay lập tức
-  const logout = async () => {
-    // 📊 Track logout activity before clearing user
-    if (user) {
-      trackUserActivity(user.id, user.username, 'logout', {
-        role: user.role,
-        timestamp: new Date().toISOString()
+      const { success, data, error: signUpError } = await authService.signUp({
+        email,
+        password,
+        displayName,
       });
 
-      // ✅ FIXED: Nếu user hiện tại là tài khoản Supabase → gọi signOut
-      try {
-        if (typeof user.id === 'string' && user.id.length > 20) {
-          console.log('[AUTH] Signing out Supabase user...');
-          await supabaseSignOut();
-          console.log('[AUTH][Supabase] signOut called successfully');
-          // ✅ CRITICAL: Sau khi signOut, SIGNED_OUT event sẽ fire và xử lý logout
-          // Không cần set user = null ở đây nữa, để event listener xử lý
-          return;
-        }
-      } catch (err) {
-        console.error('[AUTH][Supabase] Error during signOut:', err);
+      if (!success) {
+        setError(signUpError);
+        return { success: false, error: signUpError };
       }
+
+      // User created successfully
+      console.log('[AuthContext] Registration successful:', email);
+      return { success: true };
+    } catch (err) {
+      console.error('[AuthContext] Registration error:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setIsLoading(false);
     }
-    
-    // ✅ FIXED: Nếu là local user hoặc lỗi khi signOut → logout trực tiếp
-    setUser(null);
+  }, []);
+
+  /**
+   * Sign in
+   */
+  const login = useCallback(async (email, password) => {
     try {
-      localStorage.removeItem('authUser');
-    } catch (storageError) {
-      // localStorage không available → bỏ qua
+      setError(null);
+      // Don't set isLoading here - onAuthStateChange will handle it
+      // This prevents infinite loading if profile load gets stuck
+
+      const { success, data, error: signInError } = await authService.signIn({
+        email,
+        password,
+      });
+
+      if (!success) {
+        setError(signInError);
+        setIsLoading(false); // Set false on error
+        return { success: false, error: signInError };
+      }
+
+      // Session established, onAuthStateChange will handle the rest
+      // Profile will be loaded by onAuthStateChange listener
+      // setIsLoading(false) will be called in onAuthStateChange
+      console.log('[AuthContext] Login successful:', email);
+      return { success: true };
+    } catch (err) {
+      console.error('[AuthContext] Login error:', err);
+      setError(err.message);
+      setIsLoading(false); // Ensure loading is false on error
+      return { success: false, error: err.message };
     }
-    
-    console.log('[AUTH] Logout successful, authUser removed but adminUsers/userPasswords preserved');
-  };
+  }, []);
 
-  // Check if user has permission
-  const hasPermission = (permission) => {
-    if (!user) return false;
-    const { roles } = require('../data/users.js');
-    const userRole = roles[user.role];
-    if (!userRole) return false;
-    return userRole.permissions.includes(permission);
-  };
+  /**
+   * Sign out
+   */
+  const logout = useCallback(async () => {
+    try {
+      setError(null);
+      setIsLoading(true);
 
-  // Check if user is admin
-  const isAdmin = () => {
-    return user && user.role === 'admin';
-  };
+      const { success, error: signOutError } = await authService.signOut();
 
+      if (!success) {
+        setError(signOutError);
+        return { success: false, error: signOutError };
+      }
+
+      // Clear local state
+      setUser(null);
+      setProfile(null);
+
+      console.log('[AuthContext] Logout successful');
+      return { success: true };
+    } catch (err) {
+      console.error('[AuthContext] Logout error:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /**
+   * Update user profile
+   */
+  const updateProfile = useCallback(async (updates) => {
+    try {
+      if (!user?.id) {
+        return { success: false, error: 'No user logged in' };
+      }
+
+      setError(null);
+      const { success, profile: updatedProfile, error: updateError } = 
+        await authService.updateUserProfile(user.id, updates);
+
+      if (!success) {
+        setError(updateError);
+        return { success: false, error: updateError };
+      }
+
+      setProfile(updatedProfile);
+      console.log('[AuthContext] Profile updated');
+      return { success: true, profile: updatedProfile };
+    } catch (err) {
+      console.error('[AuthContext] Profile update error:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    }
+  }, [user?.id]);
+
+  /**
+   * Update password
+   */
+  const updatePassword = useCallback(async (newPassword) => {
+    try {
+      setError(null);
+      setIsLoading(true);
+
+      const { success, error: updateError } = 
+        await authService.updatePassword(newPassword);
+
+      if (!success) {
+        setError(updateError);
+        return { success: false, error: updateError };
+      }
+
+      console.log('[AuthContext] Password updated');
+      return { success: true };
+    } catch (err) {
+      console.error('[AuthContext] Password update error:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /**
+   * Request password reset
+   */
+  const requestPasswordReset = useCallback(async (email) => {
+    try {
+      setError(null);
+
+      const { success, error: resetError } = 
+        await authService.resetPasswordEmail(email);
+
+      if (!success) {
+        setError(resetError);
+        return { success: false, error: resetError };
+      }
+
+      console.log('[AuthContext] Password reset email sent');
+      return { success: true };
+    } catch (err) {
+      console.error('[AuthContext] Password reset error:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    }
+  }, []);
+
+  /**
+   * ========================================
+   * HELPER METHODS
+   * ========================================
+   */
+
+  /**
+   * Check if user has permission
+   */
+  const hasPermission = useCallback((permission) => {
+    if (!profile) return false;
+
+    const rolePermissions = {
+      admin: ['*'], // All permissions
+      editor: ['edit-content', 'view-all'],
+      user: ['view-all'],
+    };
+
+    const permissions = rolePermissions[profile.role] || [];
+    return permissions.includes('*') || permissions.includes(permission);
+  }, [profile]);
+
+  /**
+   * Check if user is admin
+   */
+  const isAdmin = useCallback(() => {
+    return profile?.role === 'admin';
+  }, [profile]);
+
+  /**
+   * Check if user is editor
+   */
+  const isEditor = useCallback(() => {
+    return profile?.role === 'editor';
+  }, [profile]);
+
+  // Context value
   const value = {
+    // State
     user,
-    login,
+    profile,
+    isLoading,
+    error,
+    isAuthenticated: !!user,
+
+    // Actions
     register,
+    login,
     logout,
-    updateUser,
+    updateProfile,
+    updatePassword,
+    requestPasswordReset,
+
+    // Helper methods
     hasPermission,
     isAdmin,
-    isLoading
+    isEditor,
   };
 
   return (
@@ -483,11 +432,22 @@ export function AuthProvider({ children }) {
   );
 }
 
-// Custom hook để sử dụng auth context
+/**
+ * ========================================
+ * CUSTOM HOOK
+ * ========================================
+ */
+
+/**
+ * Use auth context
+ * @throws {Error} if used outside AuthProvider
+ */
 export function useAuth() {
   const context = useContext(AuthContext);
+
   if (!context) {
     throw new Error('useAuth must be used within AuthProvider');
   }
+
   return context;
 }

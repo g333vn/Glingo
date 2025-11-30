@@ -1,104 +1,49 @@
 // src/translations/vi.js
 // 🇻🇳 Vietnamese Translations
-
 const vi = {
-    // ============================================================================
-    // COMMON - Các từ/cụm từ dùng chung trong toàn bộ ứng dụng
-    // Sử dụng: Tất cả components, pages
-    // ============================================================================
-    common: {
-        home: 'Home',
-        level: 'Level',
-        jlpt: 'JLPT',
-        about: 'About',
-        aboutMe: 'ABOUT ME',
-        login: 'Login',
-        register: 'Register',
-        logout: 'Logout',
-        search: 'Search',
-        close: 'Đóng',
-        save: 'Lưu',
-        cancel: 'Hủy',
-        edit: 'Sửa',
-        delete: 'Xóa',
-        duplicate: 'Nhân bản',
-        publish: 'Xuất bản',
-        unpublish: 'Hủy xuất bản',
-        preview: 'Xem trước',
-        loading: 'Đang tải...',
-        error: 'Lỗi',
-        success: 'Thành công',
-        confirmDelete: 'Bạn có chắc chắn muốn xóa?',
-        undo: 'Hoàn tác',
-        admin: 'Admin',
-        editor: 'Editor',
-        profile: 'Hồ sơ',
-        book: 'Sách',
-        chapter: 'Chương',
-        quiz: 'Quiz',
-        back: 'Quay lại'
-    },
-
-    // ============================================================================
-    // STREAK - Bộ đếm chuỗi học tập
-    // Sử dụng: Header component, Dashboard
-    // ============================================================================
-    streak: {
-        title: 'Study Streak!',
-        startTitle: 'Bắt đầu Streak!',
-        startMessage: 'Học ngay hôm nay để bắt đầu streak của bạn! 💪',
-        continuousMessage: 'Bạn đã học liên tục {count} ngày!',
-        keepGoing: 'Cố gắng duy trì nhé!',
-        great: 'Tuyệt vời! 🎉',
-        amazing: 'Amazing! 🌟',
-        day: 'ngày',
-        days: 'ngày'
-    },
-
-    // ============================================================================
-    // HEADER - Thanh điều hướng trên cùng
-    // Sử dụng: Header component
-    // ============================================================================
-    header: {
-        searchPlaceholder: 'Search lessons, chapters, books...',
-        streakDays: '{count} day streak',
-        adminPanel: 'Admin Panel',
-        editorPanel: 'Editor Panel',
-        userMenu: {
-            dashboard: 'Dashboard',
-            dashboardDesc: 'Tiến độ học tập',
-            dashboardLocked: 'Bị khóa - Không có quyền truy cập',
-            myProfile: 'My Profile',
-            adminPanel: 'Admin Panel',
-            adminPanelDesc: 'Quản trị hệ thống',
-            editorPanel: 'Editor Panel',
-            editorPanelDesc: 'Biên tập nội dung',
-            logout: 'Logout',
-            roleAdmin: 'Role: Admin',
-            roleEditor: 'Role: Editor',
-            clickToView: 'Click to view info',
-            userAccount: 'Tài khoản người dùng',
-            account: 'Tài khoản',
-            admin: 'Admin',
-            editor: 'Editor'
-        },
-        logoutModal: {
-            title: '⚠️ Đang trong bài thi',
-            message: 'Đăng xuất lúc này sẽ xóa toàn bộ tiến độ bài thi hiện tại. Bạn có chắc chắn muốn thoát?',
-            stayButton: 'Tiếp tục làm bài',
-            confirmButton: 'Đăng xuất'
-        }
-    },
-
-    // ============================================================================
-    // MAINTENANCE PAGE
-    // ============================================================================
     maintenance: {
-        title: 'Hệ thống đang bảo trì',
-        message: 'Chúng tôi đang bảo trì và nâng cấp hệ thống để phục vụ bạn tốt hơn. Vui lòng quay lại sau ít phút.',
-        contact: 'Nếu cần hỗ trợ khẩn cấp, vui lòng liên hệ',
         loggedInNonAdmin: 'Bạn đang đăng nhập với tài khoản không phải admin. Trong thời gian bảo trì, chỉ admin mới có thể sử dụng hệ thống.',
         note: 'Admin vẫn có thể truy cập khu vực quản trị để giám sát và hoàn tất bảo trì.'
+    },
+
+    // ============================================================================
+    // STREAK - Top level for StreakCounter component
+    // ============================================================================
+    streak: {
+        day: 'ngày',
+        days: 'ngày',
+        title: 'Streak: Học Liên Tục',
+        startTitle: 'Bắt đầu Streak',
+        startMessage: 'Học ít nhất 1 flashcard hoặc hoàn thành 1 lesson để bắt đầu streak của bạn! 🔥',
+        continuousMessage: 'Bạn đã học liên tục {count} ngày',
+        keepGoing: 'Tiếp tục phát huy!',
+        great: 'Tuyệt vời!',
+        amazing: 'Xuất sắc!',
+        brokenNotification: '💔 Streak bị ngắt quãng! Bạn đã bỏ lỡ {oldStreak} {days}. Hãy học ngay hôm nay để bắt đầu lại!'
+    },
+
+    // ============================================================================
+    // HEADER - Header component translations
+    // ============================================================================
+    header: {
+        userMenu: {
+            account: 'Tài khoản',
+            userAccount: 'Tài khoản người dùng',
+            admin: 'Quản trị viên',
+            editor: 'Biên tập viên',
+            dashboard: 'Bảng điều khiển',
+            dashboardDesc: 'Xem tiến độ học tập và thống kê',
+            dashboardLocked: 'Bảng điều khiển bị khóa. Liên hệ admin để được cấp quyền.',
+            myProfile: 'Hồ sơ của tôi',
+            adminPanel: 'Bảng quản trị',
+            adminPanelDesc: 'Quản lý cài đặt hệ thống và nội dung',
+            editorPanel: 'Bảng biên tập',
+            editorPanelDesc: 'Tạo và chỉnh sửa nội dung học tập',
+            logout: 'Đăng xuất',
+            roleAdmin: 'Vai trò Admin',
+            roleEditor: 'Vai trò Editor',
+            clickToView: 'Nhấp để xem menu'
+        }
     },
 
     // ============================================================================
@@ -523,7 +468,15 @@ const vi = {
         },
         streak: {
             title: 'Streak: Học Liên Tục',
+            day: 'ngày',
             days: 'ngày',
+            startTitle: 'Bắt đầu Streak',
+            startMessage: 'Học ít nhất 1 flashcard hoặc hoàn thành 1 lesson để bắt đầu streak của bạn! 🔥',
+            continuousMessage: 'Bạn đã học liên tục {count} ngày',
+            keepGoing: 'Tiếp tục phát huy!',
+            great: 'Tuyệt vời!',
+            amazing: 'Xuất sắc!',
+            brokenNotification: '💔 Streak bị ngắt quãng! Bạn đã bỏ lỡ {oldStreak} {days}. Hãy học ngay hôm nay để bắt đầu lại!',
             whenCounted: 'Streak được tính khi nào?',
             studyFlashcard: 'Học Flashcard',
             studyFlashcardDesc: 'Hoàn thành ít nhất 1 session ôn tập',
@@ -947,6 +900,8 @@ const vi = {
         registerNow: 'Đăng ký ngay',
         loginNow: 'Đăng nhập ngay',
         backToHome: 'Quay về trang chủ',
+        loginSuccess: 'Đăng nhập thành công! Chào mừng bạn trở lại!',
+        logoutSuccess: 'Đăng xuất thành công! Hẹn gặp lại!',
         loginFailed: 'Đăng nhập thất bại!',
         registerFailed: 'Đăng ký thất bại!',
         invalidCredentials: 'Tên đăng nhập hoặc mật khẩu không đúng!',
@@ -2812,6 +2767,7 @@ const vi = {
     dashboardAccess: {
         title: 'Quyền truy cập Dashboard',
         subtitle: 'Quản lý quyền truy cập cho User Dashboard',
+        noAccessMessage: 'Bạn không có quyền truy cập Dashboard. Vui lòng liên hệ Admin để được cấp quyền.',
         reset: 'Reset',
         resetConfirm: 'Bạn có chắc chắn muốn reset cấu hình Dashboard về mặc định?',
         resetSuccess: 'Đã reset cấu hình Dashboard thành công!',
@@ -2828,8 +2784,9 @@ const vi = {
         adminNote: 'Lưu ý: Admin luôn có quyền truy cập đầy đủ, không bị ảnh hưởng bởi cấu hình này',
         info: {
             point1: 'Khi Dashboard bị khóa, chỉ Admin và các users/roles được phép mới có thể truy cập'
-        }
+        },
+        noAccessMessage: 'Bạn không có quyền truy cập Dashboard. Vui lòng liên hệ Admin để được cấp quyền.'
     }
-};
+    };
 
 export default vi;

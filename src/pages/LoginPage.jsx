@@ -1,315 +1,210 @@
 // src/pages/LoginPage.jsx
-// ✨ NEO BRUTALISM + JAPANESE AESTHETIC
+// 🔐 Login Page - Clean, modern design with proper error handling
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import { useAuthActions } from '../hooks/useAuthActions.jsx';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
-import { signIn as supabaseSignIn, getUserProfile } from '../services/authService.js';
-import { fullSync } from '../services/dataSyncService.js';
+import { useToast } from '../components/ToastNotification.jsx';
+import { Mail, Lock, AlertCircle, Loader } from 'lucide-react';
+import './LoginPage.css';
 
-function LoginPage() {
-  const { t } = useLanguage();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const [loginAttempts, setLoginAttempts] = useState(0);
-  const [cooldownUntil, setCooldownUntil] = useState(null);
-
-  const { login, user, updateUser } = useAuth();
+export default function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { handleLogin, isSubmitting, actionError, clearError } = useAuthActions();
+  const { t } = useLanguage();
+  const { success } = useToast();
 
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
+  // Form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [formErrors, setFormErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
-  // ✅ Rate limiting: Check cooldown
+  // Redirect if already logged in
   useEffect(() => {
-    if (cooldownUntil) {
-      const interval = setInterval(() => {
-        if (Date.now() >= cooldownUntil) {
-          setCooldownUntil(null);
-          setLoginAttempts(0);
-          setError('');
-        }
-      }, 1000);
-      return () => clearInterval(interval);
+    if (isAuthenticated && !authLoading) {
+      navigate('/', { replace: true });
     }
-  }, [cooldownUntil]);
+  }, [isAuthenticated, authLoading, navigate]);
 
+  /**
+   * Validate form
+   */
+  const validateForm = () => {
+    const errors = {};
+
+    if (!email.trim()) {
+      errors.email = 'Email là bắt buộc';
+    } else if (!email.includes('@')) {
+      errors.email = 'Email không hợp lệ';
+    }
+
+    if (!password) {
+      errors.password = 'Password là bắt buộc';
+    } else if (password.length < 6) {
+      errors.password = 'Password tối thiểu 6 ký tự';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  /**
+   * Handle form submission
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    clearError();
 
-    // ✅ SECURITY: Rate limiting check
-    if (cooldownUntil && Date.now() < cooldownUntil) {
-      const remainingSeconds = Math.ceil((cooldownUntil - Date.now()) / 1000);
-      setError(`Too many failed attempts. Please wait ${remainingSeconds} seconds.`);
+    if (!validateForm()) {
       return;
     }
 
-    setIsLoading(true);
+    const result = await handleLogin(email, password);
 
-    try {
-      // 🔹 Nếu user nhập email (có ký tự @) thì ưu tiên thử login bằng Supabase
-      if (username.includes('@')) {
-        const { success, data, error } = await supabaseSignIn({
-          email: username,
-          password,
-        });
-
-        if (success) {
-          // Lấy profile (role, display_name) từ bảng profiles
-          const userId = data?.user?.id;
-          const { success: profileOk, profile, error: profileError } = await getUserProfile(userId);
-
-          // Map dữ liệu Supabase thành user object mà app đang dùng
-          const supabaseUserForApp = {
-            id: userId,
-            username: data?.user?.email,
-            name: profile?.display_name || data?.user?.email,
-            email: data?.user?.email,
-            role: profile?.role || 'user',
-          };
-
-          // Cập nhật AuthContext để toàn app nhận diện user này
-          updateUser(supabaseUserForApp);
-
-          // ✅ NEW: Auto sync Supabase user vào localStorage adminUsers
-          import('../data/users.js').then(({ syncSupabaseUserToLocal }) => {
-            syncSupabaseUserToLocal(data.user, profile || null).then(result => {
-              if (result.success) {
-                console.log('[LOGIN] Auto-synced Supabase user to localStorage:', result.user.email);
-              } else {
-                console.warn('[LOGIN] Failed to auto-sync user:', result.error);
-              }
-            });
-          }).catch(err => {
-            console.error('[LOGIN] Error importing sync function:', err);
-          });
-
-          // ✅ NEW: Auto sync data khi đăng nhập thành công
-          fullSync(userId).then(result => {
-            if (result.success) {
-              console.log('[LOGIN][Sync] Data synced successfully:', result);
-            } else {
-              console.warn('[LOGIN][Sync] Sync completed with errors:', result.errors);
-            }
-          }).catch(err => {
-            console.error('[LOGIN][Sync] Error syncing data:', err);
-          });
-
-          // eslint-disable-next-line no-console
-          console.log('[LOGIN][Supabase] Login successful:', {
-            id: data?.user?.id,
-            email: data?.user?.email,
-            profile: profileOk
-              ? { role: profile?.role, display_name: profile?.display_name }
-              : 'No profile or error',
-            profileError: profileError?.message,
-          });
-          // ✅ SECURITY: Clear password from memory
-          setPassword('');
-          navigate('/', { replace: true });
-          setIsLoading(false);
-          // Reset login attempts on success
-          setLoginAttempts(0);
-          return;
-        }
-
-        // ✅ SECURITY: Generic error message (don't leak user existence info)
-        console.error('[LOGIN][Supabase] Error:', error);
-
-        // Increment failed attempts
-        const newAttempts = loginAttempts + 1;
-        setLoginAttempts(newAttempts);
-
-        // Apply cooldown after 3 failed attempts
-        if (newAttempts >= 3) {
-          const cooldownMs = 30000; // 30 seconds
-          setCooldownUntil(Date.now() + cooldownMs);
-          setError('Too many failed attempts. Please wait 30 seconds.');
-        } else {
-          setError(t('auth.invalidCredentials') || 'Invalid email or password');
-        }
-
-        setPassword('');
-        setIsLoading(false);
-        return;
-      }
-
-      // 🔹 Trường hợp username không phải email → dùng hệ thống login cũ (local)
-      const result = login(username, password);
-
-      if (result.success) {
-        const loggedInUser = result.user || user;
-
-        console.log('[LOGIN] Login successful, redirecting to home:', {
-          userRole: loggedInUser?.role,
-          username: loggedInUser?.username,
-        });
-
-        // ✅ SECURITY: Clear password
-        setPassword('');
-        setLoginAttempts(0);
-        navigate('/', { replace: true });
-      } else {
-        // ✅ SECURITY: Generic error + rate limiting
-        const newAttempts = loginAttempts + 1;
-        setLoginAttempts(newAttempts);
-
-        if (newAttempts >= 3) {
-          const cooldownMs = 30000;
-          setCooldownUntil(Date.now() + cooldownMs);
-          setError('Too many failed attempts. Please wait 30 seconds.');
-        } else {
-          setError(t('auth.invalidCredentials') || 'Invalid username or password');
-        }
-        setPassword('');
-      }
-    } finally {
-      setIsLoading(false);
+    if (result.success) {
+      // Redirect to homepage after successful login
+      success(t('auth.loginSuccess'));
+      navigate('/', { replace: true });
     }
   };
 
-  return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
-      {/* ✨ NEO BRUTALISM Background - Đã loại bỏ backdrop-blur để background rõ hơn */}
+  /**
+   * Show loading state while auth is initializing
+   */
+  if (authLoading) {
+    return (
+      <div className="login-page">
+        <div className="login-container">
+          <div className="login-loader">
+            <Loader className="spinner" />
+            <p>Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-      {/* ✨ NEO BRUTALISM Main Login Card */}
-      <div
-        className={`relative z-10 w-full max-w-md transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-      >
-        <div className="bg-white rounded-2xl border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 sm:p-10 md:p-12">
-          {/* ✨ NEO BRUTALISM Header with Logo */}
-          <div className="text-center mb-8 sm:mb-10">
-            <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-yellow-400 rounded-full border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-4 sm:mb-6 transform hover:scale-110 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
-              <span className="text-4xl sm:text-5xl">🔐</span>
-            </div>
-            <h1
-              className="text-3xl sm:text-4xl font-black mb-3 text-black uppercase tracking-wide"
-              style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
-            >
-              {t('auth.loginTitle')}
-            </h1>
-            <p className="text-gray-700 text-sm sm:text-base font-bold">
-              {t('auth.loginSubtitle')}
-            </p>
+  return (
+    <div className="login-page">
+      <div className="login-background" />
+
+      <div className="login-container">
+        <div className="login-card">
+          {/* Header */}
+          <div className="login-header">
+            <h1 className="login-title">Welcome Back</h1>
+            <p className="login-subtitle">Sign in to your account</p>
           </div>
 
-          {/* ✨ NEO BRUTALISM Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
-            {/* Username */}
-            <div>
-              <label className="block text-sm font-black text-black mb-2.5 uppercase tracking-wide">
-                {t('auth.username')}
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <span className="text-black text-lg font-black">👤</span>
-                </div>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => {
-                    setUsername(e.target.value);
-                    setError('');
-                  }}
-                  placeholder={t('auth.enterUsername')}
-                  className="w-full pl-12 pr-4 py-3.5 sm:py-4 border-[3px] border-black rounded-lg focus:outline-none focus:bg-yellow-400 focus:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all text-sm sm:text-base bg-white font-bold"
-                  autoFocus
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-black text-black mb-2.5 uppercase tracking-wide">
-                {t('auth.password')}
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <span className="text-black text-lg font-black">🔒</span>
-                </div>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setError('');
-                  }}
-                  placeholder={t('auth.enterPassword')}
-                  className="w-full pl-12 pr-4 py-3.5 sm:py-4 border-[3px] border-black rounded-lg focus:outline-none focus:bg-yellow-400 focus:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all text-sm sm:text-base bg-white font-bold"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* ✨ NEO BRUTALISM Error Message */}
-            {error && (
-              <div className="bg-red-500 border-[3px] border-black text-white px-4 py-3 rounded-lg text-sm sm:text-base flex items-center gap-2 font-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                <span className="text-lg">⚠️</span>
-                <span>{error}</span>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="login-form">
+            {/* Global error message */}
+            {actionError && (
+              <div className="error-banner">
+                <AlertCircle size={20} />
+                <span>{actionError}</span>
               </div>
             )}
 
-            {/* ✨ NEO BRUTALISM Submit Button */}
+            {/* Email field */}
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">
+                <Mail size={18} />
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (formErrors.email) {
+                    setFormErrors({ ...formErrors, email: '' });
+                  }
+                }}
+                className={`form-input ${formErrors.email ? 'error' : ''}`}
+                disabled={isSubmitting}
+              />
+              {formErrors.email && (
+                <p className="field-error">{formErrors.email}</p>
+              )}
+            </div>
+
+            {/* Password field */}
+            <div className="form-group">
+              <div className="password-label-container">
+                <label htmlFor="password" className="form-label">
+                  <Lock size={18} />
+                  Password
+                </label>
+                <Link to="/forgot-password" className="forgot-password-link">
+                  Quên password?
+                </Link>
+              </div>
+              <div className="password-input-container">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (formErrors.password) {
+                      setFormErrors({ ...formErrors, password: '' });
+                    }
+                  }}
+                  className={`form-input ${formErrors.password ? 'error' : ''}`}
+                  disabled={isSubmitting}
+                />
+                <button
+                  type="button"
+                  className="show-password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isSubmitting}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+              {formErrors.password && (
+                <p className="field-error">{formErrors.password}</p>
+              )}
+            </div>
+
+            {/* Submit button */}
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full px-6 py-4 bg-[#FFB800] hover:bg-[#FF5722] text-black hover:text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all font-black text-base sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide hover:translate-x-[-2px] hover:translate-y-[-2px]"
+              className="submit-button"
+              disabled={isSubmitting || authLoading}
             >
-              <span className="flex items-center justify-center gap-2">
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>{t('auth.loggingIn')}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>🚀</span>
-                    <span>{t('auth.loginButton')}</span>
-                  </>
-                )}
-              </span>
+              {isSubmitting ? (
+                <>
+                  <Loader size={20} className="spinner-small" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </button>
           </form>
 
-          {/* Register Link */}
-          <div className="text-center pt-4">
-            <p className="text-gray-700 text-sm sm:text-base">
-              {t('auth.noAccount')}{' '}
-              <Link
-                to="/register"
-                className="text-black font-black hover:text-yellow-600 transition-colors underline decoration-2 underline-offset-2"
-              >
-                {t('auth.registerNow')}
-              </Link>
-            </p>
+          {/* Divider */}
+          <div className="form-divider">
+            <span>Don't have an account?</span>
           </div>
 
-          {/* ✨ NEO BRUTALISM Footer */}
-          <div className="mt-8 text-center">
-            <a
-              href="/"
-              className="inline-flex items-center gap-2 text-black hover:text-[#FF5722] transition-colors text-sm sm:text-base font-black uppercase tracking-wide hover:bg-yellow-400 px-3 py-1.5 rounded-lg border-[2px] border-transparent hover:border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-            >
-              <span>←</span>
-              <span>{t('auth.backToHome')}</span>
-            </a>
-          </div>
+          {/* Register link */}
+          <Link to="/register" className="register-link">
+            Create new account
+          </Link>
+
+
         </div>
       </div>
     </div>
   );
 }
-
-export default LoginPage;

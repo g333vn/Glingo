@@ -103,7 +103,7 @@ export function getDeletedUsers() {
 
 /**
  * Add user to deleted blacklist
- * @param {number} userId - User ID to blacklist
+ * @param {number|string} userId - User ID to blacklist (can be number for demo users or string for Supabase users)
  */
 export function addToDeletedUsers(userId) {
   try {
@@ -115,6 +115,58 @@ export function addToDeletedUsers(userId) {
     }
   } catch (e) {
     console.error('[DELETED_USERS] Error adding to deletedUsers:', e);
+  }
+}
+
+/**
+ * Get list of deleted Supabase user emails (blacklist for Supabase users)
+ * @returns {Array<string>} Array of deleted Supabase user emails
+ */
+export function getDeletedSupabaseUsers() {
+  try {
+    const deletedSupabaseUsers = localStorage.getItem('deletedSupabaseUsers');
+    if (deletedSupabaseUsers) {
+      return JSON.parse(deletedSupabaseUsers);
+    }
+  } catch (e) {
+    console.error('[DELETED_SUPABASE_USERS] Error reading deletedSupabaseUsers:', e);
+  }
+  return [];
+}
+
+/**
+ * Add Supabase user to deleted blacklist (by email)
+ * @param {string} email - User email to blacklist
+ */
+export function addToDeletedSupabaseUsers(email) {
+  try {
+    if (!email) return;
+    const deletedSupabaseUsers = getDeletedSupabaseUsers();
+    const emailLower = email.toLowerCase().trim();
+    if (!deletedSupabaseUsers.includes(emailLower)) {
+      deletedSupabaseUsers.push(emailLower);
+      localStorage.setItem('deletedSupabaseUsers', JSON.stringify(deletedSupabaseUsers));
+      console.log('[DELETED_SUPABASE_USERS] Added to blacklist:', emailLower);
+    }
+  } catch (e) {
+    console.error('[DELETED_SUPABASE_USERS] Error adding to deletedSupabaseUsers:', e);
+  }
+}
+
+/**
+ * Remove Supabase user from deleted blacklist (restore)
+ * @param {string} email - User email to restore
+ */
+export function removeFromDeletedSupabaseUsers(email) {
+  try {
+    if (!email) return;
+    const deletedSupabaseUsers = getDeletedSupabaseUsers();
+    const emailLower = email.toLowerCase().trim();
+    const filtered = deletedSupabaseUsers.filter(e => e !== emailLower);
+    localStorage.setItem('deletedSupabaseUsers', JSON.stringify(filtered));
+    console.log('[DELETED_SUPABASE_USERS] Removed from blacklist:', emailLower);
+  } catch (e) {
+    console.error('[DELETED_SUPABASE_USERS] Error removing from deletedSupabaseUsers:', e);
   }
 }
 

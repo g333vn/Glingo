@@ -9,7 +9,7 @@ import { useLanguage } from '../contexts/LanguageContext.jsx';
 import { hasDashboardAccess } from '../utils/dashboardAccessManager.js';
 
 function DashboardAccessGuard({ children }) {
-  const { user, isLoading } = useAuth();
+  const { user, profile, isLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [checked, setChecked] = useState(false);
@@ -20,8 +20,8 @@ function DashboardAccessGuard({ children }) {
       return;
     }
 
-    // Check dashboard access
-    const hasAccess = hasDashboardAccess(user);
+    // Check dashboard access - pass both user and profile
+    const hasAccess = hasDashboardAccess(user, profile);
     
     if (!hasAccess) {
       // No access, redirect to home
@@ -32,7 +32,7 @@ function DashboardAccessGuard({ children }) {
 
     // Access granted
     setChecked(true);
-  }, [user, isLoading, navigate, t]);
+  }, [user, profile, isLoading, navigate, t]);
 
   // If no access, don't render children (will be redirected)
   if (isLoading || !checked) {

@@ -6,7 +6,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 
 function EditorLayout() {
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -129,7 +129,7 @@ function EditorLayout() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
-                      {user?.role}
+                      {profile?.role || user?.role}
                     </span>
                   </div>
                 </div>
