@@ -242,7 +242,7 @@ function UsersManagementPage() {
   };
 
   // Add new user
-  const handleAddUser = (e) => {
+  const handleAddUser = async (e) => {
     e.preventDefault();
     
     // Validate email
@@ -293,22 +293,60 @@ function UsersManagementPage() {
       newUserId: newUser.id,
       username: newUser.username,
       role: newUser.role,
+      email: newUser.email,
       hasPassword: !!newUser.password,
       passwordLength: newUser.password ? newUser.password.length : 0,
-      passwordValue: newUser.password ? '***' : 'EMPTY',
       maxIdFromAllUsers: maxId,
       allUsersCount: allExistingUsers.length
     });
     
+    // ✅ NEW: Tạo user trong Supabase trước
+    let supabaseUserId = null;
+    try {
+      console.log('[ADD_USER] Creating user in Supabase...');
+      const signUpResult = await authService.signUp({
+        email: formData.email,
+        password: formData.password,
+        displayName: formData.name || formData.username
+      });
+      
+      if (signUpResult.success && signUpResult.data?.user?.id) {
+        supabaseUserId = signUpResult.data.user.id;
+        console.log('[ADD_USER] ✅ User created in Supabase:', supabaseUserId);
+        
+        // ✅ Cập nhật profile với role đúng (vì signUp mặc định tạo role 'user')
+        if (formData.role && formData.role !== 'user') {
+          console.log('[ADD_USER] Updating profile role to:', formData.role);
+          // Đợi một chút để profile được tạo
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const updateResult = await authService.updateUserRole(supabaseUserId, formData.role);
+          if (updateResult.success) {
+            console.log('[ADD_USER] ✅ Profile role updated to:', formData.role);
+          } else {
+            console.warn('[ADD_USER] ⚠️ Failed to update role:', updateResult.error);
+            // Vẫn tiếp tục, có thể update sau
+          }
+        }
+      } else {
+        console.error('[ADD_USER] ❌ Failed to create user in Supabase:', signUpResult.error);
+        // Kiểm tra xem user đã tồn tại chưa
+        if (signUpResult.error && signUpResult.error.includes('already registered')) {
+          alert(`⚠️ Email ${formData.email} đã được sử dụng trong Supabase. User sẽ chỉ được lưu local.`);
+        } else {
+          alert(`⚠️ Không thể tạo user trong Supabase: ${signUpResult.error || 'Unknown error'}\nUser sẽ chỉ được lưu local.`);
+        }
+      }
+    } catch (error) {
+      console.error('[ADD_USER] ❌ Error creating user in Supabase:', error);
+      alert(`⚠️ Lỗi khi tạo user trong Supabase: ${error.message}\nUser sẽ chỉ được lưu local.`);
+    }
+    
+    // ✅ Lưu vào localStorage (vẫn giữ để tương thích)
     const updatedUsers = [...users, newUser];
     
     // ✅ DEBUG: Verify newUser has password before saving
-    console.log('[ADD_USER] New user object before saveUsers:', {
-      id: newUser.id,
-      username: newUser.username,
-      password: newUser.password ? '***' : 'EMPTY',
-      passwordLength: newUser.password ? newUser.password.length : 0
-    });
+    console.log('[ADD_USER] Saving user to localStorage...');
     
     saveUsers(updatedUsers);
     
@@ -330,14 +368,16 @@ function UsersManagementPage() {
         console.error('[ADD_USER] Error verifying password:', e);
       }
     }, 100);
+    
     setFormData({ username: '', password: '', name: '', email: '', role: 'user' });
     setShowAddForm(false);
-    alert(t('userManagement.messages.addSuccess', {
-      username: formData.username,
-      name: formData.name,
-      email: formData.email,
-      role: formData.role
-    }));
+    
+    // ✅ Thông báo kết quả
+    if (supabaseUserId) {
+      alert(`✅ Tạo user thành công!\n\n- Email: ${formData.email}\n- Role: ${formData.role}\n- Đã tạo trong Supabase: ✅\n- Đã lưu local: ✅`);
+    } else {
+      alert(`⚠️ Tạo user thành công (chỉ local)!\n\n- Email: ${formData.email}\n- Role: ${formData.role}\n- Đã tạo trong Supabase: ❌\n- Đã lưu local: ✅\n\nLưu ý: User này chỉ có trong localStorage, không có trong Supabase.`);
+    }
     
     // Auto-sync sau khi tạo user
     console.log('[ADD_USER] Starting auto-sync after add...');
