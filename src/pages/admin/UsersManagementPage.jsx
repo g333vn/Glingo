@@ -754,8 +754,98 @@ function UsersManagementPage() {
 
   // ✅ NEW: View user details (for admin only)
   const handleViewUser = (user) => {
+    console.log('[VIEW_USER] Starting to view user:', {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      hasPassword: !!user.password
+    });
+    
     // Get full user info including password
-    const fullUser = getUsersFromData().find(u => u.id === user.id);
+    let fullUser = getUsersFromData().find(u => u.id === user.id || u.username === user.username);
+    
+    // ✅ FIX: Nếu không tìm thấy user, thử tìm bằng username hoặc email
+    if (!fullUser) {
+      fullUser = getUsersFromData().find(u => 
+        u.username === user.username || 
+        u.email === user.email
+      );
+    }
+    
+    // ✅ FIX: Nếu vẫn không tìm thấy, dùng user hiện tại
+    if (!fullUser) {
+      fullUser = { ...user };
+      console.log('[VIEW_USER] Using user object directly');
+    }
+    
+    // ✅ FIX: Kiểm tra xem có phải Supabase user không
+    const isSupabaseUser = typeof fullUser.id === 'string' && fullUser.id.startsWith('supabase_');
+    
+    // ✅ FIX: Luôn lấy password từ userPasswords để đảm bảo có password mới nhất
+    if (!isSupabaseUser) {
+      try {
+        const savedPasswords = localStorage.getItem('userPasswords');
+        console.log('[VIEW_USER] Checking userPasswords:', {
+          hasUserPasswords: !!savedPasswords,
+          userId: fullUser.id,
+          username: fullUser.username
+        });
+        
+        if (savedPasswords) {
+          const passwordsMap = JSON.parse(savedPasswords);
+          console.log('[VIEW_USER] Passwords map keys:', Object.keys(passwordsMap));
+          
+          // Tìm password bằng id (number và string) và username
+          const password = passwordsMap[fullUser.id] || 
+                          passwordsMap[String(fullUser.id)] || 
+                          passwordsMap[fullUser.username] ||
+                          passwordsMap[user.id] ||
+                          passwordsMap[String(user.id)] ||
+                          passwordsMap[user.username];
+          
+          if (password) {
+            fullUser.password = password;
+            console.log('[VIEW_USER] ✅ Password loaded from userPasswords for:', fullUser.username || user.username, 'Length:', password.length);
+          } else {
+            console.warn('[VIEW_USER] ⚠️ No password found in userPasswords for:', {
+              userId: fullUser.id || user.id,
+              username: fullUser.username || user.username,
+              passwordsMapKeys: Object.keys(passwordsMap),
+              triedKeys: [
+                fullUser.id,
+                String(fullUser.id),
+                fullUser.username,
+                user.id,
+                String(user.id),
+                user.username
+              ]
+            });
+          }
+        } else {
+          console.warn('[VIEW_USER] ⚠️ No userPasswords found in localStorage');
+        }
+      } catch (e) {
+        console.error('[VIEW_USER] ❌ Error loading password from userPasswords:', e);
+      }
+      
+      // ✅ FIX: Nếu vẫn không có password và user có password trong object gốc
+      if (!fullUser.password && user.password) {
+        fullUser.password = user.password;
+        console.log('[VIEW_USER] ✅ Password loaded from user object, Length:', user.password.length);
+      }
+    } else {
+      console.log('[VIEW_USER] ℹ️ This is a Supabase user, password is managed by Supabase');
+      fullUser.isSupabaseUser = true;
+    }
+    
+    console.log('[VIEW_USER] Final user object:', {
+      id: fullUser.id,
+      username: fullUser.username,
+      hasPassword: !!fullUser.password,
+      passwordLength: fullUser.password ? fullUser.password.length : 0,
+      isSupabaseUser: isSupabaseUser
+    });
+    
     setViewingUser(fullUser);
     setShowPassword(false);
     setShowViewModal(true);
@@ -1279,13 +1369,15 @@ function UsersManagementPage() {
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs font-bold text-yellow-700 uppercase">{t('userManagement.viewUser.password')}</p>
                     <div className="flex gap-2">
-                      <button
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="px-2 py-1 bg-yellow-400 text-yellow-900 rounded border-[2px] border-black text-xs font-black hover:bg-yellow-500 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px]"
-                      >
-                        {showPassword ? t('userManagement.viewUser.hidePassword') : t('userManagement.viewUser.showPassword')}
-                      </button>
-                      {showPassword && (
+                      {!viewingUser.isSupabaseUser && (
+                        <button
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="px-2 py-1 bg-yellow-400 text-yellow-900 rounded border-[2px] border-black text-xs font-black hover:bg-yellow-500 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px]"
+                        >
+                          {showPassword ? t('userManagement.viewUser.hidePassword') : t('userManagement.viewUser.showPassword')}
+                        </button>
+                      )}
+                      {showPassword && viewingUser.password && !viewingUser.isSupabaseUser && (
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(viewingUser.password);
@@ -1300,11 +1392,28 @@ function UsersManagementPage() {
                     </div>
                   </div>
                   <p className="text-base font-mono font-bold text-gray-800 break-all">
-                    {showPassword ? viewingUser.password : '••••••••'}
+                    {viewingUser.isSupabaseUser ? (
+                      <span className="text-gray-500 italic">
+                        {t('userManagement.viewUser.supabasePasswordNote') || 'Mật khẩu được quản lý bởi Supabase. Không thể xem mật khẩu.'}
+                      </span>
+                    ) : showPassword && viewingUser.password ? (
+                      viewingUser.password
+                    ) : showPassword && !viewingUser.password ? (
+                      <span className="text-red-500 italic">
+                        {t('userManagement.viewUser.noPassword') || 'Không có mật khẩu trong hệ thống'}
+                      </span>
+                    ) : (
+                      '••••••••'
+                    )}
                   </p>
-                  {showPassword && (
+                  {showPassword && viewingUser.password && !viewingUser.isSupabaseUser && (
                     <p className="text-xs text-gray-500 mt-2">
                       {t('userManagement.viewUser.copyPasswordHint')}
+                    </p>
+                  )}
+                  {viewingUser.isSupabaseUser && (
+                    <p className="text-xs text-yellow-600 mt-2 font-bold">
+                      ⚠️ {t('userManagement.viewUser.supabasePasswordWarning') || 'Supabase users: Password được quản lý bởi Supabase Auth. Để reset password, dùng Supabase Dashboard.'}
                     </p>
                   )}
                 </div>
