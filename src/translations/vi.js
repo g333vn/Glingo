@@ -451,7 +451,8 @@ const vi = {
         aboutMe: 'Giới thiệu',
         jlpt: 'JLPT',
         edit: 'Sửa',
-        loading: 'Đang lưu...'
+        loading: 'Đang lưu...',
+        cancel: 'Hủy'
     },
 
     // ============================================================================

@@ -406,7 +406,8 @@ common: {
   chapter: 'チャプター',
   edit: '編集',
   loading: '保存中...',
-  back: '戻る'
+  back: '戻る',
+  cancel: 'キャンセル'
 },
 
 home: {

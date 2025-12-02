@@ -414,7 +414,8 @@ common: {
   chapter: 'Chapter',
   edit: 'Edit',
   loading: 'Saving...',
-  back: 'Back'
+  back: 'Back',
+  cancel: 'Cancel'
 },
 
 home: {

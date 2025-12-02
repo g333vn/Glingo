@@ -43,14 +43,27 @@ export async function getAllNotificationsFromServer(user) {
       return [];
     }
 
+    // Chuẩn hoá field name từ snake_case (Supabase) sang camelCase dùng trong FE
+    const normalized = (data || []).map(row => ({
+      id: row.id,
+      title: row.title,
+      message: row.message,
+      type: row.type || 'info',
+      targetUsers: row.target_users || [],
+      targetRoles: row.target_roles || [],
+      createdAt: row.created_at,
+      expiresAt: row.expires_at,
+      readBy: row.read_by || []
+    }));
+
     // Cache to localStorage for faster reload on this device
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data || []));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
     } catch (cacheErr) {
       console.warn('[NOTIFICATIONS] Failed to cache notifications locally:', cacheErr);
     }
 
-    return data || [];
+    return normalized;
   } catch (err) {
     console.error('[NOTIFICATIONS] Unexpected Supabase error:', err);
     return [];
@@ -223,7 +236,7 @@ export async function markAllAsRead(user) {
  * @param {Object} notificationData - Notification data
  * @returns {Object} Created notification
  */
-export function createNotification(notificationData) {
+export async function createNotification(notificationData) {
   try {
     // Cleanup old notifications first to prevent quota exceeded
     cleanupExpiredNotifications();
@@ -283,9 +296,32 @@ export function createNotification(notificationData) {
       return null;
     }
     
-    // Dispatch event for real-time updates
+    // Dispatch event for real-time updates (local)
     window.dispatchEvent(new CustomEvent('notificationsUpdated'));
-    
+
+    // ✅ NEW: Lưu thêm vào Supabase để đồng bộ giữa các thiết bị
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .insert({
+          title: newNotification.title,
+          message: newNotification.message,
+          type: newNotification.type,
+          target_users: newNotification.targetUsers || [],
+          target_roles: newNotification.targetRoles || [],
+          expires_at: newNotification.expiresAt || null,
+          created_at: newNotification.createdAt
+        });
+
+      if (error) {
+        console.error('[NOTIFICATIONS] Supabase createNotification error:', error);
+      } else {
+        console.log('[NOTIFICATIONS] ✅ Notification inserted into Supabase');
+      }
+    } catch (supabaseErr) {
+      console.error('[NOTIFICATIONS] Unexpected Supabase error when creating notification:', supabaseErr);
+    }
+
     return newNotification;
   } catch (error) {
     console.error('[NOTIFICATIONS] Error creating notification:', error);

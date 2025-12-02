@@ -146,7 +146,7 @@ function NotificationManagementPage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.title || !formData.message) {
       alert(t('notifications.admin.fillRequired') || 'Vui lòng điền đầy đủ tiêu đề và nội dung!');
       return;
@@ -170,12 +170,15 @@ function NotificationManagementPage() {
     };
 
     if (editingNotification) {
+      // Hiện tại update chỉ cập nhật local cache
       updateNotification(editingNotification.id, notificationData);
     } else {
-      createNotification(notificationData);
+      // Tạo notification mới và đẩy lên Supabase (thông qua createNotification async)
+      await createNotification(notificationData);
     }
 
     setShowModal(false);
+    // Reload lại danh sách từ local
     loadData();
   };
 
