@@ -1,187 +1,154 @@
 // src/utils/notificationManager.js
-// 🔔 NOTIFICATION MANAGEMENT SYSTEM
-// Quản lý thông báo từ hệ thống và admin gửi cho users
+// 🔔 NOTIFICATION MANAGEMENT SYSTEM - Đồng bộ Supabase + Local Cache
+// Quản lý thông báo từ hệ thống với đồng bộ hóa giữa các thiết bị
 
 import { supabase } from '../services/supabaseClient.js';
 
 const STORAGE_KEY = 'systemNotifications';
 const CUSTOM_TYPES_KEY = 'notificationCustomTypes';
-const MAX_NOTIFICATIONS = 1000; // Giới hạn số lượng notifications tối đa
+const MAX_NOTIFICATIONS = 1000;
 
-/**
- * Default notification structure
- */
 const DEFAULT_NOTIFICATION = {
   id: null,
   title: '',
   message: '',
-  type: 'info', // 'info', 'warning', 'success', 'error'
-  targetUsers: [], // Array of user IDs, empty = no users (must select to send)
-  targetRoles: [], // Array of roles, empty = no roles (must select to send)
-  createdAt: null,
-  expiresAt: null, // null = never expires
-  isRead: false,
-  readBy: [] // Array of user IDs who read this
+  type: 'info',
+  target_users: [],
+  target_roles: [],
+  created_at: null,
+  expires_at: null,
+  read_by: []
 };
 
 /**
- * Get all notifications
- * @returns {Array} Array of notifications
+ * 📥 Load thông báo từ Supabase (nguồn chính) + cache local
  */
 export async function getAllNotificationsFromServer(user) {
   if (!user || !user.id) return [];
 
   try {
+    console.log(`[NOTIFICATIONS] 📡 Fetching from Supabase for user ${user.id}...`);
+    
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
-      .contains('target_users', [user.id])
+      .or(`target_users.cs.{"${user.id}"},target_roles.cs.{"${user.role || 'user'}"}`)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('[NOTIFICATIONS] Supabase getAllNotifications error:', error);
-      return [];
+      console.error('[NOTIFICATIONS] ⚠️ Supabase fetch error:', error);
+      // Fallback to local cache
+      return getAllNotificationsLocal();
     }
 
-    // Chuẩn hoá field name từ snake_case (Supabase) sang camelCase dùng trong FE
-    const normalized = (data || []).map(row => ({
+    const notifications = (data || []).map(row => ({
       id: row.id,
       title: row.title,
       message: row.message,
       type: row.type || 'info',
-      targetUsers: row.target_users || [],
-      targetRoles: row.target_roles || [],
-      createdAt: row.created_at,
-      expiresAt: row.expires_at,
-      readBy: row.read_by || []
+      target_users: row.target_users || [],
+      target_roles: row.target_roles || [],
+      created_at: row.created_at,
+      expires_at: row.expires_at,
+      read_by: row.read_by || []
     }));
 
-    // Cache to localStorage for faster reload on this device
+    // Cache to localStorage
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
     } catch (cacheErr) {
-      console.warn('[NOTIFICATIONS] Failed to cache notifications locally:', cacheErr);
+      console.warn('[NOTIFICATIONS] ⚠️ Failed to cache:', cacheErr);
     }
 
-    return normalized;
+    console.log(`[NOTIFICATIONS] ✅ Loaded ${notifications.length} notifications from Supabase`);
+    return notifications;
   } catch (err) {
-    console.error('[NOTIFICATIONS] Unexpected Supabase error:', err);
-    return [];
+    console.error('[NOTIFICATIONS] ❌ Unexpected error:', err);
+    return getAllNotificationsLocal();
   }
 }
 
-// Legacy local loader (fallback if Supabase lỗi)
+/**
+ * 📂 Load từ cache local (fallback)
+ */
 export function getAllNotificationsLocal() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    return [];
+    return stored ? JSON.parse(stored) : [];
   } catch (error) {
-    console.error('[NOTIFICATIONS] Error loading notifications from local cache:', error);
+    console.error('[NOTIFICATIONS] Error loading local cache:', error);
     return [];
   }
 }
 
-// ✅ Backward-compatible API cho trang Admin NotificationManagementPage
-// Hiện tại trang admin đang gọi getAllNotifications() dạng sync,
-// nên hàm này chỉ trả về dữ liệu cache local (giống hành vi cũ).
-// Đồng bộ thật sự giữa thiết bị đang được xử lý qua Supabase ở
-// các hàm getUserNotifications / getUnreadCount dùng cho NotificationBell.
+/**
+ * Wrapper cho trang Admin (dùng local cache)
+ */
 export function getAllNotifications() {
   return getAllNotificationsLocal();
 }
 
 /**
- * Get notifications for a specific user
- * @param {Object} user - User object with id and role
- * @returns {Array} Array of notifications for the user
+ * 📋 Get thông báo cho user cụ thể
  */
 export async function getUserNotifications(user) {
   const allNotifications = await getAllNotificationsFromServer(user);
   const now = new Date().getTime();
   
   return allNotifications.filter(notif => {
-    // Check if expired
-    if (notif.expiresAt && new Date(notif.expiresAt).getTime() < now) {
+    // Kiểm tra expire
+    if (notif.expires_at && new Date(notif.expires_at).getTime() < now) {
       return false;
     }
     
-    // If no targets specified, don't send to anyone
-    const hasTargetUsers = notif.targetUsers && notif.targetUsers.length > 0;
-    const hasTargetRoles = notif.targetRoles && notif.targetRoles.length > 0;
+    // Kiểm tra target_users hoặc target_roles
+    const hasUsers = notif.target_users && notif.target_users.length > 0 && 
+                     notif.target_users.includes(user.id);
+    const hasRoles = notif.target_roles && notif.target_roles.length > 0 && 
+                     notif.target_roles.includes(user.role);
     
-    if (!hasTargetUsers && !hasTargetRoles) {
-      return false; // No targets = don't send to anyone
-    }
-    
-    // Check if user matches target users
-    if (hasTargetUsers) {
-      if (user && notif.targetUsers.includes(user.id)) {
-        return true; // User is in target list
-      }
-    }
-    
-    // Check if user's role matches target roles
-    if (hasTargetRoles) {
-      if (user && notif.targetRoles.includes(user.role)) {
-        return true; // User's role is in target list
-      }
-    }
-    
-    // User doesn't match any target
-    return false;
-  }).sort((a, b) => {
-    // Sort by created date, newest first
-    return new Date(b.createdAt) - new Date(a.createdAt);
-  });
+    return hasUsers || hasRoles;
+  }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 }
 
 /**
- * Get unread count for a user
- * @param {Object} user - User object
- * @returns {number} Unread count
+ * 🔔 Đếm thông báo chưa đọc
  */
 export async function getUnreadCount(user) {
   const notifications = await getUserNotifications(user);
   return notifications.filter(notif => {
     if (!user) return false;
-    return !notif.readBy || !notif.readBy.includes(user.id);
+    return !notif.read_by || !notif.read_by.includes(user.id);
   }).length;
 }
 
 /**
- * Mark notification as read
- * @param {string} notificationId - Notification ID
- * @param {Object} user - User object
- * @returns {boolean} Success status
+ * ✅ Đánh dấu thông báo là đã đọc
  */
 export async function markAsRead(notificationId, user) {
   if (!user) return false;
 
   try {
-    // Update on server: thêm user.id vào mảng read_by
+    // Update Supabase via RPC
     const { error } = await supabase.rpc('mark_notification_read', {
       p_notification_id: notificationId,
       p_user_id: user.id
     });
 
     if (error) {
-      console.error('[NOTIFICATIONS] Supabase markAsRead error:', error);
+      console.error('[NOTIFICATIONS] ⚠️ Mark as read error:', error);
       return false;
     }
 
-    // Cập nhật cache local
-    const allNotifications = getAllNotificationsLocal();
-    const notification = allNotifications.find(n => n.id === notificationId);
-
-    if (notification) {
-      if (!notification.read_by) notification.read_by = [];
-      if (!notification.read_by.includes(user.id)) {
-        notification.read_by.push(user.id);
+    // Update local cache
+    const local = getAllNotificationsLocal();
+    const notif = local.find(n => n.id === notificationId);
+    if (notif) {
+      if (!notif.read_by) notif.read_by = [];
+      if (!notif.read_by.includes(user.id)) {
+        notif.read_by.push(user.id);
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(allNotifications));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
     }
 
     window.dispatchEvent(new CustomEvent('notificationsUpdated'));
@@ -193,26 +160,24 @@ export async function markAsRead(notificationId, user) {
 }
 
 /**
- * Mark all notifications as read for a user
- * @param {Object} user - User object
- * @returns {boolean} Success status
+ * ✅ Đánh dấu tất cả là đã đọc
  */
 export async function markAllAsRead(user) {
   if (!user) return false;
 
   try {
-    // Gọi RPC để đánh dấu tất cả thông báo của user là đã đọc
+    // Update Supabase via RPC
     const { error } = await supabase.rpc('mark_all_notifications_read', {
       p_user_id: user.id
     });
 
     if (error) {
-      console.error('[NOTIFICATIONS] Supabase markAllAsRead error:', error);
+      console.error('[NOTIFICATIONS] ⚠️ Mark all as read error:', error);
       return false;
     }
 
-    // Cập nhật cache local
-    const allNotifications = getAllNotificationsLocal().map(n => {
+    // Update local cache
+    const local = getAllNotificationsLocal().map(n => {
       const copy = { ...n };
       if (!copy.read_by) copy.read_by = [];
       if (!copy.read_by.includes(user.id)) {
@@ -221,8 +186,7 @@ export async function markAllAsRead(user) {
       return copy;
     });
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allNotifications));
-
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
     window.dispatchEvent(new CustomEvent('notificationsUpdated'));
     return true;
   } catch (error) {
@@ -232,13 +196,10 @@ export async function markAllAsRead(user) {
 }
 
 /**
- * Create a new notification (Admin only)
- * @param {Object} notificationData - Notification data
- * @returns {Object} Created notification
+ * 📤 Tạo thông báo mới (từ Admin)
  */
 export async function createNotification(notificationData) {
   try {
-    // Cleanup old notifications first to prevent quota exceeded
     cleanupExpiredNotifications();
     cleanupOldNotifications();
     
@@ -248,24 +209,19 @@ export async function createNotification(notificationData) {
       ...DEFAULT_NOTIFICATION,
       ...notificationData,
       id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      readBy: []
+      created_at: new Date().toISOString(),
+      read_by: []
     };
     
-    // Try to save with new notification, if quota exceeded, cleanup more aggressively
+    // Lưu local cache cho admin xem
     let saved = false;
     const limits = [1000, 500, 200, 100, 50, 20, 10, 5, 1];
     
     for (const limit of limits) {
       try {
-        // Sort by date, newest first
-        const sorted = [...allNotifications].sort((a, b) => {
-          const dateA = new Date(a.createdAt || 0).getTime();
-          const dateB = new Date(b.createdAt || 0).getTime();
-          return dateB - dateA;
-        });
-        
-        // Keep only the most recent ones, then add new notification
+        const sorted = [...allNotifications].sort((a, b) => 
+          new Date(b.created_at || 0) - new Date(a.created_at || 0)
+        );
         const kept = sorted.slice(0, Math.max(0, limit - 1));
         const toSave = [newNotification, ...kept];
         
@@ -273,17 +229,14 @@ export async function createNotification(notificationData) {
         saved = true;
         
         if (limit < 1000) {
-          console.warn(`[NOTIFICATIONS] Storage quota exceeded, kept only ${limit} most recent notifications`);
+          console.warn(`[NOTIFICATIONS] ⚠️ Local storage quota managed, kept ${limit} notifications`);
         }
-        
         break;
       } catch (quotaError) {
         if (quotaError.name === 'QuotaExceededError' && limit > 1) {
-          // Try next smaller limit
           continue;
         } else if (quotaError.name === 'QuotaExceededError' && limit === 1) {
-          // Even 1 notification is too large, localStorage is completely full
-          console.error('[NOTIFICATIONS] Storage completely full, cannot save notification');
+          console.error('[NOTIFICATIONS] ❌ Local storage full');
           return null;
         } else {
           throw quotaError;
@@ -292,48 +245,49 @@ export async function createNotification(notificationData) {
     }
     
     if (!saved) {
-      console.error('[NOTIFICATIONS] Failed to save notification after all cleanup attempts');
+      console.error('[NOTIFICATIONS] ❌ Failed to save locally');
       return null;
     }
     
-    // Dispatch event for real-time updates (local)
     window.dispatchEvent(new CustomEvent('notificationsUpdated'));
 
-    // ✅ NEW: Lưu thêm vào Supabase để đồng bộ giữa các thiết bị
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .insert({
-          title: newNotification.title,
-          message: newNotification.message,
-          type: newNotification.type,
-          target_users: newNotification.targetUsers || [],
-          target_roles: newNotification.targetRoles || [],
-          expires_at: newNotification.expiresAt || null,
-          created_at: newNotification.createdAt
-        });
+    // ✅ Đẩy lên Supabase để các user khác thấy
+    console.log(`[NOTIFICATIONS] 📤 Pushing to Supabase:`, {
+      title: newNotification.title,
+      target_users: newNotification.target_users,
+      target_roles: newNotification.target_roles
+    });
 
-      if (error) {
-        console.error('[NOTIFICATIONS] Supabase createNotification error:', error);
-      } else {
-        console.log('[NOTIFICATIONS] ✅ Notification inserted into Supabase');
-      }
-    } catch (supabaseErr) {
-      console.error('[NOTIFICATIONS] Unexpected Supabase error when creating notification:', supabaseErr);
+    const { error } = await supabase
+      .from('notifications')
+      .insert({
+        title: newNotification.title || '',
+        message: newNotification.message || '',
+        type: newNotification.type || 'info',
+        target_users: (newNotification.target_users || []).map(id => String(id)), // ✅ Convert to text[]
+        target_roles: newNotification.target_roles || [],
+        expires_at: newNotification.expires_at || null,
+        created_at: newNotification.created_at
+      });
+
+    if (error) {
+      console.error('[NOTIFICATIONS] ❌ Supabase insert error:', error);
+      console.error('  Details:', error.details);
+      console.error('  Message:', error.message);
+      // Vẫn trả về success vì đã lưu local
+      return newNotification;
     }
 
+    console.log('[NOTIFICATIONS] ✅ Successfully pushed to Supabase');
     return newNotification;
   } catch (error) {
-    console.error('[NOTIFICATIONS] Error creating notification:', error);
+    console.error('[NOTIFICATIONS] ❌ Unexpected error in createNotification:', error);
     return null;
   }
 }
 
 /**
- * Update a notification (Admin only)
- * @param {string} notificationId - Notification ID
- * @param {Object} updates - Updates to apply
- * @returns {boolean} Success status
+ * ✏️ Update thông báo
  */
 export function updateNotification(notificationId, updates) {
   try {
@@ -348,8 +302,6 @@ export function updateNotification(notificationId, updates) {
     };
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(allNotifications));
-    
-    // Dispatch event for real-time updates
     window.dispatchEvent(new CustomEvent('notificationsUpdated'));
     
     return true;
@@ -360,9 +312,7 @@ export function updateNotification(notificationId, updates) {
 }
 
 /**
- * Delete a notification (Admin only)
- * @param {string} notificationId - Notification ID
- * @returns {boolean} Success status
+ * 🗑️ Xoá thông báo
  */
 export function deleteNotification(notificationId) {
   try {
@@ -370,8 +320,6 @@ export function deleteNotification(notificationId) {
     const filtered = allNotifications.filter(n => n.id !== notificationId);
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    
-    // Dispatch event for real-time updates
     window.dispatchEvent(new CustomEvent('notificationsUpdated'));
     
     return true;
@@ -382,8 +330,7 @@ export function deleteNotification(notificationId) {
 }
 
 /**
- * Delete expired notifications
- * @returns {number} Number of deleted notifications
+ * 🧹 Xoá expired
  */
 export function cleanupExpiredNotifications() {
   try {
@@ -391,8 +338,8 @@ export function cleanupExpiredNotifications() {
     const now = new Date().getTime();
     
     const active = allNotifications.filter(notif => {
-      if (!notif.expiresAt) return true;
-      return new Date(notif.expiresAt).getTime() >= now;
+      if (!notif.expires_at) return true;
+      return new Date(notif.expires_at).getTime() >= now;
     });
     
     const deleted = allNotifications.length - active.length;
@@ -404,15 +351,13 @@ export function cleanupExpiredNotifications() {
     
     return deleted;
   } catch (error) {
-    console.error('[NOTIFICATIONS] Error cleaning up:', error);
+    console.error('[NOTIFICATIONS] Error cleaning up expired:', error);
     return 0;
   }
 }
 
 /**
- * Cleanup old notifications to free up space
- * Keeps only the most recent MAX_NOTIFICATIONS
- * @returns {number} Number of deleted notifications
+ * 🧹 Xoá cũ
  */
 export function cleanupOldNotifications() {
   try {
@@ -422,57 +367,45 @@ export function cleanupOldNotifications() {
       return 0;
     }
     
-    // Sort by createdAt, newest first
     const sorted = allNotifications.sort((a, b) => {
-      const dateA = new Date(a.createdAt || 0).getTime();
-      const dateB = new Date(b.createdAt || 0).getTime();
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
       return dateB - dateA;
     });
     
-    // Keep only the most recent ones
     const kept = sorted.slice(0, MAX_NOTIFICATIONS);
     const deleted = allNotifications.length - kept.length;
     
     if (deleted > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(kept));
       window.dispatchEvent(new CustomEvent('notificationsUpdated'));
-      console.log(`[NOTIFICATIONS] Cleaned up ${deleted} old notifications`);
+      console.log(`[NOTIFICATIONS] 🧹 Cleaned up ${deleted} old notifications`);
     }
     
     return deleted;
   } catch (error) {
-    console.error('[NOTIFICATIONS] Error cleaning up old notifications:', error);
+    console.error('[NOTIFICATIONS] Error cleaning up old:', error);
     return 0;
   }
 }
 
 /**
- * Get custom notification types
- * @returns {Array} Array of custom types
+ * Custom types management
  */
 export function getCustomTypes() {
   try {
     const stored = localStorage.getItem(CUSTOM_TYPES_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    return [];
+    return stored ? JSON.parse(stored) : [];
   } catch (error) {
     console.error('[NOTIFICATIONS] Error loading custom types:', error);
     return [];
   }
 }
 
-/**
- * Add a custom notification type
- * @param {Object} typeData - Type data with value, label, icon, color
- * @returns {boolean} Success status
- */
 export function addCustomType(typeData) {
   try {
     const customTypes = getCustomTypes();
     
-    // Check if type already exists
     if (customTypes.find(t => t.value === typeData.value)) {
       return false;
     }
@@ -483,8 +416,6 @@ export function addCustomType(typeData) {
     });
     
     localStorage.setItem(CUSTOM_TYPES_KEY, JSON.stringify(customTypes));
-    
-    // Dispatch event
     window.dispatchEvent(new CustomEvent('notificationTypesUpdated'));
     
     return true;
@@ -494,19 +425,12 @@ export function addCustomType(typeData) {
   }
 }
 
-/**
- * Delete a custom notification type
- * @param {string} typeValue - Type value to delete
- * @returns {boolean} Success status
- */
 export function deleteCustomType(typeValue) {
   try {
     const customTypes = getCustomTypes();
     const filtered = customTypes.filter(t => t.value !== typeValue);
     
     localStorage.setItem(CUSTOM_TYPES_KEY, JSON.stringify(filtered));
-    
-    // Dispatch event
     window.dispatchEvent(new CustomEvent('notificationTypesUpdated'));
     
     return true;
@@ -517,6 +441,8 @@ export function deleteCustomType(typeValue) {
 }
 
 export default {
+  getAllNotificationsFromServer,
+  getAllNotificationsLocal,
   getAllNotifications,
   getUserNotifications,
   getUnreadCount,
@@ -531,4 +457,3 @@ export default {
   addCustomType,
   deleteCustomType
 };
-
