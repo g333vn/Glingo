@@ -2,6 +2,8 @@
 // 🔔 NOTIFICATION MANAGEMENT SYSTEM
 // Quản lý thông báo từ hệ thống và admin gửi cho users
 
+import { supabase } from '../services/supabaseClient.js';
+
 const STORAGE_KEY = 'systemNotifications';
 const CUSTOM_TYPES_KEY = 'notificationCustomTypes';
 const MAX_NOTIFICATIONS = 1000; // Giới hạn số lượng notifications tối đa
@@ -26,7 +28,37 @@ const DEFAULT_NOTIFICATION = {
  * Get all notifications
  * @returns {Array} Array of notifications
  */
-export function getAllNotifications() {
+export async function getAllNotificationsFromServer(user) {
+  if (!user || !user.id) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .contains('target_users', [user.id])
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[NOTIFICATIONS] Supabase getAllNotifications error:', error);
+      return [];
+    }
+
+    // Cache to localStorage for faster reload on this device
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data || []));
+    } catch (cacheErr) {
+      console.warn('[NOTIFICATIONS] Failed to cache notifications locally:', cacheErr);
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error('[NOTIFICATIONS] Unexpected Supabase error:', err);
+    return [];
+  }
+}
+
+// Legacy local loader (fallback if Supabase lỗi)
+export function getAllNotificationsLocal() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -34,7 +66,7 @@ export function getAllNotifications() {
     }
     return [];
   } catch (error) {
-    console.error('[NOTIFICATIONS] Error loading notifications:', error);
+    console.error('[NOTIFICATIONS] Error loading notifications from local cache:', error);
     return [];
   }
 }
@@ -44,8 +76,8 @@ export function getAllNotifications() {
  * @param {Object} user - User object with id and role
  * @returns {Array} Array of notifications for the user
  */
-export function getUserNotifications(user) {
-  const allNotifications = getAllNotifications();
+export async function getUserNotifications(user) {
+  const allNotifications = await getAllNotificationsFromServer(user);
   const now = new Date().getTime();
   
   return allNotifications.filter(notif => {
@@ -89,8 +121,8 @@ export function getUserNotifications(user) {
  * @param {Object} user - User object
  * @returns {number} Unread count
  */
-export function getUnreadCount(user) {
-  const notifications = getUserNotifications(user);
+export async function getUnreadCount(user) {
+  const notifications = await getUserNotifications(user);
   return notifications.filter(notif => {
     if (!user) return false;
     return !notif.readBy || !notif.readBy.includes(user.id);
@@ -105,26 +137,32 @@ export function getUnreadCount(user) {
  */
 export function markAsRead(notificationId, user) {
   if (!user) return false;
-  
+
   try {
-    const allNotifications = getAllNotifications();
+    // Update on server: thêm user.id vào mảng read_by
+    const { error } = await supabase.rpc('mark_notification_read', {
+      p_notification_id: notificationId,
+      p_user_id: user.id
+    });
+
+    if (error) {
+      console.error('[NOTIFICATIONS] Supabase markAsRead error:', error);
+      return false;
+    }
+
+    // Cập nhật cache local
+    const allNotifications = getAllNotificationsLocal();
     const notification = allNotifications.find(n => n.id === notificationId);
-    
-    if (!notification) return false;
-    
-    if (!notification.readBy) {
-      notification.readBy = [];
+
+    if (notification) {
+      if (!notification.read_by) notification.read_by = [];
+      if (!notification.read_by.includes(user.id)) {
+        notification.read_by.push(user.id);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(allNotifications));
     }
-    
-    if (!notification.readBy.includes(user.id)) {
-      notification.readBy.push(user.id);
-    }
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allNotifications));
-    
-    // Dispatch event for real-time updates
+
     window.dispatchEvent(new CustomEvent('notificationsUpdated'));
-    
     return true;
   } catch (error) {
     console.error('[NOTIFICATIONS] Error marking as read:', error);
@@ -139,29 +177,31 @@ export function markAsRead(notificationId, user) {
  */
 export function markAllAsRead(user) {
   if (!user) return false;
-  
+
   try {
-    const allNotifications = getAllNotifications();
-    const userNotifications = getUserNotifications(user);
-    
-    // Update readBy for each notification that user can see
-    userNotifications.forEach(notif => {
-      const notifIndex = allNotifications.findIndex(n => n.id === notif.id);
-      if (notifIndex !== -1) {
-        if (!allNotifications[notifIndex].readBy) {
-          allNotifications[notifIndex].readBy = [];
-        }
-        if (!allNotifications[notifIndex].readBy.includes(user.id)) {
-          allNotifications[notifIndex].readBy.push(user.id);
-        }
-      }
+    // Gọi RPC để đánh dấu tất cả thông báo của user là đã đọc
+    const { error } = await supabase.rpc('mark_all_notifications_read', {
+      p_user_id: user.id
     });
-    
+
+    if (error) {
+      console.error('[NOTIFICATIONS] Supabase markAllAsRead error:', error);
+      return false;
+    }
+
+    // Cập nhật cache local
+    const allNotifications = getAllNotificationsLocal().map(n => {
+      const copy = { ...n };
+      if (!copy.read_by) copy.read_by = [];
+      if (!copy.read_by.includes(user.id)) {
+        copy.read_by.push(user.id);
+      }
+      return copy;
+    });
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(allNotifications));
-    
-    // Dispatch event for real-time updates
+
     window.dispatchEvent(new CustomEvent('notificationsUpdated'));
-    
     return true;
   } catch (error) {
     console.error('[NOTIFICATIONS] Error marking all as read:', error);

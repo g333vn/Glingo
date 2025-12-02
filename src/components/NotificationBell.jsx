@@ -22,15 +22,15 @@ function NotificationBell() {
   const dropdownRef = useRef(null);
 
   useEffect(() => {
-    const loadNotifications = () => {
+    const loadNotifications = async () => {
       if (!user) {
         setAllNotifications([]);
         setUnreadCount(0);
         return;
       }
       
-      const userNotifs = getUserNotifications(user);
-      const unread = getUnreadCount(user);
+      const userNotifs = await getUserNotifications(user);
+      const unread = await getUnreadCount(user);
       
       setAllNotifications(userNotifs);
       setUnreadCount(unread);
@@ -75,19 +75,20 @@ function NotificationBell() {
     };
   }, [isOpen]);
 
-  const handleNotificationClick = useCallback((notification) => {
+  const handleNotificationClick = useCallback(async (notification) => {
     if (user) {
-      markAsRead(notification.id, user);
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      await markAsRead(notification.id, user);
+      const unread = await getUnreadCount(user);
+      setUnreadCount(unread);
     }
   }, [user]);
 
-  const handleMarkAllRead = useCallback(() => {
+  const handleMarkAllRead = useCallback(async () => {
     if (user) {
-      markAllAsRead(user);
-      // Reload notifications to update UI
-      const userNotifs = getUserNotifications(user);
-      const unread = getUnreadCount(user);
+      await markAllAsRead(user);
+      // Reload notifications from server to update UI
+      const userNotifs = await getUserNotifications(user);
+      const unread = await getUnreadCount(user);
       setAllNotifications(userNotifs);
       setUnreadCount(unread);
     }
