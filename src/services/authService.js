@@ -637,6 +637,58 @@ export async function deleteUser(userId) {
 }
 
 /**
+ * Confirm user email (Admin only - requires service role key)
+ * This function uses Supabase Admin API to confirm user email
+ * @param {string} userId - Supabase user ID
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function confirmUserEmail(userId) {
+  try {
+    if (!userId) {
+      return { success: false, error: 'User ID is required' };
+    }
+
+    // ✅ Check if service role key is available
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+    if (!serviceRoleKey || !supabaseUrl) {
+      console.warn('[AuthService] ⚠️ Service role key not available. User needs manual confirmation.');
+      return { 
+        success: false, 
+        error: 'Service role key không có. User cần được confirm thủ công trong Supabase Dashboard.',
+        needsManualConfirmation: true
+      };
+    }
+
+    // ✅ Use Admin API to confirm user
+    // Note: This requires service role key
+    const { createClient } = await import('@supabase/supabase-js');
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    const { data, error } = await adminClient.auth.admin.updateUserById(userId, {
+      email_confirm: true
+    });
+
+    if (error) {
+      console.error('[AuthService] Error confirming user:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('[AuthService] ✅ User confirmed successfully:', userId);
+    return { success: true, data };
+  } catch (err) {
+    console.error('[AuthService] Unexpected error confirming user:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Delete user profile by email (for orphaned profiles)
  * @param {string} email - User email
  * @returns {Promise<{success: boolean, error?: string}>}

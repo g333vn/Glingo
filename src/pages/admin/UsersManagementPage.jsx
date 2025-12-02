@@ -314,6 +314,18 @@ function UsersManagementPage() {
         supabaseUserId = signUpResult.data.user.id;
         console.log('[ADD_USER] ✅ User created in Supabase:', supabaseUserId);
         
+        // ✅ FIX: Confirm user email để có thể đăng nhập ngay
+        console.log('[ADD_USER] Confirming user email...');
+        const confirmResult = await authService.confirmUserEmail(supabaseUserId);
+        if (confirmResult.success) {
+          console.log('[ADD_USER] ✅ User email confirmed successfully');
+        } else {
+          console.warn('[ADD_USER] ⚠️ Failed to confirm user email:', confirmResult.error);
+          if (confirmResult.needsManualConfirmation) {
+            console.warn('[ADD_USER] ⚠️ User needs manual confirmation in Supabase Dashboard');
+          }
+        }
+        
         // ✅ Cập nhật profile với role đúng (vì signUp mặc định tạo role 'user')
         if (formData.role && formData.role !== 'user') {
           console.log('[ADD_USER] Updating profile role to:', formData.role);
@@ -374,7 +386,14 @@ function UsersManagementPage() {
     
     // ✅ Thông báo kết quả
     if (supabaseUserId) {
-      alert(`✅ Tạo user thành công!\n\n- Email: ${formData.email}\n- Role: ${formData.role}\n- Đã tạo trong Supabase: ✅\n- Đã lưu local: ✅`);
+      const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+      const needsManualConfirmation = !serviceRoleKey;
+      
+      if (needsManualConfirmation) {
+        alert(`✅ Tạo user thành công!\n\n- Email: ${formData.email}\n- Role: ${formData.role}\n- Đã tạo trong Supabase: ✅\n- Đã lưu local: ✅\n\n⚠️ QUAN TRỌNG: User cần được confirm email để đăng nhập:\n1. Vào Supabase Dashboard → Authentication → Users\n2. Tìm user: ${formData.email}\n3. Click vào user → Bật "Auto Confirm User"\n\nHoặc thêm VITE_SUPABASE_SERVICE_ROLE_KEY vào .env.local để tự động confirm.`);
+      } else {
+        alert(`✅ Tạo user thành công!\n\n- Email: ${formData.email}\n- Role: ${formData.role}\n- Đã tạo trong Supabase: ✅\n- Email đã được confirm: ✅\n- Đã lưu local: ✅\n\nUser có thể đăng nhập ngay!`);
+      }
     } else {
       alert(`⚠️ Tạo user thành công (chỉ local)!\n\n- Email: ${formData.email}\n- Role: ${formData.role}\n- Đã tạo trong Supabase: ❌\n- Đã lưu local: ✅\n\nLưu ý: User này chỉ có trong localStorage, không có trong Supabase.`);
     }
@@ -754,41 +773,43 @@ function UsersManagementPage() {
 
   // ✅ NEW: View user details (for admin only)
   const handleViewUser = (user) => {
-    console.log('[VIEW_USER] Starting to view user:', {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      hasPassword: !!user.password
-    });
-    
-    // Get full user info including password
-    let fullUser = getUsersFromData().find(u => u.id === user.id || u.username === user.username);
-    
-    // ✅ FIX: Nếu không tìm thấy user, thử tìm bằng username hoặc email
-    if (!fullUser) {
-      fullUser = getUsersFromData().find(u => 
-        u.username === user.username || 
-        u.email === user.email
-      );
-    }
-    
-    // ✅ FIX: Nếu vẫn không tìm thấy, dùng user hiện tại
-    if (!fullUser) {
-      fullUser = { ...user };
-      console.log('[VIEW_USER] Using user object directly');
-    }
-    
-    // ✅ FIX: Kiểm tra xem có phải Supabase user không
-    const isSupabaseUser = typeof fullUser.id === 'string' && fullUser.id.startsWith('supabase_');
-    
-    // ✅ FIX: Luôn lấy password từ userPasswords để đảm bảo có password mới nhất
-    if (!isSupabaseUser) {
+    try {
+      console.log('[VIEW_USER] Starting to view user:', {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        hasPassword: !!user.password
+      });
+      
+      // Get full user info including password
+      let fullUser = getUsersFromData().find(u => u.id === user.id || u.username === user.username);
+      
+      // ✅ FIX: Nếu không tìm thấy user, thử tìm bằng username hoặc email
+      if (!fullUser) {
+        fullUser = getUsersFromData().find(u => 
+          u.username === user.username || 
+          u.email === user.email
+        );
+      }
+      
+      // ✅ FIX: Nếu vẫn không tìm thấy, dùng user hiện tại
+      if (!fullUser) {
+        fullUser = { ...user };
+        console.log('[VIEW_USER] Using user object directly');
+      }
+      
+      // ✅ FIX: Kiểm tra xem có phải Supabase user không (dựa vào ID format)
+      const hasSupabaseId = typeof fullUser.id === 'string' && fullUser.id.startsWith('supabase_');
+      
+      // ✅ FIX: Luôn lấy password từ userPasswords để đảm bảo có password mới nhất (cho cả Supabase users)
+      let passwordFound = false;
       try {
         const savedPasswords = localStorage.getItem('userPasswords');
         console.log('[VIEW_USER] Checking userPasswords:', {
           hasUserPasswords: !!savedPasswords,
           userId: fullUser.id,
-          username: fullUser.username
+          username: fullUser.username,
+          hasSupabaseId: hasSupabaseId
         });
         
         if (savedPasswords) {
@@ -805,6 +826,7 @@ function UsersManagementPage() {
           
           if (password) {
             fullUser.password = password;
+            passwordFound = true;
             console.log('[VIEW_USER] ✅ Password loaded from userPasswords for:', fullUser.username || user.username, 'Length:', password.length);
           } else {
             console.warn('[VIEW_USER] ⚠️ No password found in userPasswords for:', {
@@ -831,24 +853,37 @@ function UsersManagementPage() {
       // ✅ FIX: Nếu vẫn không có password và user có password trong object gốc
       if (!fullUser.password && user.password) {
         fullUser.password = user.password;
+        passwordFound = true;
         console.log('[VIEW_USER] ✅ Password loaded from user object, Length:', user.password.length);
       }
-    } else {
-      console.log('[VIEW_USER] ℹ️ This is a Supabase user, password is managed by Supabase');
-      fullUser.isSupabaseUser = true;
+      
+      // ✅ FIX: Chỉ đánh dấu là Supabase user nếu có Supabase ID VÀ không có password trong localStorage
+      // Nếu có password trong localStorage (tạo từ admin panel), vẫn cho phép xem
+      if (hasSupabaseId && !passwordFound) {
+        console.log('[VIEW_USER] ℹ️ This is a Supabase user without password in localStorage');
+        fullUser.isSupabaseUser = true;
+      } else if (hasSupabaseId && passwordFound) {
+        console.log('[VIEW_USER] ℹ️ This is a Supabase user but has password in localStorage (created from admin panel)');
+        fullUser.isSupabaseUser = false; // Cho phép xem password
+      }
+      
+      console.log('[VIEW_USER] Final user object:', {
+        id: fullUser.id,
+        username: fullUser.username,
+        hasPassword: !!fullUser.password,
+        passwordLength: fullUser.password ? fullUser.password.length : 0,
+        isSupabaseUser: fullUser.isSupabaseUser || false,
+        hasSupabaseId: hasSupabaseId,
+        passwordFound: passwordFound
+      });
+      
+      setViewingUser(fullUser);
+      setShowPassword(false);
+      setShowViewModal(true);
+    } catch (error) {
+      console.error('[VIEW_USER] ❌ Error in handleViewUser:', error);
+      alert('⚠️ Lỗi khi xem thông tin user: ' + error.message);
     }
-    
-    console.log('[VIEW_USER] Final user object:', {
-      id: fullUser.id,
-      username: fullUser.username,
-      hasPassword: !!fullUser.password,
-      passwordLength: fullUser.password ? fullUser.password.length : 0,
-      isSupabaseUser: isSupabaseUser
-    });
-    
-    setViewingUser(fullUser);
-    setShowPassword(false);
-    setShowViewModal(true);
   };
 
   // ✅ Lock body scroll when password modal is open (but NOT for view modal)
@@ -1369,7 +1404,8 @@ function UsersManagementPage() {
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs font-bold text-yellow-700 uppercase">{t('userManagement.viewUser.password')}</p>
                     <div className="flex gap-2">
-                      {!viewingUser.isSupabaseUser && (
+                      {/* ✅ FIX: Luôn hiển thị nút Ẩn/Hiện nếu có password hoặc không phải Supabase user không có password */}
+                      {(!viewingUser.isSupabaseUser || viewingUser.password) && (
                         <button
                           onClick={() => setShowPassword(!showPassword)}
                           className="px-2 py-1 bg-yellow-400 text-yellow-900 rounded border-[2px] border-black text-xs font-black hover:bg-yellow-500 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px]"
@@ -1377,7 +1413,8 @@ function UsersManagementPage() {
                           {showPassword ? t('userManagement.viewUser.hidePassword') : t('userManagement.viewUser.showPassword')}
                         </button>
                       )}
-                      {showPassword && viewingUser.password && !viewingUser.isSupabaseUser && (
+                      {/* ✅ FIX: Hiển thị nút Copy nếu có password và đang hiển thị */}
+                      {showPassword && viewingUser.password && (
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(viewingUser.password);
@@ -1392,28 +1429,31 @@ function UsersManagementPage() {
                     </div>
                   </div>
                   <p className="text-base font-mono font-bold text-gray-800 break-all">
-                    {viewingUser.isSupabaseUser ? (
-                      <span className="text-gray-500 italic">
-                        {t('userManagement.viewUser.supabasePasswordNote') || 'Mật khẩu được quản lý bởi Supabase. Không thể xem mật khẩu.'}
+                    {/* ✅ FIX: Chỉ hiển thị thông báo Supabase nếu thực sự không có password */}
+                    {viewingUser.isSupabaseUser && !viewingUser.password ? (
+                      <span className="text-gray-600 italic">
+                        {t('userManagement.viewUser.supabasePasswordNote')}
                       </span>
                     ) : showPassword && viewingUser.password ? (
                       viewingUser.password
                     ) : showPassword && !viewingUser.password ? (
                       <span className="text-red-500 italic">
-                        {t('userManagement.viewUser.noPassword') || 'Không có mật khẩu trong hệ thống'}
+                        {t('userManagement.viewUser.noPassword')}
                       </span>
                     ) : (
                       '••••••••'
                     )}
                   </p>
-                  {showPassword && viewingUser.password && !viewingUser.isSupabaseUser && (
+                  {/* ✅ FIX: Hiển thị hint khi có password và đang hiển thị */}
+                  {showPassword && viewingUser.password && (
                     <p className="text-xs text-gray-500 mt-2">
                       {t('userManagement.viewUser.copyPasswordHint')}
                     </p>
                   )}
-                  {viewingUser.isSupabaseUser && (
+                  {/* ✅ FIX: Chỉ hiển thị cảnh báo Supabase nếu thực sự không có password */}
+                  {viewingUser.isSupabaseUser && !viewingUser.password && (
                     <p className="text-xs text-yellow-600 mt-2 font-bold">
-                      ⚠️ {t('userManagement.viewUser.supabasePasswordWarning') || 'Supabase users: Password được quản lý bởi Supabase Auth. Để reset password, dùng Supabase Dashboard.'}
+                      {t('userManagement.viewUser.supabasePasswordWarning')}
                     </p>
                   )}
                 </div>

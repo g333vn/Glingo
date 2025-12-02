@@ -1736,7 +1736,10 @@ userManagement: {
                                       characters: 'characters',
                                         copyPasswordHint: '💡 Click Copy to copy password',
                                           edit: '✏️ Edit',
-                                            close: 'Close'
+                                            close: 'Close',
+                                            supabasePasswordNote: 'Password is managed by Supabase. Cannot view password.',
+                                            supabasePasswordWarning: '⚠️ Supabase users: Password is managed by Supabase Auth. To reset password, use Supabase Dashboard.',
+                                            noPassword: 'No password in system'
   },
   messages: {
     emailRequired: '⚠️ Email cannot be empty!',

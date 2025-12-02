@@ -1715,7 +1715,10 @@ const vi = {
             characters: 'ký tự',
             copyPasswordHint: '💡 Click Copy để copy password',
             edit: '✏️ Sửa',
-            close: 'Đóng'
+            close: 'Đóng',
+            supabasePasswordNote: 'Mật khẩu được quản lý bởi Supabase. Không thể xem mật khẩu.',
+            supabasePasswordWarning: '⚠️ Supabase users: Mật khẩu được quản lý bởi Supabase Auth. Để reset password, dùng Supabase Dashboard.',
+            noPassword: 'Không có mật khẩu trong hệ thống'
         },
         messages: {
             emailRequired: '⚠️ Email không được để trống!',
