@@ -71,6 +71,15 @@ export function getAllNotificationsLocal() {
   }
 }
 
+// ✅ Backward-compatible API cho trang Admin NotificationManagementPage
+// Hiện tại trang admin đang gọi getAllNotifications() dạng sync,
+// nên hàm này chỉ trả về dữ liệu cache local (giống hành vi cũ).
+// Đồng bộ thật sự giữa thiết bị đang được xử lý qua Supabase ở
+// các hàm getUserNotifications / getUnreadCount dùng cho NotificationBell.
+export function getAllNotifications() {
+  return getAllNotificationsLocal();
+}
+
 /**
  * Get notifications for a specific user
  * @param {Object} user - User object with id and role
