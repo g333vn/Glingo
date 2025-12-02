@@ -13,8 +13,9 @@ import DisplayOrderConfig from '../DisplayOrderConfig.jsx';
  * 
  * @param {object} theoryData - Theory data from lesson
  * @param {function} onChange - Callback khi thay đổi
+ * @param {object} lessonContext - Thông tin định danh (levelId, bookId, chapterId, lessonId)
  */
-function TheoryTabEnhanced({ theoryData, onChange }) {
+function TheoryTabEnhanced({ theoryData, onChange, lessonContext = {} }) {
   const { t } = useLanguage();
   const [uploadMode, setUploadMode] = useState('url'); // 'url' | 'upload' | 'editor'
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -83,13 +84,14 @@ function TheoryTabEnhanced({ theoryData, onChange }) {
     
     const fileExt = validTypes[file.type];
     const fileName = file.name;
+    const { levelId, bookId, chapterId, lessonId } = lessonContext || {};
     
-    // Simulate upload (Phase 1: store in-memory Data URL)
+    // Upload/nhúng nội dung
     setIsUploading(true);
     setUploadProgress(0);
     
     try {
-      // Convert file to base64 or blob URL for preview
+      // Convert file to base64 hoặc đọc text (cho preview / embed)
       const reader = new FileReader();
       
       reader.onprogress = (e) => {
@@ -103,15 +105,43 @@ function TheoryTabEnhanced({ theoryData, onChange }) {
         const result = e.target.result;
         const updatedTheory = { ...theoryData };
         
-        // Update lesson data trực tiếp bằng Data URL / text content
+        // ✅ PDF: upload lên Supabase Storage và lưu public URL
         if (fileExt === 'pdf' || file.type === 'application/pdf') {
-          updatedTheory.pdfUrl = result;
-          updatedTheory.type = 'pdf';
-          } else if (['mp3', 'wav', 'ogg', 'm4a'].includes(fileExt)) {
+          try {
+            const { uploadPDF, generateFilePath } = await import('../../../../services/fileUploadService.js');
+            // 📁 Tạo folder theo cấu trúc: level-n1/book-xxx/chapter-yyy/lesson-zzz
+            const safeLevel = levelId || 'unknown-level';
+            const safeBook = bookId || 'unknown-book';
+            const safeChapter = chapterId || 'unknown-chapter';
+            const safeLesson = lessonId || 'unknown-lesson';
+            const prefix = `level-${safeLevel}/book-${safeBook}/chapter-${safeChapter}/lesson-${safeLesson}`;
+            const path = generateFilePath(prefix, fileName);
+            const uploadResult = await uploadPDF(file, path);
+            
+            if (!uploadResult.success) {
+              console.error('[TheoryTabEnhanced] Error uploading PDF:', uploadResult.error);
+              alert(`❌ ${t('contentManagement.lessonModal.theoryTab.errorUploading')}`);
+              setIsUploading(false);
+              setUploadProgress(0);
+              return;
+            }
+            
+            updatedTheory.pdfUrl = uploadResult.url;
+            updatedTheory.type = 'pdf';
+          } catch (uploadErr) {
+            console.error('[TheoryTabEnhanced] Unexpected error uploading PDF:', uploadErr);
+            alert(`❌ ${t('contentManagement.lessonModal.theoryTab.errorUploading')}`);
+            setIsUploading(false);
+            setUploadProgress(0);
+            return;
+          }
+        } else if (['mp3', 'wav', 'ogg', 'm4a'].includes(fileExt)) {
           updatedTheory.audioUrl = result;
-          } else if (['mp4', 'webm', 'ogv'].includes(fileExt)) {
+          updatedTheory.type = 'audio';
+        } else if (['mp4', 'webm', 'ogv'].includes(fileExt)) {
           updatedTheory.videoUrl = result;
-          } else if (['jpg', 'png', 'gif', 'webp'].includes(fileExt)) {
+          updatedTheory.type = 'video';
+        } else if (['jpg', 'png', 'gif', 'webp'].includes(fileExt)) {
           // Image - chèn trực tiếp vào HTML
           const imgHtml = `<img src="${result}" alt="${fileName}" style="max-width: 100%; height: auto;" />`;
           updatedTheory.htmlContent = (theoryData.htmlContent || '') + '\n' + imgHtml;
@@ -126,13 +156,12 @@ function TheoryTabEnhanced({ theoryData, onChange }) {
         }
         
         onChange(updatedTheory);
-          
-          setUploadProgress(100);
-          
-          setTimeout(() => {
-            setIsUploading(false);
-            setUploadProgress(0);
-          alert(`✅ ${t('contentManagement.lessonModal.theoryTab.uploadSuccess')}\n\n${t('contentManagement.lessonModal.theoryTab.file')} ${fileName}\n${t('contentManagement.lessonModal.theoryTab.size')} ${(file.size / 1024).toFixed(2)}KB\n\n${t('contentManagement.lessonModal.theoryTab.fileEmbedded')}`);
+        
+        setUploadProgress(100);
+        setTimeout(() => {
+          setIsUploading(false);
+          setUploadProgress(0);
+          alert(`✅ ${t('contentManagement.lessonModal.theoryTab.uploadSuccess')}\n\n${t('contentManagement.lessonModal.theoryTab.file')} ${fileName}\n${t('contentManagement.lessonModal.theoryTab.size')} ${(file.size / 1024).toFixed(2)}KB`);
         }, 400);
       };
       

@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';
 import Modal from '../../components/Modal.jsx';
 import storageManager from '../../utils/localStorageManager.js';
+import * as contentService from '../../services/contentService.js';
 import { n1BooksMetadata } from '../../data/level/n1/books-metadata.js';
 import { n1Books } from '../../data/level/n1/books.js';
 // ✅ NEW: Import components
@@ -193,10 +194,13 @@ function ContentManagementPage() {
     
     // ✅ Save to Supabase if user is admin and has UUID
     const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+    console.log('[SAVE_BOOKS] userId:', userId, 'user:', user); // 🔍 DEBUG
+    console.log('[SAVE_BOOKS] Saving', sortedBooks.length, 'books to level:', selectedLevel); // 🔍 DEBUG
     await storageManager.saveBooks(selectedLevel, sortedBooks, userId);
+    console.log('[SAVE_BOOKS] ✅ Save completed'); // 🔍 DEBUG
   };
 
-  // ✅ UPDATED: Save series (async) - Sắp xếp theo tên và thêm metadata
+  // ✅ UPDATED: Save series (async) - Sắp xếp theo tên và thêm metadata, đồng bộ Supabase
   const saveSeries = async (updatedSeries) => {
     // ✅ Thêm metadata cho series mới
     const enrichedSeries = updatedSeries.map(s => {
@@ -224,7 +228,12 @@ function ContentManagementPage() {
       return (a.name || '').localeCompare(b.name || '');
     });
     setSeries(sortedSeries);
-    await storageManager.saveSeries(selectedLevel, sortedSeries);
+
+    // Lấy userId dạng UUID để lưu lên Supabase (nếu có)
+    const userId =
+      user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+
+    await storageManager.saveSeries(selectedLevel, sortedSeries, userId);
   };
 
   // State for chapters data (async loading)
@@ -368,11 +377,20 @@ function ContentManagementPage() {
   const handleAddBook = (seriesName = null) => {
     setEditingBook(null);
     const autoId = generateBookId(seriesName);
+    
+    // ✅ Find the series ID if adding book to a specific series
+    let seriesId = null;
+    if (seriesName) {
+      const matchingSeries = series.find(s => s.name === seriesName);
+      seriesId = matchingSeries?.id || null;
+    }
+    
     setBookForm({ 
       id: autoId, // ✅ Auto-generate ID with category suffix
       title: '', 
       imageUrl: '', 
-      category: seriesName || '' // ✅ Auto-fill series nếu có context
+      category: seriesName || '', // ✅ Auto-fill series name
+      seriesId: seriesId // ✅ NEW: Store series ID for filtering
     });
     setBookFormValidation({ idExists: false, titleExists: false, isValidating: false });
     setShowBookForm(true);
@@ -384,7 +402,8 @@ function ContentManagementPage() {
       id: book.id,
       title: book.title,
       imageUrl: book.imageUrl,
-      category: book.category || ''
+      category: book.category || '',
+      seriesId: book.seriesId || null // ✅ NEW: Preserve series ID when editing
     });
     setBookFormValidation({ idExists: false, titleExists: false, isValidating: false });
     setShowBookForm(true);
@@ -452,7 +471,14 @@ function ContentManagementPage() {
     try {
       // ✅ Upload to Supabase Storage
       const { uploadAudio, generateFilePath } = await import('../../services/fileUploadService.js');
-      const path = generateFilePath('quiz', file.name);
+      // 📁 Đường dẫn có ngữ nghĩa: level / book / chapter / lesson / question
+      const safeLevel = selectedLevel || 'unknown-level';
+      const safeBook = selectedBook?.id || 'unknown-book';
+      const safeChapter = selectedChapter?.id || 'unknown-chapter';
+      const safeLesson = selectedLesson?.id || 'unknown-lesson';
+      const safeQuestion = questionIndex != null ? `question-${questionIndex + 1}` : 'question-unknown';
+      const prefix = `level-${safeLevel}/book-${safeBook}/chapter-${safeChapter}/lesson-${safeLesson}/${safeQuestion}`;
+      const path = generateFilePath(prefix, file.name);
       
       const result = await uploadAudio(file, path);
       
@@ -512,7 +538,11 @@ function ContentManagementPage() {
     try {
       // ✅ Upload to Supabase Storage
       const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
-      const path = generateFilePath('book', file.name);
+      // 📁 Đường dẫn có ngữ nghĩa: level / book
+      const safeLevel = selectedLevel || 'unknown-level';
+      const safeBookId = bookForm.id || editingBook?.id || 'unknown-book';
+      const prefix = `level-${safeLevel}/book-${safeBookId}`;
+      const path = generateFilePath(prefix, file.name);
       
       // Simulate progress (Supabase doesn't provide progress events)
       setUploadProgress(50);
@@ -601,11 +631,24 @@ function ContentManagementPage() {
   };
 
   const handleDeleteBook = async (bookId) => {
-    if (confirm(t('contentManagement.confirm.deleteBook'))) {
-      const updatedBooks = books.filter(b => b.id !== bookId);
-      await saveBooks(updatedBooks);
-      alert(t('contentManagement.messages.bookDeleted'));
+    if (!confirm(t('contentManagement.confirm.deleteBook'))) return;
+
+    // 1. Xóa sách + toàn bộ nội dung liên quan trên Supabase
+    try {
+      const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+      console.log('[ContentManagement] 🗑️ Deleting book from Supabase:', { bookId, level: selectedLevel, userId });
+      const result = await contentService.deleteBookCascade(bookId, selectedLevel);
+      if (!result.success) {
+        console.warn('[ContentManagement] ⚠️ Failed to delete book from Supabase:', result.error);
+      }
+    } catch (err) {
+      console.error('[ContentManagement] ❌ Unexpected error when deleting book from Supabase:', err);
     }
+
+    // 2. Cập nhật state + cache local (books list)
+    const updatedBooks = books.filter(b => b.id !== bookId);
+    await saveBooks(updatedBooks);
+    alert(t('contentManagement.messages.bookDeleted'));
   };
 
   // ✅ Helper: Generate auto ID for chapters
@@ -2194,6 +2237,7 @@ function ContentManagementPage() {
         onSave={handleSaveLesson}
         initialLesson={editingLesson}
         chapterInfo={{
+          levelId: selectedLevel,
           title: selectedChapter?.title,
           bookTitle: selectedBook?.title,
           bookId: selectedBook?.id,

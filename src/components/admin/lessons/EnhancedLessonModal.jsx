@@ -571,6 +571,12 @@ function EnhancedLessonModal({
             <TheoryTabEnhanced
               theoryData={lessonData.theory}
               onChange={handleTheoryChange}
+              lessonContext={{
+                levelId: chapterInfo.levelId,
+                bookId: chapterInfo.bookId,
+                chapterId: chapterInfo.chapterId,
+                lessonId: lessonData.id
+              }}
             />
           </TabPanel>
           

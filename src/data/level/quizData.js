@@ -1,17 +1,16 @@
 // src/data/level/quizData.js
-// ✅ UPDATED: Import từ các file đã tách theo level
-// Giữ nguyên export để tương thích với code cũ
+// CLEAN MODE: Legacy quizData map kept only for backward compatibility.
+// All real quizzes should be stored in Supabase / IndexedDB via admin tools.
 
-import { shinkanzenQuizData } from './n1/index.js';
-
-// Export tất cả quiz data (hiện tại chỉ có N1, sẽ thêm sau)
 export const quizData = {
-  ...shinkanzenQuizData,
-  // Thêm quiz data cho các sách/level khác sau
-  
-  // Default fallback
-  'default': {
-    title: "Bài không tồn tại",
-    questions: []
+  // Legacy code expects a default entry
+  default: {
+    title: 'No Quiz',
+    questions: [],
+    metadata: {}
   }
 };
+
+export default quizData;
+
+

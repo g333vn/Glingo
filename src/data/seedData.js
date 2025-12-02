@@ -4,11 +4,12 @@
 
 /**
  * Configuration for seed data
+ * CLEAN MODE: Disable all automatic demo users.
  */
 export const SEED_CONFIG = {
-  ENABLED: true, // ✅ Set to false in production
-  AUTO_SEED: true, // Auto seed when no users exist
-  KEEP_AFTER_DELETE: false // If false, deleted demo users won't reappear
+  ENABLED: false,      // ❌ Không tự tạo user demo nữa
+  AUTO_SEED: false,    // ❌ Không auto seed khi không có user
+  KEEP_AFTER_DELETE: false // Nếu false, user demo đã xoá sẽ không xuất hiện lại
 };
 
 /**

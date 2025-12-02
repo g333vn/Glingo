@@ -7,7 +7,6 @@ import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import { bookData } from '../../../data/level/bookData.js';
 import { n1BooksMetadata } from '../../../data/level/n1/index.js';
-import { demoLessons } from '../../../data/level/n1/demo-book/lessons.js';
 import { demoQuizzes } from '../../../data/level/n1/demo-book/quizzes.js';
 import storageManager from '../../../utils/localStorageManager.js';
 import { setLessonCompletion, getLessonCompletion, updateStudyStreak } from '../../../utils/lessonProgressTracker.js';
@@ -60,13 +59,40 @@ function LessonPage() {
   const contentRef = useRef(null);
   useDictionaryDoubleClick(contentRef);
   
-  // Load books metadata
+  // Load books metadata (và đồng bộ category từ seriesId giống BookDetailPage)
   useEffect(() => {
     const loadBooksMetadata = async () => {
       const savedBooks = await storageManager.getBooks(levelId);
+
       if (savedBooks && savedBooks.length > 0) {
-        setBooksMetadata(savedBooks);
-        console.log(`✅ Loaded ${savedBooks.length} books from storage for ${levelId}`);
+        let booksWithCategory = savedBooks;
+
+        try {
+          const seriesList = await storageManager.getSeries(levelId);
+          if (Array.isArray(seriesList) && seriesList.length > 0) {
+            const seriesMap = {};
+            seriesList.forEach(s => {
+              if (s && s.id) {
+                seriesMap[s.id] = s.name || s.id;
+              }
+            });
+
+            booksWithCategory = savedBooks.map(book => {
+              if (book.category && book.category.length > 0) return book;
+              const seriesName = book.seriesId ? seriesMap[book.seriesId] : null;
+              return {
+                ...book,
+                category: seriesName || book.category || null,
+              };
+            });
+          }
+        } catch (err) {
+          console.warn('[LessonPage] ⚠️ Could not load series for category mapping:', err);
+        }
+
+        setBooksMetadata(booksWithCategory);
+        await storageManager.saveBooks(levelId, booksWithCategory);
+        console.log(`[LessonPage] ✅ Loaded ${booksWithCategory.length} books from storage for ${levelId} (categories synced)`);
       } else {
         if (levelId === 'n1') {
           setBooksMetadata(n1BooksMetadata);
@@ -88,16 +114,6 @@ function LessonPage() {
         // Load lesson data from storage
         const savedLessons = await storageManager.getLessons(bookId, finalChapterId);
         let lesson = savedLessons?.find(l => l.id === finalLessonId);
-        
-        // ✅ FALLBACK: Try demo lessons if not found in storage
-        if (!lesson && bookId === 'demo-complete-001') {
-          const demoKey = `${bookId}_${finalChapterId}`;
-          const demoLessonList = demoLessons[demoKey];
-          lesson = demoLessonList?.find(l => l.id === finalLessonId);
-          if (lesson) {
-            console.log(`📁 Loaded DEMO lesson from static file:`, lesson);
-          }
-        }
         
         if (lesson) {
           setCurrentLesson(lesson);
@@ -228,10 +244,27 @@ function LessonPage() {
     loadLesson();
   }, [bookId, finalChapterId, finalLessonId]);
   
-  // Get current book
-  const currentBook = bookData[bookId] || bookData.default;
-  const currentBookCategory = booksMetadata.find(book => book.id === bookId)?.category || null;
-  
+  // Get current book & category (ưu tiên dữ liệu động từ booksMetadata)
+  const currentBookMeta = booksMetadata.find(book => book.id === bookId);
+  const currentBookTitle = currentBookMeta?.title || bookId;
+  const currentBookCategory = currentBookMeta?.category || null;
+
+  // Tạo danh sách categories (bộ sách) từ booksMetadata cho Sidebar
+  const categories = React.useMemo(() => {
+    const categoryCounts = {};
+    booksMetadata.forEach(book => {
+      if (book.category) {
+        categoryCounts[book.category] = (categoryCounts[book.category] || 0) + 1;
+      }
+    });
+
+    return Object.keys(categoryCounts).map(name => ({
+      name,
+      id: name,
+      count: categoryCounts[name],
+    }));
+  }, [booksMetadata]);
+
   // Handler cho category click trong sidebar
   const handleCategoryClick = (categoryName) => {
     if (!categoryName) {
@@ -240,7 +273,7 @@ function LessonPage() {
     }
 
     const firstBookInCategory = booksMetadata.find(book => book.category === categoryName);
-    
+
     if (firstBookInCategory) {
       navigate(`/level/${levelId}/${firstBookInCategory.id}`);
     } else {
@@ -393,7 +426,7 @@ function LessonPage() {
     { name: 'Home', link: '/' },
     { name: 'Level', link: '/level' },
     { name: levelId.toUpperCase(), link: `/level/${levelId}` },
-    { name: currentBook?.title || bookId, link: `/level/${levelId}/${bookId}` },
+    { name: currentBookTitle, link: `/level/${levelId}/${bookId}` },
     ...(finalChapterId !== finalLessonId ? [
       { name: currentChapter?.title || `Chapter ${finalChapterId}`, link: `/level/${levelId}/${bookId}/chapter/${finalChapterId}` }
     ] : []),
@@ -426,6 +459,7 @@ function LessonPage() {
           <Sidebar 
             selectedCategory={currentBookCategory}
             onCategoryClick={handleCategoryClick}
+            categories={categories}
           />
           
           <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col 

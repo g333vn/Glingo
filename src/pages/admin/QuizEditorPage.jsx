@@ -117,14 +117,36 @@ function QuizEditorPage() {
   useEffect(() => {
     const loadBooks = async () => {
       const books = await getBooksByLevel(selectedLevel);
+      let enrichedBooks = books || [];
+
+      // ✅ Đồng bộ category dựa trên seriesId nếu thiếu
+      if (Array.isArray(enrichedBooks) && enrichedBooks.length > 0 && availableSeries.length > 0) {
+        const seriesMap = {};
+        availableSeries.forEach(s => {
+          if (s && s.id) {
+            seriesMap[s.id] = s.name || s.id;
+          }
+        });
+
+        enrichedBooks = enrichedBooks.map(book => {
+          if (book.category && book.category.length > 0) return book;
+          const seriesName = book.seriesId ? seriesMap[book.seriesId] : null;
+          return {
+            ...book,
+            category: seriesName || book.category || null
+          };
+        });
+      }
+
       // Filter by series if selected
-      let filteredBooks = books || [];
+      let filteredBooks = enrichedBooks;
       if (selectedSeries && availableSeries.length > 0) {
         const series = availableSeries.find(s => s.id === selectedSeries || s.name === selectedSeries);
         if (series) {
-          filteredBooks = books.filter(book => book.category === series.name);
+          filteredBooks = enrichedBooks.filter(book => book.category === series.name);
         }
       }
+
       setAvailableBooks(filteredBooks);
     };
     loadBooks();
@@ -379,7 +401,7 @@ function QuizEditorPage() {
     setQuestions([...questions, newQuestion]);
   };
 
-  // ✅ NEW: Audio upload handler
+  // ✅ NEW: Audio upload handler (Supabase Storage)
   const handleAudioUpload = async (file, questionIndex) => {
     if (!file) return;
     
@@ -399,64 +421,37 @@ function QuizEditorPage() {
     setUploadingAudioIndex(questionIndex);
     
     try {
-      const reader = new FileReader();
+      const { uploadAudio, generateFilePath } = await import('../../services/fileUploadService.js');
       
-      reader.onload = (e) => {
-        const base64DataUrl = e.target.result; // This contains: data:audio/mpeg;base64,...
-        const timestamp = Date.now();
-        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const audioPath = `/audio/quiz/${timestamp}_${safeName}`;
+      // 📁 Đường dẫn có ngữ nghĩa: level / book / chapter / lesson / question
+      const safeLevel = selectedLevel || 'unknown-level';
+      const safeBook = selectedBook || 'unknown-book';
+      const safeChapter = selectedChapter || 'unknown-chapter';
+      const safeLesson = selectedLesson || 'unknown-lesson';
+      const safeQuestion = questionIndex != null ? `question-${questionIndex + 1}` : 'question-unknown';
+      const prefix = `level-${safeLevel}/book-${safeBook}/chapter-${safeChapter}/lesson-${safeLesson}/${safeQuestion}`;
+      const path = generateFilePath(prefix, file.name);
+      
+      const result = await uploadAudio(file, path);
+      
+      if (!result.success) {
+        console.error('[QuizEditor] ❌ Error uploading audio to Supabase:', result.error);
+        alert(t('quizEditor.validation.audioUploadError'));
+      } else {
+        console.log('[QuizEditor] ✅ Audio uploaded to Supabase:', result.url);
         
-        console.log('✅ Audio upload successful:');
-        console.log('  - File name:', file.name);
-        console.log('  - File size:', (file.size / 1024).toFixed(2), 'KB');
-        console.log('  - File type:', file.type);
-        console.log('  - Data URL length:', base64DataUrl.length);
-        console.log('  - Data URL preview:', base64DataUrl.substring(0, 100) + '...');
-        
-        // Save metadata to localStorage
-        try {
-          localStorage.setItem(`audio_${timestamp}`, JSON.stringify({
-            path: audioPath,
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            dataUrl: base64DataUrl, // Save the actual playable data URL
-            uploadedAt: new Date().toISOString()
-          }));
-          console.log('  - Saved to localStorage: audio_' + timestamp);
-        } catch (err) {
-          console.error('  - Failed to save to localStorage:', err);
-        }
-        
-        // ✅ FIXED: Store data URL (base64) so it can be played immediately
         const newQuestions = [...questions];
-        newQuestions[questionIndex].audioUrl = base64DataUrl; // Use data URL for preview
-        newQuestions[questionIndex].audioPath = audioPath; // Store path for export/reference
-        newQuestions[questionIndex].audioName = file.name; // Store original filename
+        newQuestions[questionIndex].audioUrl = result.url;   // URL public trên Supabase
+        newQuestions[questionIndex].audioPath = path;        // Đường dẫn trong bucket
+        newQuestions[questionIndex].audioName = file.name;   // Tên file gốc
         setQuestions(newQuestions);
         
-        console.log('  - Updated question', questionIndex, 'with audioUrl');
-        console.log('  - Question audioUrl:', newQuestions[questionIndex].audioUrl.substring(0, 50) + '...');
-        
-        setTimeout(() => {
-          setIsUploadingAudio(false);
-          setUploadingAudioIndex(-1);
-          alert(`✅ Upload audio thành công!\n\nFile: ${file.name}\nKích thước: ${(file.size / 1024).toFixed(2)}KB\n\n🎧 Bạn có thể nghe thử ngay ở phần Preview Audio bên dưới!`);
-        }, 300);
-      };
-      
-      reader.onerror = (error) => {
-        console.error('❌ FileReader error:', error);
-        alert(t('quizEditor.validation.audioUploadError'));
-        setIsUploadingAudio(false);
-        setUploadingAudioIndex(-1);
-      };
-      
-      reader.readAsDataURL(file);
+        alert(`✅ Upload audio thành công!\n\nFile: ${file.name}`);
+      }
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('[QuizEditor] ❌ Unexpected error during audio upload:', error);
       alert(t('quizEditor.validation.audioUploadError'));
+    } finally {
       setIsUploadingAudio(false);
       setUploadingAudioIndex(-1);
     }
@@ -599,9 +594,19 @@ function QuizEditorPage() {
       lessonId: quizData.metadata.lessonId
     });
 
-    // Save to IndexedDB (unlimited storage!) or localStorage
-    console.log(`💾 Calling storageManager.saveQuiz(${selectedBook}, ${selectedChapter}, ${finalLessonId})...`);
-    const success = await storageManager.saveQuiz(selectedBook, selectedChapter, finalLessonId, quizData);
+    // Save to Supabase + IndexedDB/localStorage
+    const userId =
+      user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+
+    console.log(`💾 Calling storageManager.saveQuiz(${selectedBook}, ${selectedChapter}, ${finalLessonId}, level=${selectedLevel}, userId=${userId})...`);
+    const success = await storageManager.saveQuiz(
+      selectedBook,
+      selectedChapter,
+      finalLessonId,
+      quizData,
+      selectedLevel,
+      userId
+    );
     console.log(`📦 storageManager.saveQuiz result: ${success ? 'SUCCESS' : 'FAILED'}`);
     
     if (success) {

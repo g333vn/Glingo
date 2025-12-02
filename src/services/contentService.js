@@ -11,6 +11,8 @@ import { supabase } from './supabaseClient.js';
  */
 export async function saveBook(book, userId) {
   try {
+    console.log('[ContentService.saveBook] 💾 Saving book:', book.id, book.title, 'category:', book.category);
+
     const { data, error } = await supabase
       .from('books')
       .upsert({
@@ -20,6 +22,8 @@ export async function saveBook(book, userId) {
         description: book.description || null,
         image_url: book.imageUrl || null,
         series_id: book.seriesId || null,
+        // ❗ Không ghi field `category` lên Supabase vì bảng `books` hiện chưa có cột này.
+        //    Category chỉ dùng phía client, dựa trên seriesId/series.name.
         order_index: book.orderIndex || 0,
         created_by: userId,
         updated_at: new Date().toISOString()
@@ -30,14 +34,14 @@ export async function saveBook(book, userId) {
       .single();
 
     if (error) {
-      console.error('[ContentService] Error saving book:', error);
+      console.error('[ContentService] ❌ Error saving book:', error);
       return { success: false, error };
     }
 
     console.log('[ContentService] ✅ Saved book to Supabase:', data);
     return { success: true, data };
   } catch (err) {
-    console.error('[ContentService] Unexpected error:', err);
+    console.error('[ContentService] ❌ Unexpected error in saveBook:', err);
     return { success: false, error: err };
   }
 }
@@ -49,6 +53,7 @@ export async function saveBook(book, userId) {
  */
 export async function getBooks(level) {
   try {
+    console.log('[ContentService.getBooks] 🔍 Loading books for level:', level);
     const { data, error } = await supabase
       .from('books')
       .select('*')
@@ -56,7 +61,7 @@ export async function getBooks(level) {
       .order('order_index', { ascending: true });
 
     if (error) {
-      console.error('[ContentService] Error fetching books:', error);
+      console.error('[ContentService] ❌ Error fetching books:', error);
       return { success: false, error };
     }
 
@@ -68,12 +73,73 @@ export async function getBooks(level) {
       description: book.description,
       imageUrl: book.image_url,
       seriesId: book.series_id,
+      category: book.category || null, // ✅ Include category field from Supabase
       orderIndex: book.order_index
     }));
 
+    console.log('[ContentService.getBooks] ✅ Loaded', books.length, 'books from Supabase:', books.map(b => ({ id: b.id, title: b.title, category: b.category })));
     return { success: true, data: books };
   } catch (err) {
-    console.error('[ContentService] Unexpected error:', err);
+    console.error('[ContentService] ❌ Unexpected error in getBooks:', err);
+    return { success: false, error: err };
+  }
+}
+
+/**
+ * Delete book and all related content (chapters, lessons, quizzes) from Supabase
+ * @param {string} bookId - Book ID
+ * @param {string} level - Level (n1, n2, ...)
+ * @returns {Promise<{success: boolean, error?: Object}>}
+ */
+export async function deleteBookCascade(bookId, level) {
+  try {
+    console.log('[ContentService.deleteBookCascade] 🗑️ Deleting book and related content:', { bookId, level });
+
+    // 1. Delete quizzes for this book (any chapter / lesson)
+    const { error: quizError } = await supabase
+      .from('quizzes')
+      .delete()
+      .eq('book_id', bookId)
+      .eq('level', level);
+    if (quizError) {
+      console.warn('[ContentService.deleteBookCascade] ⚠️ Error deleting quizzes:', quizError);
+    }
+
+    // 2. Delete lessons for this book
+    const { error: lessonError } = await supabase
+      .from('lessons')
+      .delete()
+      .eq('book_id', bookId)
+      .eq('level', level);
+    if (lessonError) {
+      console.warn('[ContentService.deleteBookCascade] ⚠️ Error deleting lessons:', lessonError);
+    }
+
+    // 3. Delete chapters for this book
+    const { error: chapterError } = await supabase
+      .from('chapters')
+      .delete()
+      .eq('book_id', bookId)
+      .eq('level', level);
+    if (chapterError) {
+      console.warn('[ContentService.deleteBookCascade] ⚠️ Error deleting chapters:', chapterError);
+    }
+
+    // 4. Finally delete the book itself
+    const { error: bookError } = await supabase
+      .from('books')
+      .delete()
+      .eq('id', bookId)
+      .eq('level', level);
+    if (bookError) {
+      console.error('[ContentService.deleteBookCascade] ❌ Error deleting book:', bookError);
+      return { success: false, error: bookError };
+    }
+
+    console.log('[ContentService.deleteBookCascade] ✅ Book and related content deleted:', { bookId, level });
+    return { success: true };
+  } catch (err) {
+    console.error('[ContentService.deleteBookCascade] ❌ Unexpected error:', err);
     return { success: false, error: err };
   }
 }

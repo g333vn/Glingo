@@ -5,7 +5,7 @@ import ProtectedLink from './ProtectedLink.jsx';
 import { jlptExams } from '../data/jlpt/jlptData.js';
 import { useExamGuard } from '../hooks/useExamGuard.jsx';
 
-function Sidebar({ selectedCategory, onCategoryClick }) {
+function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
   const location = useLocation();
   const params = useParams();
   const [activeItem, setActiveItem] = useState(selectedCategory || null);
@@ -65,23 +65,13 @@ function Sidebar({ selectedCategory, onCategoryClick }) {
         status: exam.status
       }));
     } else {
-      return [
-        { name: '新完全マスター', id: 'shinkanzen' },
-        { name: 'TRY!', id: 'try' },
-        { name: '徹底トレーニング', id: 'tettei' },
-        { name: '日本語総まとめ', id: 'nihongo' },
-        { name: '耳から覚える', id: 'mimikara' },
-        { name: '学ぼう！にほんご', id: 'manabou' },
-        { name: 'ドリル', id: 'drill' },
-        { name: '20日合格', id: '20days' },
-        { name: '読解戦略', id: 'dokkai' },
-        { name: 'GENKI', id: 'genki' },
-        { name: 'Tài liệu phụ 1', id: 'sup1' },
-        { name: 'Tài liệu phụ 2', id: 'sup2' },
-        { name: 'Tài liệu phụ 3', id: 'sup3' },
-        { name: 'Tài liệu phụ 4', id: 'sup4' },
-        { name: 'Tài liệu phụ 5', id: 'sup5' },
-      ];
+      // LEVEL mode: hiển thị danh sách "Bộ sách" (categories) được truyền từ trang Level
+      // categories: [{ id, name, count }]
+      return (categories || []).map(cat => ({
+        id: cat.id || cat.name,
+        name: `${cat.name} (${cat.count || 0})`,
+        rawName: cat.name,
+      }));
     }
   };
 
@@ -236,7 +226,9 @@ function Sidebar({ selectedCategory, onCategoryClick }) {
       handleJlptExamClick(item);
     } else {
       // Module LEVEL: Filter logic
-      handleLevelCategoryClick(item.name);
+      // Dùng rawName nếu có (để bỏ phần số lượng "(x)")
+      const categoryName = item.rawName || item.name;
+      handleLevelCategoryClick(categoryName);
     }
   };
 

@@ -46,6 +46,8 @@ function QuizPage() {
   const [currentQuiz, setCurrentQuiz] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [booksMetadata, setBooksMetadata] = useState([]);
+  const [chapterTitle, setChapterTitle] = useState('');
+  const [lessonTitle, setLessonTitle] = useState('');
 
   // ✅ UPDATED: Ref cho TOÀN BỘ content container để tra từ bất cứ đâu
   const quizContentRef = useRef(null);
@@ -70,6 +72,38 @@ function QuizPage() {
 
     loadBooksMetadata();
   }, [levelId]);
+
+  // ✅ NEW: Load chapter & lesson titles for accurate breadcrumb
+  useEffect(() => {
+    const loadTitles = async () => {
+      try {
+        // Load chapters
+        let chapters = await storageManager.getChapters(bookId);
+        if (!chapters || chapters.length === 0) {
+          const bookStatic = bookData[bookId] || bookData.default;
+          chapters = bookStatic?.contents || [];
+        }
+
+        const chapter = chapters.find(ch => ch.id === finalChapterId);
+        setChapterTitle(chapter?.title || finalChapterId);
+
+        // Load lessons for this chapter
+        let lessons = await storageManager.getLessons(bookId, finalChapterId);
+        if (!lessons || lessons.length === 0) {
+          // Fallback: dùng chính chapter làm lesson
+          lessons = [{ id: finalChapterId, title: chapter?.title || finalChapterId }];
+        }
+        const lesson = lessons.find(l => l.id === finalLessonId);
+        setLessonTitle(lesson?.title || finalLessonId);
+      } catch (err) {
+        console.warn('[QuizPage] Could not load chapter/lesson titles:', err);
+        setChapterTitle(finalChapterId);
+        setLessonTitle(finalLessonId);
+      }
+    };
+
+    loadTitles();
+  }, [bookId, finalChapterId, finalLessonId]);
 
   // ✅ UPDATED: Load quiz with IndexedDB/localStorage priority
   useEffect(() => {
@@ -162,12 +196,14 @@ function QuizPage() {
     loadQuiz();
   }, [bookId, finalChapterId, finalLessonId]);
 
-  const currentBook = bookData[bookId] || bookData.default;
-  
-  // ✅ Tìm category của book hiện tại để highlight trong sidebar (phải tính trước khi dùng)
-  const currentBookCategory = Array.isArray(booksMetadata) && booksMetadata.length > 0
-    ? booksMetadata.find(book => book.id === bookId)?.category || null
+  // ✅ Ưu tiên lấy thông tin sách từ booksMetadata (Supabase) thay vì static bookData
+  const currentBookMeta = Array.isArray(booksMetadata)
+    ? booksMetadata.find(book => book.id === bookId)
     : null;
+  const currentBookTitle = currentBookMeta?.title || bookId;
+  
+  // ✅ Tìm category của book hiện tại để highlight trong sidebar
+  const currentBookCategory = currentBookMeta?.category || null;
 
   // ✅ Handler cho category click trong sidebar (phải định nghĩa trước khi dùng)
   const handleCategoryClick = (categoryName) => {
@@ -238,13 +274,12 @@ function QuizPage() {
 
   const breadcrumbPaths = [
     { name: t('common.home') || 'Home', link: '/' },
-    { name: t('common.level') || 'Level', link: '/level' },
+    { name: 'LEVEL', link: '/level' },
     { name: levelId.toUpperCase(), link: `/level/${levelId}` },
-    { name: currentBook?.title || `${t('common.book')} ${bookId}`, link: `/level/${levelId}/${bookId}` },
-    ...(finalChapterId !== finalLessonId ? [
-      { name: `${t('common.chapter')} ${finalChapterId}`, link: `/level/${levelId}/${bookId}/chapter/${finalChapterId}` }
-    ] : []),
-    { name: currentQuiz?.title || `${t('common.quiz')} ${finalLessonId}`, link: `/level/${levelId}/${bookId}${finalChapterId !== finalLessonId ? `/chapter/${finalChapterId}` : ''}/lesson/${finalLessonId}` }
+    { name: currentBookTitle, link: `/level/${levelId}/${bookId}` },
+    { name: chapterTitle || finalChapterId, link: `/level/${levelId}/${bookId}/chapter/${finalChapterId}` },
+    { name: lessonTitle || finalLessonId, link: `/level/${levelId}/${bookId}/chapter/${finalChapterId}/lesson/${finalLessonId}` },
+    { name: t('lesson.quiz') || t('common.quiz') || 'Quiz', link: `/level/${levelId}/${bookId}/chapter/${finalChapterId}/lesson/${finalLessonId}/quiz` }
   ];
 
   const handleAnswerSelect = (label) => {
@@ -550,9 +585,6 @@ function QuizPage() {
                         <span className="text-lg">🎧</span>
                         <span>{t('quiz.listeningQuestion') || 'Listening Question'}</span>
                       </p>
-                      {currentQuestion.audioName && (
-                        <p className="text-xs text-purple-700">📁 {currentQuestion.audioName}</p>
-                      )}
                     </div>
                     <audio controls className="w-full" style={{ height: '40px' }}>
                       <source src={currentQuestion.audioUrl} type={currentQuestion.audioUrl.startsWith('data:') ? 'audio/mpeg' : undefined} />

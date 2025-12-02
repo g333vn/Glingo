@@ -1,6 +1,16 @@
 // src/translations/en.js
 // 🇬🇧 English Translations
 const en = {
+// Common shared labels (breadcrumbs, buttons...)
+common: {
+  home: 'Home',
+  level: 'Level',
+  book: 'Book',
+  chapter: 'Chapter',
+  quiz: 'Quiz',
+  back: 'Back',
+  jlpt: 'JLPT'
+},
 maintenance: {
   loggedInNonAdmin: 'You are logged in with a non-admin account. During maintenance, only admins can use the system.',
   note: 'Admins can still access the admin area to monitor and complete the maintenance process.'
@@ -397,6 +407,16 @@ search: {
                 pressCtrlK: 'Press Ctrl+K to search'
 },
 
+common: {
+  home: 'Home',
+  aboutMe: 'About Me',
+  jlpt: 'JLPT',
+  chapter: 'Chapter',
+  edit: 'Edit',
+  loading: 'Saving...',
+  back: 'Back'
+},
+
 home: {
   tagline: 'Learn Japanese Anytime, Anywhere',
     free: '100% Free',
@@ -412,7 +432,8 @@ home: {
                         smartFlashcards: 'Smart Flashcards',
                           smartFlashcardsDesc: 'SRS Algorithm - Learn Smart',
                             studyStreak: 'Study Streak',
-                              studyStreakDesc: 'Track Progress & Motivation'
+                              studyStreakDesc: 'Track Progress & Motivation',
+                              levelSystem: 'LEVEL System'
 },
 
 dashboard: {
@@ -1494,7 +1515,7 @@ quizEditor: {
                             answerNotEntered: '❌ Question {id}: Answer {label} not entered'
   },
   saveMessages: {
-    savedSuccess: '✅ SAVED SUCCESSFULLY!\n\n📝 Quiz saved:\n   - Title: {title}\n   - Number of questions: {count}\n   - Location: {location}\n\n💾 Data has been saved to system (IndexedDB/localStorage)!',
+    savedSuccess: '✅ SAVED SUCCESSFULLY!\n\n📝 Quiz saved:\n   - Title: {title}\n   - Number of questions: {count}\n   - Location: {location}\n\n💾 Data has been saved to server (Supabase) and local cache!',
       savedWithFile: '✅ SAVED SUCCESSFULLY!\n\n📝 Quiz saved:\n   - Title: {title}\n   - Number of questions: {count}\n   - Location: {location}\n\n💾 Data has been saved to system!\n\n- ✅ File saved: {filename}\n- ✅ JSON copied to clipboard\n\n📁 Full path:\n{path}\n\n🎉 Complete! File has been automatically saved to the correct location.\n💡 Next time just click "💾 Save Quiz" → Automatically save to correct location!',
         fileOverwritten: '⚠️ Note: File already exists and has been overwritten.\n\n',
           savedManual: '✅ SAVED SUCCESSFULLY!\n\n📝 Quiz saved:\n   - Title: {title}\n   - Number of questions: {count}\n   - Location: {location}\n\n💾 Data has been saved to system!\n\n✅ Quiz saved and JSON file automatically saved!\n\n📁 Full path:\n{path}\n\n- ✅ File saved: {filename} (to selected folder)\n- ✅ JSON copied to clipboard\n\n🎉 Complete! File has been saved to project code.',
@@ -1826,6 +1847,9 @@ contentManagement: {
       table: 'Table View',
         tree: 'Tree View'
   },
+  upload: {
+    audioUploadError: '❌ Error uploading audio!'
+  },
   confirm: {
     deleteSeries: 'Are you sure you want to delete this book series?',
       deleteBook: 'Are you sure you want to delete this book? All chapters will be deleted!',
@@ -1842,6 +1866,12 @@ contentManagement: {
               idExists: 'This ID already exists! Please use the + button to increase the number.',
                 bookNameExistsSuggestion: 'This book name already exists! Suggestion: add " v2" or " (new)"',
                   questionExists: 'This question already exists! Please check again.'
+  },
+  success: {
+    bookDetails: 'Book details saved successfully!\n\n📚 Book: {title}\n🆔 ID: {id}\n📚 Series: {series}',
+    saveSuccess: 'Saved successfully!\n\n{details}',
+    chapterDetails: '📝 {action} Chapter:\n   - ID: {id}\n   - Name: {title}',
+    lessonDetails: '📚 {action} Lesson:\n   - ID: {id}\n   - Name: {title}\n   - Type: {type}'
   },
   forms: {
     editBook: '✏️ Edit Book',

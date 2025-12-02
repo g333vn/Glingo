@@ -20,53 +20,28 @@ function LevelN5Page() {
 
     useEffect(() => {
         const loadBooks = async () => {
-            const savedBooks = await storageManager.getBooks('n5');
-            if (!savedBooks || savedBooks.length === 0) {
-                console.log('📁 No saved data found. Loading default data...');
-                setN5Books(n5BooksMetadata);
-                await storageManager.saveBooks('n5', n5BooksMetadata);
-                return;
-            }
-            const hasOldData = savedBooks.some(book =>
-                book.title && (book.title.includes('Sách phụ') || book.category === 'Tài liệu phụ')
-            );
-            if (hasOldData) {
-                console.warn('🔄 Detected outdated data. Updating to latest version...');
-                await storageManager.clearBooks('n5');
-                setN5Books(n5BooksMetadata);
-                await storageManager.saveBooks('n5', n5BooksMetadata);
-                console.log(`✅ Updated to ${n5BooksMetadata.length} books`);
-            } else {
-                setN5Books(savedBooks);
-                console.log(`✅ Loaded ${savedBooks.length} books from storage`);
-            }
-        };
-        loadBooks();
-    }, []);
+            const filterDemoAndExtraBooks = (books) =>
+                (books || []).filter(book => {
+                    if (!book) return false;
+                    const id = String(book.id || '');
+                    if (book.category === 'Extra Materials') return false;
+                    if (book.isDemo) return false;
+                    if (id.includes('extra-')) return false;
+                    return true;
+                });
 
-    // duplicate state/effect removed
+            const savedBooksRaw = await storageManager.getBooks('n5');
+            const cleanedSaved = filterDemoAndExtraBooks(savedBooksRaw);
 
-    useEffect(() => {
-        const loadBooks = async () => {
-            const savedBooks = await storageManager.getBooks('n5');
-            if (!savedBooks || savedBooks.length === 0) {
-                console.log('📁 No saved data found. Loading default data...');
-                setN5Books(n5BooksMetadata);
-                await storageManager.saveBooks('n5', n5BooksMetadata);
-                return;
-            }
-            const hasOldData = savedBooks.some(book =>
-                book.title && (book.title.includes('Sách phụ') || book.category === 'Tài liệu phụ')
-            );
-            if (hasOldData) {
-                console.warn('🔄 Detected outdated data. Updating to latest version...');
-                await storageManager.clearBooks('n5');
-                setN5Books(n5BooksMetadata);
-                await storageManager.saveBooks('n5', n5BooksMetadata);
-                console.log(`✅ Updated to ${n5BooksMetadata.length} books`);
+            if (cleanedSaved && cleanedSaved.length > 0) {
+                setN5Books(cleanedSaved);
+                await storageManager.saveBooks('n5', cleanedSaved);
+                console.log(`✅ Loaded ${cleanedSaved.length} N5 books (demo/extra removed)`);
             } else {
-                setN5Books(savedBooks);
-                console.log(`✅ Loaded ${savedBooks.length} books from storage`);
+                const cleanedDefaults = filterDemoAndExtraBooks(n5BooksMetadata);
+                setN5Books(cleanedDefaults);
+                await storageManager.saveBooks('n5', cleanedDefaults);
+                console.log(`📁 Loaded ${cleanedDefaults.length} N5 books from static file (demo/extra removed)`);
             }
         };
         loadBooks();

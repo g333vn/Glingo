@@ -1,6 +1,16 @@
 // src/translations/ja.js
 // 🇯🇵 Japanese Translations
 const ja = {
+// Common shared labels (breadcrumbs, buttons...)
+common: {
+  home: 'ホーム',
+  level: 'レベル',
+  book: '本',
+  chapter: 'チャプター',
+  quiz: 'クイズ',
+  back: '戻る',
+  jlpt: 'JLPT'
+},
 maintenance: {
   loggedInNonAdmin: '管理者以外のアカウントでログインしています。メンテナンス中は管理者のみシステムを利用できます。',
   note: '管理者は引き続き管理画面にアクセスして、メンテナンス状況を確認できます。'
@@ -389,6 +399,16 @@ search: {
                 pressCtrlK: 'Ctrl+Kで検索'
 },
 
+common: {
+  home: 'ホーム',
+  aboutMe: '自己紹介',
+  jlpt: 'JLPT',
+  chapter: 'チャプター',
+  edit: '編集',
+  loading: '保存中...',
+  back: '戻る'
+},
+
 home: {
   tagline: 'いつでもどこでも日本語学習',
     free: '100%無料',
@@ -404,7 +424,8 @@ home: {
                         smartFlashcards: 'スマートフラッシュカード',
                           smartFlashcardsDesc: 'SRSアルゴリズム - 効率的学習',
                             studyStreak: '学習ストリーク',
-                              studyStreakDesc: '進捗とモチベーション管理'
+                              studyStreakDesc: '進捗とモチベーション管理',
+                              levelSystem: 'レベルシステム'
 },
 
 dashboard: {
@@ -1484,7 +1505,7 @@ quizEditor: {
                                   selectComplete: '完全に選択してください: レベル → 書籍 → 章'
   },
   saveMessages: {
-    savedSuccess: '✅ 正常に保存されました！\n\n📝 クイズが保存されました:\n   - タイトル: {title}\n   - 質問数: {count}\n   - 場所: {location}\n\n💾 データがシステム（IndexedDB/localStorage）に保存されました！',
+  savedSuccess: '✅ 正常に保存されました！\n\n📝 クイズが保存されました:\n   - タイトル: {title}\n   - 質問数: {count}\n   - 場所: {location}\n\n💾 データがサーバー（Supabase）とローカルキャッシュに保存されました！',
       savedWithFile: '✅ 正常に保存されました！\n\n📝 クイズが保存されました:\n   - タイトル: {title}\n   - 質問数: {count}\n   - 場所: {location}\n\n💾 データがシステムに保存されました！\n\n- ✅ ファイルが保存されました: {filename}\n- ✅ JSONがクリップボードにコピーされました\n\n📁 完全なパス:\n{path}\n\n🎉 完了！ファイルが正しい場所に自動的に保存されました。\n💡 次回は「💾 クイズを保存」をクリックするだけで、正しい場所に自動的に保存されます！',
         fileOverwritten: '⚠️ 注意: ファイルは既に存在し、上書きされました。\n\n',
           savedManual: '✅ 正常に保存されました！\n\n📝 クイズが保存されました:\n   - タイトル: {title}\n   - 質問数: {count}\n   - 場所: {location}\n\n💾 データがシステムに保存されました！\n\n✅ クイズが保存され、JSONファイルが自動的に保存されました！\n\n📁 完全なパス:\n{path}\n\n- ✅ ファイルが保存されました: {filename}（選択したフォルダへ）\n- ✅ JSONがクリップボードにコピーされました\n\n🎉 完了！ファイルがプロジェクトコードに保存されました。',
@@ -1813,6 +1834,9 @@ contentManagement: {
       table: 'テーブル表示',
         tree: 'ツリー表示'
   },
+  upload: {
+    audioUploadError: '❌ 音声のアップロード中にエラーが発生しました！'
+  },
   confirm: {
     deleteSeries: 'この本シリーズを削除してもよろしいですか?',
       deleteBook: 'この本を削除してもよろしいですか? すべての章が削除されます!',
@@ -1829,6 +1853,12 @@ contentManagement: {
               idExists: 'このIDは既に存在します! +ボタンを使用して番号を増やしてください。',
                 bookNameExistsSuggestion: 'この本の名前は既に存在します! 提案: " v2" または " (新規)" を追加',
                   questionExists: 'この質問は既に存在します! 再度確認してください。'
+  },
+  success: {
+    bookDetails: '本の詳細が正常に保存されました！\n\n📚 本: {title}\n🆔 ID: {id}\n📚 シリーズ: {series}',
+    saveSuccess: '保存に成功しました！\n\n{details}',
+    chapterDetails: '📝 {action} 章:\n   - ID: {id}\n   - 名前: {title}',
+    lessonDetails: '📚 {action} レッスン:\n   - ID: {id}\n   - 名前: {title}\n   - タイプ: {type}'
   },
   forms: {
     editBook: '✏️ 本を編集',

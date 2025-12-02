@@ -601,10 +601,35 @@ export async function deleteUser(userId) {
     console.log('[AuthService] ✅ Profile deleted:', userId);
     
     // Step 2: Try to delete from auth.users using Admin API
-    // Note: This requires service role key, which should be in server-side code
-    // For client-side, we'll just delete the profile and let user know
-    console.warn('[AuthService] ⚠️ Profile deleted. User may still exist in auth.users.');
-    console.warn('[AuthService] ⚠️ To fully delete, use Supabase Dashboard → Authentication → Users → Delete');
+    let deletedAuth = false;
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    
+    if (serviceRoleKey && supabaseUrl) {
+      try {
+        console.log('[AuthService] Attempting to delete from auth.users using Admin API...');
+        const response = await fetch(`${supabaseUrl}/rest/v1/auth/admin/users/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseUrl.split('//')[1] ? serviceRoleKey : import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${serviceRoleKey}`
+          }
+        });
+        
+        if (response.ok) {
+          console.log('[AuthService] ✅ User deleted from auth.users:', userId);
+          deletedAuth = true;
+        } else {
+          const errorData = await response.text();
+          console.warn('[AuthService] ⚠️ Failed to delete from auth.users:', response.status, errorData);
+        }
+      } catch (err) {
+        console.warn('[AuthService] ⚠️ Error calling Admin API to delete user:', err.message);
+      }
+    } else {
+      console.warn('[AuthService] ⚠️ Service role key not available. User will not be deleted from auth.users.');
+    }
     
     // Step 3: Verify deletion by checking if profile still exists
     await new Promise(resolve => setTimeout(resolve, 500)); // Wait for deletion to complete
@@ -620,7 +645,8 @@ export async function deleteUser(userId) {
       return { 
         success: false, 
         error: 'Profile vẫn còn sau khi xóa. Có thể do RLS policy hoặc trigger tự động tạo lại.',
-        deletedProfile: false
+        deletedProfile: false,
+        deletedAuth: deletedAuth
       };
     }
     
@@ -628,7 +654,7 @@ export async function deleteUser(userId) {
     return { 
       success: true, 
       deletedProfile: true,
-      deletedAuth: false // Cannot delete from auth.users from client
+      deletedAuth: deletedAuth // ✅ Now attempts to delete from auth.users automatically
     };
   } catch (err) {
     console.error('[AuthService] Unexpected error deleting user:', err);

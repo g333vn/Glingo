@@ -224,23 +224,25 @@ function DictionaryButton() {
         <div className="fixed top-40 md:top-44 lg:top-48 right-6 z-[60] animate-slide-in">
           <div className="relative">
             {/* Main Tooltip Card - ✨ NEO BRUTALISM */}
-            <div className="relative bg-yellow-400 text-black p-5 rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] max-w-sm">
+            <div className="relative bg-yellow-300 text-black px-5 py-4 rounded-2xl border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] max-w-sm">
               
               <div className="flex items-start gap-3">
                 {/* Icon */}
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white border-[2px] border-black flex items-center justify-center">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white border-[2px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
                   <span className="text-xl">💡</span>
                 </div>
                 
                 {/* Content */}
                 <div className="flex-1">
-                  <h4 className="font-black text-sm uppercase tracking-wide mb-3">Hướng dẫn sử dụng</h4>
+                  <h4 className="font-black text-sm md:text-base uppercase tracking-wide mb-3 text-center md:text-left">
+                    Hướng dẫn sử dụng
+                  </h4>
                   
                   {/* ✅ NEW: Tooltip 2 bước */}
                   {hintStep === 1 ? (
                     // Bước 1: Chưa bật
                     <div className="space-y-3">
-                      <div className="bg-white/70 rounded-lg p-3 border-[2px] border-black">
+                      <div className="bg-white/80 rounded-xl p-3 border-[2px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="bg-blue-500 text-white text-xs font-black px-2 py-1 rounded border-[2px] border-black">{t('dictionary.step1')}</span>
                           <span className="text-xs font-black text-black">{t('dictionary.enableFeature')}</span>
@@ -250,7 +252,7 @@ function DictionaryButton() {
                         </p>
                       </div>
                       
-                      <div className="bg-white/50 rounded-lg p-3 border-[2px] border-black opacity-60">
+                      <div className="bg-white/60 rounded-xl p-3 border-[2px] border-dashed border-gray-500">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="bg-gray-400 text-white text-xs font-black px-2 py-1 rounded border-[2px] border-black">{t('dictionary.step2')}</span>
                           <span className="text-xs font-black text-gray-600">{t('dictionary.doubleClickToTranslate')}</span>
@@ -263,14 +265,14 @@ function DictionaryButton() {
                   ) : (
                     // Bước 2: Đã bật
                     <div className="space-y-3">
-                      <div className="bg-green-100 rounded-lg p-3 border-[2px] border-green-600">
+                      <div className="bg-green-100 rounded-xl p-3 border-[2px] border-green-600 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="bg-green-600 text-white text-xs font-black px-2 py-1 rounded border-[2px] border-black">✓ {t('dictionary.completed')}</span>
                           <span className="text-xs font-black text-green-800">{t('dictionary.enabledMessage')}</span>
                         </div>
                       </div>
                       
-                      <div className="bg-white/70 rounded-lg p-3 border-[2px] border-black animate-pulse">
+                      <div className="bg-white/80 rounded-xl p-3 border-[2px] border-black animate-pulse">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="bg-blue-500 text-white text-xs font-black px-2 py-1 rounded border-[2px] border-black">{t('dictionary.step2')}</span>
                           <span className="text-xs font-black text-black">{t('dictionary.doubleClickToTranslate')}!</span>

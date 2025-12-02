@@ -41,15 +41,15 @@ function HierarchyView({
   onDeleteQuiz,
 }) {
   const { t } = useLanguage();
-  // Group books by series
+  // Group books by series (use seriesId as key để ổn định theo Supabase)
   const booksBySeries = useMemo(() => {
     const grouped = {};
     booksWithChapters.forEach(book => {
-      const seriesName = book.category || t('contentManagement.series.noSeriesCategory');
-      if (!grouped[seriesName]) {
-        grouped[seriesName] = [];
+      const key = book.seriesId || '__no_series__';
+      if (!grouped[key]) {
+        grouped[key] = [];
       }
-      grouped[seriesName].push(book);
+      grouped[key].push(book);
     });
     return grouped;
   }, [booksWithChapters]);
@@ -107,8 +107,13 @@ function HierarchyView({
         onDeleteSeries={onDeleteSeries}
         onAddBook={onAddBook}
         onEditBook={onEditBook}
+        onDeleteBook={onDeleteBook}
         onAddChapter={onAddChapter}
+        onEditChapter={onEditChapter}
+        onDeleteChapter={onDeleteChapter}
         onAddLesson={onAddLesson}
+        onEditLesson={onEditLesson}
+        onDeleteLesson={onDeleteLesson}
         onAddQuiz={onAddQuiz}
         onSeriesClick={(seriesId) => {
           setHierarchyPath({ ...hierarchyPath, series: seriesId });
@@ -120,7 +125,7 @@ function HierarchyView({
 
   if (!hierarchyPath.book) {
     // Show Books in selected Series
-    const seriesBooks = booksBySeries[currentSeries?.name || ''] || [];
+    const seriesBooks = booksBySeries[currentSeries?.id || '__no_series__'] || [];
     return (
       <div className="bg-white rounded-lg shadow-lg p-6">
         <div className="flex items-center justify-between mb-4">

@@ -33,7 +33,12 @@ function SeriesListView({
   onSeriesClick,
   onExportItem,
   onImportItem,
-  level // ✅ NEW: Need level for export
+  level, // ✅ NEW: Need level for export
+  onDeleteBook,
+  onEditChapter,
+  onDeleteChapter,
+  onEditLesson,
+  onDeleteLesson,
 }) {
   const { t } = useLanguage();
   // ✅ Helper: Wrap onAddBook để truyền series name
@@ -151,7 +156,7 @@ function SeriesListView({
           {viewType === 'card' ? (
             <div className="space-y-4">
               {paginatedSeries.map(seriesItem => {
-                const seriesBooks = booksBySeries[seriesItem.name] || [];
+                const seriesBooks = booksBySeries[seriesItem.id] || [];
                 const isExpanded = expandedSeries[seriesItem.id];
                 
                 return (
@@ -166,16 +171,21 @@ function SeriesListView({
                       onToggleExpand={() => {
                         setExpandedSeries(prev => ({ ...prev, [seriesItem.id]: !prev[seriesItem.id] }));
                       }}
-                    onEdit={onEditSeries}
-                    onDelete={onDeleteSeries}
-                    onAddBook={handleAddBookWithSeries}
-                    onEditBook={onEditBook}
-                    onAddChapter={onAddChapter}
-                    onAddLesson={onAddLesson}
-                    onAddQuiz={onAddQuiz}
-                    onExportItem={onExportItem}
-                    onImportItem={onImportItem}
-                    level={level}
+                      onEdit={onEditSeries}
+                      onDelete={onDeleteSeries}
+                      onAddBook={handleAddBookWithSeries}
+                      onEditBook={onEditBook}
+                      onDeleteBook={onDeleteBook}
+                      onAddChapter={onAddChapter}
+                      onEditChapter={onEditChapter}
+                      onDeleteChapter={onDeleteChapter}
+                      onAddLesson={onAddLesson}
+                      onEditLesson={onEditLesson}
+                      onDeleteLesson={onDeleteLesson}
+                      onAddQuiz={onAddQuiz}
+                      onExportItem={onExportItem}
+                      onImportItem={onImportItem}
+                      level={level}
                     />
                     {!isExpanded && (
                       <div className="mt-2 text-center">

@@ -16,46 +16,63 @@ function LevelN1Page() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // ✅ UPDATED: Load books from IndexedDB/localStorage (admin added books) or default data
+  // ✅ UPDATED: Load books from Supabase/IndexedDB/localStorage (admin added books) or default data
   const [n1Books, setN1Books] = useState([]);
-
   useEffect(() => {
     const loadBooks = async () => {
-      // ✅ AUTO FIX: Check if saved data has old Vietnamese titles OR missing DEMO book
-      const savedBooks = await storageManager.getBooks('n1');
+      // Helper để loại bỏ sách DEMO và Extra Materials
+      const filterDemoAndExtraBooks = (books) =>
+        (books || []).filter(book => {
+          if (!book) return false;
+          const id = String(book.id || '');
+          // Loại bỏ demo book & extra placeholders
+          if (book.category === 'Extra Materials') return false;
+          if (book.isDemo) return false;
+          if (id === 'demo-complete-001') return false;
+          if (id.includes('extra-')) return false;
+          return true;
+        });
 
-      // Detect old data (Vietnamese titles like "Sách phụ")
-      const hasOldData = savedBooks && savedBooks.some(book =>
-        book.title && (book.title.includes('Sách phụ') || book.category === 'Tài liệu phụ')
-      );
+      // 1. Lấy books từ storage/Supabase
+      const savedBooksRaw = await storageManager.getBooks('n1');
+      const cleanedSavedBooks = filterDemoAndExtraBooks(savedBooksRaw);
 
-      // Detect missing DEMO book (new addition)
-      const hasDemoBook = savedBooks && savedBooks.some(book => book.id === 'demo-complete-001');
-      const needsUpdate = hasOldData || (savedBooks && savedBooks.length > 0 && !hasDemoBook);
+      // 1b. Lấy danh sách series để gán lại category (tên bộ sách) nếu thiếu
+      let booksWithCategory = cleanedSavedBooks;
+      try {
+        const seriesList = await storageManager.getSeries('n1');
+        if (Array.isArray(seriesList) && seriesList.length > 0) {
+          const seriesMap = {};
+          seriesList.forEach(s => {
+            if (s && s.id) {
+              seriesMap[s.id] = s.name || s.id;
+            }
+          });
 
-      if (needsUpdate) {
-        console.warn('🔄 Detected outdated data. Updating to latest version...');
-        if (hasOldData) {
-          console.log('   - Found old Vietnamese titles');
+          booksWithCategory = cleanedSavedBooks.map(book => {
+            if (book.category && book.category.length > 0) return book;
+            const seriesName = book.seriesId ? seriesMap[book.seriesId] : null;
+            return {
+              ...book,
+              category: seriesName || book.category || null,
+            };
+          });
         }
-        if (!hasDemoBook) {
-          console.log('   - Missing DEMO book, adding it now');
-        }
+      } catch (err) {
+        console.warn('[LevelN1Page] ⚠️ Could not load series for category mapping:', err);
+      }
 
-        // Clear old data from storage
-        await storageManager.clearBooks('n1');
-        // Use fresh data from static file (includes DEMO book)
-        setN1Books(n1BooksMetadata);
-        // Save new data to storage
-        await storageManager.saveBooks('n1', n1BooksMetadata);
-        console.log(`✅ Updated to ${n1BooksMetadata.length} books (includes DEMO book)`);
-      } else if (savedBooks && savedBooks.length > 0) {
-        setN1Books(savedBooks);
-        console.log(`✅ Loaded ${savedBooks.length} books from storage`);
+      if (booksWithCategory && booksWithCategory.length > 0) {
+        setN1Books(booksWithCategory);
+        // Ghi đè lại storage để xoá sạch demo/extra cũ và lưu category đã khôi phục
+        await storageManager.saveBooks('n1', booksWithCategory);
+        console.log(`✅ Loaded ${booksWithCategory.length} N1 books (demo/extra removed, categories synced)`);
       } else {
-        // Fallback to default static data
-        setN1Books(n1BooksMetadata);
-        console.log(`📁 Loaded ${n1BooksMetadata.length} books from static file`);
+        // 2. Không có data trong storage → dùng metadata mặc định (đã được clean)
+        const cleanedDefaults = filterDemoAndExtraBooks(n1BooksMetadata);
+        setN1Books(cleanedDefaults);
+        await storageManager.saveBooks('n1', cleanedDefaults);
+        console.log(`📁 Loaded ${cleanedDefaults.length} N1 books from static file (demo/extra removed)`);
       }
     };
 

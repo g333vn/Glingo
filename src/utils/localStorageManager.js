@@ -155,29 +155,62 @@ class LocalStorageManager {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
-    // 1. Try Supabase first (cloud)
+    console.log('[StorageManager.getBooks] 🔍 Loading books for level:', level);
+
+    // 1. Try Supabase first (cloud) - nguồn dữ liệu "chuẩn"
     try {
       const { success, data } = await contentService.getBooks(level);
-      if (success && data && data.length > 0) {
-        // Cache to IndexedDB for offline support
-        if (this.useIndexedDB) {
-          await indexedDBManager.saveBooks(level, data);
+
+      if (success) {
+        const supaBooks = Array.isArray(data) ? data : [];
+
+        if (supaBooks.length > 0) {
+          // ✅ Có dữ liệu trên server → dùng server làm nguồn chính
+          console.log('[StorageManager.getBooks] ✅ Loaded', supaBooks.length, 'books from Supabase');
+
+          // Cache to IndexedDB for offline support
+          if (this.useIndexedDB) {
+            await indexedDBManager.saveBooks(level, supaBooks);
+          }
+
+          // Also cache to localStorage
+          if (this.storageAvailable) {
+            const key = `adminBooks_${level}`;
+            localStorage.setItem(key, JSON.stringify(supaBooks));
+          }
+
+          return supaBooks;
         }
-        // Also cache to localStorage
+
+        // ✅ Supabase trả về RỖNG (server hiện không có sách nào)
+        //    → Xoá cache local/IndexedDB để client đồng bộ với server
+        console.log('[StorageManager.getBooks] ℹ️ Supabase has 0 books for level', level, '- clearing local caches');
+
+        if (this.useIndexedDB) {
+          await indexedDBManager.saveBooks(level, []); // xoá tất cả books level này trong IndexedDB
+        }
+
         if (this.storageAvailable) {
           const key = `adminBooks_${level}`;
-          localStorage.setItem(key, JSON.stringify(data));
+          localStorage.removeItem(key);
         }
-        return data;
+
+        // Trả về mảng rỗng, KHÔNG fallback sang cache cũ nữa
+        return [];
       }
+
+      console.log('[StorageManager.getBooks] ⚠️ Supabase request not successful, will try local caches');
     } catch (err) {
-      console.warn('[StorageManager] Supabase getBooks failed, trying local:', err);
+      console.warn('[StorageManager.getBooks] ❌ Supabase getBooks failed, trying local:', err);
     }
     
     // 2. Try IndexedDB (local cache)
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getBooks(level);
-      if (result) return result;
+      if (result && result.length > 0) {
+        console.log('[StorageManager.getBooks] ✅ Loaded', result.length, 'books from IndexedDB');
+        return result;
+      }
     }
 
     // 3. Fallback to localStorage
@@ -186,6 +219,7 @@ class LocalStorageManager {
       const data = localStorage.getItem(key);
       if (data) {
         const books = JSON.parse(data);
+        console.log('[StorageManager.getBooks] ✅ Loaded', books.length, 'books from localStorage');
         // Sync to IndexedDB for future use
         if (this.useIndexedDB) {
           await indexedDBManager.saveBooks(level, books);
@@ -194,6 +228,7 @@ class LocalStorageManager {
       }
     }
 
+    console.log('[StorageManager.getBooks] ❌ No books found anywhere');
     return null;
   }
 
@@ -201,19 +236,28 @@ class LocalStorageManager {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
+    // 🔍 DEBUG: Log userId check
+    console.log('[StorageManager.saveBooks] userId:', userId, 'isValid:', userId && typeof userId === 'string' && userId.length > 0);
+    
     // 1. Save to Supabase if userId provided (admin)
     if (userId) {
+      console.log('[StorageManager.saveBooks] 📤 Saving', books.length, 'books to Supabase for level:', level);
       try {
         // Save each book to Supabase
         for (const book of books) {
+          console.log('[StorageManager.saveBooks] 💾 Saving book:', book.id, book.title);
           const result = await contentService.saveBook({ ...book, level }, userId);
           if (!result.success) {
-            console.warn('[StorageManager] Failed to save book to Supabase:', book.id, result.error);
+            console.warn('[StorageManager] ❌ Failed to save book to Supabase:', book.id, result.error);
+          } else {
+            console.log('[StorageManager] ✅ Saved book to Supabase:', book.id);
           }
         }
       } catch (err) {
-        console.warn('[StorageManager] Supabase saveBooks failed, continuing with local save:', err);
+        console.warn('[StorageManager] ❌ Supabase saveBooks failed, continuing with local save:', err);
       }
+    } else {
+      console.warn('[StorageManager.saveBooks] ⚠️ No userId provided, books will NOT be saved to Supabase!');
     }
     
     // 2. Save to IndexedDB (local cache)
@@ -278,14 +322,35 @@ class LocalStorageManager {
   async getSeries(level) {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
+
+    // 1. Try Supabase trước (nếu có level)
+    if (level) {
+      try {
+        const { success, data } = await contentService.getSeries(level);
+        if (success && data && data.length > 0) {
+          // Cache to IndexedDB
+          if (this.useIndexedDB) {
+            await indexedDBManager.saveSeries(level, data);
+          }
+          // Cache to localStorage
+          if (this.storageAvailable) {
+            const key = `adminSeries_${level}`;
+            localStorage.setItem(key, JSON.stringify(data));
+          }
+          return data;
+        }
+      } catch (err) {
+        console.warn('[StorageManager] Supabase getSeries failed, trying local cache:', err);
+      }
+    }
     
-    // Try IndexedDB first
+    // 2. Try IndexedDB (local cache)
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getSeries(level);
       if (result) return result;
     }
 
-    // Fallback to localStorage
+    // 3. Fallback to localStorage
     if (this.storageAvailable) {
       const key = `adminSeries_${level}`;
       const data = localStorage.getItem(key);
@@ -302,11 +367,25 @@ class LocalStorageManager {
     return null;
   }
 
-  async saveSeries(level, series) {
+  async saveSeries(level, series, userId = null) {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
+
+    // 1. Save to Supabase nếu có level + userId (admin)
+    if (level && userId) {
+      try {
+        const result = await contentService.saveSeries(level, series, userId);
+        if (!result.success) {
+          console.warn('[StorageManager] Failed to save series to Supabase:', result.error);
+        } else {
+          console.log(`[StorageManager] ✅ Saved ${series.length} series to Supabase for level ${level}`);
+        }
+      } catch (err) {
+        console.warn('[StorageManager] Supabase saveSeries failed, continuing with local save:', err);
+      }
+    }
     
-    // Save to IndexedDB (primary)
+    // 2. Save to IndexedDB (primary)
     if (this.useIndexedDB) {
       const success = await indexedDBManager.saveSeries(level, series);
       if (success) {
@@ -319,7 +398,7 @@ class LocalStorageManager {
       }
     }
 
-    // Fallback to localStorage
+    // 3. Fallback to localStorage
     if (this.storageAvailable) {
       const key = `adminSeries_${level}`;
       localStorage.setItem(key, JSON.stringify(series));

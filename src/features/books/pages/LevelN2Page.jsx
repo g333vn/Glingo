@@ -20,25 +20,29 @@ function LevelN2Page() {
 
     useEffect(() => {
         const loadBooks = async () => {
-            const savedBooks = await storageManager.getBooks('n2');
-            if (!savedBooks || savedBooks.length === 0) {
-                console.log('📁 No saved data found. Loading default data...');
-                setN2Books(n2BooksMetadata);
-                await storageManager.saveBooks('n2', n2BooksMetadata);
-                return;
-            }
-            const hasOldData = savedBooks.some(book =>
-                book.title && (book.title.includes('Sách phụ') || book.category === 'Tài liệu phụ')
-            );
-            if (hasOldData) {
-                console.warn('🔄 Detected outdated data. Updating to latest version...');
-                await storageManager.clearBooks('n2');
-                setN2Books(n2BooksMetadata);
-                await storageManager.saveBooks('n2', n2BooksMetadata);
-                console.log(`✅ Updated to ${n2BooksMetadata.length} books`);
+            // Helper: loại bỏ Extra Materials / demo
+            const filterDemoAndExtraBooks = (books) =>
+                (books || []).filter(book => {
+                    if (!book) return false;
+                    const id = String(book.id || '');
+                    if (book.category === 'Extra Materials') return false;
+                    if (book.isDemo) return false;
+                    if (id.includes('extra-')) return false;
+                    return true;
+                });
+
+            const savedBooksRaw = await storageManager.getBooks('n2');
+            const cleanedSaved = filterDemoAndExtraBooks(savedBooksRaw);
+
+            if (cleanedSaved && cleanedSaved.length > 0) {
+                setN2Books(cleanedSaved);
+                await storageManager.saveBooks('n2', cleanedSaved);
+                console.log(`✅ Loaded ${cleanedSaved.length} N2 books (demo/extra removed)`);
             } else {
-                setN2Books(savedBooks);
-                console.log(`✅ Loaded ${savedBooks.length} books from storage`);
+                const cleanedDefaults = filterDemoAndExtraBooks(n2BooksMetadata);
+                setN2Books(cleanedDefaults);
+                await storageManager.saveBooks('n2', cleanedDefaults);
+                console.log(`📁 Loaded ${cleanedDefaults.length} N2 books from static file (demo/extra removed)`);
             }
         };
         loadBooks();

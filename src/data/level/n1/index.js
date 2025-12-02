@@ -1,7 +1,7 @@
 // src/data/level/n1/index.js
-// Export tất cả data N1
+// Re-export N1 metadata in clean mode (no hard-coded books).
 
-export { n1Books } from './books.js';
 export { n1BooksMetadata } from './books-metadata.js';
-export { quizData as shinkanzenQuizData } from './shinkanzen-n1-bunpou-quiz.js';
+export { n1Books } from './books.js';
+
 

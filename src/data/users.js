@@ -45,8 +45,9 @@ import { getSetting } from '../utils/settingsManager.js';
 /**
  * Get demo/seed users
  * This is a getter function to ensure config is always fresh
+ * CLEAN MODE: Returns empty array
  */
-export const users = getDemoUsers();
+export const users = [];
 
 // Roles và permissions
 export const roles = {

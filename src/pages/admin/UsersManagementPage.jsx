@@ -31,7 +31,10 @@ function UsersManagementPage() {
   
   const { user: currentUser } = useAuth();
   const { t } = useLanguage();
+
   const [users, setUsers] = useState(initialUsers);
+  const [currentPage, setCurrentPage] = useState(1);
+  const USERS_PER_PAGE = 3; // ✅ Hiển thị 3 user mỗi trang
   const [editingUser, setEditingUser] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -130,6 +133,7 @@ function UsersManagementPage() {
         
         // Step 4: Update UI
         setUsers(finalUsers);
+        setCurrentPage(1); // Reset về trang đầu khi load lại danh sách
         
         console.log('[USERS_MGMT] ✅✅✅ Loaded from Supabase. Final:', finalUsers.length, 'users');
         
@@ -551,6 +555,13 @@ function UsersManagementPage() {
         if (result.success) {
           console.log('[DELETE_USER] ✅ Deleted from Supabase:', userToDelete.email);
           
+          // Báo kết quả xóa từ auth.users
+          if (result.deletedAuth) {
+            console.log('[DELETE_USER] ✅ Also deleted from auth.users');
+          } else {
+            console.log('[DELETE_USER] ⚠️ Could not delete from auth.users (Service Role Key may not be configured)');
+          }
+          
           // Verify deletion by waiting and checking
           await new Promise(resolve => setTimeout(resolve, 1000));
           
@@ -564,9 +575,12 @@ function UsersManagementPage() {
             
             if (stillExists) {
               console.warn('[DELETE_USER] ⚠️ User still exists in Supabase after deletion!');
-              alert(`⚠️ User đã được xóa khỏi danh sách local, nhưng vẫn còn trong Supabase.\n\nVui lòng xóa từ Supabase Dashboard → Authentication → Users để xóa hoàn toàn.`);
+              alert(`⚠️ User đã được xóa khỏi danh sách local, nhưng vẫn còn trong Supabase.\n\n${result.deletedAuth ? 'Đã xóa từ auth.users.' : 'Không thể xóa từ auth.users (chưa cấu hình Service Role Key).'}\n\nNếu muốn xóa hoàn toàn, vui lòng xóa từ Supabase Dashboard → Authentication → Users.`);
             } else {
               console.log('[DELETE_USER] ✅ Verified: User deleted from Supabase');
+              if (result.deletedAuth) {
+                alert(`✅ User đã được xóa thành công từ Supabase (cả auth.users và profiles)!`);
+              }
             }
           }
         } else {
@@ -1125,7 +1139,8 @@ function UsersManagementPage() {
           )}
         </div>
 
-        <div className="overflow-x-auto -mx-2 sm:mx-0">
+        {/* Bảng users với scroll nội bộ: thanh cuộn ngang nằm phía dưới như mặc định */}
+        <div className="overflow-x-auto overflow-y-auto -mx-2 sm:mx-0 max-h-[60vh]">
           <table className="w-full min-w-[600px]">
             <thead className="bg-gray-50">
               <tr>
@@ -1138,7 +1153,9 @@ function UsersManagementPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {users.map((user) => (
+              {users
+                .slice((currentPage - 1) * USERS_PER_PAGE, currentPage * USERS_PER_PAGE)
+                .map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.id}</td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -1206,6 +1223,33 @@ function UsersManagementPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination cho danh sách Users */}
+        {users.length > USERS_PER_PAGE && (
+          <div className="flex justify-center items-center gap-2 py-3 border-t border-gray-200">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              &lt;
+            </button>
+            <span className="text-xs sm:text-sm font-medium">
+              {currentPage} / {Math.ceil(users.length / USERS_PER_PAGE)}
+            </span>
+            <button
+              onClick={() =>
+                setCurrentPage((prev) =>
+                  Math.min(Math.ceil(users.length / USERS_PER_PAGE), prev + 1)
+                )
+              }
+              disabled={currentPage >= Math.ceil(users.length / USERS_PER_PAGE)}
+              className="px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              &gt;
+            </button>
+          </div>
+        )}
         </div>
 
       {/* Change Password Modal */}

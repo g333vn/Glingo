@@ -13,7 +13,7 @@ function SeriesTableView({
   onDelete
 }) {
   const getSeriesStatus = (seriesItem) => {
-    const seriesBooks = booksBySeries[seriesItem.name] || [];
+    const seriesBooks = booksBySeries[seriesItem.id] || [];
     if (seriesBooks.length === 0) return 'empty';
     return 'published'; // TODO: Implement actual status
   };
@@ -33,7 +33,7 @@ function SeriesTableView({
         </thead>
         <tbody className="divide-y divide-gray-200">
           {series.map(seriesItem => {
-            const seriesBooks = booksBySeries[seriesItem.name] || [];
+            const seriesBooks = booksBySeries[seriesItem.id] || [];
             const status = getSeriesStatus(seriesItem);
             let lessonsCount = 0;
             let quizzesCount = 0;

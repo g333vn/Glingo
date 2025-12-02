@@ -6,8 +6,6 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import storageManager from '../../../utils/localStorageManager.js';
 import { bookData } from '../../../data/level/bookData.js';
 import { n1BooksMetadata } from '../../../data/level/n1/index.js';
-import { demoChapters } from '../../../data/level/n1/demo-book/chapters.js';
-import { demoLessons } from '../../../data/level/n1/demo-book/lessons.js';
 import { calculateChapterProgress, LESSON_STATUS } from '../../../data/lessonTypes.js';
 import { getChapterProgress, getBookProgress } from '../../../utils/lessonProgressTracker.js';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
@@ -104,16 +102,45 @@ function BookDetailPage() {
   // Load books metadata for category navigation
   useEffect(() => {
     const loadBooksMetadata = async () => {
-      // ✅ UPDATED: Load from IndexedDB/localStorage first (via storageManager)
+      // ✅ Load from storage/Supabase first (admin data)
       const savedBooks = await storageManager.getBooks(levelId);
+
       if (savedBooks && savedBooks.length > 0) {
-        setBooksMetadata(savedBooks);
-        console.log(`✅ Loaded ${savedBooks.length} books from storage for ${levelId}`);
+        let booksWithCategory = savedBooks;
+
+        // ✅ Đồng bộ lại category từ seriesId nếu thiếu
+        try {
+          const seriesList = await storageManager.getSeries(levelId);
+          if (Array.isArray(seriesList) && seriesList.length > 0) {
+            const seriesMap = {};
+            seriesList.forEach(s => {
+              if (s && s.id) {
+                seriesMap[s.id] = s.name || s.id;
+              }
+            });
+
+            booksWithCategory = savedBooks.map(book => {
+              if (book.category && book.category.length > 0) return book;
+              const seriesName = book.seriesId ? seriesMap[book.seriesId] : null;
+              return {
+                ...book,
+                category: seriesName || book.category || null,
+              };
+            });
+          }
+        } catch (err) {
+          console.warn('[BookDetailPage] ⚠️ Could not load series for category mapping:', err);
+        }
+
+        setBooksMetadata(booksWithCategory);
+        // Lưu lại metadata đã có category để các trang khác dùng chung
+        await storageManager.saveBooks(levelId, booksWithCategory);
+        console.log(`[BookDetailPage] ✅ Loaded ${booksWithCategory.length} books from storage for ${levelId} (categories synced)`);
       } else {
-        // Fallback to default based on level
+        // Fallback to default based on level (static file, đã được clean demo)
         if (levelId === 'n1') {
           setBooksMetadata(n1BooksMetadata);
-          console.log(`📁 Loaded ${n1BooksMetadata.length} books from static file`);
+          console.log(`[BookDetailPage] 📁 Loaded ${n1BooksMetadata.length} books from static file`);
         }
       }
     };
@@ -145,16 +172,7 @@ function BookDetailPage() {
         setIsShowingLessons(true);
         
         // ✅ Load lessons for this chapter from storage
-        let savedLessons = await storageManager.getLessons(bookId, chapterId);
-        
-        // ✅ FALLBACK: Load demo lessons if not in storage
-        if ((!savedLessons || savedLessons.length === 0) && bookId === 'demo-complete-001') {
-          const demoKey = `${bookId}_${chapterId}`;
-          savedLessons = demoLessons[demoKey];
-          if (savedLessons) {
-            console.log(`📁 Loaded ${savedLessons.length} DEMO lessons from static file`);
-          }
-        }
+        const savedLessons = await storageManager.getLessons(bookId, chapterId);
         
         if (savedLessons && savedLessons.length > 0) {
           setBookContents(savedLessons);
@@ -183,13 +201,7 @@ function BookDetailPage() {
         setCurrentChapter(null);
         
         // ✅ Try IndexedDB/localStorage first for chapters
-        let savedChapters = await storageManager.getChapters(bookId);
-        
-        // ✅ FALLBACK: Load demo chapters if this is demo book
-        if ((!savedChapters || savedChapters.length === 0) && bookId === 'demo-complete-001') {
-          savedChapters = demoChapters;
-          console.log(`📁 Loaded ${demoChapters.length} DEMO chapters from static file`);
-        }
+        const savedChapters = await storageManager.getChapters(bookId);
         
         if (savedChapters && savedChapters.length > 0) {
           // Use saved chapters (IndexedDB or localStorage or demo)
@@ -199,16 +211,7 @@ function BookDetailPage() {
           // Load lessons for all chapters to calculate progress
           const lessonsMap = {};
           for (const chapter of savedChapters) {
-            let lessons = await storageManager.getLessons(bookId, chapter.id);
-            
-            // ✅ FALLBACK: Load demo lessons if not in storage
-            if ((!lessons || lessons.length === 0) && bookId === 'demo-complete-001') {
-              const demoKey = `${bookId}_${chapter.id}`;
-              lessons = demoLessons[demoKey];
-              if (lessons) {
-                console.log(`📁 Loaded ${lessons.length} DEMO lessons for ${chapter.id}`);
-              }
-            }
+            const lessons = await storageManager.getLessons(bookId, chapter.id);
             
             if (lessons && lessons.length > 0) {
               lessonsMap[chapter.id] = lessons;
@@ -247,6 +250,22 @@ function BookDetailPage() {
 
   // ✅ Tìm category của book hiện tại để highlight trong sidebar
   const currentBookCategory = booksMetadata.find(book => book.id === bookId)?.category || null;
+
+  // ✅ Tạo danh sách categories (bộ sách) từ booksMetadata để hiển thị ở Sidebar
+  const categories = React.useMemo(() => {
+    const categoryCounts = {};
+    booksMetadata.forEach(book => {
+      if (book.category) {
+        categoryCounts[book.category] = (categoryCounts[book.category] || 0) + 1;
+      }
+    });
+
+    return Object.keys(categoryCounts).map(name => ({
+      name,
+      id: name,
+      count: categoryCounts[name],
+    }));
+  }, [booksMetadata]);
 
   // ✅ Handler cho category click trong sidebar
   const handleCategoryClick = (categoryName) => {
@@ -351,10 +370,11 @@ function BookDetailPage() {
     <div className="w-full pr-0 md:pr-4 flex flex-col md:flex-row">
       <div className="flex flex-col md:flex-row items-start gap-0 md:gap-6 mt-4 w-full">
         
-        {/* Sidebar - Pass category click handler và selectedCategory để highlight */}
-        <Sidebar 
+        {/* Sidebar - Pass category click handler, selectedCategory & categories để highlight và lọc */}
+        <Sidebar
           selectedCategory={currentBookCategory}
           onCategoryClick={handleCategoryClick}
+          categories={categories}
         />
 
         {/* Main Content - sticky chỉ trên màn hình lớn để mobile scroll tự nhiên */}

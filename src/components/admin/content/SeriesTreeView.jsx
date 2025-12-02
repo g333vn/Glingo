@@ -31,7 +31,7 @@ function SeriesTreeView({
     const allNodes = {};
     series.forEach(s => {
       allNodes[`series-${s.id}`] = true;
-      const books = booksBySeries[s.name] || [];
+      const books = booksBySeries[s.id] || [];
       books.forEach(book => {
         allNodes[`book-${book.id}`] = true;
         const chapters = chaptersData[book.id] || [];
@@ -51,7 +51,7 @@ function SeriesTreeView({
     // Use stored status if available
     if (seriesItem.status) return seriesItem.status;
     
-    const seriesBooks = booksBySeries[seriesItem.name] || [];
+    const seriesBooks = booksBySeries[seriesItem.id] || [];
     if (seriesBooks.length === 0) return 'empty';
     
     // Check if all books have content
@@ -84,7 +84,7 @@ function SeriesTreeView({
 
       <div className="font-mono text-sm space-y-1">
         {series.map(seriesItem => {
-          const seriesBooks = booksBySeries[seriesItem.name] || [];
+          const seriesBooks = booksBySeries[seriesItem.id] || [];
           const status = getSeriesStatus(seriesItem);
           const isExpanded = expandedNodes[`series-${seriesItem.id}`];
           

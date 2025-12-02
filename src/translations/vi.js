@@ -1,6 +1,16 @@
 // src/translations/vi.js
 // 🇻🇳 Vietnamese Translations
 const vi = {
+    // Common shared labels (breadcrumbs, buttons...)
+    common: {
+        home: 'Trang chủ',
+        level: 'Level',
+        book: 'Sách',
+        chapter: 'Chương',
+        quiz: 'Bài kiểm tra',
+        back: 'Quay lại',
+        jlpt: 'JLPT'
+    },
     maintenance: {
         loggedInNonAdmin: 'Bạn đang đăng nhập với tài khoản không phải admin. Trong thời gian bảo trì, chỉ admin mới có thể sử dụng hệ thống.',
         note: 'Admin vẫn có thể truy cập khu vực quản trị để giám sát và hoàn tất bảo trì.'
@@ -429,6 +439,22 @@ const vi = {
     },
 
     // ============================================================================
+    // COMMON - Các text dùng chung
+    // ============================================================================
+    common: {
+        home: 'Trang chủ',
+        level: 'Level',
+        book: 'Sách',
+        chapter: 'Chương',
+        quiz: 'Bài kiểm tra',
+        back: 'Quay lại',
+        aboutMe: 'Giới thiệu',
+        jlpt: 'JLPT',
+        edit: 'Sửa',
+        loading: 'Đang lưu...'
+    },
+
+    // ============================================================================
     // HOME - Trang chủ
     // ============================================================================
     home: {
@@ -446,7 +472,8 @@ const vi = {
         smartFlashcards: 'Smart Flashcards',
         smartFlashcardsDesc: 'Thuật toán SRS - Học thông minh',
         studyStreak: 'Study Streak',
-        studyStreakDesc: 'Theo dõi tiến độ & động lực'
+        studyStreakDesc: 'Theo dõi tiến độ & động lực',
+        levelSystem: 'Hệ Thống LEVEL'
     },
 
     // ============================================================================
@@ -1473,7 +1500,7 @@ const vi = {
             selectComplete: 'Vui lòng chọn đầy đủ: Level → Book → Chapter'
         },
         saveMessages: {
-            savedSuccess: '✅ ĐÃ LƯU THÀNH CÔNG!\n\n📝 Đã lưu quiz:\n   - Tiêu đề: {title}\n   - Số câu hỏi: {count}\n   - Vị trí: {location}\n\n💾 Dữ liệu đã được lưu vào hệ thống (IndexedDB/localStorage)!',
+            savedSuccess: '✅ ĐÃ LƯU THÀNH CÔNG!\n\n📝 Đã lưu quiz:\n   - Tiêu đề: {title}\n   - Số câu hỏi: {count}\n   - Vị trí: {location}\n\n💾 Dữ liệu đã được lưu lên server (Supabase) và cache cục bộ!',
             savedWithFile: '✅ ĐÃ LƯU THÀNH CÔNG!\n\n📝 Đã lưu quiz:\n   - Tiêu đề: {title}\n   - Số câu hỏi: {count}\n   - Vị trí: {location}\n\n💾 Dữ liệu đã được lưu vào hệ thống!\n\n- ✅ Lưu file: {filename}\n- ✅ Copy JSON vào clipboard\n\n📁 Đường dẫn đầy đủ:\n{path}\n\n🎉 Hoàn tất! File đã được lưu tự động vào đúng vị trí.\n💡 Lần sau chỉ cần click "💾 Lưu Quiz" → Tự động lưu vào đúng vị trí!',
             fileOverwritten: '⚠️ Lưu ý: File đã tồn tại và đã được ghi đè.\n\n',
             savedManual: '✅ ĐÃ LƯU THÀNH CÔNG!\n\n📝 Đã lưu quiz:\n   - Tiêu đề: {title}\n   - Số câu hỏi: {count}\n   - Vị trí: {location}\n\n💾 Dữ liệu đã được lưu vào hệ thống!\n\n✅ Đã lưu quiz và tự động lưu file JSON!\n\n📁 Đường dẫn đầy đủ:\n{path}\n\n- ✅ Lưu file: {filename} (vào thư mục đã chọn)\n- ✅ Copy JSON vào clipboard\n\n🎉 Hoàn tất! File đã được lưu vào project code.',
@@ -1805,6 +1832,9 @@ const vi = {
             table: 'Table View',
             tree: 'Tree View'
         },
+        upload: {
+            audioUploadError: '❌ Lỗi khi upload audio!'
+        },
         confirm: {
             deleteSeries: 'Bạn có chắc muốn xóa bộ sách này?',
             deleteBook: 'Bạn có chắc muốn xóa sách này? Tất cả chapters sẽ bị xóa!',
@@ -1821,6 +1851,12 @@ const vi = {
             idExists: 'ID này đã tồn tại! Hãy dùng nút + để tăng số.',
             bookNameExistsSuggestion: 'Tên sách này đã tồn tại! Gợi ý: thêm " v2" hoặc " (mới)"',
             questionExists: 'Câu hỏi này đã tồn tại! Hãy kiểm tra lại.'
+        },
+        success: {
+            bookDetails: 'Đã lưu thông tin sách thành công!\n\n📚 Sách: {title}\n🆔 ID: {id}\n📚 Bộ sách: {series}',
+            saveSuccess: 'Lưu thành công!\n\n{details}',
+            chapterDetails: '📝 {action} Chương:\n   - ID: {id}\n   - Tên: {title}',
+            lessonDetails: '📚 {action} Bài học:\n   - ID: {id}\n   - Tên: {title}\n   - Loại: {type}'
         },
         forms: {
             editBook: '✏️ Sửa Sách',

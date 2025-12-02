@@ -1,9 +1,8 @@
 // src/data/level/n2/books.js
-// Danh sách tất cả sách N2 (dùng cho BookDetailPage - có contents/chapters)
-// TODO: Thêm data đầy đủ cho các sách N2
+// CLEAN MODE: No hard-coded book structures for N2.
 
-export const n2Books = {
-  // 'skm-n2-bunpou': { ... },
-  // Thêm các sách N2 khác ở đây khi có data đầy đủ
-};
+export const n2Books = {};
+
+export default n2Books;
+
 
