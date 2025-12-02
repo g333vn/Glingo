@@ -135,7 +135,7 @@ export async function getUnreadCount(user) {
  * @param {Object} user - User object
  * @returns {boolean} Success status
  */
-export function markAsRead(notificationId, user) {
+export async function markAsRead(notificationId, user) {
   if (!user) return false;
 
   try {
@@ -175,7 +175,7 @@ export function markAsRead(notificationId, user) {
  * @param {Object} user - User object
  * @returns {boolean} Success status
  */
-export function markAllAsRead(user) {
+export async function markAllAsRead(user) {
   if (!user) return false;
 
   try {
