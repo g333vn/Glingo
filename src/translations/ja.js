@@ -407,7 +407,8 @@ common: {
   edit: '編集',
   loading: '保存中...',
   back: '戻る',
-  cancel: 'キャンセル'
+  cancel: 'キャンセル',
+  delete: '削除'
 },
 
 home: {

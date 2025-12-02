@@ -415,7 +415,8 @@ common: {
   edit: 'Edit',
   loading: 'Saving...',
   back: 'Back',
-  cancel: 'Cancel'
+  cancel: 'Cancel',
+  delete: 'Delete'
 },
 
 home: {
