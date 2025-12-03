@@ -64,6 +64,7 @@ const vi = {
         title: 'Bài học',
         chapterList: 'DANH SÁCH CHƯƠNG',
         lessonList: 'Danh sách bài học',
+        emptyState: 'Chưa có nội dung nào trong sách này. Vui lòng chọn sách/chap khác hoặc quay lại sau nhé!',
         chapterBadge: 'Chương',
         lessonBadge: 'Bài học',
         questionCounter: 'Câu hỏi',

@@ -74,6 +74,7 @@ lesson: {
                       contactAdmin: '更新については管理者に連絡してください',
                         chapterList: 'チャプターリスト',
                           lessonList: 'レッスンリスト',
+                          emptyState: 'この本にはまだコンテンツがありません。別の本やチャプターを選ぶか、後でもう一度お試しください。',
                             chapterBadge: '章',
                               lessonBadge: 'レッスン',
                                 questionCounter: '問題',
