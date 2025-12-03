@@ -111,8 +111,8 @@ function LessonPage() {
       try {
         console.log(`🔍 Loading lesson: bookId=${bookId}, chapterId=${finalChapterId}, lessonId=${finalLessonId}`);
         
-        // Load lesson data from storage
-        const savedLessons = await storageManager.getLessons(bookId, finalChapterId);
+        // Load lesson data from Supabase + storage
+        const savedLessons = await storageManager.getLessons(bookId, finalChapterId, levelId);
         let lesson = savedLessons?.find(l => l.id === finalLessonId);
         
         if (lesson) {
@@ -164,7 +164,7 @@ function LessonPage() {
         }
         
         // Load chapter info
-        const savedChapters = await storageManager.getChapters(bookId);
+        const savedChapters = await storageManager.getChapters(bookId, levelId);
         const chapter = savedChapters?.find(ch => ch.id === finalChapterId);
         if (chapter) {
           setCurrentChapter(chapter);
@@ -173,8 +173,8 @@ function LessonPage() {
         // ✅ Load all quizzes for this lesson
         const allQuizzesList = [];
         
-        // Load from storage
-        let savedQuiz = await storageManager.getQuiz(bookId, finalChapterId, finalLessonId);
+        // Load from Supabase + storage
+        let savedQuiz = await storageManager.getQuiz(bookId, finalChapterId, finalLessonId, levelId);
         if (savedQuiz) {
           allQuizzesList.push(savedQuiz);
         }

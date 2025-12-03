@@ -885,6 +885,7 @@ search: {
 lesson: {
   chapterList: 'チャプターリスト',
     lessonList: 'レッスンリスト',
+      emptyState: 'この本にはまだコンテンツがありません。別の本やチャプターを選ぶか、後でもう一度お試しください。',
       chapterBadge: 'チャプター',
         lessonBadge: 'レッスン',
           questionCounter: '質問',

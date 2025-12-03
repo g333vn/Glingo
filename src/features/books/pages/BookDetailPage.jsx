@@ -171,8 +171,8 @@ function BookDetailPage() {
       if (chapterId) {
         setIsShowingLessons(true);
         
-        // ✅ Load lessons for this chapter from storage
-        const savedLessons = await storageManager.getLessons(bookId, chapterId);
+        // ✅ Load lessons for this chapter from storage + Supabase (multi-device)
+        const savedLessons = await storageManager.getLessons(bookId, chapterId, levelId);
         
         if (savedLessons && savedLessons.length > 0) {
           setBookContents(savedLessons);
@@ -184,8 +184,8 @@ function BookDetailPage() {
           console.log(`📁 No lessons found, using chapter as lesson`);
         }
         
-        // ✅ Find and set current chapter info from storage first
-        const savedChapters = await storageManager.getChapters(bookId);
+        // ✅ Find and set current chapter info (Supabase + cache)
+        const savedChapters = await storageManager.getChapters(bookId, levelId);
         let chapter = savedChapters?.find(ch => ch.id === chapterId);
         
         // Fallback to static data if not found in storage
@@ -200,18 +200,18 @@ function BookDetailPage() {
         setIsShowingLessons(false);
         setCurrentChapter(null);
         
-        // ✅ Try IndexedDB/localStorage first for chapters
-        const savedChapters = await storageManager.getChapters(bookId);
+        // ✅ Load chapters from Supabase + cache
+        const savedChapters = await storageManager.getChapters(bookId, levelId);
         
         if (savedChapters && savedChapters.length > 0) {
           // Use saved chapters (IndexedDB or localStorage or demo)
           setBookContents(savedChapters);
           console.log(`✅ Loaded ${savedChapters.length} chapters`);
           
-          // Load lessons for all chapters to calculate progress
+          // Load lessons for all chapters to calculate progress (Supabase + cache)
           const lessonsMap = {};
           for (const chapter of savedChapters) {
-            const lessons = await storageManager.getLessons(bookId, chapter.id);
+            const lessons = await storageManager.getLessons(bookId, chapter.id, levelId);
             
             if (lessons && lessons.length > 0) {
               lessonsMap[chapter.id] = lessons;

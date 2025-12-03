@@ -892,6 +892,7 @@ search: {
 lesson: {
   chapterList: 'Chapter List',
     lessonList: 'Lesson List',
+      emptyState: 'No content is available in this book yet. Please choose another book/chapter or check back later.',
       chapterBadge: 'Chapter',
         lessonBadge: 'Lesson',
           questionCounter: 'Question',
