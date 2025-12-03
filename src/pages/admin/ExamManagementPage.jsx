@@ -8,6 +8,10 @@ import Modal from '../../components/Modal.jsx';
 import MonthPicker from '../../components/admin/MonthPicker.jsx';
 import storageManager from '../../utils/localStorageManager.js';
 import { jlptExams } from '../../data/jlpt/jlptData.js';
+import {
+  saveExam as saveExamToSupabase,
+  deleteExam as deleteExamFromSupabase,
+} from '../../services/examService.js';
 
 const TEST_TYPE_ORDER = ['knowledge', 'reading', 'listening'];
 
@@ -360,19 +364,52 @@ function ExamManagementPage() {
     const sortedExams = sortExamsByYear(updatedExams);
 
     const success = await storageManager.saveExams(selectedLevel, sortedExams);
-    if (success) {
-      setExams(sortedExams);
-      setShowExamForm(false);
-      alert(`✅ ${t('examManagement.examForm.saveSuccess')}\n\n` +
-            `📝 ${editingExam ? t('examManagement.examForm.updated') : t('examManagement.examForm.added')} ${t('examManagement.examForm.savedExam')}:\n` +
-            `   - ID: ${examForm.id}\n` +
-            `   - ${t('examManagement.exams.table.title')}: ${examForm.title}\n` +
-            `   - ${t('examManagement.exams.table.date')}: ${examForm.date}\n` +
-            `   - ${t('examManagement.selectLevel')}: ${selectedLevel.toUpperCase()}\n\n` +
-            `💾 ${t('examManagement.examForm.savedToSystem')}`);
-    } else {
+    if (!success) {
       alert(`❌ ${t('examManagement.examForm.saveError')}\n\n${t('examManagement.examForm.saveErrorMessage')}`);
+      return;
     }
+
+    // ✅ NEW: Lưu exam metadata + cấu trúc (nếu có) lên Supabase để toàn hệ thống dùng chung
+    if (user && (isAdmin || isEditor)) {
+      try {
+        // Thử lấy full exam data (bao gồm knowledge/reading/listening) từ storage
+        const fullExamData = await storageManager.getExam(selectedLevel, examForm.id);
+
+        const examPayload = {
+          level: selectedLevel,
+          examId: examForm.id,
+          title: examForm.title,
+          date: examForm.date,
+          status: examForm.status,
+          imageUrl: examForm.imageUrl,
+          knowledge: fullExamData?.knowledge || { sections: [] },
+          reading: fullExamData?.reading || { sections: [] },
+          listening: fullExamData?.listening || { sections: [] },
+          config: fullExamData?.config || {},
+        };
+
+        const result = await saveExamToSupabase(examPayload, user.id);
+        if (!result.success) {
+          console.warn('[ExamManagement] Failed to save exam to Supabase:', result.error);
+        }
+      } catch (error) {
+        console.error('[ExamManagement] Unexpected error while saving exam to Supabase:', error);
+      }
+    }
+
+    setExams(sortedExams);
+    setShowExamForm(false);
+    alert(
+      `✅ ${t('examManagement.examForm.saveSuccess')}\n\n` +
+        `📝 ${editingExam ? t('examManagement.examForm.updated') : t('examManagement.examForm.added')} ${t(
+          'examManagement.examForm.savedExam',
+        )}:\n` +
+        `   - ID: ${examForm.id}\n` +
+        `   - ${t('examManagement.exams.table.title')}: ${examForm.title}\n` +
+        `   - ${t('examManagement.exams.table.date')}: ${examForm.date}\n` +
+        `   - ${t('examManagement.selectLevel')}: ${selectedLevel.toUpperCase()}\n\n` +
+        `💾 ${t('examManagement.examForm.savedToSystem')}`,
+    );
   };
 
   const handleDeleteExam = async (examId) => {
@@ -382,6 +419,19 @@ function ExamManagementPage() {
       const sortedExams = sortExamsByYear(updatedExams);
       await storageManager.saveExams(selectedLevel, sortedExams);
       await storageManager.deleteExam(selectedLevel, examId);
+
+       // ✅ NEW: Xóa exam trên Supabase (soft delete) để ẩn với toàn bộ user
+       if (user && isAdmin) {
+         try {
+           const result = await deleteExamFromSupabase(selectedLevel, examId, user.id);
+           if (!result.success) {
+             console.warn('[ExamManagement] Failed to delete exam from Supabase:', result.error);
+           }
+         } catch (error) {
+           console.error('[ExamManagement] Unexpected error while deleting exam from Supabase:', error);
+         }
+       }
+
       setExams(sortedExams);
       alert(`✅ ${t('examManagement.delete.examSuccess')}`);
     }
@@ -591,8 +641,33 @@ function ExamManagementPage() {
     
     const saveResult = await storageManager.saveExam(selectedLevel, selectedExam.id, normalizedExam);
     console.log(`💾 Save result:`, saveResult ? 'SUCCESS' : 'FAILED');
+
+    // ✅ NEW: Đồng bộ exam (bao gồm questions) lên Supabase để mọi user đều dùng chung
+    if (saveResult && user && (isAdmin || isEditor)) {
+      try {
+        const examPayload = {
+          level: selectedLevel,
+          examId: selectedExam.id,
+          title: normalizedExam.title || selectedExam.title || `JLPT ${selectedExam.id}`,
+          date: normalizedExam.date || selectedExam.date || selectedExam.id,
+          status: normalizedExam.status || selectedExam.status || 'Có sẵn',
+          imageUrl: normalizedExam.imageUrl || selectedExam.imageUrl || `/jlpt/${selectedLevel}/${selectedExam.id}.jpg`,
+          knowledge: normalizedExam.knowledge || { sections: [] },
+          reading: normalizedExam.reading || { sections: [] },
+          listening: normalizedExam.listening || { sections: [] },
+          config: normalizedExam.config || {},
+        };
+
+        const result = await saveExamToSupabase(examPayload, user.id);
+        if (!result.success) {
+          console.warn('[ExamManagement] Failed to sync exam questions to Supabase:', result.error);
+        }
+      } catch (error) {
+        console.error('[ExamManagement] Unexpected error while syncing exam questions to Supabase:', error);
+      }
+    }
     
-    // ✅ FIX: Verify sau khi save
+    // ✅ FIX: Verify sau khi save (local)
     if (saveResult) {
       const verifyExam = await storageManager.getExam(selectedLevel, selectedExam.id);
       if (verifyExam) {

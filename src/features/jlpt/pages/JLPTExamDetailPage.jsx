@@ -6,6 +6,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import { getExamById } from '../../../data/jlpt/jlptData.js';
 import storageManager from '../../../utils/localStorageManager.js';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
+import { getExam as getExamFromSupabase } from '../../../services/examService.js';
 
 const STATUS_KEYWORDS = {
   upcoming: ['sắp', 'upcoming', 'coming', 'soon', 'đang chuẩn bị', '準備', 'まもなく'],
@@ -153,8 +154,34 @@ function JLPTExamDetailPage() {
     const loadExam = async () => {
       setIsLoading(true);
       try {
-        const savedExam = await storageManager.getExam(levelId, examId);
+        // 1️⃣ Ưu tiên load từ Supabase (toàn hệ thống dùng chung)
+        const { success, data: supabaseExam } = await getExamFromSupabase(levelId, examId);
+        if (success && supabaseExam) {
+          const examMetadata = {
+            id: supabaseExam.id,
+            title: supabaseExam.title || `JLPT ${examId}`,
+            date: supabaseExam.date || examId,
+            status: supabaseExam.status || 'Có sẵn',
+            imageUrl: supabaseExam.imageUrl || `/jlpt/${levelId}/${examId}.jpg`,
+            level: supabaseExam.level || levelId,
+          };
 
+          setCurrentExam(examMetadata);
+          // Đồng bộ về storage để client có cache
+          try {
+            await storageManager.saveExam(levelId, examId, {
+              ...supabaseExam,
+              level: supabaseExam.level || levelId,
+              examId: supabaseExam.id || examId,
+            });
+          } catch (syncErr) {
+            console.warn('[JLPTExamDetailPage] Failed to sync Supabase exam to local storage:', syncErr);
+          }
+          return;
+        }
+
+        // 2️⃣ Fallback: storage (exam do admin tạo trước đó)
+        const savedExam = await storageManager.getExam(levelId, examId);
         if (savedExam) {
           console.log('✅ ExamDetailPage: Loaded exam from storage:', savedExam);
           const examMetadata = {
@@ -163,18 +190,16 @@ function JLPTExamDetailPage() {
             date: savedExam.date || examId,
             status: savedExam.status || 'Có sẵn',
             imageUrl: savedExam.imageUrl || `/jlpt/${levelId}/${examId}.jpg`,
-            level: savedExam.level || levelId
+            level: savedExam.level || levelId,
           };
           setCurrentExam(examMetadata);
-        } else {
-          console.log('📁 ExamDetailPage: Loading exam from static file...');
-          const staticExam = getExamById(levelId, examId);
-          if (staticExam) {
-            setCurrentExam(staticExam);
-          } else {
-            setCurrentExam(null);
-          }
+          return;
         }
+
+        // 3️⃣ Cuối cùng: static file
+        console.log('📁 ExamDetailPage: Loading exam from static file...');
+        const staticExam = getExamById(levelId, examId);
+        setCurrentExam(staticExam || null);
       } catch (error) {
         console.error('❌ ExamDetailPage: Error loading exam:', error);
         const staticExam = getExamById(levelId, examId);

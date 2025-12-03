@@ -129,15 +129,17 @@ export async function markAsRead(notificationId, user) {
   if (!user) return false;
 
   try {
-    // Update Supabase via RPC
+    // Update Supabase via RPC (nếu cấu hình đầy đủ).
+    // ⚠️ QUAN TRỌNG: Kể cả RPC lỗi, vẫn tiếp tục cập nhật local cache để UI hoạt động bình thường.
     const { error } = await supabase.rpc('mark_notification_read', {
       p_notification_id: notificationId,
       p_user_id: user.id
     });
 
-    if (error) {
-      console.error('[NOTIFICATIONS] ⚠️ Mark as read error:', error);
-      return false;
+    if (error && error.code === 'PGRST203') {
+      console.warn('[NOTIFICATIONS] ⚠️ RPC mark_notification_read bị trùng định nghĩa (PGRST203) – chỉ cập nhật local cache, không ghi Supabase.');
+    } else if (error) {
+      console.warn('[NOTIFICATIONS] ⚠️ Mark as read RPC error, sẽ chỉ cập nhật local cache:', error);
     }
 
     // Update local cache
@@ -166,36 +168,38 @@ export async function markAllAsRead(user) {
   if (!user) return false;
 
   try {
-    // Get user's notifications first to only mark what they can see
+    // Lấy danh sách thông báo mà user thực sự nhìn thấy
     const userNotifications = await getUserNotifications(user);
     const notificationIds = userNotifications.map(n => n.id);
+    const idSet = new Set(notificationIds);
 
-    // Update Supabase via RPC (if available)
+    // Cập nhật Supabase qua RPC (nếu function tồn tại)
     const { error: rpcError } = await supabase.rpc('mark_all_notifications_read', {
       p_user_id: user.id
     });
 
     if (rpcError) {
-      console.warn('[NOTIFICATIONS] ⚠️ RPC mark_all_notifications_read not available or failed, using fallback:', rpcError);
-      // Fallback: mark each notification individually
-      for (const notifId of notificationIds) {
-        await markAsRead(notifId, user);
+      console.warn('[NOTIFICATIONS] ⚠️ RPC mark_all_notifications_read không tồn tại hoặc lỗi, dùng fallback:', rpcError);
+
+      // Nếu lỗi không phải PGRST203 (trùng định nghĩa function) thì mới fallback gọi markAsRead
+      if (rpcError.code !== 'PGRST203') {
+        for (const notifId of notificationIds) {
+          await markAsRead(notifId, user);
+        }
       }
     }
 
-    // Update local cache - only for notifications user can see
+    // Cập nhật local cache: chỉ đánh dấu các thông báo mà user đang thấy
     const local = getAllNotificationsLocal().map(n => {
       const copy = { ...n };
-      // Only mark notifications that user has access to
-      const hasAccess = (copy.target_users && copy.target_users.includes(user.id)) ||
-                       (copy.target_roles && copy.target_roles.includes(user.role || 'user'));
-      
-      if (hasAccess) {
+
+      if (idSet.has(copy.id)) {
         if (!copy.read_by) copy.read_by = [];
         if (!copy.read_by.includes(user.id)) {
           copy.read_by.push(user.id);
         }
       }
+
       return copy;
     });
 
@@ -204,26 +208,32 @@ export async function markAllAsRead(user) {
     return true;
   } catch (error) {
     console.error('[NOTIFICATIONS] Error marking all as read:', error);
-    // Still try to update local cache even if there's an error
+
+    // Vẫn cố gắng update local cache nếu có thể
     try {
+      const userNotifications = await getUserNotifications(user);
+      const notificationIds = userNotifications.map(n => n.id);
+      const idSet = new Set(notificationIds);
+
       const local = getAllNotificationsLocal().map(n => {
         const copy = { ...n };
-        const hasAccess = (copy.target_users && copy.target_users.includes(user.id)) ||
-                         (copy.target_roles && copy.target_roles.includes(user.role || 'user'));
-        
-        if (hasAccess) {
+
+        if (idSet.has(copy.id)) {
           if (!copy.read_by) copy.read_by = [];
           if (!copy.read_by.includes(user.id)) {
             copy.read_by.push(user.id);
           }
         }
+
         return copy;
       });
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
       window.dispatchEvent(new CustomEvent('notificationsUpdated'));
     } catch (fallbackError) {
       console.error('[NOTIFICATIONS] Fallback update also failed:', fallbackError);
     }
+
     return false;
   }
 }

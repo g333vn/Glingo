@@ -9,6 +9,7 @@ import storageManager from '../../../utils/localStorageManager.js';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
 import { useAuth } from '../../../contexts/AuthContext.jsx';
 import { saveLearningProgress } from '../../../services/learningProgressService.js';
+import { getExam as getExamFromSupabase } from '../../../services/examService.js';
 import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
 
 // ✅ Helper: Lock/unlock body scroll
@@ -188,7 +189,7 @@ function ExamKnowledgePage() {
   // ✅ REMOVED: Don't lock body scroll - allow scrolling in modal and outside modal
   // useBodyScrollLock(showSubmitModal || showIncompleteWarning);
 
-  // ✅ Load exam metadata + questions (storage first, fallback static)
+  // ✅ Load exam metadata + questions (Supabase → storage → static)
   useEffect(() => {
     let isMounted = true;
 
@@ -203,22 +204,52 @@ function ExamKnowledgePage() {
     const loadExamData = async () => {
       setIsLoading(true);
       try {
-        const savedExam = await storageManager.getExam(levelId, examId);
+        // 1️⃣ Ưu tiên load đề thi từ Supabase
+        const { success, data: supabaseExam } = await getExamFromSupabase(levelId, examId);
+        let sourceExam = supabaseExam;
+
+        if (!success) {
+          console.warn('[ExamKnowledgePage] Failed to load exam from Supabase, will try local/static.');
+        }
+
+        if (!sourceExam) {
+          // 2️⃣ Fallback: storage (exam do admin tạo, cache)
+          const savedExam = await storageManager.getExam(levelId, examId);
+          if (savedExam) {
+            sourceExam = {
+              ...savedExam,
+              level: savedExam.level || levelId,
+              examId: savedExam.examId || examId,
+            };
+          }
+        } else {
+          // Đồng bộ Supabase exam về storage để có cache
+          try {
+            await storageManager.saveExam(levelId, examId, {
+              ...sourceExam,
+              level: sourceExam.level || levelId,
+              examId: sourceExam.id || examId,
+            });
+          } catch (syncErr) {
+            console.warn('[ExamKnowledgePage] Failed to sync Supabase exam to local storage:', syncErr);
+          }
+        }
 
         if (!isMounted) return;
 
-        if (savedExam) {
+        if (sourceExam) {
           const examMetadata = {
             id: examId,
-            title: savedExam.title || `JLPT ${examId}`,
-            date: savedExam.date || examId,
-            status: savedExam.status || 'Có sẵn',
-            imageUrl: savedExam.imageUrl || `/jlpt/${levelId}/${examId}.jpg`,
-            level: savedExam.level || levelId
+            title: sourceExam.title || `JLPT ${examId}`,
+            date: sourceExam.date || examId,
+            status: sourceExam.status || 'Có sẵn',
+            imageUrl: sourceExam.imageUrl || `/jlpt/${levelId}/${examId}.jpg`,
+            level: sourceExam.level || levelId,
           };
           setCurrentExam(examMetadata);
-          setExamData(normalizeExamData(savedExam));
+          setExamData(normalizeExamData(sourceExam));
         } else {
+          // 3️⃣ Cuối cùng: static file
           const staticExam = getExamById(levelId, examId);
           const staticData = getExamQuestions(levelId, examId);
           setCurrentExam(staticExam || null);

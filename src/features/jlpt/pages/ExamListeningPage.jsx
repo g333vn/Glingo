@@ -5,6 +5,7 @@ import { useExamGuard } from '../../../hooks/useExamGuard.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import { getExamById } from '../../../data/jlpt/jlptData.js';
 import { getListeningQuestions } from '../../../data/jlpt/listeningQuestionsData.js';
+import { getExam as getExamFromSupabase } from '../../../services/examService.js';
 import storageManager from '../../../utils/localStorageManager.js';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
 import { useAuth } from '../../../contexts/AuthContext.jsx';
@@ -357,34 +358,62 @@ function ExamListeningPage() {
   // ✅ REMOVED: Don't lock body scroll - allow scrolling in modal and outside modal
   // useBodyScrollLock(showSubmitModal || showIncompleteWarning);
 
-  // ✅ UPDATED: Load exam data từ storage hoặc static file
+  // ✅ UPDATED: Load exam data từ Supabase → storage → static file
   useEffect(() => {
     const loadExamData = async () => {
       setIsLoading(true);
       try {
-        // 1. Thử load từ storage trước (admin created exams)
-        const savedExam = await storageManager.getExam(levelId, examId);
-        
-        if (savedExam) {
-          // Có dữ liệu trong storage
-          console.log('✅ ExamListeningPage: Loaded exam from storage');
-          console.log('📦 Full exam data:', JSON.stringify(savedExam, null, 2));
+        // 1️⃣ Ưu tiên load đề thi từ Supabase
+        const { success, data: supabaseExam } = await getExamFromSupabase(levelId, examId);
+        let sourceExam = supabaseExam;
+
+        if (!success) {
+          console.warn('[ExamListeningPage] Failed to load exam from Supabase, will try local/static.');
+        }
+
+        if (!sourceExam) {
+          // 2️⃣ Fallback: storage (admin created exams, cached)
+          const savedExam = await storageManager.getExam(levelId, examId);
+          if (savedExam) {
+            console.log('✅ ExamListeningPage: Loaded exam from storage');
+            sourceExam = {
+              ...savedExam,
+              level: savedExam.level || levelId,
+              examId: savedExam.examId || examId,
+            };
+          }
+        } else {
+          // Đồng bộ Supabase exam về storage để có cache
+          try {
+            await storageManager.saveExam(levelId, examId, {
+              ...sourceExam,
+              level: sourceExam.level || levelId,
+              examId: sourceExam.id || examId,
+            });
+          } catch (syncErr) {
+            console.warn('[ExamListeningPage] Failed to sync Supabase exam to local storage:', syncErr);
+          }
+        }
+
+        if (sourceExam) {
+          console.log('📦 Full exam data (Supabase/local):', JSON.stringify(sourceExam, null, 2));
           console.log('📊 Exam data structure:', {
-            hasListening: !!savedExam.listening,
-            hasSections: !!savedExam.listening?.sections,
-            sectionsCount: savedExam.listening?.sections?.length || 0,
-            totalQuestions: savedExam.listening?.sections?.reduce((acc, s) => acc + (s.questions?.length || 0), 0) || 0,
-            listeningType: typeof savedExam.listening,
-            sectionsType: typeof savedExam.listening?.sections,
-            sectionsIsArray: Array.isArray(savedExam.listening?.sections)
+            hasListening: !!sourceExam.listening,
+            hasSections: !!sourceExam.listening?.sections,
+            sectionsCount: sourceExam.listening?.sections?.length || 0,
+            totalQuestions:
+              sourceExam.listening?.sections?.reduce((acc, s) => acc + (s.questions?.length || 0), 0) || 0,
+            listeningType: typeof sourceExam.listening,
+            sectionsType: typeof sourceExam.listening?.sections,
+            sectionsIsArray: Array.isArray(sourceExam.listening?.sections),
           });
-          
+
           // ✅ Đảm bảo exam data có structure đúng (knowledge, reading, listening)
           const normalizedExamData = {
-            ...savedExam,
-            knowledge: savedExam.knowledge || { sections: [] },
-            reading: savedExam.reading || { sections: [] },
-            listening: savedExam.listening || { sections: [] }
+            ...sourceExam,
+            knowledge: sourceExam.knowledge || { sections: [] },
+            reading: sourceExam.reading || { sections: [] },
+            listening: sourceExam.listening || { sections: [] },
           };
           
           // ✅ Đảm bảo listening.sections là array
@@ -399,14 +428,14 @@ function ExamListeningPage() {
             sectionsCount: normalizedExamData.listening.sections.length
           });
           
-          // Extract exam metadata từ savedExam
+          // Extract exam metadata
           const examMetadata = {
             id: examId,
-            title: savedExam.title || `JLPT ${examId}`,
-            date: savedExam.date || examId,
-            status: savedExam.status || 'Có sẵn',
-            imageUrl: savedExam.imageUrl || `/jlpt/${levelId}/${examId}.jpg`,
-            level: savedExam.level || levelId
+            title: normalizedExamData.title || `JLPT ${examId}`,
+            date: normalizedExamData.date || examId,
+            status: normalizedExamData.status || 'Có sẵn',
+            imageUrl: normalizedExamData.imageUrl || `/jlpt/${levelId}/${examId}.jpg`,
+            level: normalizedExamData.level || levelId,
           };
           
           setCurrentExam(examMetadata);
@@ -437,16 +466,15 @@ function ExamListeningPage() {
             setExamData(null);
           }
         } else {
-          // 2. Fallback về static file
+          // 3️⃣ Fallback: static file (exam cứng trong code)
           console.log('📁 ExamListeningPage: Loading exam from static file...');
           const staticExam = getExamById(levelId, examId);
           const staticData = getListeningQuestions(levelId, examId);
-          
+
           if (staticExam && staticData) {
             setCurrentExam(staticExam);
             setExamData(staticData);
           } else {
-            // Không tìm thấy ở cả 2 nơi
             setCurrentExam(null);
             setExamData(null);
           }

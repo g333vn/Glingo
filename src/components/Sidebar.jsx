@@ -4,6 +4,8 @@ import { Modal } from 'antd';
 import ProtectedLink from './ProtectedLink.jsx';
 import { jlptExams } from '../data/jlpt/jlptData.js';
 import { useExamGuard } from '../hooks/useExamGuard.jsx';
+import storageManager from '../utils/localStorageManager.js';
+import { getExamsByLevel as getExamsFromSupabase } from '../services/examService.js';
 
 function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
   const location = useLocation();
@@ -11,6 +13,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
   const [activeItem, setActiveItem] = useState(selectedCategory || null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [jlptExamList, setJlptExamList] = useState([]);
   const itemsPerPage = 14;
 
   // ✅ State cho Modal "Sắp diễn ra"
@@ -53,14 +56,76 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
   // ✅ Lấy examId hiện tại để highlight
   const currentExamId = params.examId;
 
+  // ✅ JLPT Exam Loader: Supabase → Storage → Static data
+  useEffect(() => {
+    const levelId = params.levelId;
+    const isJlptMode = location.pathname.startsWith('/jlpt/') && levelId;
+
+    if (!isJlptMode) {
+      setJlptExamList([]);
+      setCurrentPage(1);
+      return;
+    }
+
+    let isCancelled = false;
+
+    const loadJlptExams = async () => {
+      try {
+        // 1️⃣ Try Supabase (source of truth)
+        const { success, data } = await getExamsFromSupabase(levelId);
+        if (!isCancelled && success && Array.isArray(data) && data.length > 0) {
+          setJlptExamList(data);
+
+          // Sync xuống storage để cache
+          try {
+            await storageManager.saveExams(levelId, data);
+          } catch (syncErr) {
+            console.warn('[Sidebar] Failed to sync Supabase exams to local storage:', syncErr);
+          }
+          return;
+        }
+
+        // 2️⃣ Fallback: storage (admin-created exams)
+        const savedExams = await storageManager.getExams(levelId);
+        if (!isCancelled && Array.isArray(savedExams) && savedExams.length > 0) {
+          setJlptExamList(savedExams);
+          return;
+        }
+
+        // 3️⃣ Final fallback: static config (jlptData)
+        const staticExams = jlptExams[levelId] || [];
+        if (!isCancelled) {
+          setJlptExamList(staticExams);
+        }
+      } catch (error) {
+        console.error('[Sidebar] Error loading JLPT exams:', error);
+
+        // Fallback chain when error
+        const levelIdFallback = params.levelId;
+        const savedExams = await storageManager.getExams(levelIdFallback);
+        if (!isCancelled && Array.isArray(savedExams) && savedExams.length > 0) {
+          setJlptExamList(savedExams);
+        } else if (!isCancelled) {
+          setJlptExamList(jlptExams[levelIdFallback] || []);
+        }
+      }
+    };
+
+    loadJlptExams();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [location.pathname, params.levelId]);
+
   const getMenuItems = () => {
     const levelId = params.levelId;
     const isJlptMode = location.pathname.startsWith('/jlpt/') && levelId;
 
     if (isJlptMode) {
-      const exams = jlptExams[levelId] || [];
+      const exams = jlptExamList || [];
       return exams.map(exam => ({
-        name: `${exam.title} (${exam.date})`,
+        name: `${exam.title} (${exam.date || exam.id})`,
         id: exam.id,
         status: exam.status
       }));
