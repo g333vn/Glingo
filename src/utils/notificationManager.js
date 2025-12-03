@@ -166,22 +166,35 @@ export async function markAllAsRead(user) {
   if (!user) return false;
 
   try {
-    // Update Supabase via RPC
-    const { error } = await supabase.rpc('mark_all_notifications_read', {
+    // Get user's notifications first to only mark what they can see
+    const userNotifications = await getUserNotifications(user);
+    const notificationIds = userNotifications.map(n => n.id);
+
+    // Update Supabase via RPC (if available)
+    const { error: rpcError } = await supabase.rpc('mark_all_notifications_read', {
       p_user_id: user.id
     });
 
-    if (error) {
-      console.error('[NOTIFICATIONS] ⚠️ Mark all as read error:', error);
-      return false;
+    if (rpcError) {
+      console.warn('[NOTIFICATIONS] ⚠️ RPC mark_all_notifications_read not available or failed, using fallback:', rpcError);
+      // Fallback: mark each notification individually
+      for (const notifId of notificationIds) {
+        await markAsRead(notifId, user);
+      }
     }
 
-    // Update local cache
+    // Update local cache - only for notifications user can see
     const local = getAllNotificationsLocal().map(n => {
       const copy = { ...n };
-      if (!copy.read_by) copy.read_by = [];
-      if (!copy.read_by.includes(user.id)) {
-        copy.read_by.push(user.id);
+      // Only mark notifications that user has access to
+      const hasAccess = (copy.target_users && copy.target_users.includes(user.id)) ||
+                       (copy.target_roles && copy.target_roles.includes(user.role || 'user'));
+      
+      if (hasAccess) {
+        if (!copy.read_by) copy.read_by = [];
+        if (!copy.read_by.includes(user.id)) {
+          copy.read_by.push(user.id);
+        }
       }
       return copy;
     });
@@ -191,6 +204,26 @@ export async function markAllAsRead(user) {
     return true;
   } catch (error) {
     console.error('[NOTIFICATIONS] Error marking all as read:', error);
+    // Still try to update local cache even if there's an error
+    try {
+      const local = getAllNotificationsLocal().map(n => {
+        const copy = { ...n };
+        const hasAccess = (copy.target_users && copy.target_users.includes(user.id)) ||
+                         (copy.target_roles && copy.target_roles.includes(user.role || 'user'));
+        
+        if (hasAccess) {
+          if (!copy.read_by) copy.read_by = [];
+          if (!copy.read_by.includes(user.id)) {
+            copy.read_by.push(user.id);
+          }
+        }
+        return copy;
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
+      window.dispatchEvent(new CustomEvent('notificationsUpdated'));
+    } catch (fallbackError) {
+      console.error('[NOTIFICATIONS] Fallback update also failed:', fallbackError);
+    }
     return false;
   }
 }

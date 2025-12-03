@@ -84,13 +84,34 @@ function NotificationBell() {
   }, [user]);
 
   const handleMarkAllRead = useCallback(async () => {
-    if (user) {
-      await markAllAsRead(user);
-      // Reload notifications from server to update UI
-      const userNotifs = await getUserNotifications(user);
-      const unread = await getUnreadCount(user);
-      setAllNotifications(userNotifs);
-      setUnreadCount(unread);
+    if (!user) return;
+    
+    try {
+      const success = await markAllAsRead(user);
+      if (success) {
+        // Reload notifications from server to update UI
+        const userNotifs = await getUserNotifications(user);
+        const unread = await getUnreadCount(user);
+        setAllNotifications(userNotifs);
+        setUnreadCount(unread);
+      } else {
+        // Even if markAllAsRead returns false, try to reload to sync state
+        const userNotifs = await getUserNotifications(user);
+        const unread = await getUnreadCount(user);
+        setAllNotifications(userNotifs);
+        setUnreadCount(unread);
+      }
+    } catch (error) {
+      console.error('[NOTIFICATIONS] Error in handleMarkAllRead:', error);
+      // Still try to reload to sync state
+      try {
+        const userNotifs = await getUserNotifications(user);
+        const unread = await getUnreadCount(user);
+        setAllNotifications(userNotifs);
+        setUnreadCount(unread);
+      } catch (reloadError) {
+        console.error('[NOTIFICATIONS] Error reloading notifications:', reloadError);
+      }
     }
   }, [user]);
 
@@ -208,8 +229,9 @@ function NotificationBell() {
       const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
       filtered = filtered.filter(notif => {
-        if (!notif.createdAt) return false;
-        const notifDate = new Date(notif.createdAt);
+        const createdAt = notif.created_at || notif.createdAt;
+        if (!createdAt) return false;
+        const notifDate = new Date(createdAt);
         
         switch (timeFilter) {
           case 'today':
@@ -370,7 +392,7 @@ function NotificationBell() {
             ) : (
               <div className="divide-y divide-black">
                 {translatedNotifications.map((notif) => {
-                  const isRead = user && notif.readBy && notif.readBy.includes(user.id);
+                  const isRead = user && notif.read_by && notif.read_by.includes(user.id);
                   
                   return (
                     <div
@@ -415,9 +437,9 @@ function NotificationBell() {
                               </span>
                             </div>
                           </div>
-                          {notif.createdAt && (
+                          {(notif.created_at || notif.createdAt) && (
                             <p className="text-[10px] text-gray-500 font-bold">
-                              {new Date(notif.createdAt).toLocaleDateString(navigator.language || 'vi-VN', {
+                              {new Date(notif.created_at || notif.createdAt).toLocaleDateString(navigator.language || 'vi-VN', {
                                 day: '2-digit',
                                 month: '2-digit',
                                 year: 'numeric',
