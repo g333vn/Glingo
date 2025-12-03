@@ -11,6 +11,8 @@ import { jlptExams } from '../../data/jlpt/jlptData.js';
 import {
   saveExam as saveExamToSupabase,
   deleteExam as deleteExamFromSupabase,
+  getExam as getExamFromSupabase,
+  getExamsByLevel as getExamsFromSupabase,
 } from '../../services/examService.js';
 
 const TEST_TYPE_ORDER = ['knowledge', 'reading', 'listening'];
@@ -231,16 +233,35 @@ function ExamManagementPage() {
   };
 
   const loadExams = async () => {
+    // 1️⃣ Ưu tiên lấy từ local cache (IndexedDB/localStorage)
     const savedExams = await storageManager.getExams(selectedLevel);
     if (savedExams && savedExams.length > 0) {
-      // ✅ FIX: Sort theo năm mới nhất trước
       setExams(sortExamsByYear(savedExams));
-    } else {
-      // Fallback to default data
-      const defaultExams = jlptExams[selectedLevel] || [];
-      // ✅ FIX: Sort default exams cũng theo năm mới nhất trước
-      setExams(sortExamsByYear(defaultExams));
+      return;
     }
+
+    // 2️⃣ Nếu local trống, thử lấy từ Supabase (nguồn chung cho toàn hệ thống)
+    try {
+      const { success, data } = await getExamsFromSupabase(selectedLevel);
+      if (success && Array.isArray(data) && data.length > 0) {
+        const sorted = sortExamsByYear(data);
+        setExams(sorted);
+
+        // Sync về local để admin làm việc offline nhanh hơn
+        try {
+          await storageManager.saveExams(selectedLevel, sorted);
+        } catch (syncErr) {
+          console.warn('[ExamManagementPage] Failed to sync Supabase exams to local storage:', syncErr);
+        }
+        return;
+      }
+    } catch (error) {
+      console.error('[ExamManagementPage] Error loading exams from Supabase:', error);
+    }
+
+    // 3️⃣ Fallback cuối cùng: dữ liệu tĩnh (nếu còn)
+    const defaultExams = jlptExams[selectedLevel] || [];
+    setExams(sortExamsByYear(defaultExams));
   };
 
   const loadLevelConfig = async () => {
@@ -446,8 +467,40 @@ function ExamManagementPage() {
 
   const loadExamData = async () => {
     if (!selectedExam) return;
-    
-    const data = await storageManager.getExam(selectedLevel, selectedExam.id);
+
+    // 1️⃣ Ưu tiên lấy exam đầy đủ từ local cache (nếu đã có)
+    let data = await storageManager.getExam(selectedLevel, selectedExam.id);
+
+    // 2️⃣ Nếu local chưa có dữ liệu chi tiết, thử load từ Supabase
+    if (!data) {
+      try {
+        const { success, data: supabaseExam } = await getExamFromSupabase(selectedLevel, selectedExam.id);
+        if (success && supabaseExam) {
+          data = {
+            level: supabaseExam.level || selectedLevel,
+            examId: supabaseExam.id || selectedExam.id,
+            title: supabaseExam.title || selectedExam.title || `JLPT ${selectedExam.id}`,
+            date: supabaseExam.date || selectedExam.date || selectedExam.id,
+            status: supabaseExam.status || selectedExam.status || 'Có sẵn',
+            imageUrl: supabaseExam.imageUrl || selectedExam.imageUrl || `/jlpt/${selectedLevel}/${selectedExam.id}.jpg`,
+            knowledge: supabaseExam.knowledge || { sections: [] },
+            reading: supabaseExam.reading || { sections: [] },
+            listening: supabaseExam.listening || { sections: [] },
+            config: supabaseExam.config || {},
+          };
+
+          // Sync về local để lần sau load nhanh hơn
+          try {
+            await storageManager.saveExam(selectedLevel, selectedExam.id, data);
+          } catch (syncErr) {
+            console.warn('[ExamManagementPage] Failed to sync Supabase exam detail to local storage:', syncErr);
+          }
+        }
+      } catch (error) {
+        console.error('[ExamManagementPage] Error loading exam detail from Supabase:', error);
+      }
+    }
+
     if (data) {
       // ✅ FIX: Tự động set timeLimit cho sections không có timeLimit
       const updatedData = { ...data };
