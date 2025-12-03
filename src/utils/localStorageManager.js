@@ -5,6 +5,7 @@
 
 import indexedDBManager from './indexedDBManager.js';
 import * as contentService from '../services/contentService.js';
+import * as examService from '../services/examService.js';
 
 /**
  * Storage Strategy:
@@ -882,13 +883,57 @@ class LocalStorageManager {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
-    // Try IndexedDB first
+    // 1. Try Supabase first (nguồn dữ liệu chuẩn, dùng chung cho mọi user)
+    try {
+      const { success, data } = await examService.getExamsByLevel(level);
+
+      if (success) {
+        const supaExams = Array.isArray(data) ? data : [];
+
+        if (supaExams.length > 0) {
+          console.log('[StorageManager.getExams] ✅ Loaded', supaExams.length, 'exams from Supabase for level', level);
+
+          // Cache to IndexedDB
+          if (this.useIndexedDB) {
+            await indexedDBManager.saveExams(level, supaExams);
+          }
+
+          // Cache to localStorage
+          if (this.storageAvailable) {
+            const key = `adminExams_${level}`;
+            localStorage.setItem(key, JSON.stringify(supaExams));
+          }
+
+          return supaExams;
+        }
+
+        // Supabase trả về rỗng → đồng bộ xoá cache local cho level này
+        console.log('[StorageManager.getExams] ℹ️ Supabase has 0 exams for level', level, '- clearing local caches');
+
+        if (this.useIndexedDB) {
+          await indexedDBManager.saveExams(level, []);
+        }
+
+        if (this.storageAvailable) {
+          const key = `adminExams_${level}`;
+          localStorage.removeItem(key);
+        }
+
+        return [];
+      }
+
+      console.log('[StorageManager.getExams] ⚠️ Supabase request not successful, will try local caches');
+    } catch (err) {
+      console.warn('[StorageManager.getExams] ❌ Supabase getExamsByLevel failed, trying local:', err);
+    }
+    
+    // 2. Try IndexedDB (local cache)
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getExams(level);
       if (result) return result;
     }
 
-    // Fallback to localStorage
+    // 3. Fallback to localStorage
     if (this.storageAvailable) {
       const key = `adminExams_${level}`;
       const data = localStorage.getItem(key);
@@ -1014,13 +1059,32 @@ class LocalStorageManager {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
-    // Try IndexedDB first
+    // 1. Try Supabase first (nguồn chuẩn)
+    try {
+      const { success, data } = await examService.getExam(level, examId);
+      if (success && data) {
+        // Cache to IndexedDB
+        if (this.useIndexedDB) {
+          await indexedDBManager.saveExam(level, examId, data);
+        }
+        // Cache to localStorage
+        if (this.storageAvailable) {
+          const key = `adminExam_${level}_${examId}`;
+          localStorage.setItem(key, JSON.stringify(data));
+        }
+        return data;
+      }
+    } catch (err) {
+      console.warn('[StorageManager.getExam] ❌ Supabase getExam failed, trying local:', err);
+    }
+    
+    // 2. Try IndexedDB (local cache)
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getExam(level, examId);
       if (result) return result;
     }
 
-    // Fallback to localStorage
+    // 3. Fallback to localStorage
     if (this.storageAvailable) {
       const key = `adminExam_${level}_${examId}`;
       const data = localStorage.getItem(key);

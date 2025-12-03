@@ -221,7 +221,7 @@ function DictionaryButton() {
 
       {/* ✅ IMPROVED: First-Time Hint Popup - Hiển thị 2 bước rõ ràng */}
       {showFirstTimeHint && (
-        <div className="fixed top-40 md:top-44 lg:top-48 right-6 z-[60] animate-slide-in">
+        <div className="fixed top-20 md:top-24 lg:top-28 right-6 z-[60] animate-slide-in">
           <div className="relative">
             {/* Main Tooltip Card - ✨ NEO BRUTALISM */}
             <div className="relative bg-yellow-300 text-black px-5 py-4 rounded-2xl border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] max-w-sm">
