@@ -31,14 +31,42 @@ function LevelN2Page() {
                     return true;
                 });
 
+            // 1. Lấy books từ storage/Supabase
             const savedBooksRaw = await storageManager.getBooks('n2');
-            const cleanedSaved = filterDemoAndExtraBooks(savedBooksRaw);
+            const cleanedSavedBooks = filterDemoAndExtraBooks(savedBooksRaw);
 
-            if (cleanedSaved && cleanedSaved.length > 0) {
-                setN2Books(cleanedSaved);
-                await storageManager.saveBooks('n2', cleanedSaved);
-                console.log(`✅ Loaded ${cleanedSaved.length} N2 books (demo/extra removed)`);
+            // 1b. Lấy danh sách series để gán lại category (tên bộ sách) nếu thiếu
+            let booksWithCategory = cleanedSavedBooks;
+            try {
+                const seriesList = await storageManager.getSeries('n2');
+                if (Array.isArray(seriesList) && seriesList.length > 0) {
+                    const seriesMap = {};
+                    seriesList.forEach(s => {
+                        if (s && s.id) {
+                            seriesMap[s.id] = s.name || s.id;
+                        }
+                    });
+
+                    booksWithCategory = cleanedSavedBooks.map(book => {
+                        if (book.category && book.category.length > 0) return book;
+                        const seriesName = book.seriesId ? seriesMap[book.seriesId] : null;
+                        return {
+                            ...book,
+                            category: seriesName || book.category || null,
+                        };
+                    });
+                }
+            } catch (err) {
+                console.warn('[LevelN2Page] ⚠️ Could not load series for category mapping:', err);
+            }
+
+            if (booksWithCategory && booksWithCategory.length > 0) {
+                setN2Books(booksWithCategory);
+                // Ghi đè lại storage để xoá sạch demo/extra cũ và lưu category đã khôi phục
+                await storageManager.saveBooks('n2', booksWithCategory);
+                console.log(`✅ Loaded ${booksWithCategory.length} N2 books (demo/extra removed, categories synced)`);
             } else {
+                // 2. Không có data trong storage → dùng metadata mặc định (đã được clean)
                 const cleanedDefaults = filterDemoAndExtraBooks(n2BooksMetadata);
                 setN2Books(cleanedDefaults);
                 await storageManager.saveBooks('n2', cleanedDefaults);
