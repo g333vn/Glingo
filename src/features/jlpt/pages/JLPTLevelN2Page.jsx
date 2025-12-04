@@ -152,7 +152,8 @@ function JLPTLevelN2Page() {
     const getMemeImage = (indexInPage) => {
         // indexInPage từ 0-9, chuyển thành 1-10 và lặp lại
         const memeNumber = String((indexInPage % 10) + 1).padStart(2, '0');
-        return `/src/features/jlpt/components/meme/${memeNumber}.png`;
+        // Ảnh được đặt trong public/jlpt/meme → build & deploy vẫn giữ nguyên đường dẫn
+        return `/jlpt/meme/${memeNumber}.png`;
     };
 
     const getStatusDisplay = (status) => {
