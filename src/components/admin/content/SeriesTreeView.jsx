@@ -17,6 +17,10 @@ function SeriesTreeView({
   onDeleteBook,
   onDeleteChapter,
   onDeleteLesson,
+  onAddBook, // ✅ NEW: Add book handler
+  onAddChapter, // ✅ NEW: Add chapter handler
+  onAddLesson, // ✅ NEW: Add lesson handler
+  onAddQuiz, // ✅ NEW: Add quiz handler
   onDeleteQuiz // ✅ NEW: Delete quiz handler
 }) {
   const [expandedNodes, setExpandedNodes] = useState({});
@@ -177,17 +181,26 @@ function SeriesTreeView({
                               ({bookChapters.length} Chapters, {bookLessons} Lessons, {bookQuizzes} Quizzes)
                             </span>
                             <div className="flex gap-1 ml-auto">
+                              {onAddChapter && (
+                                <button
+                                  onClick={() => onAddChapter(book)}
+                                  className="px-2 py-0.5 bg-green-500 text-white rounded text-xs hover:bg-green-600 transition-colors"
+                                  title="Add Chapter"
+                                >
+                                  ➕ Chapter
+                                </button>
+                              )}
                               <button
                                 onClick={() => onEditBook(book)}
-                                className="px-2 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
-                                title="Edit"
+                                className="px-2 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors"
+                                title="Edit Book"
                               >
                                 ✏️
                               </button>
                               <button
                                 onClick={() => onDeleteBook(book.id)}
-                                className="px-2 py-0.5 bg-red-500 text-white rounded text-xs hover:bg-red-600"
-                                title="Delete"
+                                className="px-2 py-0.5 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors"
+                                title="Delete Book"
                               >
                                 🗑️
                               </button>
@@ -211,7 +224,7 @@ function SeriesTreeView({
 
                                   return (
                                     <div key={chapter.id} className="pl-0">
-                                      {/* Chapter Node */}
+                                      {/* Chapter Node - Level 2 */}
                                       <div className="flex items-center gap-2 py-1 hover:bg-gray-50 rounded">
                                         <button
                                           onClick={() => toggleNode(`chapter-${book.id}-${chapter.id}`)}
@@ -219,29 +232,38 @@ function SeriesTreeView({
                                         >
                                           {isChapterExpanded ? '▼' : '▶'}
                                         </button>
-                                        <span className="text-gray-600">📑 {chapter.title || chapter.id}</span>
+                                        <span className="text-gray-600 font-medium">📑 {chapter.title || chapter.id}</span>
                                         <span className="text-xs text-gray-500">
                                           ({lessons.length} Lessons, {chapterQuizzes} Quizzes)
                                         </span>
                                         <div className="flex gap-1 ml-auto">
+                                          {onAddLesson && (
+                                            <button
+                                              onClick={() => onAddLesson(book, chapter)}
+                                              className="px-2 py-0.5 bg-purple-500 text-white rounded text-xs hover:bg-purple-600 transition-colors"
+                                              title="Add Lesson"
+                                            >
+                                              ➕ Lesson
+                                            </button>
+                                          )}
                                           <button
                                             onClick={() => onEditChapter(chapter)}
-                                            className="px-2 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
-                                            title="Edit"
+                                            className="px-2 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors"
+                                            title="Edit Chapter"
                                           >
                                             ✏️
                                           </button>
                                           <button
                                             onClick={() => onDeleteChapter(book.id, chapter.id)}
-                                            className="px-2 py-0.5 bg-red-500 text-white rounded text-xs hover:bg-red-600"
-                                            title="Delete"
+                                            className="px-2 py-0.5 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors"
+                                            title="Delete Chapter"
                                           >
                                             🗑️
                                           </button>
                                         </div>
                                       </div>
 
-                                      {/* Lessons in Chapter */}
+                                      {/* Lessons in Chapter - Level 3 */}
                                       {isChapterExpanded && (
                                         <div className="pl-6 space-y-1">
                                           {lessons.length === 0 ? (
@@ -250,11 +272,15 @@ function SeriesTreeView({
                                             lessons.map(lesson => {
                                               const hasQuiz = !!quizzesData[`${book.id}_${chapter.id}_${lesson.id}`];
                                               return (
-                                                <div key={lesson.id} className="flex items-center gap-2 py-0.5 hover:bg-gray-50 rounded pl-6">
-                                                  <span className="text-gray-500">📖 {lesson.title || lesson.id}</span>
-                                                  {hasQuiz && (
+                                                <div key={lesson.id} className="flex items-center gap-2 py-1 hover:bg-gray-50 rounded pl-2 border-l-2 border-dashed border-gray-300">
+                                                  <span className="text-gray-600 text-sm">📖 {lesson.title || lesson.id}</span>
+                                                  
+                                                  {/* Quiz Status & Actions */}
+                                                  {hasQuiz ? (
                                                     <>
-                                                      <span className="text-xs text-green-600">✅ Quiz</span>
+                                                      <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-semibold border border-green-300">
+                                                        ✅ Quiz
+                                                      </span>
                                                       {onDeleteQuiz && (
                                                         <button
                                                           onClick={() => {
@@ -262,26 +288,41 @@ function SeriesTreeView({
                                                               onDeleteQuiz(book, chapter, lesson);
                                                             }
                                                           }}
-                                                          className="px-2 py-0.5 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                                                          className="px-2 py-0.5 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors"
                                                           title="Delete Quiz"
                                                         >
                                                           🗑️ Quiz
                                                         </button>
                                                       )}
                                                     </>
+                                                  ) : (
+                                                    <>
+                                                      <span className="text-xs text-gray-400">(No quiz)</span>
+                                                      {onAddQuiz && (
+                                                        <button
+                                                          onClick={() => onAddQuiz(book, chapter, lesson)}
+                                                          className="px-2 py-0.5 bg-orange-500 text-white rounded text-xs hover:bg-orange-600 transition-colors"
+                                                          title="Add Quiz"
+                                                        >
+                                                          ➕ Quiz
+                                                        </button>
+                                                      )}
+                                                    </>
                                                   )}
+                                                  
+                                                  {/* Lesson Actions */}
                                                   <div className="flex gap-1 ml-auto">
                                                     <button
                                                       onClick={() => onEditLesson(lesson)}
-                                                      className="px-2 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
-                                                      title="Edit"
+                                                      className="px-2 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors"
+                                                      title="Edit Lesson"
                                                     >
                                                       ✏️
                                                     </button>
                                                     <button
                                                       onClick={() => onDeleteLesson(book.id, chapter.id, lesson.id)}
-                                                      className="px-2 py-0.5 bg-red-500 text-white rounded text-xs hover:bg-red-600"
-                                                      title="Delete"
+                                                      className="px-2 py-0.5 bg-red-500 text-white rounded text-xs hover:bg-red-600 transition-colors"
+                                                      title="Delete Lesson"
                                                     >
                                                       🗑️
                                                     </button>

@@ -287,16 +287,20 @@ function SeriesCard({
                     </div>
 
                     {isBookExpanded && (
-                      <div className="mt-3 border-t-[2px] border-dashed border-black pt-2">
-                        <div className="text-xs font-bold text-gray-800 mb-1">
-                          📑 {t('contentManagement.series.chapters')}
+                      <div className="mt-3 border-t-[2px] border-dashed border-black pt-3">
+                        {/* Chapter Section Header */}
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="text-xs font-bold text-gray-800 uppercase tracking-wide">
+                            📑 {t('contentManagement.series.chapters')} ({bookChapters.length})
+                          </h5>
                         </div>
+                        
                         {bookChapters.length === 0 ? (
-                          <p className="text-xs text-gray-500 italic">
+                          <p className="text-xs text-gray-500 italic pl-4">
                             {t('contentManagement.empty.noChapters')}
                           </p>
                         ) : (
-                          <ul className="space-y-1 text-xs">
+                          <div className="space-y-2 pl-2">
                             {bookChapters.map((chapter) => {
                               const chapterKey = `${book.id}_${chapter.id}`;
                               const lessons = lessonsData[chapterKey] || [];
@@ -310,13 +314,13 @@ function SeriesCard({
                               const isChapterExpanded = !!expandedChapters[chapterKey];
 
                               return (
-                                <li
+                                <div
                                   key={chapter.id}
-                                  className="bg-yellow-50 border border-black/40 rounded px-2 py-1 space-y-1"
+                                  className="bg-yellow-50 border-[2px] border-black/30 rounded-lg p-2 hover:bg-yellow-100 transition-colors"
                                 >
-                                  {/* Header dòng chương */}
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
+                                  {/* Chapter Header - Level 2 */}
+                                  <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center gap-2 flex-1">
                                       <button
                                         type="button"
                                         onClick={(e) => {
@@ -326,23 +330,23 @@ function SeriesCard({
                                             [chapterKey]: !prev[chapterKey]
                                           }));
                                         }}
-                                        className="text-gray-700 font-mono text-xs"
+                                        className="text-gray-700 font-mono text-xs w-4 text-center hover:text-black"
                                       >
                                         {isChapterExpanded ? '▼' : '▶'}
                                       </button>
-                                      <span>📄 {chapter.title || chapter.id}</span>
+                                      <span className="font-semibold text-gray-800 text-sm">📄 {chapter.title || chapter.id}</span>
+                                      <span className="text-[10px] text-gray-600">
+                                        ({lessons.length} {t('contentManagement.lessons.title')} | {chapterQuizzes} {t('contentManagement.quizzes.title')})
+                                      </span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-[11px] text-gray-600">
-                                      <span>{lessons.length} {t('contentManagement.lessons.title')}</span>
-                                      <span>|</span>
-                                      <span>{chapterQuizzes} {t('contentManagement.quizzes.title')}</span>
+                                    <div className="flex items-center gap-1">
                                       {onAddLesson && (
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             onAddLesson(book, chapter);
                                           }}
-                                          className="ml-2 px-2 py-0.5 bg-purple-500 text-white rounded-md border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[10px] font-black uppercase"
+                                          className="px-2 py-1 bg-purple-500 text-white rounded-md border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-[10px] font-black uppercase hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
                                           title={t('contentManagement.series.addLesson')}
                                         >
                                           ➕ {t('contentManagement.lessons.title')}
@@ -354,7 +358,7 @@ function SeriesCard({
                                             e.stopPropagation();
                                             onEditChapter(chapter, book);
                                           }}
-                                          className="px-2 py-0.5 bg-blue-500 text-white rounded-md border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[10px] font-black uppercase"
+                                          className="px-2 py-1 bg-blue-500 text-white rounded-md border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-[10px] font-black hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
                                           title={t('contentManagement.series.editChapter')}
                                         >
                                           ✏️
@@ -366,7 +370,7 @@ function SeriesCard({
                                             e.stopPropagation();
                                             onDeleteChapter(book.id, chapter.id);
                                           }}
-                                          className="px-2 py-0.5 bg-red-500 text-white rounded-md border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[10px] font-black uppercase"
+                                          className="px-2 py-1 bg-red-500 text-white rounded-md border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-[10px] font-black hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
                                           title={t('contentManagement.series.deleteChapter')}
                                         >
                                           🗑️
@@ -375,81 +379,104 @@ function SeriesCard({
                                     </div>
                                   </div>
 
-                                  {/* Danh sách bài trong chương (dropdown) */}
-                                  {isChapterExpanded && lessons.length > 0 && (
-                                    <ul className="pl-4 border-l-2 border-dashed border-black/50 space-y-0.5 text-[11px] text-gray-700">
-                                      {lessons.map((lesson) => (
-                                        <li key={lesson.id} className="flex items-center justify-between">
-                                          <div className="flex items-center gap-1">
-                                            <span>📘</span>
-                                            <span>{lesson.title || lesson.id}</span>
-                                          </div>
-                                          <div className="flex items-center gap-1">
-                                            {quizzesData[`${book.id}_${chapter.id}_${lesson.id}`] ? (
-                                              <>
-                                                <span className="text-green-700 font-semibold">✅ Quiz</span>
-                                                {onDeleteQuiz && (
-                                                  <button
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      if (confirm(t('contentManagement.confirm.deleteQuiz', { title: lesson.title || lesson.id }))) {
-                                                        onDeleteQuiz(book, chapter, lesson);
-                                                      }
-                                                    }}
-                                                    className="px-2 py-0.5 bg-red-500 text-white rounded-md border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[10px] font-black uppercase"
-                                                    title={t('contentManagement.series.deleteQuiz')}
-                                                  >
-                                                    🗑️
-                                                  </button>
-                                                )}
-                                              </>
-                                            ) : (
-                                              onAddQuiz && (
-                                                <button
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onAddQuiz(book, chapter, lesson);
-                                                  }}
-                                                  className="px-2 py-0.5 bg-orange-500 text-white rounded-md border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[10px] font-black uppercase"
-                                                  title={t('contentManagement.series.addQuiz')}
-                                                >
-                                                  ➕ {t('contentManagement.quizzes.title')}
-                                                </button>
-                                              )
-                                            )}
-                                            {onEditLesson && (
-                                              <button
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  onEditLesson(lesson, book, chapter);
-                                                }}
-                                                className="px-2 py-0.5 bg-blue-500 text-white rounded-md border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[10px] font-black uppercase"
-                                                title={t('contentManagement.series.editLesson')}
+                                  {/* Lessons List - Level 3 */}
+                                  {isChapterExpanded && (
+                                    <div className="mt-2 pl-4 border-l-2 border-dashed border-black/40">
+                                      {lessons.length === 0 ? (
+                                        <p className="text-[10px] text-gray-500 italic py-1">
+                                          {t('contentManagement.empty.noLessons') || 'Chưa có bài học'}
+                                        </p>
+                                      ) : (
+                                        <div className="space-y-1.5">
+                                          {lessons.map((lesson) => {
+                                            const hasQuiz = !!quizzesData[`${book.id}_${chapter.id}_${lesson.id}`];
+                                            return (
+                                              <div
+                                                key={lesson.id}
+                                                className="bg-white border border-black/20 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors"
                                               >
-                                                ✏️
-                                              </button>
-                                            )}
-                                            {onDeleteLesson && (
-                                              <button
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  onDeleteLesson(book.id, chapter.id, lesson.id);
-                                                }}
-                                                className="px-2 py-0.5 bg-red-500 text-white rounded-md border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[10px] font-black uppercase"
-                                                title={t('contentManagement.series.deleteLesson')}
-                                              >
-                                                🗑️
-                                              </button>
-                                            )}
-                                          </div>
-                                        </li>
-                                      ))}
-                                    </ul>
+                                                <div className="flex items-center justify-between">
+                                                  {/* Lesson Info */}
+                                                  <div className="flex items-center gap-2 flex-1">
+                                                    <span className="text-gray-700 text-xs font-medium">📘 {lesson.title || lesson.id}</span>
+                                                    {hasQuiz && (
+                                                      <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-semibold border border-green-300">
+                                                        ✅ Quiz
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                  
+                                                  {/* Lesson Actions */}
+                                                  <div className="flex items-center gap-1">
+                                                    {/* Quiz Actions */}
+                                                    {hasQuiz ? (
+                                                      onDeleteQuiz && (
+                                                        <button
+                                                          onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (confirm(t('contentManagement.confirm.deleteQuiz', { title: lesson.title || lesson.id }))) {
+                                                              onDeleteQuiz(book, chapter, lesson);
+                                                            }
+                                                          }}
+                                                          className="px-1.5 py-0.5 bg-red-500 text-white rounded border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[9px] font-black hover:bg-red-600 transition-colors"
+                                                          title={t('contentManagement.series.deleteQuiz')}
+                                                        >
+                                                          🗑️ Quiz
+                                                        </button>
+                                                      )
+                                                    ) : (
+                                                      onAddQuiz && (
+                                                        <button
+                                                          onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onAddQuiz(book, chapter, lesson);
+                                                          }}
+                                                          className="px-1.5 py-0.5 bg-orange-500 text-white rounded border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[9px] font-black hover:bg-orange-600 transition-colors"
+                                                          title={t('contentManagement.series.addQuiz')}
+                                                        >
+                                                          ➕ Quiz
+                                                        </button>
+                                                      )
+                                                    )}
+                                                    
+                                                    {/* Lesson Actions */}
+                                                    {onEditLesson && (
+                                                      <button
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          onEditLesson(lesson, book, chapter);
+                                                        }}
+                                                        className="px-1.5 py-0.5 bg-blue-500 text-white rounded border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[9px] font-black hover:bg-blue-600 transition-colors"
+                                                        title={t('contentManagement.series.editLesson')}
+                                                      >
+                                                        ✏️
+                                                      </button>
+                                                    )}
+                                                    {onDeleteLesson && (
+                                                      <button
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          onDeleteLesson(book.id, chapter.id, lesson.id);
+                                                        }}
+                                                        className="px-1.5 py-0.5 bg-red-500 text-white rounded border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[9px] font-black hover:bg-red-600 transition-colors"
+                                                        title={t('contentManagement.series.deleteLesson')}
+                                                      >
+                                                        🗑️
+                                                      </button>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
                                   )}
-                                </li>
+                                </div>
                               );
                             })}
-                          </ul>
+                          </div>
                         )}
                       </div>
                     )}

@@ -222,12 +222,16 @@ function SeriesListView({
               quizzesData={quizzesData}
               onEditSeries={onEditSeries}
               onEditBook={onEditBook}
-              onEditChapter={() => {}}
-              onEditLesson={() => {}}
+              onEditChapter={onEditChapter}
+              onEditLesson={onEditLesson}
               onDeleteSeries={onDeleteSeries}
-              onDeleteBook={() => {}}
-              onDeleteChapter={() => {}}
-              onDeleteLesson={() => {}}
+              onDeleteBook={onDeleteBook}
+              onDeleteChapter={onDeleteChapter}
+              onDeleteLesson={onDeleteLesson}
+              onAddBook={handleAddBookWithSeries}
+              onAddChapter={onAddChapter}
+              onAddLesson={onAddLesson}
+              onAddQuiz={onAddQuiz}
               onDeleteQuiz={onDeleteQuiz}
             />
           ) : null}
