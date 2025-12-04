@@ -2228,6 +2228,15 @@ contentManagement: {
         nameCopied: '✅ コピーしました: {name}'
     }
   },
+  errors: {
+    deleteChapter: '❌ 章の削除中にエラーが発生しました!',
+      deleteLesson: '❌ レッスンの削除中にエラーが発生しました!',
+        deleteQuiz: '❌ クイズの削除中にエラーが発生しました!',
+          general: '❌ エラー: {message}',
+            fillAllInfo: '⚠️ すべての情報を入力してください!',
+              chapterIdExists: '⚠️ 章IDは既に存在します!',
+                lessonIdExists: '⚠️ レッスンIDは既に存在します!'
+  },
   chapter: {
     idLabel: '章ID *',
       idExample: '(例: bai-1, unit-1)',

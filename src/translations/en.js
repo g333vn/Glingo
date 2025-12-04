@@ -2241,6 +2241,15 @@ contentManagement: {
         nameCopied: '✅ Copied: {name}'
     }
   },
+  errors: {
+    deleteChapter: '❌ Error deleting chapter!',
+      deleteLesson: '❌ Error deleting lesson!',
+        deleteQuiz: '❌ Error deleting quiz!',
+          general: '❌ ERROR: {message}',
+            fillAllInfo: '⚠️ Please fill in all information!',
+              chapterIdExists: '⚠️ Chapter ID already exists!',
+                lessonIdExists: '⚠️ Lesson ID already exists!'
+  },
   chapter: {
     idLabel: 'Chapter ID *',
       idExample: '(e.g.: bai-1, unit-1)',

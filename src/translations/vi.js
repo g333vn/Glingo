@@ -2225,6 +2225,15 @@ const vi = {
                 nameCopied: '✅ Đã copy: {name}'
             }
         },
+        errors: {
+            deleteChapter: '❌ Lỗi khi xóa chapter!',
+            deleteLesson: '❌ Lỗi khi xóa lesson!',
+            deleteQuiz: '❌ Lỗi khi xóa quiz!',
+            general: '❌ LỖI: {message}',
+            fillAllInfo: '⚠️ Vui lòng điền đầy đủ thông tin!',
+            chapterIdExists: '⚠️ ID chapter đã tồn tại!',
+            lessonIdExists: '⚠️ ID lesson đã tồn tại!'
+        },
         chapter: {
             idLabel: 'ID Chương *',
             idExample: '(ví dụ: bai-1, unit-1)',
