@@ -1503,20 +1503,60 @@ function ContentManagementPage() {
             onEditLesson={handleEditLesson}
             onEditQuiz={handleEditQuiz}
               onDeleteSeries={async (seriesId) => {
-                if (confirm(t('contentManagement.confirm.deleteSeries'))) {
-                  const updatedSeries = series.filter(s => s.id !== seriesId);
-                  await saveSeries(updatedSeries);
-                  // Also update books to remove this category
-                  const updatedBooks = books.map(book => {
-                    if (book.category === series.find(s => s.id === seriesId)?.name) {
-                      return { ...book, category: '' };
-                    }
-                    return book;
-                  });
-                  await saveBooks(updatedBooks);
-                  // ✅ Trigger refresh AllLevelsOverview stats
-                  setOverviewRefreshTrigger(prev => prev + 1);
+                const seriesToDelete = series.find(s => s.id === seriesId);
+                if (!seriesToDelete) return;
+                
+                if (!confirm(t('contentManagement.confirm.deleteSeries'))) return;
+
+                // 1. Xóa series + tất cả books, chapters, lessons, quizzes liên quan trên Supabase
+                try {
+                  const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+                  console.log('[ContentManagement] 🗑️ Deleting series from Supabase:', { seriesId, level: selectedLevel, userId });
+                  const result = await contentService.deleteSeriesCascade(seriesId, selectedLevel);
+                  if (!result.success) {
+                    console.warn('[ContentManagement] ⚠️ Failed to delete series from Supabase:', result.error);
+                    alert(t('contentManagement.messages.deleteSeriesError') || `Lỗi khi xóa series trên Supabase: ${result.error?.message || 'Unknown error'}`);
+                  } else {
+                    console.log('[ContentManagement] ✅ Deleted', result.deletedBooks || 0, 'books from Supabase');
+                  }
+                } catch (err) {
+                  console.error('[ContentManagement] ❌ Unexpected error when deleting series from Supabase:', err);
+                  alert(t('contentManagement.messages.deleteSeriesError') || `Lỗi khi xóa series: ${err.message}`);
                 }
+
+                // 2. Xóa tất cả books thuộc series này khỏi local state
+                const seriesName = seriesToDelete.name;
+                const updatedBooks = books.filter(book => {
+                  // Xóa books có seriesId khớp hoặc category khớp với series name
+                  return book.seriesId !== seriesId && book.category !== seriesName;
+                });
+
+                // 3. Xóa series khỏi list
+                const updatedSeries = series.filter(s => s.id !== seriesId);
+
+                // 4. Lưu lại state đã cập nhật
+                await saveSeries(updatedSeries);
+                await saveBooks(updatedBooks);
+
+                // 5. Xóa chapters, lessons, quizzes của các books đã xóa khỏi local storage
+                const deletedBookIds = books
+                  .filter(book => book.seriesId === seriesId || book.category === seriesName)
+                  .map(book => book.id);
+                
+                for (const bookId of deletedBookIds) {
+                  await storageManager.deleteChapters(bookId);
+                  // Delete lessons for all chapters of this book
+                  const bookChapters = chaptersData[bookId] || [];
+                  for (const chapter of bookChapters) {
+                    await storageManager.deleteLessons(bookId, chapter.id);
+                    await storageManager.deleteQuiz(bookId, chapter.id);
+                  }
+                }
+
+                // ✅ Trigger refresh AllLevelsOverview stats
+                setOverviewRefreshTrigger(prev => prev + 1);
+                
+                alert(t('contentManagement.messages.seriesDeleted') || `Đã xóa series "${seriesName}" và ${deletedBookIds.length} sách liên quan`);
               }}
             onDeleteBook={handleDeleteBook}
             onDeleteChapter={handleDeleteChapter}

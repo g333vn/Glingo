@@ -503,3 +503,94 @@ export async function getSeries(level) {
   }
 }
 
+/**
+ * Delete series and all related content (books, chapters, lessons, quizzes) from Supabase
+ * @param {string} seriesId - Series ID
+ * @param {string} level - Level (n1, n2, ...)
+ * @returns {Promise<{success: boolean, error?: Object}>}
+ */
+export async function deleteSeriesCascade(seriesId, level) {
+  try {
+    console.log('[ContentService.deleteSeriesCascade] 🗑️ Deleting series and all related content:', { seriesId, level });
+
+    // 1. Get all books in this series
+    const { data: seriesBooks, error: booksError } = await supabase
+      .from('books')
+      .select('id')
+      .eq('level', level)
+      .eq('series_id', seriesId);
+
+    if (booksError) {
+      console.warn('[ContentService.deleteSeriesCascade] ⚠️ Error fetching books for series:', booksError);
+    }
+
+    const bookIds = (seriesBooks || []).map(book => book.id);
+    console.log('[ContentService.deleteSeriesCascade] Found', bookIds.length, 'books in series');
+
+    // 2. For each book, delete all related content (quizzes, lessons, chapters)
+    for (const bookId of bookIds) {
+      // Delete quizzes
+      const { error: quizError } = await supabase
+        .from('quizzes')
+        .delete()
+        .eq('book_id', bookId)
+        .eq('level', level);
+      if (quizError) {
+        console.warn('[ContentService.deleteSeriesCascade] ⚠️ Error deleting quizzes for book', bookId, ':', quizError);
+      }
+
+      // Delete lessons
+      const { error: lessonError } = await supabase
+        .from('lessons')
+        .delete()
+        .eq('book_id', bookId)
+        .eq('level', level);
+      if (lessonError) {
+        console.warn('[ContentService.deleteSeriesCascade] ⚠️ Error deleting lessons for book', bookId, ':', lessonError);
+      }
+
+      // Delete chapters
+      const { error: chapterError } = await supabase
+        .from('chapters')
+        .delete()
+        .eq('book_id', bookId)
+        .eq('level', level);
+      if (chapterError) {
+        console.warn('[ContentService.deleteSeriesCascade] ⚠️ Error deleting chapters for book', bookId, ':', chapterError);
+      }
+    }
+
+    // 3. Delete all books in this series
+    if (bookIds.length > 0) {
+      const { error: booksDeleteError } = await supabase
+        .from('books')
+        .delete()
+        .eq('level', level)
+        .eq('series_id', seriesId);
+      
+      if (booksDeleteError) {
+        console.error('[ContentService.deleteSeriesCascade] ❌ Error deleting books:', booksDeleteError);
+        return { success: false, error: booksDeleteError };
+      }
+    }
+
+    // 4. Finally delete the series itself
+    const { error: seriesError } = await supabase
+      .from('series')
+      .delete()
+      .eq('id', seriesId)
+      .eq('level', level);
+
+    if (seriesError) {
+      console.error('[ContentService.deleteSeriesCascade] ❌ Error deleting series:', seriesError);
+      return { success: false, error: seriesError };
+    }
+
+    console.log('[ContentService.deleteSeriesCascade] ✅ Series and all related content deleted:', { seriesId, level, booksDeleted: bookIds.length });
+    return { success: true, deletedBooks: bookIds.length };
+  } catch (err) {
+    console.error('[ContentService.deleteSeriesCascade] ❌ Unexpected error:', err);
+    return { success: false, error: err };
+  }
+}
+
