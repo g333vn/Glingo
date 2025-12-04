@@ -1556,7 +1556,10 @@ function ContentManagementPage() {
                 // ✅ Trigger refresh AllLevelsOverview stats
                 setOverviewRefreshTrigger(prev => prev + 1);
                 
-                alert(t('contentManagement.messages.seriesDeleted') || `Đã xóa series "${seriesName}" và ${deletedBookIds.length} sách liên quan`);
+                alert(t('contentManagement.messages.seriesDeleted', { 
+                  seriesName, 
+                  count: deletedBookIds.length 
+                }) || `Đã xóa series "${seriesName}" và ${deletedBookIds.length} sách liên quan`);
               }}
             onDeleteBook={handleDeleteBook}
             onDeleteChapter={handleDeleteChapter}

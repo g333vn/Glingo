@@ -1994,6 +1994,7 @@ const vi = {
             seriesNameExists: '⚠️ Tên bộ sách đã tồn tại!',
             seriesUpdated: '📚 Đã cập nhật bộ sách:',
             seriesAdded: '📚 Đã thêm bộ sách:',
+            seriesDeleted: '✅ Đã xóa series "{seriesName}" và {count} sách liên quan',
             seriesNameCannotChange: '⚠️ Tên bộ sách không thể thay đổi sau khi tạo',
             seriesNameCannotChangeHint: 'Tên bộ sách (không thể thay đổi sau khi tạo)',
             seriesNameExistsChooseOther: 'Tên bộ sách này đã tồn tại! Vui lòng chọn tên khác.',
