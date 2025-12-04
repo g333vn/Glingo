@@ -212,6 +212,21 @@ export function AuthProvider({ children }) {
         return { success: false, error: signUpError };
       }
 
+      // ✅ NEW: Auto-confirm user email để có thể đăng nhập ngay
+      if (data?.user?.id) {
+        console.log('[AuthContext] Confirming user email...');
+        const confirmResult = await authService.confirmUserEmail(data.user.id);
+        if (confirmResult.success) {
+          console.log('[AuthContext] ✅ User email confirmed successfully');
+        } else {
+          console.warn('[AuthContext] ⚠️ Failed to confirm user email:', confirmResult.error);
+          if (confirmResult.needsManualConfirmation) {
+            console.warn('[AuthContext] ⚠️ User needs manual confirmation in Supabase Dashboard');
+            // Vẫn tiếp tục, user có thể confirm sau qua email
+          }
+        }
+      }
+
       // User created successfully
       console.log('[AuthContext] Registration successful:', email);
       return { success: true };
