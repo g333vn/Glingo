@@ -1030,8 +1030,8 @@ function ContentManagementPage() {
         [key]: lessons
       }));
       
-      // Also delete quiz for this lesson
-      await storageManager.deleteQuiz(book.id, chapter.id, lesson.id);
+      // Also delete quiz for this lesson (từ Supabase và local storage)
+      await storageManager.deleteQuiz(book.id, chapter.id, lesson.id, selectedLevel);
       const quizKey = `${book.id}_${chapter.id}_${lesson.id}`;
       setQuizzesData(prev => {
         const newData = { ...prev };
@@ -1193,7 +1193,7 @@ function ContentManagementPage() {
       return;
     }
 
-    const success = await storageManager.deleteQuiz(book.id, chapter.id, lesson.id);
+    const success = await storageManager.deleteQuiz(book.id, chapter.id, lesson.id, selectedLevel);
     
     if (success) {
       const key = `${book.id}_${chapter.id}_${lesson.id}`;
@@ -1549,7 +1549,8 @@ function ContentManagementPage() {
                   const bookChapters = chaptersData[bookId] || [];
                   for (const chapter of bookChapters) {
                     await storageManager.deleteLessons(bookId, chapter.id);
-                    await storageManager.deleteQuiz(bookId, chapter.id);
+                    // ✅ FIXED: Truyền level để xóa quiz từ Supabase
+                    await storageManager.deleteQuiz(bookId, chapter.id, null, selectedLevel);
                   }
                 }
 

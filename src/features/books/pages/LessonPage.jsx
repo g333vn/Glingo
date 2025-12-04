@@ -180,13 +180,19 @@ function LessonPage() {
         }
         
         // ✅ Try to load all quizzes that might match this lesson
+        // ✅ FIXED: Chỉ load quiz có lessonId chính xác (không load quiz cũ không có lessonId)
         try {
           const allQuizzesFromStorage = await storageManager.getAllQuizzes();
-          const filteredQuizzes = allQuizzesFromStorage.filter(q => 
-            q.bookId === bookId && 
-            q.chapterId === finalChapterId && 
-            (q.lessonId === finalLessonId || !q.lessonId)
-          );
+          const filteredQuizzes = allQuizzesFromStorage.filter(q => {
+            // Chỉ match quiz có lessonId chính xác
+            const matchesLesson = q.lessonId === finalLessonId;
+            // Phải có bookId và chapterId khớp
+            const matchesBookChapter = q.bookId === bookId && q.chapterId === finalChapterId;
+            // Quiz phải có questions hợp lệ (không rỗng)
+            const hasValidQuestions = q.questions && Array.isArray(q.questions) && q.questions.length > 0;
+            
+            return matchesBookChapter && matchesLesson && hasValidQuestions;
+          });
           // Add unique quizzes (avoid duplicates)
           filteredQuizzes.forEach(q => {
             if (!allQuizzesList.find(existing => existing.id === q.id)) {
@@ -208,26 +214,50 @@ function LessonPage() {
         }
         
         // Transform and set quizzes
-        const transformedQuizzes = allQuizzesList.map(savedQuiz => {
-          let quizToSet = savedQuiz;
-          if (savedQuiz.questions && Array.isArray(savedQuiz.questions)) {
-            const firstQuestion = savedQuiz.questions[0];
-            if (firstQuestion && (firstQuestion.question || firstQuestion.correctAnswer)) {
-              quizToSet = {
-                ...savedQuiz,
-                questions: savedQuiz.questions.map(q => ({
-                  id: q.id,
-                  text: q.question || q.text,
-                  options: q.options || [],
-                  correct: q.correctAnswer || q.correct,
-                  explanation: q.explanation || ''
-                }))
-              };
+        // ✅ FIXED: Filter và validate quiz trước khi hiển thị
+        const transformedQuizzes = allQuizzesList
+          .map(savedQuiz => {
+            let quizToSet = savedQuiz;
+            if (savedQuiz.questions && Array.isArray(savedQuiz.questions)) {
+              const firstQuestion = savedQuiz.questions[0];
+              if (firstQuestion && (firstQuestion.question || firstQuestion.correctAnswer || firstQuestion.text)) {
+                quizToSet = {
+                  ...savedQuiz,
+                  questions: savedQuiz.questions.map(q => ({
+                    id: q.id,
+                    text: q.question || q.text,
+                    options: q.options || [],
+                    correct: q.correctAnswer || q.correct,
+                    explanation: q.explanation || ''
+                  }))
+                };
+              }
             }
-          }
-          return quizToSet;
-        });
+            return quizToSet;
+          })
+          // ✅ FIXED: Chỉ giữ lại quiz hợp lệ (có questions và ít nhất 1 câu hỏi có nội dung)
+          .filter(quiz => {
+            if (!quiz || !quiz.questions || !Array.isArray(quiz.questions)) {
+              console.warn(`⚠️ Filtered out invalid quiz (no questions):`, quiz);
+              return false;
+            }
+            if (quiz.questions.length === 0) {
+              console.warn(`⚠️ Filtered out quiz with empty questions:`, quiz);
+              return false;
+            }
+            // Kiểm tra ít nhất 1 câu hỏi có text
+            const hasValidQuestion = quiz.questions.some(q => 
+              (q.text && q.text.trim().length > 0) || 
+              (q.question && q.question.trim().length > 0)
+            );
+            if (!hasValidQuestion) {
+              console.warn(`⚠️ Filtered out quiz with no valid question text:`, quiz);
+              return false;
+            }
+            return true;
+          });
         
+        console.log(`✅ Loaded ${transformedQuizzes.length} valid quiz(es) for lesson ${finalLessonId}`);
         setAllQuizzes(transformedQuizzes);
         if (transformedQuizzes.length > 0) {
           setCurrentQuiz(transformedQuizzes[0]);

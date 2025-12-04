@@ -854,13 +854,54 @@ class LocalStorageManager {
     return allQuizzes;
   }
 
-  async deleteQuiz(bookId, chapterId, lessonId = null) {
+  async deleteQuiz(bookId, chapterId, lessonId = null, level = null) {
     // Nếu không có lessonId, dùng chapterId (backward compatibility)
     const finalLessonId = lessonId || chapterId;
     
+    console.log(`🗑️ storageManager.deleteQuiz(${bookId}, ${chapterId}, ${finalLessonId}, level=${level})`);
+    
+    // ✅ FIXED: Xóa từ Supabase trước (nếu có level)
+    if (level) {
+      try {
+        // Xóa quiz từ Supabase bằng cách gọi contentService
+        // Note: contentService không có deleteQuiz function, nhưng có thể xóa trực tiếp
+        const { supabase } = await import('../services/supabaseClient.js');
+        const { error } = await supabase
+          .from('quizzes')
+          .delete()
+          .eq('book_id', bookId)
+          .eq('chapter_id', chapterId)
+          .eq('lesson_id', finalLessonId)
+          .eq('level', level);
+        
+        if (error) {
+          console.warn('[StorageManager] ⚠️ Failed to delete quiz from Supabase:', error);
+        } else {
+          console.log(`✅ Deleted quiz from Supabase`);
+        }
+      } catch (err) {
+        console.warn('[StorageManager] ⚠️ Error deleting quiz from Supabase:', err);
+      }
+    }
+    
+    // ✅ FIXED: Xóa tất cả quiz liên quan từ local storage (cả quiz cũ không có lessonId)
     // Delete from IndexedDB
     if (this.useIndexedDB) {
       await indexedDBManager.deleteQuiz(bookId, chapterId, finalLessonId);
+      // ✅ Cũng thử xóa quiz cũ không có lessonId (backward compatibility)
+      try {
+        const allQuizzes = await indexedDBManager.getAllQuizzes();
+        const relatedQuizzes = allQuizzes.filter(q => 
+          q.bookId === bookId && 
+          q.chapterId === chapterId && 
+          (!q.lessonId || q.lessonId === chapterId) // Quiz cũ dùng chapterId làm lessonId
+        );
+        for (const q of relatedQuizzes) {
+          await indexedDBManager.deleteQuiz(bookId, chapterId, q.lessonId || chapterId);
+        }
+      } catch (e) {
+        console.warn('[StorageManager] Error cleaning up old quizzes from IndexedDB:', e);
+      }
     }
 
     // Delete from localStorage (both old and new format)
@@ -873,7 +914,17 @@ class LocalStorageManager {
       const oldKey = `adminQuiz_${bookId}_${chapterId}`;
       localStorage.removeItem(oldKey);
       
-      console.log(`🗑️ Deleted quiz keys: ${newKey}, ${oldKey}`);
+      // ✅ FIXED: Xóa tất cả quiz liên quan (có thể có nhiều quiz với các lessonId khác nhau)
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(`adminQuiz_${bookId}_${chapterId}_`)) {
+          // Xóa tất cả quiz của chapter này (có thể có quiz cũ với lessonId khác)
+          localStorage.removeItem(key);
+          console.log(`🗑️ Deleted related quiz key: ${key}`);
+        }
+      }
+      
+      console.log(`🗑️ Deleted quiz keys: ${newKey}, ${oldKey} and all related quizzes`);
     }
   }
 

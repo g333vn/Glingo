@@ -238,8 +238,8 @@ function LessonManagementEnhanced({
       const saveSuccess = await storageManager.saveLessons(bookId, chapterId, updatedLessons);
       
       if (saveSuccess) {
-        // Also delete quiz
-        await storageManager.deleteQuiz(bookId, chapterId, lessonId);
+        // Also delete quiz (từ Supabase và local storage)
+        await storageManager.deleteQuiz(bookId, chapterId, lessonId, levelId);
         setLessons(updatedLessons);
         success(`✅ ${t('lessonManagement.messages.deleteSuccess')}`);
       } else {
