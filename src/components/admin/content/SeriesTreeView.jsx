@@ -16,7 +16,8 @@ function SeriesTreeView({
   onDeleteSeries,
   onDeleteBook,
   onDeleteChapter,
-  onDeleteLesson
+  onDeleteLesson,
+  onDeleteQuiz // ✅ NEW: Delete quiz handler
 }) {
   const [expandedNodes, setExpandedNodes] = useState({});
 
@@ -251,7 +252,24 @@ function SeriesTreeView({
                                               return (
                                                 <div key={lesson.id} className="flex items-center gap-2 py-0.5 hover:bg-gray-50 rounded pl-6">
                                                   <span className="text-gray-500">📖 {lesson.title || lesson.id}</span>
-                                                  {hasQuiz && <span className="text-xs text-green-600">✅ Quiz</span>}
+                                                  {hasQuiz && (
+                                                    <>
+                                                      <span className="text-xs text-green-600">✅ Quiz</span>
+                                                      {onDeleteQuiz && (
+                                                        <button
+                                                          onClick={() => {
+                                                            if (confirm(`⚠️ Bạn có chắc muốn xóa quiz của bài "${lesson.title || lesson.id}"?`)) {
+                                                              onDeleteQuiz(book, chapter, lesson);
+                                                            }
+                                                          }}
+                                                          className="px-2 py-0.5 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                                                          title="Delete Quiz"
+                                                        >
+                                                          🗑️ Quiz
+                                                        </button>
+                                                      )}
+                                                    </>
+                                                  )}
                                                   <div className="flex gap-1 ml-auto">
                                                     <button
                                                       onClick={() => onEditLesson(lesson)}

@@ -24,6 +24,7 @@ function SeriesCard({
   onEditLesson,
   onDeleteLesson,
   onAddQuiz,
+  onDeleteQuiz, // ✅ NEW: Delete quiz handler
   onExportItem,
   onImportItem,
   level // ✅ NEW: Need level for export
@@ -385,7 +386,23 @@ function SeriesCard({
                                           </div>
                                           <div className="flex items-center gap-1">
                                             {quizzesData[`${book.id}_${chapter.id}_${lesson.id}`] ? (
-                                              <span className="text-green-700 font-semibold">✅ Quiz</span>
+                                              <>
+                                                <span className="text-green-700 font-semibold">✅ Quiz</span>
+                                                {onDeleteQuiz && (
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      if (confirm(t('contentManagement.confirm.deleteQuiz', { title: lesson.title || lesson.id }))) {
+                                                        onDeleteQuiz(book, chapter, lesson);
+                                                      }
+                                                    }}
+                                                    className="px-2 py-0.5 bg-red-500 text-white rounded-md border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[10px] font-black uppercase"
+                                                    title={t('contentManagement.series.deleteQuiz')}
+                                                  >
+                                                    🗑️
+                                                  </button>
+                                                )}
+                                              </>
                                             ) : (
                                               onAddQuiz && (
                                                 <button

@@ -39,6 +39,7 @@ function SeriesListView({
   onDeleteChapter,
   onEditLesson,
   onDeleteLesson,
+  onDeleteQuiz, // ✅ NEW: Delete quiz handler
 }) {
   const { t } = useLanguage();
   // ✅ Helper: Wrap onAddBook để truyền series name
@@ -183,6 +184,7 @@ function SeriesListView({
                       onEditLesson={onEditLesson}
                       onDeleteLesson={onDeleteLesson}
                       onAddQuiz={onAddQuiz}
+                      onDeleteQuiz={onDeleteQuiz}
                       onExportItem={onExportItem}
                       onImportItem={onImportItem}
                       level={level}
@@ -226,6 +228,7 @@ function SeriesListView({
               onDeleteBook={() => {}}
               onDeleteChapter={() => {}}
               onDeleteLesson={() => {}}
+              onDeleteQuiz={onDeleteQuiz}
             />
           ) : null}
           

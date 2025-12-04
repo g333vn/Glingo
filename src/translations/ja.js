@@ -1846,7 +1846,8 @@ contentManagement: {
       deleteBook: 'この本を削除してもよろしいですか? すべての章が削除されます!',
         deleteChapter: '章 "{title}" を削除しますか?\n\nこの操作は元に戻せません!',
           deleteLesson: 'レッスン "{title}" を削除しますか?\n\nこのレッスンのすべてのクイズも削除されます!',
-            deleteQuiz: 'レッスン "{title}" のクイズを削除しますか?'
+            deleteQuiz: 'レッスン "{title}" のクイズを削除しますか?',
+              cleanupQuizzes: '⚠️ 無効なクイズをすべてクリーンアップしてもよろしいですか?\n\n無効なクイズはストレージから削除されます。'
   },
   alerts: {
     selectCategory: '⚠️ 本シリーズ（カテゴリ）を選択してください!',
@@ -2248,6 +2249,9 @@ contentManagement: {
                     addLesson: '➕ レッスンを追加',
                       hasQuiz: '✅ クイズあり',
                         noQuiz: '❌ クイズなし'
+  },
+  actions: {
+    cleanupQuizzes: 'クイズをクリーンアップ'
   }
 },
 

@@ -1858,8 +1858,9 @@ contentManagement: {
     deleteSeries: 'Are you sure you want to delete this book series?',
       deleteBook: 'Are you sure you want to delete this book? All chapters will be deleted!',
         deleteChapter: 'Delete chapter "{title}"?\n\nThis action cannot be undone!',
-          deleteLesson: 'Delete lesson "{title}"?\n\nAll quizzes for this lesson will also be deleted!',
-            deleteQuiz: 'Delete quiz for lesson "{title}"?'
+                                        deleteLesson: 'Delete lesson "{title}"?\n\nAll quizzes for this lesson will also be deleted!',
+                                          deleteQuiz: 'Delete quiz for lesson "{title}"?',
+                                            cleanupQuizzes: '⚠️ Are you sure you want to cleanup all invalid quizzes?\n\nInvalid quizzes will be deleted from storage.'
   },
   alerts: {
     selectCategory: '⚠️ Please select a book series (Category)!',
@@ -2261,6 +2262,9 @@ contentManagement: {
                     addLesson: '➕ Add Lesson',
                       hasQuiz: '✅ Has quiz',
                         noQuiz: '❌ No quiz'
+  },
+  actions: {
+    cleanupQuizzes: 'Cleanup Quizzes'
   }
 },
 

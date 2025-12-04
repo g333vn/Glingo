@@ -1843,7 +1843,8 @@ const vi = {
             deleteBook: 'Bạn có chắc muốn xóa sách này? Tất cả chapters sẽ bị xóa!',
             deleteChapter: 'Xóa chapter "{title}"?\n\nHành động này không thể hoàn tác!',
             deleteLesson: 'Xóa lesson "{title}"?\n\nTất cả quiz của lesson này cũng sẽ bị xóa!',
-            deleteQuiz: 'Xóa quiz của lesson "{title}"?'
+            deleteQuiz: 'Xóa quiz của lesson "{title}"?',
+            cleanupQuizzes: '⚠️ Bạn có chắc muốn dọn dẹp tất cả quiz không hợp lệ?\n\nQuiz không hợp lệ sẽ bị xóa khỏi storage.'
         },
         alerts: {
             selectCategory: '⚠️ Vui lòng chọn bộ sách (Category)!',
@@ -2245,6 +2246,9 @@ const vi = {
             addLesson: '➕ Thêm Bài học',
             hasQuiz: '✅ Có quiz',
             noQuiz: '❌ Chưa có quiz'
+        },
+        actions: {
+            cleanupQuizzes: 'Dọn dẹp Quiz'
         }
     },
 

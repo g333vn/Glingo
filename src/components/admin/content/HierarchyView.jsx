@@ -115,6 +115,7 @@ function HierarchyView({
         onEditLesson={onEditLesson}
         onDeleteLesson={onDeleteLesson}
         onAddQuiz={onAddQuiz}
+        onDeleteQuiz={onDeleteQuiz}
         onSeriesClick={(seriesId) => {
           setHierarchyPath({ ...hierarchyPath, series: seriesId });
         }}

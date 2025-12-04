@@ -16,6 +16,7 @@ import HierarchyView from '../../components/admin/content/HierarchyView.jsx';
 // ✅ SRS INTEGRATION: Import Enhanced Lesson Modal
 import EnhancedLessonModal from '../../components/admin/lessons/EnhancedLessonModal.jsx';
 import { migrateLegacyLesson } from '../../types/lessonTypes.js';
+import { cleanupInvalidQuizzes } from '../../utils/quizCleanup.js';
 
 function ContentManagementPage() {
   const { user } = useAuth();
@@ -1209,6 +1210,48 @@ function ContentManagementPage() {
     }
   };
 
+  // ✅ NEW: Cleanup invalid quizzes
+  const handleCleanupQuizzes = async () => {
+    if (!confirm(t('contentManagement.confirm.cleanupQuizzes') || '⚠️ Bạn có chắc muốn dọn dẹp tất cả quiz không hợp lệ?\n\nQuiz không hợp lệ sẽ bị xóa khỏi storage.')) {
+      return;
+    }
+    
+    try {
+      const result = await cleanupInvalidQuizzes(selectedLevel);
+      const message = result.cleaned > 0
+        ? `✅ Đã dọn dẹp ${result.cleaned} quiz không hợp lệ${result.errors > 0 ? `\n⚠️ ${result.errors} lỗi xảy ra` : ''}`
+        : `✅ Không tìm thấy quiz nào cần dọn dẹp${result.errors > 0 ? `\n⚠️ ${result.errors} lỗi xảy ra` : ''}`;
+      
+      alert(message);
+      
+      // Refresh quizzes data
+      const loadQuizzes = async () => {
+        const newQuizzesData = {};
+        for (const book of books) {
+          const chapters = chaptersData[book.id] || [];
+          for (const chapter of chapters) {
+            const lessons = lessonsData[`${book.id}_${chapter.id}`] || [];
+            for (const lesson of lessons) {
+              const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id);
+              if (quiz) {
+                const key = `${book.id}_${chapter.id}_${lesson.id}`;
+                newQuizzesData[key] = quiz;
+              }
+            }
+          }
+        }
+        setQuizzesData(newQuizzesData);
+      };
+      await loadQuizzes();
+      
+      // Refresh overview
+      setOverviewRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error('Error cleaning up quizzes:', error);
+      alert(`❌ Lỗi khi dọn dẹp quiz: ${error.message}`);
+    }
+  };
+
   // ✅ NEW: Export data to JSON file (by level or all)
 
   return (
@@ -1224,6 +1267,15 @@ function ContentManagementPage() {
             <p className="text-sm sm:text-base text-gray-600 font-semibold">
               {t('contentManagement.subtitle')}
             </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleCleanupQuizzes}
+              className="px-3 py-2 bg-orange-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black transition-all uppercase tracking-wide text-xs flex items-center gap-2"
+              title={t('contentManagement.actions.cleanupQuizzes') || 'Dọn dẹp quiz không hợp lệ'}
+            >
+              🧹 <span className="hidden sm:inline">{t('contentManagement.actions.cleanupQuizzes') || 'Dọn dẹp Quiz'}</span>
+            </button>
           </div>
         </div>
 
