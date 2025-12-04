@@ -1,0 +1,21 @@
+{
+  "name": "Learn Your Approach - Japanese Learning Platform",
+  "short_name": "LYA JLPT",
+  "description": "Nền tảng luyện thi JLPT với đề thi mô phỏng, sách học và lộ trình rõ ràng.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "/logo/main.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
+
