@@ -367,7 +367,7 @@ function BookDetailPage() {
   };
 
   return (
-    <div className="w-full pr-0 md:pr-4 flex flex-col md:flex-row">
+    <div className="w-full pr-0 md:pr-4 overflow-x-hidden">
       <div className="flex flex-col md:flex-row items-start gap-0 md:gap-6 mt-4 w-full">
         
         {/* Sidebar - Pass category click handler, selectedCategory & categories để highlight và lọc */}
@@ -378,40 +378,40 @@ function BookDetailPage() {
         />
 
         {/* Main Content - sticky chỉ trên màn hình lớn để mobile scroll tự nhiên */}
-        <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full 
+        <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col 
                         md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
           
           {/* ========== BREADCRUMBS - Compact ========== */}
-          <div className="pt-3 px-5 pb-2 flex-shrink-0">
+          <div className="pt-3 px-3 sm:px-4 md:px-5 pb-2 flex-shrink-0">
             <Breadcrumbs paths={breadcrumbPaths} />
           </div>
           
           {/* ========== PAGE TITLE ========== */}
           {isShowingLessons && currentChapter ? (
-            <div className="px-5 py-3 border-b-[3px] border-black flex-shrink-0">
-              <h2 className="text-xl font-black text-gray-900">
+            <div className="px-3 sm:px-4 md:px-5 py-3 border-b-[3px] border-black flex-shrink-0">
+              <h2 className="text-lg sm:text-xl font-black text-gray-900 break-words">
                 {currentChapter.title || `Chapter ${chapterId}`}
               </h2>
-              <p className="text-sm text-gray-700 mt-1 font-medium">{t('lesson.lessonList')}</p>
+              <p className="text-xs sm:text-sm text-gray-700 mt-1 font-medium">{t('lesson.lessonList')}</p>
             </div>
           ) : (
-            <div className="px-5 py-3 border-b-[3px] border-black flex-shrink-0">
-              <h2 className="text-xl font-black text-gray-900">
+            <div className="px-3 sm:px-4 md:px-5 py-3 border-b-[3px] border-black flex-shrink-0">
+              <h2 className="text-lg sm:text-xl font-black text-gray-900 break-words">
                 {currentBook?.title || bookId}
               </h2>
-              <p className="text-sm text-gray-700 mt-1 font-medium">{t('lesson.chapterList')}</p>
+              <p className="text-xs sm:text-sm text-gray-700 mt-1 font-medium">{t('lesson.chapterList')}</p>
             </div>
           )}
 
           {/* ========== LESSON CARDS GRID - Optimized (240px cards, gap-6, max 10 items) ========== */}
-          <div className="flex-1 px-4 py-4 md:px-5 md:py-4 md:overflow-y-auto">
+          <div className="flex-1 md:overflow-y-auto overflow-x-hidden px-3 sm:px-4 md:px-5 py-3 md:py-4">
             {gridItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-500">
                 <div className="text-6xl mb-4">📚</div>
                 <p className="text-lg font-bold">{t('lesson.emptyState') || 'No content available'}</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 pb-4 w-full max-w-full">
                 {gridItems.map((content, index) => (
                   <div 
                     key={content?.id || `item-${index}`} 
@@ -444,7 +444,7 @@ function BookDetailPage() {
           </div>
 
           {/* ========== PAGINATION - Fixed at bottom ========== */}
-          <div className="px-5 py-4 border-t-[3px] border-black flex-shrink-0 bg-white">
+          <div className="px-3 sm:px-4 md:px-5 py-3 md:py-4 border-t-[3px] border-black flex-shrink-0 bg-white">
             <GridPagination total={totalPages} current={currentPage} onChange={setCurrentPage} />
           </div>
         </div>

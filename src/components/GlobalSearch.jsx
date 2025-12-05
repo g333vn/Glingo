@@ -206,9 +206,10 @@ function GlobalSearch() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 px-4 py-3 bg-blue-500 text-white rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 flex items-center gap-2"
+        className="fixed bottom-20 sm:bottom-6 right-3 sm:right-4 md:right-6 z-50 px-3 sm:px-4 py-2.5 sm:py-3 bg-blue-500 text-white rounded-full border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 flex items-center gap-2"
+        aria-label="Search"
       >
-        <span className="text-xl">🔍</span>
+        <span className="text-lg sm:text-xl">🔍</span>
         <span className="hidden md:inline text-sm">Search (Ctrl+K)</span>
       </button>
     );
