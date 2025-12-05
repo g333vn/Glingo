@@ -16,7 +16,7 @@ export default defineConfig({
       ],
       manifest: {
         name: 'Learn Your Approach - Japanese Learning Platform',
-        short_name: 'LYA JLPT',
+        short_name: 'JLPT',
         description: 'Nền tảng luyện thi JLPT với đề thi mô phỏng, sách học và lộ trình rõ ràng.',
         start_url: '/',
         scope: '/',
