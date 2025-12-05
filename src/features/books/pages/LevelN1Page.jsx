@@ -219,12 +219,12 @@ function LevelN1Page() {
         <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full 
                         md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
           {/* Breadcrumbs - Fixed at top */}
-          <div className="pt-4 px-6 pb-2">
+          <div className="pt-3 px-3 sm:px-4 md:pt-4 md:px-6 pb-2 flex-shrink-0">
             <Breadcrumbs paths={breadcrumbPaths} />
           </div>
 
           {/* Content area */}
-          <div className="flex-1 px-4 py-4 md:px-6 md:py-4 md:overflow-hidden">
+          <div className="flex-1 md:overflow-hidden overflow-y-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
             {filteredBooks.length === 0 ? (
               // Empty state
               <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -272,7 +272,7 @@ function LevelN1Page() {
           </div>
 
           {/* Pagination - Fixed at bottom */}
-          <div className="px-6 py-4 border-t border-black">
+          <div className="px-3 sm:px-4 md:px-6 py-3 md:py-4 border-t border-black flex-shrink-0">
             <GridPagination
               total={totalPages}
               current={currentPage}

@@ -192,7 +192,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
           border-b-[3px] border-black
         `}
       >
-        <nav className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-3.5 flex justify-between items-center gap-3 sm:gap-4">
+        <nav className="container mx-auto px-2 sm:px-4 lg:px-6 py-3 sm:py-3.5 flex justify-between items-center gap-2 sm:gap-4">
           {/* Logo - Clean & Compact */}
           <button
             onClick={() => handleNavigate('/')}
@@ -208,14 +208,14 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
             </div>
             {/* Logo text - Mobile (guest) */}
             {!user && (
-              <div className="flex flex-col md:hidden min-w-0">
+              <div className="flex flex-col md:hidden min-w-0 flex-shrink">
                 <span
-                  className="font-black text-xs sm:text-sm text-white whitespace-nowrap truncate transition-colors duration-200 group-hover:text-yellow-300 leading-tight"
+                  className="font-black text-[10px] sm:text-xs text-white transition-colors duration-200 group-hover:text-yellow-300 leading-tight break-words"
                   style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}
                 >
                   {settings.system.platformName}
                 </span>
-                <span className="text-[9px] sm:text-[10px] text-yellow-300 font-semibold uppercase tracking-wide truncate">
+                <span className="text-[8px] sm:text-[9px] text-yellow-300 font-semibold uppercase tracking-wide break-words line-clamp-1">
                   {settings.system.platformTagline}
                 </span>
               </div>

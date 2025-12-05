@@ -307,14 +307,14 @@ function JLPTLevelN1Page() {
 
         <Sidebar />
 
-        <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
+        <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
           {/* Breadcrumbs - Fixed at top */}
-          <div className="pt-4 px-6 pb-2">
+          <div className="pt-3 px-3 sm:px-4 md:pt-4 md:px-6 pb-2 flex-shrink-0">
             <Breadcrumbs paths={breadcrumbPaths} />
           </div>
 
           {/* Fixed content area - No scroll */}
-          <div className="flex-1 overflow-hidden px-6 py-4">
+          <div className="flex-1 md:overflow-hidden overflow-y-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
             {jlptN1Exams.length === 0 ? (
               // Empty state
               <div className="flex flex-col items-center justify-center h-full text-gray-500">
