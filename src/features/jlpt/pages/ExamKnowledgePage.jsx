@@ -486,19 +486,19 @@ function ExamKnowledgePage() {
 
   return (
     <>
-      <div className="w-full pr-0 md:pr-4">
+      <div className="w-full pr-0 md:pr-4 overflow-x-hidden">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-          <div className="flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col w-full">
-            <div className="p-4 sm:p-6 border-b border-gray-300">
+          <div className="flex-1 min-w-0 w-full bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col">
+            <div className="p-3 sm:p-4 md:p-6 border-b border-gray-300 flex-shrink-0">
               <Breadcrumbs paths={breadcrumbPaths} />
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mt-4">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{currentExam.title}</h1>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mt-3 md:mt-4">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 break-words">{currentExam.title}</h1>
                 <CountdownTimer initialTime={totalTime} onTimeUp={handleTimeUp} />
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              <div className="max-w-4xl mx-auto">
+            <div className="flex-1 md:overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6">
+              <div className="max-w-4xl mx-auto w-full">
               <QuestionDisplay
                   question={currentQuestion}
                   selectedAnswer={answers[normalizedCurrentId]}
@@ -535,7 +535,7 @@ function ExamKnowledgePage() {
             </div>
           </div>
 
-          <div className="w-full md:w-80 md:sticky md:top-4 mt-4 md:mt-0">
+          <div className="w-full md:w-80 md:sticky md:top-4 mt-4 md:mt-0 flex-shrink-0">
             <NavigationPanel
               sections={sections}
               currentQuestion={normalizedCurrentId}

@@ -250,13 +250,13 @@ function QuizPage() {
               selectedCategory={currentBookCategory}
               onCategoryClick={handleCategoryClick}
             />
-            <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
-              <div className="flex-1 flex items-center justify-center overflow-y-auto">
-                <div className="text-center bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-8 m-6">
-                  <h2 className="text-xl font-bold text-red-500 mb-4">{t('quiz.notFoundTitle') || 'Quiz không tồn tại'}</h2>
+            <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
+              <div className="flex-1 flex items-center justify-center md:overflow-y-auto overflow-x-hidden">
+                <div className="text-center bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-6 md:p-8 m-3 sm:m-4 md:m-6 w-full max-w-full">
+                  <h2 className="text-lg sm:text-xl font-bold text-red-500 mb-3 md:mb-4 break-words">{t('quiz.notFoundTitle') || 'Quiz không tồn tại'}</h2>
                   <button 
                     onClick={() => navigate(`/level/${levelId}/${bookId}`)}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
+                    className="px-4 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide text-sm sm:text-base min-h-[48px]"
                   >
                     ← {t('common.back') || 'Quay về'}
                   </button>
@@ -381,12 +381,12 @@ function QuizPage() {
               selectedCategory={currentBookCategory}
               onCategoryClick={handleCategoryClick}
             />
-            <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
-              <div className="pt-3 px-5 pb-1 flex-shrink-0">
+            <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
+              <div className="pt-3 px-3 sm:px-4 md:px-5 pb-1 flex-shrink-0">
                 <Breadcrumbs paths={breadcrumbPaths} />
               </div>
               
-              <div className="flex-1 flex items-center justify-center px-6 py-4 overflow-y-auto">
+              <div className="flex-1 flex items-center justify-center px-3 sm:px-4 md:px-6 py-4 md:overflow-y-auto overflow-x-hidden">
                 <div className="w-full max-w-3xl">
                   <div className={`rounded-lg border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 ${
                     isPerfect ? 'bg-yellow-400' :
@@ -550,47 +550,47 @@ function QuizPage() {
       <DictionaryButton />
       <DictionaryPopup />
 
-      <div className="w-full pr-0 md:pr-4">
+      <div className="w-full pr-0 md:pr-4 overflow-x-hidden">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
           <Sidebar 
             selectedCategory={currentBookCategory}
             onCategoryClick={handleCategoryClick}
           />
 
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
-            <div className="pt-4 px-6 mb-4 flex-shrink-0">
+          <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
+            <div className="pt-3 px-3 sm:px-4 md:px-6 mb-3 md:mb-4 flex-shrink-0">
               <Breadcrumbs paths={breadcrumbPaths} />
             </div>
             
             {/* ✅ UPDATED: Wrap toàn bộ content với ref để tra từ mọi nơi */}
-            <div ref={quizContentRef} className="px-6 pb-6 flex-1 flex flex-col overflow-y-auto select-text">
-              <h1 className="text-2xl font-bold mb-4 text-gray-800 text-center md:text-left">
+            <div ref={quizContentRef} className="px-3 sm:px-4 md:px-6 pb-4 md:pb-6 flex-1 flex flex-col md:overflow-y-auto overflow-x-hidden select-text">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 md:mb-4 text-gray-800 text-center md:text-left break-words">
                 {currentQuiz.title}
               </h1>
 
-              <div className="mb-4 text-center">
-                <p className="text-sm text-gray-600">{t('lesson.questionCounter')} {currentQuestionIndex + 1} / {totalQuestions}</p>
+              <div className="mb-3 md:mb-4 text-center">
+                <p className="text-xs sm:text-sm text-gray-600">{t('lesson.questionCounter')} {currentQuestionIndex + 1} / {totalQuestions}</p>
               </div>
 
-              <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-4 mb-4">
-                <p className="text-lg text-gray-800 mb-4 leading-relaxed">
+              <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-3 sm:p-4 mb-3 md:mb-4">
+                <p className="text-base sm:text-lg text-gray-800 mb-3 md:mb-4 leading-relaxed break-words">
                   {currentQuestion.text}
                 </p>
                 
                 {/* ✅ Audio Player - For listening questions */}
                 {currentQuestion.audioUrl && (
-                  <div className="mb-4 p-4 bg-purple-50 border-[3px] border-purple-300 rounded-lg">
+                  <div className="mb-3 md:mb-4 p-3 sm:p-4 bg-purple-50 border-[3px] border-purple-300 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-bold text-purple-900 flex items-center gap-2">
-                        <span className="text-lg">🎧</span>
-                        <span>{t('quiz.listeningQuestion') || 'Listening Question'}</span>
+                      <p className="text-xs sm:text-sm font-bold text-purple-900 flex items-center gap-2">
+                        <span className="text-base sm:text-lg">🎧</span>
+                        <span className="break-words">{t('quiz.listeningQuestion') || 'Listening Question'}</span>
                       </p>
                     </div>
                     <audio controls className="w-full" style={{ height: '40px' }}>
                       <source src={currentQuestion.audioUrl} type={currentQuestion.audioUrl.startsWith('data:') ? 'audio/mpeg' : undefined} />
                       {t('quiz.browserNotSupport') || 'Browser does not support audio.'}
                     </audio>
-                    <p className="text-xs text-green-600 mt-2 font-semibold text-center">
+                    <p className="text-[10px] sm:text-xs text-green-600 mt-2 font-semibold text-center break-words">
                       ✅ {t('quiz.playAudioToAnswer') || 'Listen to the audio and choose the correct answer'}
                     </p>
                   </div>
@@ -598,16 +598,16 @@ function QuizPage() {
                 
                 <div className="space-y-2">
                   {currentQuestion.options.map((option) => (
-                    <label key={option.label} className="flex items-center p-3 bg-white rounded-md border-[3px] border-black cursor-pointer hover:bg-yellow-400 hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 font-bold">
+                    <label key={option.label} className="flex items-start sm:items-center p-2.5 sm:p-3 bg-white rounded-md border-[3px] border-black cursor-pointer hover:bg-yellow-400 hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 font-bold">
                       <input
                         type="radio"
                         name="answer"
                         value={option.label}
                         checked={selectedAnswer === option.label}
                         onChange={() => handleAnswerSelect(option.label)}
-                        className="mr-3 text-blue-600 h-4 w-4"
+                        className="mr-2 sm:mr-3 text-blue-600 h-4 w-4 flex-shrink-0 mt-0.5 sm:mt-0"
                       />
-                      <span className="text-sm text-gray-700">
+                      <span className="text-xs sm:text-sm text-gray-700 break-words flex-1">
                         {option.label}. {option.text}
                       </span>
                     </label>
@@ -618,31 +618,31 @@ function QuizPage() {
               {/* ✅ UPDATED: Explanation không cần ref riêng nữa */}
               {showExplanation && (
                 <div 
-                  className={`mb-4 p-4 rounded-lg border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${selectedAnswer === currentQuestion.correct ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}
+                  className={`mb-3 md:mb-4 p-3 sm:p-4 rounded-lg border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${selectedAnswer === currentQuestion.correct ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}
                 >
                   <div className="flex items-center mb-2">
                     {selectedAnswer === currentQuestion.correct ? (
                       <>
-                        <svg className="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="font-black text-white text-lg uppercase">✅ {t('lesson.correct')}!</span>
+                        <span className="font-black text-white text-sm sm:text-base md:text-lg uppercase break-words">✅ {t('lesson.correct')}!</span>
                       </>
                     ) : (
                       <>
-                        <svg className="w-6 h-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span className="font-black text-white text-lg uppercase">❌ {t('lesson.wrong')}</span>
+                        <span className="font-black text-white text-sm sm:text-base md:text-lg uppercase break-words">❌ {t('lesson.wrong')}</span>
                       </>
                     )}
                   </div>
                   {showAnswersSetting && (
                     <>
-                      <p className="text-sm text-white mb-2 font-black">
+                      <p className="text-xs sm:text-sm text-white mb-2 font-black break-words">
                         <strong>{t('lesson.correctAnswer')}:</strong> {currentQuestion.correct}
                       </p>
-                      <p className="text-sm text-white font-black">
+                      <p className="text-xs sm:text-sm text-white font-black break-words">
                         <strong>{t('lesson.explanation')}:</strong> {currentQuestion.explanation}
                       </p>
                     </>
@@ -652,10 +652,10 @@ function QuizPage() {
 
               <div className="flex-1"></div>
 
-              <div className="border-t border-gray-300 pt-4 flex justify-between items-center mt-auto">
+              <div className="border-t border-gray-300 pt-3 md:pt-4 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 sm:gap-0 mt-auto">
                 <button
                   onClick={() => window.history.back()}
-                  className="px-4 py-2 bg-[#2D2D2D] text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
+                  className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-[#2D2D2D] text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide min-h-[48px]"
                 >
                   {t('lesson.closeWindow')}
                 </button>
@@ -664,14 +664,14 @@ function QuizPage() {
                   <button
                     onClick={handleSolution}
                     disabled={!selectedAnswer}
-                    className="px-6 py-2 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
                   >
                     {t('lesson.checkAnswer') || 'Check'}
                   </button>
                 ) : (
                   <button
                     onClick={handleNextQuestion}
-                    className="px-6 py-2 bg-green-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
+                    className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-green-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide min-h-[48px]"
                   >
                     {currentQuestionIndex < totalQuestions - 1 ? (t('lesson.next') || 'Next') : (t('lesson.finish') || 'Finish')}
                   </button>
