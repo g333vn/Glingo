@@ -484,7 +484,7 @@ function LessonPage() {
       <DictionaryButton />
       <DictionaryPopup />
       
-      <div className="w-full pr-0 md:pr-4">
+      <div className="w-full pr-0 md:pr-4 overflow-x-hidden">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
           <Sidebar 
             selectedCategory={currentBookCategory}
@@ -492,29 +492,29 @@ function LessonPage() {
             categories={categories}
           />
           
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col 
+          <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col 
                           md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
             {/* Breadcrumbs */}
-            <div className="pt-3 px-5 pb-2 flex-shrink-0">
+            <div className="pt-3 px-3 sm:px-4 md:px-5 pb-2 flex-shrink-0">
               <Breadcrumbs paths={breadcrumbPaths} />
             </div>
             
             {/* Header */}
-            <div className="px-5 py-3 border-b-[3px] border-black flex-shrink-0">
-              <h2 className="text-xl font-black text-gray-900">
+            <div className="px-3 sm:px-4 md:px-5 py-3 border-b-[3px] border-black flex-shrink-0">
+              <h2 className="text-lg sm:text-xl font-black text-gray-900 break-words">
                 {currentLesson?.title || `Bài ${finalLessonId}`}
               </h2>
               {currentLesson?.description && (
-                <p className="text-sm text-gray-700 mt-1 font-medium">{currentLesson.description}</p>
+                <p className="text-xs sm:text-sm text-gray-700 mt-1 font-medium break-words">{currentLesson.description}</p>
               )}
             </div>
             
             {/* Tabs - Mobile Responsive */}
-            <div className="px-5 py-3 border-b-[3px] border-black flex-shrink-0">
-              <div className="flex gap-2 overflow-x-auto">
+            <div className="px-3 sm:px-4 md:px-5 py-3 border-b-[3px] border-black flex-shrink-0">
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
                 <button
                   onClick={() => setActiveTab(TABS.THEORY)}
-                  className={`px-6 py-2 rounded-lg border-[3px] border-black font-black uppercase tracking-wide transition-all duration-200 whitespace-nowrap ${
+                  className={`px-4 sm:px-6 py-2 rounded-lg border-[3px] border-black font-black uppercase tracking-wide transition-all duration-200 whitespace-nowrap text-sm sm:text-base flex-shrink-0 ${
                     activeTab === TABS.THEORY
                       ? 'bg-yellow-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
                       : 'bg-white hover:bg-yellow-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
@@ -526,7 +526,7 @@ function LessonPage() {
                 {currentQuiz && (
                   <button
                     onClick={() => setActiveTab(TABS.QUIZ)}
-                    className={`px-6 py-2 rounded-lg border-[3px] border-black font-black uppercase tracking-wide transition-all duration-200 whitespace-nowrap ${
+                    className={`px-4 sm:px-6 py-2 rounded-lg border-[3px] border-black font-black uppercase tracking-wide transition-all duration-200 whitespace-nowrap text-sm sm:text-base flex-shrink-0 ${
                       activeTab === TABS.QUIZ
                         ? 'bg-yellow-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
                         : 'bg-white hover:bg-yellow-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
@@ -539,14 +539,14 @@ function LessonPage() {
             </div>
             
             {/* Content Area */}
-            <div ref={contentRef} className="flex-1 md:overflow-y-auto">
-              <div className="px-4 pt-4 pb-6 md:px-5 min-h-full flex flex-col">
+            <div ref={contentRef} className="flex-1 md:overflow-y-auto overflow-x-hidden">
+              <div className="px-3 sm:px-4 md:px-5 pt-4 pb-6 min-h-full flex flex-col max-w-full">
                 {activeTab === TABS.THEORY ? (
                   <div className="flex flex-col">
                   {pdfUrl ? (
                     <>
                       {/* PDF Viewer - Clean display without controls */}
-                      <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden mb-6 relative" style={{ minHeight: '80vh', height: '80vh' }}>
+                      <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden mb-6 relative w-full" style={{ minHeight: '80vh', height: '80vh', maxWidth: '100%' }}>
                         {/* White overlay to hide PDF viewer toolbar - Must be on top */}
                         <div 
                           className="absolute top-0 left-0 right-0 bg-white z-20 pointer-events-none"
@@ -610,13 +610,15 @@ function LessonPage() {
                   ) : htmlContent ? (
                     <>
                       {/* HTML Content Viewer - Rich text */}
-                      <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden mb-6 p-6">
+                      <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden mb-6 p-3 sm:p-4 md:p-6 w-full max-w-full">
                         <div 
-                          className="prose prose-lg max-w-none"
+                          className="prose prose-sm sm:prose-base md:prose-lg max-w-none w-full overflow-x-auto"
                           dangerouslySetInnerHTML={{ __html: htmlContent }}
                           style={{
                             fontSize: `${zoomLevel}%`,
-                            lineHeight: '1.8'
+                            lineHeight: '1.8',
+                            wordWrap: 'break-word',
+                            overflowWrap: 'break-word'
                           }}
                         />
                       </div>
@@ -658,22 +660,22 @@ function LessonPage() {
                   )}
                   
                   {/* Lesson Actions */}
-                  <div className="mt-6 mb-5 flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
-                    <label className="flex items-center gap-2 cursor-pointer bg-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-3 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 min-h-[48px]">
+                  <div className="mt-6 mb-5 flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center w-full">
+                    <label className="flex items-center gap-2 cursor-pointer bg-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-2 sm:p-3 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 min-h-[48px] w-full sm:w-auto">
                       <input
                         type="checkbox"
                         checked={isLessonCompleted}
                         onChange={handleToggleCompletion}
-                        className="w-5 h-5"
+                        className="w-5 h-5 flex-shrink-0"
                       />
-                      <span className="font-bold text-gray-800">✅ {t('lesson.completed')}</span>
+                      <span className="font-bold text-sm sm:text-base text-gray-800 break-words">✅ {t('lesson.completed')}</span>
                     </label>
                     
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                       {currentQuiz && (
                         <button
                           onClick={() => setActiveTab(TABS.QUIZ)}
-                          className="flex-1 sm:flex-initial px-6 py-3 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide min-h-[48px]"
+                          className="flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide min-h-[48px] text-sm sm:text-base"
                         >
                           {t('lesson.doQuiz')} →
                         </button>
@@ -681,7 +683,7 @@ function LessonPage() {
                       
                       <button
                         onClick={() => navigate(`/level/${levelId}/${bookId}/chapter/${finalChapterId}`)}
-                        className="flex-1 sm:flex-initial px-6 py-3 bg-green-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide min-h-[48px]"
+                        className="flex-1 sm:flex-initial px-4 sm:px-6 py-2.5 sm:py-3 bg-green-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide min-h-[48px] text-sm sm:text-base"
                       >
                         {t('lesson.nextLesson')} →
                       </button>
