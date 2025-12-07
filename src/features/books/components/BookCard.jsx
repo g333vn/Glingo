@@ -33,26 +33,29 @@ function BookCard({ imageUrl, title, isComingSoon = false, status = null }) {
             />
           </>
         ) : (
-          /* Placeholder Design - Beautiful & Professional */
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 p-4">
-            {/* Background pattern - Japanese wave */}
-            <div className="absolute inset-0 opacity-5" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0c8.284 0 15 6.716 15 15 0 8.284-6.716 15-15 15-8.284 0-15-6.716-15-15C15 6.716 21.716 0 30 0z' fill='%23000000' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-              backgroundSize: '30px 30px'
+          /* Placeholder Design - NEO BRUTALISM STYLE */
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white p-4">
+            {/* Geometric background pattern - Neo Brutalism grid */}
+            <div className="absolute inset-0 opacity-[0.03]" style={{
+              backgroundImage: `
+                linear-gradient(to right, black 1px, transparent 1px),
+                linear-gradient(to bottom, black 1px, transparent 1px)
+              `,
+              backgroundSize: '40px 40px'
             }}></div>
             
-            {/* Book icon - Large & prominent */}
-            <div className="relative z-10 mb-4 transform group-hover:scale-110 transition-transform duration-300">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center">
-                <span className="text-4xl sm:text-5xl">📚</span>
+            {/* Book icon container - NEO BRUTALISM */}
+            <div className="relative z-10 mb-6 transform group-hover:scale-105 transition-transform duration-200">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 bg-yellow-400 rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center">
+                <span className="text-5xl sm:text-6xl">📚</span>
               </div>
             </div>
             
-            {/* Status badge - ALWAYS ENGLISH */}
+            {/* Status badge - NEO BRUTALISM */}
             {isComingSoon && (
-              <div className="relative z-10 px-4 py-2 bg-yellow-400 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rounded-lg transform -rotate-2 group-hover:rotate-0 transition-transform duration-300">
+              <div className="relative z-10 px-5 py-2.5 bg-yellow-300 border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-lg transform -rotate-1 group-hover:rotate-0 transition-transform duration-200">
                 <p 
-                  className="text-xs sm:text-sm font-black text-black uppercase tracking-wider"
+                  className="text-xs sm:text-sm font-black text-black uppercase tracking-widest"
                   style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
                   lang="en"
                 >
@@ -62,9 +65,9 @@ function BookCard({ imageUrl, title, isComingSoon = false, status = null }) {
             )}
             
             {status && !isComingSoon && (
-              <div className="relative z-10 px-3 py-1.5 bg-blue-500 border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-md">
+              <div className="relative z-10 px-4 py-2 bg-blue-500 border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-lg">
                 <p 
-                  className="text-xs font-bold text-white uppercase"
+                  className="text-xs font-black text-white uppercase tracking-wider"
                   style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
                   lang="en"
                 >
@@ -73,16 +76,18 @@ function BookCard({ imageUrl, title, isComingSoon = false, status = null }) {
               </div>
             )}
             
-            {/* No image indicator - ALWAYS ENGLISH */}
+            {/* No image indicator - NEO BRUTALISM */}
             {!isComingSoon && !status && (
-              <div className="relative z-10 mt-2">
-                <p 
-                  className="text-xs text-gray-500 font-medium"
-                  style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
-                  lang="en"
-                >
-                  No Cover Image
-                </p>
+              <div className="relative z-10 mt-4">
+                <div className="px-4 py-2 bg-gray-100 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rounded-md">
+                  <p 
+                    className="text-xs font-black text-black uppercase tracking-wider"
+                    style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
+                    lang="en"
+                  >
+                    No Cover Image
+                  </p>
+                </div>
               </div>
             )}
           </div>

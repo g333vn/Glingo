@@ -848,7 +848,7 @@ about: {
 },
 
 search: {
-  placeholder: 'レッスン、チャプター、本、ページ、機能を検索...',
+  placeholder: '辞書を調べるか、レッスン、チャプター、本、ページ、機能を検索...',
     minChars: '検索するには1文字以上入力してください',
       shortcut: 'ショートカット',
         quickTips: 'クイックヒント',
@@ -870,7 +870,11 @@ search: {
                                         useArrows: '使用',
                                           toMove: '移動する',
                                             toSelect: '選択する',
-                                              category: {
+                                              toJump: 'ジャンプする',
+                                                toPage: 'ページ送り',
+                                                  recentSearches: '最近の検索',
+                                                    searchButton: '検索 (Ctrl+K)',
+                                                      category: {
     page: 'ページ',
       feature: '機能',
         content: 'コンテンツ',

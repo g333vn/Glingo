@@ -206,11 +206,14 @@ export async function translateMultipleWords(words) {
 
 /**
  * CORS Proxy alternatives
+ * ✅ FIXED: Removed empty string to avoid direct API calls (CORS errors)
+ * Only use proxies to bypass CORS restrictions
  */
 const CORS_PROXIES = [
-  '',
   'https://api.allorigins.win/raw?url=',
   'https://corsproxy.io/?',
+  'https://cors-anywhere.herokuapp.com/',
+  'https://api.codetabs.com/v1/proxy?quest=',
 ];
 
 /**
@@ -243,15 +246,26 @@ export async function lookupWord(word) {
     const apiUrl = `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(trimmedWord)}`;
     
     let lastError;
+    // ✅ FIXED: Only use proxies, never call API directly to avoid CORS
     for (let i = 0; i < CORS_PROXIES.length; i++) {
       const proxy = CORS_PROXIES[i];
-      const requestUrl = proxy ? `${proxy}${encodeURIComponent(apiUrl)}` : apiUrl;
+      // ✅ Always use proxy (never direct call)
+      const requestUrl = `${proxy}${encodeURIComponent(apiUrl)}`;
+      
+      // Create timeout controller for better browser compatibility
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
       
       try {
+        console.log(`[Dictionary] Trying proxy ${i + 1}/${CORS_PROXIES.length}: ${proxy.substring(0, 30)}...`);
+        
         const response = await fetch(requestUrl, {
           method: 'GET',
           headers: { 'Accept': 'application/json' },
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -284,17 +298,26 @@ export async function lookupWord(word) {
         
         // ✅ Cache successful results
         localStorage.setItem(cacheKey, JSON.stringify(result));
-        console.log(`[Lookup] ${trimmedWord} - Cached for next time`);
+        console.log(`[Lookup] ${trimmedWord} - Cached for next time (via proxy ${i + 1})`);
         
         return result;
         
       } catch (error) {
+        clearTimeout(timeoutId); // Ensure timeout is cleared even on error
+        // Log error but continue to next proxy
+        if (error.name === 'AbortError') {
+          console.warn(`[Dictionary] Proxy ${i + 1} timed out after 10s`);
+        } else {
+          console.warn(`[Dictionary] Proxy ${i + 1} failed:`, error.message);
+        }
         lastError = error;
         continue;
       }
     }
     
-    throw lastError || new Error('Không thể kết nối đến từ điển');    
+    // All proxies failed
+    console.error('[Dictionary] All proxies failed. Last error:', lastError);
+    throw lastError || new Error('Không thể kết nối đến từ điển. Tất cả proxy đều thất bại.');    
   } catch (error) {
     console.error('[Dictionary] Lookup failed:', error);
     return {

@@ -855,7 +855,7 @@ about: {
 },
 
 search: {
-  placeholder: 'Search lessons, chapters, books, pages, features...',
+  placeholder: 'Look up dictionary or search lessons, chapters, books, pages, features...',
     minChars: 'Type at least 1 character to search',
       shortcut: 'Shortcut',
         quickTips: 'Quick tips',
@@ -877,7 +877,11 @@ search: {
                                         useArrows: 'Use',
                                           toMove: 'to move',
                                             toSelect: 'to select',
-                                              category: {
+                                              toJump: 'to jump',
+                                                toPage: 'to page',
+                                                  recentSearches: 'Recent Searches',
+                                                    searchButton: 'Search (Ctrl+K)',
+                                                      category: {
     page: 'PAGE',
       feature: 'FEATURE',
         content: 'CONTENT',

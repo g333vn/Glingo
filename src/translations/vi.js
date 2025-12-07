@@ -404,7 +404,7 @@ const vi = {
     // SEARCH - Chức năng tìm kiếm
     // ============================================================================
     search: {
-        placeholder: 'Tìm kiếm bài học, chương, sách, trang, tính năng...',
+        placeholder: 'Tra từ điển hoặc tìm kiếm bài học, chương, sách, trang, tính năng...',
         minChars: 'Nhập ít nhất 1 ký tự để tìm kiếm',
         shortcut: 'Phím tắt',
         quickTips: 'Mẹo nhanh',
@@ -427,8 +427,12 @@ const vi = {
         useArrows: 'Dùng',
         toMove: 'để di chuyển',
         toSelect: 'để chọn',
+        toJump: 'để nhảy',
+        toPage: 'để lật trang',
+        recentSearches: 'Tìm kiếm gần đây',
         shortcuts: 'Phím tắt',
         pressCtrlK: 'Nhấn Ctrl+K để tìm kiếm',
+        searchButton: 'Tìm kiếm (Ctrl+K)',
         category: {
             page: 'TRANG',
             feature: 'TÍNH NĂNG',

@@ -13,7 +13,7 @@ import {
   clearHistory
 } from '../../services/api_translate/dictionaryService.js';
 
-const DictionaryContext = createContext();
+const DictionaryContext = createContext(null);
 
 export function useDictionary() {
   const context = useContext(DictionaryContext);
@@ -51,7 +51,33 @@ export function DictionaryProvider({ children }) {
     setShowPopup(true);
 
     try {
-      // Gọi API
+      // ✅ OPTIMIZED: Check cache first to avoid CORS issues
+      const cacheKey = `lookup_complete_${word.trim()}`;
+      const cached = localStorage.getItem(cacheKey);
+      
+      if (cached) {
+        try {
+          const rawData = JSON.parse(cached);
+          console.log(`[Dictionary] Using cached data for: ${word}`);
+          
+          // Format cached data
+          const formattedData = await formatDictionaryResult(rawData);
+          setResult(formattedData);
+          
+          // Lưu vào lịch sử
+          if (formattedData.success) {
+            addToHistory(word);
+            setHistory(getHistory());
+          }
+          setIsLoading(false);
+          return;
+        } catch (e) {
+          // Cache corrupted, remove it
+          localStorage.removeItem(cacheKey);
+        }
+      }
+      
+      // Gọi API nếu không có cache
       const rawData = await lookupWord(word);
       
       // ✅ UPDATED: formatDictionaryResult giờ là async (auto-translate)
@@ -69,6 +95,36 @@ export function DictionaryProvider({ children }) {
       setResult({
         success: false,
         message: 'Có lỗi xảy ra khi tra từ'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Hiển thị popup với data đã có (từ search result)
+  const showDictionaryResult = useCallback(async (rawData, word, x, y) => {
+    if (!word || !word.trim()) return;
+
+    setIsLoading(true);
+    setCurrentWord(word);
+    setPopupPosition({ x, y });
+    setShowPopup(true);
+
+    try {
+      // Format data đã có
+      const formattedData = await formatDictionaryResult(rawData);
+      setResult(formattedData);
+
+      // Lưu vào lịch sử
+      if (formattedData.success) {
+        addToHistory(word);
+        setHistory(getHistory());
+      }
+    } catch (error) {
+      console.error('Format dictionary result error:', error);
+      setResult({
+        success: false,
+        message: 'Có lỗi xảy ra khi hiển thị từ điển'
       });
     } finally {
       setIsLoading(false);
@@ -128,6 +184,7 @@ export function DictionaryProvider({ children }) {
     // Actions
     toggleDictionary,
     lookup,
+    showDictionaryResult,
     closePopup,
     saveWord: handleSaveWord,
     removeWord: handleRemoveWord,
