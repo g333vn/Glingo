@@ -171,20 +171,20 @@ function AboutPage() {
                 </p>
               </div>
 
-              {/* 100% Free - NEO BRUTALISM */}
+              {/* PR Content - NEO BRUTALISM */}
               <div className="bg-[#E5FFE5] rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-8 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px]">
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="text-5xl animate-pulseGlow">💚</span>
+                  <span className="text-5xl animate-pulseGlow">🚀</span>
                   <h3 className="text-2xl font-bold text-green-800">
-                    {t('about.freeTitle')}
+                    {t('about.prTitle')}
                   </h3>
                 </div>
                 <p className="text-gray-700 leading-relaxed mb-4 font-semibold">
-                  {t('about.freeSubtitle')}
+                  {t('about.prSubtitle')}
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-green-700 font-medium">
-                  <span className="text-2xl">🌱</span>
-                  <span className="text-sm">{t('about.forLove')}</span>
+                  <span className="text-2xl">⭐</span>
+                  <span className="text-sm">{t('about.prTagline')}</span>
                 </div>
               </div>
             </div>
@@ -444,13 +444,6 @@ function AboutPage() {
         {/* CTA Section - NEO BRUTALISM */}
         <section className={`py-16 bg-[#FFB800] border-t-[4px] border-black transition-all duration-1000 delay-900 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="container mx-auto px-8 md:px-12 text-center">
-            {/* Free Badge */}
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-6 py-3 rounded-full mb-6 border-2 border-white/50 animate-pulseGlow">
-              <span className="text-3xl">💚</span>
-              <span className="text-white font-bold text-lg">{t('about.freeTitle')}</span>
-              <span className="text-3xl">💚</span>
-            </div>
-
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 drop-shadow-lg">
               {t('about.letsStudy')}
             </h2>
@@ -465,14 +458,6 @@ function AboutPage() {
               <span className="text-xl sm:text-2xl flex-shrink-0">📧</span>
               <span className="break-all sm:break-normal text-center sm:text-left">{settings.system.contactEmail}</span>
             </a>
-
-            {/* Community Note */}
-            <div className="mt-8 text-white/90 text-sm max-w-xl mx-auto">
-              <p className="flex items-center justify-center gap-2">
-                <span className="text-xl">🌸</span>
-                <span>{t('about.communityProject')}</span>
-              </p>
-            </div>
 
             {/* Back to Home Link */}
             <div className="mt-8">
