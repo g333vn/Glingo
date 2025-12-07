@@ -50,53 +50,98 @@ const Clock = () => {
   const secondAngle = seconds * 6;
 
   return (
-    <div className="relative w-40 h-40 sm:w-52 sm:h-52 mx-auto">
-      <div className="absolute inset-0 bg-white rounded-full shadow-2xl border-4 sm:border-8 border-gray-300">
+    <div className="relative mx-auto flex-shrink-0 flex flex-col items-center">
+      {/* Clock face container */}
+      <div 
+        className="relative bg-white rounded-full shadow-2xl border-4 sm:border-6 md:border-8 lg:border-[10px] border-gray-300 w-40 h-40 sm:w-48 sm:h-48 md:w-[240px] md:h-[240px] lg:w-[280px] lg:h-[280px] xl:w-[320px] xl:h-[320px]"
+        style={{ 
+          aspectRatio: '1 / 1',
+          flexShrink: 0
+        }}
+      >
         {[...Array(12)].map((_, i) => {
           const angle = i * 30;
           const isMainHour = i % 3 === 0;
+          const hourNumber = i === 0 ? 12 : i;
+          
+          // Calculate position for markers (closer to edge)
+          const markerRadius = 45; // percentage from center
+          const numberRadius = 35; // percentage from center for numbers
+          
+          const markerX = 50 + markerRadius * Math.sin((angle * Math.PI) / 180);
+          const markerY = 50 - markerRadius * Math.cos((angle * Math.PI) / 180);
+          
+          const numberX = 50 + numberRadius * Math.sin((angle * Math.PI) / 180);
+          const numberY = 50 - numberRadius * Math.cos((angle * Math.PI) / 180);
+          
           return (
-            <div
-              key={i}
-              className={`absolute ${isMainHour ? 'w-1.5 h-5' : 'w-1 h-3'} bg-gray-400`}
-              style={{
-                left: '50%',
-                top: '50%',
-                transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-${isMainHour ? '94px' : '96px'})`,
-                transformOrigin: 'center'
-              }}
-            />
+            <React.Fragment key={i}>
+              {/* Hour markers */}
+              <div
+                className={`absolute ${isMainHour ? 'w-1 h-3 sm:h-4 md:h-5 lg:h-6' : 'w-0.5 h-2 sm:h-2.5 md:h-3 lg:h-4'} bg-gray-700`}
+                style={{
+                  left: `${markerX}%`,
+                  top: `${markerY}%`,
+                  transform: `translate(-50%, -50%) rotate(${angle}deg)`,
+                  transformOrigin: 'center center'
+                }}
+              />
+              {/* Hour numbers - show all on all screen sizes */}
+              {isMainHour && (
+                <div
+                  className="absolute text-gray-800 font-bold text-sm sm:text-base md:text-lg lg:text-xl"
+                  style={{
+                    left: `${numberX}%`,
+                    top: `${numberY}%`,
+                    transform: 'translate(-50%, -50%)'
+                  }}
+                >
+                  {hourNumber}
+                </div>
+              )}
+            </React.Fragment>
           );
         })}
 
-        <div className="absolute top-1/2 left-1/2 w-4 h-4 bg-gray-800 rounded-full -translate-x-1/2 -translate-y-1/2 z-30" />
+        {/* Center dot */}
+        <div className="absolute top-1/2 left-1/2 w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 bg-gray-900 rounded-full -translate-x-1/2 -translate-y-1/2 z-30" />
 
+        {/* Hour hand */}
         <div
-          className="absolute left-1/2 top-1/2 w-2 h-16 bg-gray-800 rounded-full origin-bottom transition-transform duration-500 ease-out"
+          className="absolute left-1/2 top-1/2 origin-bottom bg-gray-900 rounded-full z-20"
           style={{
+            width: '6px',
+            height: '28%',
             transform: `translateX(-50%) translateY(-100%) rotate(${hourAngle}deg)`,
-            transformOrigin: '50% 100%'
+            transformOrigin: 'center bottom'
           }}
         />
 
+        {/* Minute hand */}
         <div
-          className="absolute left-1/2 top-1/2 w-1.5 h-24 bg-blue-600 rounded-full origin-bottom transition-transform duration-500 ease-out z-10"
+          className="absolute left-1/2 top-1/2 origin-bottom bg-blue-600 rounded-full z-10"
           style={{
+            width: '4px',
+            height: '38%',
             transform: `translateX(-50%) translateY(-100%) rotate(${minuteAngle}deg)`,
-            transformOrigin: '50% 100%'
+            transformOrigin: 'center bottom'
           }}
         />
 
+        {/* Second hand */}
         <div
-          className="absolute left-1/2 top-1/2 w-0.5 h-28 bg-pink-500 rounded-full origin-bottom transition-transform duration-1000 ease-linear z-20"
+          className="absolute left-1/2 top-1/2 origin-bottom bg-pink-500 rounded-full z-20"
           style={{
+            width: '2px',
+            height: '42%',
             transform: `translateX(-50%) translateY(-100%) rotate(${secondAngle}deg)`,
-            transformOrigin: '50% 100%'
+            transformOrigin: 'center bottom'
           }}
         />
       </div>
 
-      <div className="absolute -bottom-8 sm:-bottom-10 left-1/2 -translate-x-1/2 text-sm sm:text-base font-mono text-gray-700 font-semibold">
+      {/* Digital time - centered below clock */}
+      <div className="text-center text-base sm:text-lg md:text-xl lg:text-2xl font-mono text-gray-800 font-semibold mt-3 sm:mt-4 md:mt-5">
         {formatTime()}
       </div>
     </div>
@@ -112,24 +157,24 @@ const ExamButton = ({ title, score, bgColor, disabled, onClick }) => {
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`relative ${bgColor} rounded-xl px-2 sm:px-4 border-[3px] border-black 
+      className={`relative ${bgColor} rounded-xl px-2 sm:px-3 md:px-4 border-[3px] border-black 
         transition-all duration-200 
-        w-full md:w-[340px] h-[160px] md:h-[180px] flex flex-col justify-center items-center
+        w-full max-w-full md:w-[340px] h-[140px] sm:h-[160px] md:h-[180px] flex flex-col justify-center items-center
         ${disabled
           ? 'opacity-50 cursor-not-allowed shadow-none'
           : 'hover:translate-x-[-2px] hover:translate-y-[-2px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] cursor-pointer'}`}
     >
-      <div className="text-center w-full px-2">
-        <div className="text-lg sm:text-xl md:text-2xl font-bold text-black mb-2 min-h-[3.5rem] flex items-center justify-center leading-tight">
+      <div className="text-center w-full px-2 sm:px-3">
+        <div className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-black mb-2 min-h-[3rem] sm:min-h-[3.5rem] flex items-center justify-center leading-tight break-words">
           {title}
         </div>
-        <div className="text-xl sm:text-2xl md:text-3xl font-black text-black">
+        <div className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-black">
           {formattedScore}
         </div>
       </div>
       {disabled && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900/10 rounded-xl">
-          <svg className="w-12 h-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-10 h-10 sm:w-12 sm:h-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
         </div>
@@ -224,11 +269,11 @@ function JLPTExamDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="w-full pr-0 md:pr-4">
+      <div className="w-full pr-0 md:pr-4 overflow-x-hidden">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
           <Sidebar />
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] p-8 text-center justify-center">
-            <div className="text-xl text-gray-500 font-bold">{t('jlpt.commonTexts.loading')}</div>
+          <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] p-4 sm:p-6 md:p-8 text-center justify-center">
+            <div className="text-lg sm:text-xl text-gray-500 font-bold">{t('jlpt.commonTexts.loading')}</div>
           </div>
         </div>
       </div>
@@ -237,13 +282,13 @@ function JLPTExamDetailPage() {
 
   if (!currentExam || examStatusType === 'upcoming') {
     return (
-      <div className="w-full pr-0 md:pr-4">
+      <div className="w-full pr-0 md:pr-4 overflow-x-hidden">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
           <Sidebar />
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] p-8 text-center justify-center">
-            <h1 className="text-2xl font-black text-red-500 mb-4">{t('jlpt.detailPage.unavailableTitle')}</h1>
-            <p className="text-gray-600 mb-4 font-medium">{t('jlpt.detailPage.unavailableDesc')}</p>
-            <button onClick={() => navigate(`/jlpt/${levelId}`)} className="px-4 py-2 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide">
+          <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] p-4 sm:p-6 md:p-8 text-center justify-center">
+            <h1 className="text-xl sm:text-2xl font-black text-red-500 mb-3 sm:mb-4 break-words px-2">{t('jlpt.detailPage.unavailableTitle')}</h1>
+            <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4 font-medium break-words px-2">{t('jlpt.detailPage.unavailableDesc')}</p>
+            <button onClick={() => navigate(`/jlpt/${levelId}`)} className="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide text-sm sm:text-base min-h-[48px] w-full sm:w-auto max-w-xs">
               {t('jlpt.commonTexts.backToList')}
             </button>
           </div>
@@ -285,43 +330,50 @@ function JLPTExamDetailPage() {
 
   return (
     <>
-      <div className="w-full pr-0 md:pr-4">
+      <div className="w-full pr-0 md:pr-4 overflow-x-hidden">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
 
           <Sidebar />
 
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
+          <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] overflow-hidden">
 
-            <div className="pt-4 px-6 pb-2">
+            <div className="pt-3 px-3 sm:px-4 md:px-6 pb-2 flex-shrink-0">
               <Breadcrumbs paths={breadcrumbPaths} />
             </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col items-center justify-center">
+            <div 
+              className="flex-1 md:overflow-y-auto overflow-x-hidden px-3 sm:px-4 md:px-6 py-2 md:py-4 flex flex-col items-center justify-center hide-scrollbar"
+              style={{
+                msOverflowStyle: 'none',
+                scrollbarWidth: 'none',
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
 
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black text-black mb-6 sm:mb-8 md:mb-12 tracking-tight px-4 text-center">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-black tracking-tight px-2 sm:px-4 text-center break-words w-full flex-shrink-0 mb-4 sm:mb-6 md:mb-8">
                 {currentExam.title}
               </h1>
 
-              <div className="mb-12">
+              <div className="flex-shrink-0 w-full flex justify-center mb-6 sm:mb-8 md:mb-10">
                 <Clock />
               </div>
 
               {isFinished ? (
-                <div className="flex flex-col gap-4 items-center justify-center mb-6 sm:mb-8 w-full px-4">
-                  <div className="bg-gray-100 rounded-lg border-[3px] border-black p-6 mb-4 text-center max-w-md shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                    <p className="text-black text-lg font-bold mb-2">
+                <div className="flex flex-col gap-3 sm:gap-4 items-center justify-center w-full px-2 sm:px-4 max-w-full flex-shrink-0">
+                  <div className="bg-gray-100 rounded-lg border-[3px] border-black p-4 sm:p-6 mb-3 sm:mb-4 text-center max-w-md w-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    <p className="text-black text-base sm:text-lg font-bold mb-2 break-words">
                       📅 {t('jlpt.detailPage.finishedTitle')}
                     </p>
-                    <p className="text-gray-700 text-sm font-medium">
+                    <p className="text-gray-700 text-xs sm:text-sm font-medium break-words">
                       {t('jlpt.detailPage.finishedDesc')}
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-center w-full">
                     {bothCompleted && (
                       <button
                         onClick={handleViewResults}
-                        className="px-8 py-3 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
+                        className="px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide text-sm sm:text-base min-h-[48px] w-full sm:w-auto"
                       >
                         {t('jlpt.detailPage.viewResults')}
                       </button>
@@ -329,21 +381,21 @@ function JLPTExamDetailPage() {
 
                     <button
                       onClick={() => navigate(`/jlpt/${levelId}/${examId}/answers`)}
-                      className="px-8 py-3 bg-[#2D2D2D] text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
+                      className="px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 bg-[#2D2D2D] text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide text-sm sm:text-base min-h-[48px] w-full sm:w-auto"
                     >
                       {t('jlpt.detailPage.viewAnswers')}
                     </button>
                   </div>
 
                   {!bothCompleted && (
-                    <p className="text-gray-500 text-sm mt-2 font-medium">
+                    <p className="text-gray-500 text-xs sm:text-sm mt-2 font-medium px-2 sm:px-4 break-words text-center">
                       {t('jlpt.detailPage.unfinishedNote')}
                     </p>
                   )}
                 </div>
               ) : (
                 <>
-                  <div className="flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 items-center justify-center mb-6 sm:mb-8 w-full px-4">
+                  <div className="flex flex-col md:flex-row gap-4 sm:gap-5 md:gap-6 items-center justify-center w-full px-2 sm:px-4 max-w-full flex-shrink-0 mb-4">
                     <ExamButton
                       title={t('jlpt.detailPage.knowledgeButton')}
                       score={110}
@@ -362,25 +414,25 @@ function JLPTExamDetailPage() {
                   </div>
 
                   {!knowledgeTestCompleted && (
-                    <p className="text-gray-700 text-center text-base md:text-lg">
+                    <p className="text-gray-700 text-center text-sm sm:text-base px-2 sm:px-4 break-words flex-shrink-0">
                       {t('jlpt.detailPage.listeningLocked')}
                     </p>
                   )}
 
                   {knowledgeTestCompleted && !listeningCompleted && (
-                    <p className="text-green-700 font-semibold text-center text-base md:text-lg">
+                    <p className="text-green-700 font-semibold text-center text-sm sm:text-base px-2 sm:px-4 break-words flex-shrink-0">
                       ✓ {t('jlpt.detailPage.listeningUnlocked')}
                     </p>
                   )}
 
                   {bothCompleted && (
-                    <div className="mt-8 text-center">
-                      <p className="text-green-700 font-semibold text-center text-base md:text-lg mb-4">
+                    <div className="text-center px-2 sm:px-4 flex-shrink-0">
+                      <p className="text-green-700 font-semibold text-center text-sm sm:text-base mb-3 sm:mb-4 break-words">
                         ✓ {t('jlpt.detailPage.allCompleted')}
                       </p>
                       <button
                         onClick={handleViewResults}
-                        className="px-8 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition"
+                        className="px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition text-sm sm:text-base min-h-[48px] w-full sm:w-auto"
                       >
                         {t('jlpt.detailPage.viewSummary')}
                       </button>

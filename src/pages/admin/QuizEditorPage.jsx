@@ -43,7 +43,8 @@ function QuizEditorPage() {
   ]);
 
   const [exportedJSON, setExportedJSON] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview] = useState(false); // For quiz preview
+  const [showQuestionPreview, setShowQuestionPreview] = useState({}); // Per question preview
   
   // ✅ NEW: Lưu directory handle để tự động lưu vào đúng thư mục
   const [savedDirectoryHandle, setSavedDirectoryHandle] = useState(null);
@@ -52,6 +53,14 @@ function QuizEditorPage() {
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
   const [uploadingAudioIndex, setUploadingAudioIndex] = useState(-1);
   const audioInputRefs = React.useRef({});
+  
+  // ✅ NEW: Image upload and textarea enhancement states
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadingImageIndex, setUploadingImageIndex] = useState(-1);
+  const [uploadingImageField, setUploadingImageField] = useState(''); // 'text' or 'explanation'
+  const imageInputRefs = React.useRef({});
+  const textareaRefs = React.useRef({});
+  const explanationTextareaRefs = React.useRef({});
 
   // ✅ UPDATED: Get books by level (check IndexedDB/localStorage first, fallback to default)
   const getBooksByLevel = async (levelId) => {
@@ -455,6 +464,278 @@ function QuizEditorPage() {
       setIsUploadingAudio(false);
       setUploadingAudioIndex(-1);
     }
+  };
+
+  // ✅ NEW: Image upload handler (Supabase Storage + Insert into textarea)
+  const handleImageUpload = async (file, questionIndex, field = 'text') => {
+    if (!file) return;
+    
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      alert('❌ Chỉ hỗ trợ ảnh: JPEG, PNG, WEBP, GIF');
+      return;
+    }
+    
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      alert(`❌ Ảnh quá lớn!\n\nKích thước: ${(file.size / 1024 / 1024).toFixed(2)}MB\nGiới hạn: 5MB`);
+      return;
+    }
+    
+    setIsUploadingImage(true);
+    setUploadingImageIndex(questionIndex);
+    setUploadingImageField(field);
+    
+    try {
+      const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
+      
+      // 📁 Đường dẫn có ngữ nghĩa: level / book / chapter / lesson / question
+      const safeLevel = selectedLevel || 'unknown-level';
+      const safeBook = selectedBook || 'unknown-book';
+      const safeChapter = selectedChapter || 'unknown-chapter';
+      const safeLesson = selectedLesson || 'unknown-lesson';
+      const safeQuestion = questionIndex != null ? `question-${questionIndex + 1}` : 'question-unknown';
+      const prefix = `level-${safeLevel}/book-${safeBook}/chapter-${safeChapter}/lesson-${safeLesson}/${safeQuestion}`;
+      const path = generateFilePath(prefix, file.name);
+      
+      const result = await uploadImage(file, path);
+      
+      if (!result.success) {
+        console.error('[QuizEditor] ❌ Error uploading image to Supabase:', result.error);
+        alert('❌ Lỗi upload ảnh!');
+      } else {
+        console.log('[QuizEditor] ✅ Image uploaded to Supabase:', result.url);
+        
+        // Insert <img> tag vào textarea tại vị trí cursor
+        const textarea = field === 'explanation' 
+          ? explanationTextareaRefs.current[questionIndex]
+          : textareaRefs.current[questionIndex];
+          
+        if (textarea) {
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const currentValue = field === 'explanation'
+            ? questions[questionIndex].explanation || ''
+            : questions[questionIndex].text || '';
+          
+          const imgTag = `<img src="${result.url}" alt="${field === 'explanation' ? 'Explanation image' : 'Question image'}" style="max-width: 100%; height: auto; display: block; margin: 10px 0;" />`;
+          
+          const newValue = 
+            currentValue.substring(0, start) + 
+            imgTag + 
+            currentValue.substring(end);
+          
+          const newQuestions = [...questions];
+          if (field === 'explanation') {
+            newQuestions[questionIndex].explanation = newValue;
+          } else {
+            newQuestions[questionIndex].text = newValue;
+          }
+          setQuestions(newQuestions);
+          
+          // Restore cursor position
+          setTimeout(() => {
+            textarea.focus();
+            const newPos = start + imgTag.length;
+            textarea.setSelectionRange(newPos, newPos);
+          }, 0);
+        }
+        
+        alert(`✅ Upload ảnh thành công!\n\nFile: ${file.name}`);
+      }
+    } catch (error) {
+      console.error('[QuizEditor] ❌ Unexpected error during image upload:', error);
+      alert('❌ Lỗi upload ảnh!');
+    } finally {
+      setIsUploadingImage(false);
+      setUploadingImageIndex(-1);
+      setUploadingImageField('');
+    }
+  };
+
+  // ✅ NEW: Process pasted HTML (clean up, convert formatting, furigana)
+  const processPastedHTML = (html) => {
+    if (!html || !html.trim()) return '';
+    
+    // Create temporary div to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    // Convert <b> to <strong>
+    tempDiv.querySelectorAll('b').forEach(el => {
+      const strong = document.createElement('strong');
+      strong.innerHTML = el.innerHTML;
+      el.replaceWith(strong);
+    });
+    
+    // Convert <i> to <em>
+    tempDiv.querySelectorAll('i').forEach(el => {
+      const em = document.createElement('em');
+      em.innerHTML = el.innerHTML;
+      el.replaceWith(em);
+    });
+    
+    // Convert <p> to preserve line breaks
+    tempDiv.querySelectorAll('p').forEach(el => {
+      if (el.textContent.trim()) {
+        el.outerHTML = el.innerHTML + '<br/>';
+      } else {
+        el.remove();
+      }
+    });
+    
+    // Convert <div> to <br/> if it's a line break
+    tempDiv.querySelectorAll('div').forEach(el => {
+      if (el.textContent.trim() && !el.querySelector('p, div, h1, h2, h3, h4, h5, h6')) {
+        el.outerHTML = el.innerHTML + '<br/>';
+      }
+    });
+    
+    // Remove empty tags
+    tempDiv.querySelectorAll('*').forEach(el => {
+      if (!el.textContent.trim() && !el.querySelector('img, br')) {
+        el.remove();
+      }
+    });
+    
+    // Detect furigana pattern: 渋谷(しぶや) → <ruby>渋谷<rt>しぶや</rt></ruby>
+    let processed = tempDiv.innerHTML;
+    const furiganaPattern = /([\u4E00-\u9FAF]+)\(([\u3040-\u309F\u30A0-\u30FF]+)\)/g;
+    processed = processed.replace(furiganaPattern, '<ruby>$1<rt>$2</rt></ruby>');
+    
+    return processed;
+  };
+
+  // ✅ NEW: Paste handler (detect image or text/HTML)
+  const handlePaste = async (e, questionIndex, field = 'text') => {
+    const items = e.clipboardData.items;
+    let hasImage = false;
+    
+    // Check for images first
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        hasImage = true;
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          await handleImageUpload(file, questionIndex, field);
+        }
+        return;
+      }
+    }
+    
+    // No image → Process text/HTML
+    if (!hasImage) {
+      const html = e.clipboardData.getData('text/html');
+      const text = e.clipboardData.getData('text/plain');
+      
+      if (html && html.trim()) {
+        e.preventDefault();
+        
+        // Process HTML: clean up, convert formatting
+        const processed = processPastedHTML(html);
+        
+        // Insert into textarea
+        const textarea = field === 'explanation'
+          ? explanationTextareaRefs.current[questionIndex]
+          : textareaRefs.current[questionIndex];
+          
+        if (textarea) {
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const currentValue = field === 'explanation'
+            ? questions[questionIndex].explanation || ''
+            : questions[questionIndex].text || '';
+          
+          const newValue = 
+            currentValue.substring(0, start) + 
+            processed + 
+            currentValue.substring(end);
+          
+          const newQuestions = [...questions];
+          if (field === 'explanation') {
+            newQuestions[questionIndex].explanation = newValue;
+          } else {
+            newQuestions[questionIndex].text = newValue;
+          }
+          setQuestions(newQuestions);
+          
+          // Restore cursor position
+          setTimeout(() => {
+            textarea.focus();
+            const newPos = start + processed.length;
+            textarea.setSelectionRange(newPos, newPos);
+          }, 0);
+        }
+      }
+    }
+  };
+
+  // ✅ NEW: Toolbar functions (format text)
+  const insertTextAtCursor = (questionIndex, beforeText, afterText = '', field = 'text') => {
+    const textarea = field === 'explanation'
+      ? explanationTextareaRefs.current[questionIndex]
+      : textareaRefs.current[questionIndex];
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentValue = field === 'explanation'
+      ? questions[questionIndex].explanation || ''
+      : questions[questionIndex].text || '';
+    const selectedText = currentValue.substring(start, end);
+    
+    const newValue = 
+      currentValue.substring(0, start) + 
+      beforeText + selectedText + afterText + 
+      currentValue.substring(end);
+    
+    const newQuestions = [...questions];
+    if (field === 'explanation') {
+      newQuestions[questionIndex].explanation = newValue;
+    } else {
+      newQuestions[questionIndex].text = newValue;
+    }
+    setQuestions(newQuestions);
+    
+    // Restore cursor position
+    setTimeout(() => {
+      textarea.focus();
+      const newPos = start + beforeText.length + selectedText.length + afterText.length;
+      textarea.setSelectionRange(newPos, newPos);
+    }, 0);
+  };
+
+  const handleFormatBold = (questionIndex, field = 'text') => {
+    insertTextAtCursor(questionIndex, '<strong>', '</strong>', field);
+  };
+
+  const handleFormatItalic = (questionIndex, field = 'text') => {
+    insertTextAtCursor(questionIndex, '<em>', '</em>', field);
+  };
+
+  const handleInsertLineBreak = (questionIndex, field = 'text') => {
+    insertTextAtCursor(questionIndex, '<br/>', '', field);
+  };
+
+  // ✅ NEW: Auto-resize textarea
+  const handleTextareaResize = (questionIndex, field = 'text') => {
+    const textarea = field === 'explanation'
+      ? explanationTextareaRefs.current[questionIndex]
+      : textareaRefs.current[questionIndex];
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
+  };
+
+  // ✅ NEW: Toggle preview for question
+  const toggleQuestionPreview = (questionIndex, field = 'text') => {
+    const key = `${questionIndex}_${field}`;
+    setShowQuestionPreview(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
   };
 
   // ✅ NEW: Check duplicate questions
@@ -1607,22 +1888,113 @@ function QuizEditorPage() {
                   </div>
                 </div>
 
-                {/* ✅ ENHANCED: Question Text with Duplicate Check */}
+                {/* ✅ ENHANCED: Question Text with Full Features (Paste, Upload, Format, Preview) */}
                 <div className="mb-4">
-                  <label className="block text-sm font-black text-gray-700 mb-2 uppercase tracking-wide">
-                    {t('quizEditor.questions.questionText')}
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-black text-gray-700 uppercase tracking-wide">
+                      {t('quizEditor.questions.questionText')}
+                    </label>
+                    {/* Toolbar */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleFormatBold(qIndex)}
+                        className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors"
+                        title="Bold"
+                      >
+                        <strong>B</strong>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFormatItalic(qIndex)}
+                        className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors italic"
+                        title="Italic"
+                      >
+                        I
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleInsertLineBreak(qIndex)}
+                        className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors"
+                        title="Line Break"
+                      >
+                        ⏎
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!imageInputRefs.current[qIndex]) {
+                            imageInputRefs.current[qIndex] = document.createElement('input');
+                            imageInputRefs.current[qIndex].type = 'file';
+                            imageInputRefs.current[qIndex].accept = 'image/jpeg,image/jpg,image/png,image/webp,image/gif';
+                            imageInputRefs.current[qIndex].onchange = (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleImageUpload(file, qIndex);
+                            };
+                          }
+                          imageInputRefs.current[qIndex].click();
+                        }}
+                        disabled={isUploadingImage && uploadingImageIndex === qIndex}
+                        className={`px-2 py-1 text-xs font-black rounded border-[2px] border-black transition-colors ${
+                          isUploadingImage && uploadingImageIndex === qIndex
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                        title="Upload Image"
+                      >
+                        {isUploadingImage && uploadingImageIndex === qIndex ? '⏳' : '📷'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleQuestionPreview(qIndex, 'text')}
+                        className={`px-2 py-1 text-xs font-black rounded border-[2px] border-black transition-colors ${
+                          showQuestionPreview[`${qIndex}_text`]
+                            ? 'bg-green-500 text-white'
+                            : 'bg-white hover:bg-gray-100'
+                        }`}
+                        title="Toggle Preview"
+                      >
+                        👁
+                      </button>
+                    </div>
+                  </div>
                   <textarea
+                    ref={(el) => {
+                      if (el) textareaRefs.current[qIndex] = el;
+                    }}
                     value={question.text}
-                    onChange={(e) => updateQuestion(qIndex, 'text', e.target.value)}
-                    placeholder={t('quizEditor.questions.questionTextPlaceholder')}
-                    rows={3}
-                    className={`w-full px-4 py-2 border-[3px] rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 transition-colors font-bold ${
+                    onChange={(e) => {
+                      updateQuestion(qIndex, 'text', e.target.value);
+                      handleTextareaResize(qIndex);
+                    }}
+                    onPaste={(e) => handlePaste(e, qIndex)}
+                    onInput={() => handleTextareaResize(qIndex)}
+                    placeholder={t('quizEditor.questions.questionTextPlaceholder') || 'Nhập nội dung câu hỏi... (Có thể paste từ Word/Google Docs hoặc paste ảnh)'}
+                    rows={6}
+                    style={{ minHeight: '150px', resize: 'vertical' }}
+                    className={`w-full px-4 py-2 border-[3px] rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 transition-colors font-mono text-sm ${
                       checkDuplicateQuestion(question.text, qIndex)
                         ? 'border-red-500 bg-red-50 focus:border-red-500'
                         : 'border-black focus:border-black'
                     }`}
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Tip: Paste từ Word/Google Docs sẽ tự động format. Paste ảnh (Ctrl+V) sẽ tự động upload và chèn vào.
+                  </p>
+                  {/* Preview Panel */}
+                  {showQuestionPreview[`${qIndex}_text`] && question.text && (
+                    <div className="mt-3 p-3 bg-gray-50 border-[2px] border-gray-300 rounded-lg">
+                      <p className="text-xs font-bold text-gray-700 mb-2">📺 Preview:</p>
+                      <div 
+                        className="prose prose-sm max-w-none text-base leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: question.text }}
+                        style={{
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word'
+                        }}
+                      />
+                    </div>
+                  )}
                   {/* ✅ Duplicate Warning */}
                   {checkDuplicateQuestion(question.text, qIndex) && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1 animate-pulse font-black">
@@ -1708,18 +2080,110 @@ function QuizEditorPage() {
                   ))}
                 </div>
 
-                {/* Explanation */}
-                <div>
-                  <label className="block text-sm font-black text-gray-700 mb-2 uppercase tracking-wide">
-                    {t('quizEditor.questions.explanation')}:
-                  </label>
+                {/* ✅ ENHANCED: Explanation with Full Features (Paste, Upload, Format, Preview) */}
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-black text-gray-700 uppercase tracking-wide">
+                      {t('quizEditor.questions.explanation')}:
+                    </label>
+                    {/* Toolbar */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleFormatBold(qIndex, 'explanation')}
+                        className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors"
+                        title="Bold"
+                      >
+                        <strong>B</strong>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFormatItalic(qIndex, 'explanation')}
+                        className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors italic"
+                        title="Italic"
+                      >
+                        I
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleInsertLineBreak(qIndex, 'explanation')}
+                        className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors"
+                        title="Line Break"
+                      >
+                        ⏎
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const key = `explanation_${qIndex}`;
+                          if (!imageInputRefs.current[key]) {
+                            imageInputRefs.current[key] = document.createElement('input');
+                            imageInputRefs.current[key].type = 'file';
+                            imageInputRefs.current[key].accept = 'image/jpeg,image/jpg,image/png,image/webp,image/gif';
+                            imageInputRefs.current[key].onchange = (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleImageUpload(file, qIndex, 'explanation');
+                            };
+                          }
+                          imageInputRefs.current[key].click();
+                        }}
+                        disabled={isUploadingImage && uploadingImageIndex === qIndex && uploadingImageField === 'explanation'}
+                        className={`px-2 py-1 text-xs font-black rounded border-[2px] border-black transition-colors ${
+                          isUploadingImage && uploadingImageIndex === qIndex && uploadingImageField === 'explanation'
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                        title="Upload Image"
+                      >
+                        {isUploadingImage && uploadingImageIndex === qIndex && uploadingImageField === 'explanation' ? '⏳' : '📷'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleQuestionPreview(qIndex, 'explanation')}
+                        className={`px-2 py-1 text-xs font-black rounded border-[2px] border-black transition-colors ${
+                          showQuestionPreview[`${qIndex}_explanation`]
+                            ? 'bg-green-500 text-white'
+                            : 'bg-white hover:bg-gray-100'
+                        }`}
+                        title="Toggle Preview"
+                      >
+                        👁
+                      </button>
+                    </div>
+                  </div>
                   <textarea
+                    ref={(el) => {
+                      if (el) explanationTextareaRefs.current[qIndex] = el;
+                    }}
                     value={question.explanation}
-                    onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
-                    placeholder={t('quizEditor.questions.explanationPlaceholder')}
-                    rows={2}
-                    className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black font-bold"
+                    onChange={(e) => {
+                      updateQuestion(qIndex, 'explanation', e.target.value);
+                      handleTextareaResize(qIndex, 'explanation');
+                    }}
+                    onPaste={(e) => handlePaste(e, qIndex, 'explanation')}
+                    onInput={() => handleTextareaResize(qIndex, 'explanation')}
+                    placeholder={t('quizEditor.questions.explanationPlaceholder') || 'Nhập giải thích... (Có thể paste từ Word/Google Docs hoặc paste ảnh)'}
+                    rows={4}
+                    style={{ minHeight: '100px', resize: 'vertical' }}
+                    className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black font-mono text-sm"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Tip: Paste từ Word/Google Docs sẽ tự động format. Paste ảnh (Ctrl+V) sẽ tự động upload và chèn vào.
+                  </p>
+                  {/* Preview Panel */}
+                  {showQuestionPreview[`${qIndex}_explanation`] && question.explanation && (
+                    <div className="mt-3 p-3 bg-gray-50 border-[2px] border-gray-300 rounded-lg">
+                      <p className="text-xs font-bold text-gray-700 mb-2">📺 Preview:</p>
+                      <div 
+                        className="prose prose-sm max-w-none text-base leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: question.explanation }}
+                        style={{
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word'
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

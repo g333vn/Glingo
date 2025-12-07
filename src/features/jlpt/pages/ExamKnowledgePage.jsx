@@ -71,16 +71,28 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer, t }) => {
       <div className="text-gray-500 text-sm mb-2">
         {t('jlpt.knowledgePage.questionLabel', { number: question.id })}
       </div>
-      <div className="text-lg font-semibold mb-4">{question.question}</div>
+      <div 
+        className="text-lg font-semibold mb-4 prose prose-sm max-w-none"
+        dangerouslySetInnerHTML={{ __html: question.question }}
+        style={{
+          wordWrap: 'break-word',
+          overflowWrap: 'break-word'
+        }}
+      />
       
       {question.passage && (
-        <div className="bg-gray-50 p-4 rounded mb-4 text-base leading-relaxed">
-          {question.passage}
-        </div>
+        <div 
+          className="bg-gray-50 p-4 rounded mb-4 text-base leading-relaxed prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: question.passage }}
+          style={{
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word'
+          }}
+        />
       )}
       
       {question.text && (
-        <div className="mb-6 text-lg">
+        <div className="mb-6 text-lg prose prose-sm max-w-none">
           {question.underline ? (
             <span>
               {question.text.split(question.underline)[0]}
@@ -90,7 +102,13 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer, t }) => {
               {question.text.split(question.underline)[1]}
             </span>
           ) : (
-            question.text
+            <span 
+              dangerouslySetInnerHTML={{ __html: question.text }}
+              style={{
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word'
+              }}
+            />
           )}
         </div>
       )}

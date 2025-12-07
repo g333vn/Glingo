@@ -323,16 +323,16 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
 
       {/* 🔘 Mobile Toggle Button - Hidden when sidebar is open or on desktop */}
       {!isMobileOpen && (
-        <button
-          onClick={toggleMobileSidebar}
+      <button
+        onClick={toggleMobileSidebar}
           className="md:hidden fixed top-20 left-2 z-50 bg-gray-800 hover:bg-gray-700 text-white p-2.5 rounded-lg shadow-lg"
-          aria-label="Toggle Sidebar"
-          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
-        >
+        aria-label="Toggle Sidebar"
+        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
+      >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
-        </button>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+      </button>
       )}
 
       {/* 🌑 Mobile Backdrop */}

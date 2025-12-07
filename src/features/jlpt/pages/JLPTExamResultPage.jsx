@@ -445,31 +445,31 @@ function JLPTExamResultPage() {
       <div className="w-full pr-0 md:pr-4">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
           <Sidebar />
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
-            <div className="pt-4 px-4 md:px-6 pb-2">
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] overflow-hidden">
+            <div className="pt-3 sm:pt-4 px-3 sm:px-4 md:px-6 pb-2 flex-shrink-0">
               <Breadcrumbs paths={breadcrumbPaths} />
             </div>
-            <div className="flex-1 px-2 sm:px-4 md:px-6 py-3 sm:py-4 flex flex-col items-center justify-center overflow-y-auto">
+            <div className="flex-1 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-4 flex flex-col items-center md:justify-center justify-start overflow-y-auto overflow-x-hidden">
               {/* ✨ Animated Title */}
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 sm:mb-6 md:mb-8 lg:mb-12 text-center animate-slideUp px-4">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 sm:mb-6 md:mb-8 lg:mb-12 text-center animate-slideUp px-2 sm:px-4 flex-shrink-0 w-full">
                 {currentExam?.title || `JLPT ${examId}`} - {t('jlpt.resultPage.title')}
               </h1>
 
               {/* ✨ Animated Layout - ✅ FIXED PERFECT ALIGNMENT */}
-              <div className="flex flex-col md:flex-row gap-4 sm:gap-6 items-center md:items-stretch mb-6 sm:mb-8 w-full max-w-4xl px-4">
+              <div className="flex flex-col md:flex-row gap-4 sm:gap-6 items-center md:items-stretch mb-4 sm:mb-6 md:mb-8 w-full max-w-4xl px-2 sm:px-4 flex-shrink-0">
                 {/* ✨ Pass/Fail Card */}
                 <div 
-                  className={`rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center justify-between w-full md:w-64 h-64 sm:h-72 md:h-80 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp ${!isPass ? 'animate-shake' : ''}`}
+                  className={`rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center justify-between w-full md:w-64 h-auto min-h-[240px] sm:min-h-[280px] md:h-80 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp ${!isPass ? 'animate-shake' : ''}`}
                   style={{ animationDelay: '0.1s', animationFillMode: 'both' }}
                 >
-                  <div className="flex-1 flex items-center justify-center pt-4 sm:pt-6">
-                    <div className={`flex items-center justify-center w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 border-4 rounded-full text-2xl sm:text-3xl md:text-4xl font-bold transition-all duration-500 ${isPass ? 'border-red-500 text-red-500 animate-pulse-slow' : 'border-gray-400 text-gray-500'}`}>
+                  <div className="flex-1 flex items-center justify-center pt-4 sm:pt-6 pb-2">
+                    <div className={`flex items-center justify-center w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 border-4 rounded-full text-xl sm:text-3xl md:text-4xl font-bold transition-all duration-500 ${isPass ? 'border-red-500 text-red-500 animate-pulse-slow' : 'border-gray-400 text-gray-500'}`}>
                       <div className={isPass ? 'animate-spin-slow' : ''}>
                         {isPass ? t('jlpt.resultPage.pass') : t('jlpt.resultPage.fail')}
                       </div>
                     </div>
                   </div>
-                  <div className={`text-white font-bold w-full text-center py-3 sm:py-4 rounded-b-xl text-lg sm:text-xl md:text-2xl transition-all duration-500 ${isPass ? 'bg-gradient-to-r from-red-500 to-pink-500' : 'bg-gradient-to-r from-gray-500 to-gray-600'}`}>
+                  <div className={`text-white font-bold w-full text-center py-2.5 sm:py-3 md:py-4 rounded-b-xl text-base sm:text-xl md:text-2xl transition-all duration-500 ${isPass ? 'bg-gradient-to-r from-red-500 to-pink-500' : 'bg-gradient-to-r from-gray-500 to-gray-600'}`}>
                     <AnimatedNumber value={scores.total} /> / {SCORING_CONFIG.total.max}
                   </div>
                 </div>
@@ -478,42 +478,42 @@ function JLPTExamResultPage() {
                 <div className="flex flex-col gap-4 w-full md:flex-1 justify-between">
                   {/* 語彙・知識 */}
                   <div 
-                    className="rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full h-20 sm:h-24 flex flex-row items-center justify-between px-4 sm:px-6 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp"
+                    className="rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full min-h-[80px] sm:h-24 flex flex-row items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-0 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp"
                     style={{ animationDelay: '0.2s', animationFillMode: 'both' }}
                   >
                     <div className="flex flex-col items-start">
                       <span className="text-sm sm:text-base font-semibold text-gray-700">{t('jlpt.resultPage.knowledgeLabel')}</span>
                       <span className="text-xs text-gray-500">({breakdown.knowledgeCorrect}/{breakdown.knowledgeTotal})</span>
                     </div>
-                    <span className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                    <span className="text-xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                       <AnimatedNumber value={scores.knowledge} duration={1500} />{t('jlpt.resultPage.points')}
                     </span>
                   </div>
 
                   {/* 読解 */}
                   <div 
-                    className="rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full h-20 sm:h-24 flex flex-row items-center justify-between px-4 sm:px-6 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp"
+                    className="rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full min-h-[80px] sm:h-24 flex flex-row items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-0 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp"
                     style={{ animationDelay: '0.3s', animationFillMode: 'both' }}
                   >
                     <div className="flex flex-col items-start">
                       <span className="text-sm sm:text-base font-semibold text-gray-700">{t('jlpt.resultPage.readingLabel')}</span>
                       <span className="text-xs text-gray-500">({breakdown.readingCorrect}/{breakdown.readingTotal})</span>
                     </div>
-                    <span className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
+                    <span className="text-xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
                       <AnimatedNumber value={scores.reading} duration={1500} />{t('jlpt.resultPage.points')}
                     </span>
                   </div>
 
                   {/* 聴解 */}
                   <div 
-                    className="rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full h-20 sm:h-24 flex flex-row items-center justify-between px-4 sm:px-6 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp"
+                    className="rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full min-h-[80px] sm:h-24 flex flex-row items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-0 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp"
                     style={{ animationDelay: '0.4s', animationFillMode: 'both' }}
                   >
                     <div className="flex flex-col items-start">
                       <span className="text-sm sm:text-base font-semibold text-gray-700">{t('jlpt.resultPage.listeningLabel')}</span>
                       <span className="text-xs text-gray-500">({breakdown.listeningCorrect}/{breakdown.listeningTotal})</span>
                     </div>
-                    <span className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                    <span className="text-xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                       <AnimatedNumber value={scores.listening} duration={1500} />{t('jlpt.resultPage.points')}
                     </span>
                   </div>
@@ -521,7 +521,7 @@ function JLPTExamResultPage() {
               </div>
 
               {/* ✨ Animated Action Buttons - ✅ FIXED */}
-              <div className="flex flex-col gap-3 md:gap-4 w-full max-w-2xl animate-slideUp px-4" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
+              <div className="flex flex-col gap-3 md:gap-4 w-full max-w-2xl animate-slideUp px-2 sm:px-4 flex-shrink-0 pb-2 sm:pb-4" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
                 {/* View Answers Button */}
                 <button
                   onClick={handleViewAnswers}

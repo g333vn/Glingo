@@ -573,9 +573,14 @@ function QuizPage() {
               </div>
 
               <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-3 sm:p-4 mb-3 md:mb-4">
-                <p className="text-base sm:text-lg text-gray-800 mb-3 md:mb-4 leading-relaxed break-words">
-                  {currentQuestion.text}
-                </p>
+                <div 
+                  className="text-base sm:text-lg text-gray-800 mb-3 md:mb-4 leading-relaxed break-words prose prose-sm sm:prose-base max-w-none"
+                  dangerouslySetInnerHTML={{ __html: currentQuestion.text }}
+                  style={{
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word'
+                  }}
+                />
                 
                 {/* ✅ Audio Player - For listening questions */}
                 {currentQuestion.audioUrl && (
@@ -643,7 +648,15 @@ function QuizPage() {
                         <strong>{t('lesson.correctAnswer')}:</strong> {currentQuestion.correct}
                       </p>
                       <p className="text-xs sm:text-sm text-white font-black break-words">
-                        <strong>{t('lesson.explanation')}:</strong> {currentQuestion.explanation}
+                        <strong>{t('lesson.explanation')}:</strong>{' '}
+                        <span 
+                          dangerouslySetInnerHTML={{ __html: currentQuestion.explanation }}
+                          className="prose prose-sm max-w-none"
+                          style={{
+                            wordWrap: 'break-word',
+                            overflowWrap: 'break-word'
+                          }}
+                        />
                       </p>
                     </>
                   )}

@@ -9,40 +9,7 @@ import SavedWordsDrawer from './SavedWordsDrawer.jsx';
 function DictionaryButton() {
   const { isEnabled, toggleDictionary, savedWords } = useDictionary();
   const { t } = useLanguage();
-  const [showFirstTimeHint, setShowFirstTimeHint] = useState(false);
-  const [hintStep, setHintStep] = useState(1); // 1: Chưa bật, 2: Đã bật
   const [showSavedWordsDrawer, setShowSavedWordsDrawer] = useState(false);
-
-  useEffect(() => {
-    // ✅ IMPROVED: Check if user has seen the hint before
-    const hasSeenHint = localStorage.getItem('dictionary-hint-seen');
-    if (!hasSeenHint) {
-      // Hiển thị tooltip ngay từ đầu (khi chưa bật)
-      setShowFirstTimeHint(true);
-      setHintStep(1);
-      
-      // Auto-hide sau 12 giây (tăng từ 8 giây)
-      const timer = setTimeout(() => {
-        setShowFirstTimeHint(false);
-        localStorage.setItem('dictionary-hint-seen', 'true');
-      }, 12000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, []); // ✅ FIXED: Không phụ thuộc vào isEnabled
-
-  // ✅ NEW: Cập nhật hint khi user bật chức năng
-  useEffect(() => {
-    if (showFirstTimeHint && isEnabled && hintStep === 1) {
-      // Chuyển sang bước 2 khi user bật
-      setHintStep(2);
-      // Reset timer để hiển thị thêm 10 giây nữa
-      setTimeout(() => {
-        setShowFirstTimeHint(false);
-        localStorage.setItem('dictionary-hint-seen', 'true');
-      }, 10000);
-    }
-  }, [isEnabled, showFirstTimeHint, hintStep]);
 
   useEffect(() => {
     const styleId = 'dictionary-button-styles';
@@ -219,99 +186,6 @@ function DictionaryButton() {
         isOpen={showSavedWordsDrawer}
         onClose={() => setShowSavedWordsDrawer(false)}
       />
-
-      {/* ✅ IMPROVED: First-Time Hint Popup - Hiển thị 2 bước rõ ràng */}
-      {showFirstTimeHint && (
-        <div className="fixed top-20 md:top-24 lg:top-28 right-6 z-[60] animate-slide-in">
-          <div className="relative">
-            {/* Main Tooltip Card - ✨ NEO BRUTALISM */}
-            <div className="relative bg-yellow-300 text-black px-5 py-4 rounded-2xl border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] max-w-sm">
-              
-              <div className="flex items-start gap-3">
-                {/* Icon */}
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white border-[2px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                  <span className="text-xl">💡</span>
-                </div>
-                
-                {/* Content */}
-                <div className="flex-1">
-                  <h4 className="font-black text-sm md:text-base uppercase tracking-wide mb-3 text-center md:text-left">
-                    Hướng dẫn sử dụng
-                  </h4>
-                  
-                  {/* ✅ NEW: Tooltip 2 bước */}
-                  {hintStep === 1 ? (
-                    // Bước 1: Chưa bật
-                    <div className="space-y-3">
-                      <div className="bg-white/80 rounded-xl p-3 border-[2px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="bg-blue-500 text-white text-xs font-black px-2 py-1 rounded border-[2px] border-black">{t('dictionary.step1')}</span>
-                          <span className="text-xs font-black text-black">{t('dictionary.enableFeature')}</span>
-                        </div>
-                        <p className="text-sm font-bold leading-relaxed text-black">
-                          {t('dictionary.clickButton')} <span className="bg-green-500 text-white px-1 rounded">"{t('dictionary.turnOn').toUpperCase()}"</span>
-                        </p>
-                      </div>
-                      
-                      <div className="bg-white/60 rounded-xl p-3 border-[2px] border-dashed border-gray-500">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="bg-gray-400 text-white text-xs font-black px-2 py-1 rounded border-[2px] border-black">{t('dictionary.step2')}</span>
-                          <span className="text-xs font-black text-gray-600">{t('dictionary.doubleClickToTranslate')}</span>
-                        </div>
-                        <p className="text-sm font-bold leading-relaxed text-gray-600">
-                          {t('dictionary.thenDoubleClick')}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    // Bước 2: Đã bật
-                    <div className="space-y-3">
-                      <div className="bg-green-100 rounded-xl p-3 border-[2px] border-green-600 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="bg-green-600 text-white text-xs font-black px-2 py-1 rounded border-[2px] border-black">✓ {t('dictionary.completed')}</span>
-                          <span className="text-xs font-black text-green-800">{t('dictionary.enabledMessage')}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-white/80 rounded-xl p-3 border-[2px] border-black animate-pulse">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="bg-blue-500 text-white text-xs font-black px-2 py-1 rounded border-[2px] border-black">{t('dictionary.step2')}</span>
-                          <span className="text-xs font-black text-black">{t('dictionary.doubleClickToTranslate')}!</span>
-                        </div>
-                        <p className="text-sm font-bold leading-relaxed text-black mb-2">
-                          {t('dictionary.doubleClickWord')} (JP-VI-EN)
-                        </p>
-                        <div className="flex items-center gap-2 text-xs bg-blue-100 rounded px-2 py-1 border-[2px] border-blue-500">
-                          <span className="text-base">👆</span>
-                          <span className="text-black font-black">{t('dictionary.tryNow')}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Close Button */}
-                <button 
-                  onClick={() => {
-                    setShowFirstTimeHint(false);
-                    localStorage.setItem('dictionary-hint-seen', 'true');
-                  }}
-                  className="flex-shrink-0 text-black hover:bg-black hover:text-white rounded-full w-7 h-7 flex items-center justify-center transition-all duration-200 text-xl leading-none font-black border-[2px] border-black"
-                  title="Đóng hướng dẫn"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-            
-            {/* Arrow Pointer - ✨ NEO BRUTALISM */}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[-4px] z-20">
-              <div className="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[12px] border-t-yellow-400"></div>
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[14px] border-t-black mt-[-18px]"></div>
-            </div>
-          </div>
-        </div>
-      )}
 
     </>
   );

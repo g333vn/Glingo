@@ -173,6 +173,15 @@ function ExamManagementPage() {
   const [isFinalizingExam, setIsFinalizingExam] = useState(false);
   const [isUploadingAudio, setIsUploadingAudio] = useState(false); // ✅ Track audio upload progress
   
+  // ✅ NEW: Image upload and textarea enhancement states
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadingImageField, setUploadingImageField] = useState(''); // 'question', 'explanation', 'instruction'
+  const imageInputRefs = React.useRef({});
+  const questionTextareaRef = React.useRef(null);
+  const explanationTextareaRef = React.useRef(null);
+  const instructionTextareaRef = React.useRef(null);
+  const [showQuestionPreview, setShowQuestionPreview] = useState({}); // For question and explanation preview
+  
   // ✅ Quiz Editor style states - Preview & Export
   const [showPreview, setShowPreview] = useState(false);
   const [exportedJSON, setExportedJSON] = useState('');
@@ -826,6 +835,289 @@ function ExamManagementPage() {
     return titles[testType] || '問題1';
   };
 
+  // ✅ NEW: Image upload handler (Supabase Storage + Insert into textarea)
+  const handleImageUpload = async (file, field = 'question') => {
+    if (!file) return;
+    
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      alert('❌ Chỉ hỗ trợ ảnh: JPEG, PNG, WEBP, GIF');
+      return;
+    }
+    
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      alert(`❌ Ảnh quá lớn!\n\nKích thước: ${(file.size / 1024 / 1024).toFixed(2)}MB\nGiới hạn: 5MB`);
+      return;
+    }
+    
+    setIsUploadingImage(true);
+    setUploadingImageField(field);
+    
+    try {
+      const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
+      
+      // 📁 Đường dẫn có ngữ nghĩa: level / exam / testType / section / question
+      const safeLevel = selectedLevel || 'unknown-level';
+      const safeExam = selectedExam?.id || 'unknown-exam';
+      const safeTestType = selectedTestType || 'unknown-type';
+      const safeSection = selectedSection?.id || 'unknown-section';
+      const safeQuestion = questionForm.id || 'question-unknown';
+      const prefix = `level-${safeLevel}/exam-${safeExam}/${safeTestType}/section-${safeSection}/${safeQuestion}`;
+      const path = generateFilePath(prefix, file.name);
+      
+      const result = await uploadImage(file, path);
+      
+      if (!result.success) {
+        console.error('[ExamManagement] ❌ Error uploading image to Supabase:', result.error);
+        alert('❌ Lỗi upload ảnh!');
+      } else {
+        console.log('[ExamManagement] ✅ Image uploaded to Supabase:', result.url);
+        
+        // Insert <img> tag vào textarea tại vị trí cursor
+        const textarea = field === 'explanation' 
+          ? explanationTextareaRef.current
+          : field === 'instruction'
+          ? instructionTextareaRef.current
+          : questionTextareaRef.current;
+          
+        if (textarea) {
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const currentValue = field === 'explanation'
+            ? questionForm.explanation || ''
+            : field === 'instruction'
+            ? sectionForm.instruction || ''
+            : questionForm.question || '';
+          
+          const imgTag = `<img src="${result.url}" alt="${field === 'explanation' ? 'Explanation image' : field === 'instruction' ? 'Instruction image' : 'Question image'}" style="max-width: 100%; height: auto; display: block; margin: 10px 0;" />`;
+          
+          const newValue = 
+            currentValue.substring(0, start) + 
+            imgTag + 
+            currentValue.substring(end);
+          
+          if (field === 'explanation') {
+            setQuestionForm({ ...questionForm, explanation: newValue });
+          } else if (field === 'instruction') {
+            setSectionForm({ ...sectionForm, instruction: newValue });
+          } else {
+            setQuestionForm({ ...questionForm, question: newValue });
+          }
+          
+          // Restore cursor position
+          setTimeout(() => {
+            textarea.focus();
+            const newPos = start + imgTag.length;
+            textarea.setSelectionRange(newPos, newPos);
+          }, 0);
+        }
+        
+        alert(`✅ Upload ảnh thành công!\n\nFile: ${file.name}`);
+      }
+    } catch (error) {
+      console.error('[ExamManagement] ❌ Unexpected error during image upload:', error);
+      alert('❌ Lỗi upload ảnh!');
+    } finally {
+      setIsUploadingImage(false);
+      setUploadingImageField('');
+    }
+  };
+
+  // ✅ NEW: Process pasted HTML (clean up, convert formatting, furigana)
+  const processPastedHTML = (html) => {
+    if (!html || !html.trim()) return '';
+    
+    // Create temporary div to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    // Convert <b> to <strong>
+    tempDiv.querySelectorAll('b').forEach(el => {
+      const strong = document.createElement('strong');
+      strong.innerHTML = el.innerHTML;
+      el.replaceWith(strong);
+    });
+    
+    // Convert <i> to <em>
+    tempDiv.querySelectorAll('i').forEach(el => {
+      const em = document.createElement('em');
+      em.innerHTML = el.innerHTML;
+      el.replaceWith(em);
+    });
+    
+    // Convert <p> to preserve line breaks
+    tempDiv.querySelectorAll('p').forEach(el => {
+      if (el.textContent.trim()) {
+        el.outerHTML = el.innerHTML + '<br/>';
+      } else {
+        el.remove();
+      }
+    });
+    
+    // Convert <div> to <br/> if it's a line break
+    tempDiv.querySelectorAll('div').forEach(el => {
+      if (el.textContent.trim() && !el.querySelector('p, div, h1, h2, h3, h4, h5, h6')) {
+        el.outerHTML = el.innerHTML + '<br/>';
+      }
+    });
+    
+    // Remove empty tags
+    tempDiv.querySelectorAll('*').forEach(el => {
+      if (!el.textContent.trim() && !el.querySelector('img, br')) {
+        el.remove();
+      }
+    });
+    
+    // Detect furigana pattern: 渋谷(しぶや) → <ruby>渋谷<rt>しぶや</rt></ruby>
+    let processed = tempDiv.innerHTML;
+    const furiganaPattern = /([\u4E00-\u9FAF]+)\(([\u3040-\u309F\u30A0-\u30FF]+)\)/g;
+    processed = processed.replace(furiganaPattern, '<ruby>$1<rt>$2</rt></ruby>');
+    
+    return processed;
+  };
+
+  // ✅ NEW: Paste handler (detect image or text/HTML)
+  const handlePaste = async (e, field = 'question') => {
+    const items = e.clipboardData.items;
+    let hasImage = false;
+    
+    // Check for images first
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        hasImage = true;
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          await handleImageUpload(file, field);
+        }
+        return;
+      }
+    }
+    
+    // No image → Process text/HTML
+    if (!hasImage) {
+      const html = e.clipboardData.getData('text/html');
+      const text = e.clipboardData.getData('text/plain');
+      
+      if (html && html.trim()) {
+        e.preventDefault();
+        
+        // Process HTML: clean up, convert formatting
+        const processed = processPastedHTML(html);
+        
+        // Insert into textarea
+        const textarea = field === 'explanation'
+          ? explanationTextareaRef.current
+          : field === 'instruction'
+          ? instructionTextareaRef.current
+          : questionTextareaRef.current;
+          
+        if (textarea) {
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const currentValue = field === 'explanation'
+            ? questionForm.explanation || ''
+            : field === 'instruction'
+            ? sectionForm.instruction || ''
+            : questionForm.question || '';
+          
+          const newValue = 
+            currentValue.substring(0, start) + 
+            processed + 
+            currentValue.substring(end);
+          
+          if (field === 'explanation') {
+            setQuestionForm({ ...questionForm, explanation: newValue });
+          } else if (field === 'instruction') {
+            setSectionForm({ ...sectionForm, instruction: newValue });
+          } else {
+            setQuestionForm({ ...questionForm, question: newValue });
+          }
+          
+          // Restore cursor position
+          setTimeout(() => {
+            textarea.focus();
+            const newPos = start + processed.length;
+            textarea.setSelectionRange(newPos, newPos);
+          }, 0);
+        }
+      }
+    }
+  };
+
+  // ✅ NEW: Toolbar functions (format text)
+  const insertTextAtCursor = (beforeText, afterText = '', field = 'question') => {
+    const textarea = field === 'explanation'
+      ? explanationTextareaRef.current
+      : field === 'instruction'
+      ? instructionTextareaRef.current
+      : questionTextareaRef.current;
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentValue = field === 'explanation'
+      ? questionForm.explanation || ''
+      : field === 'instruction'
+      ? (editingSection?.instruction || '')
+      : questionForm.question || '';
+    const selectedText = currentValue.substring(start, end);
+    
+    const newValue = 
+      currentValue.substring(0, start) + 
+      beforeText + selectedText + afterText + 
+      currentValue.substring(end);
+    
+    if (field === 'explanation') {
+      setQuestionForm({ ...questionForm, explanation: newValue });
+    } else if (field === 'instruction') {
+      setSectionForm({ ...sectionForm, instruction: newValue });
+    } else {
+      setQuestionForm({ ...questionForm, question: newValue });
+    }
+    
+    // Restore cursor position
+    setTimeout(() => {
+      textarea.focus();
+      const newPos = start + beforeText.length + selectedText.length + afterText.length;
+      textarea.setSelectionRange(newPos, newPos);
+    }, 0);
+  };
+
+  const handleFormatBold = (field = 'question') => {
+    insertTextAtCursor('<strong>', '</strong>', field);
+  };
+
+  const handleFormatItalic = (field = 'question') => {
+    insertTextAtCursor('<em>', '</em>', field);
+  };
+
+  const handleInsertLineBreak = (field = 'question') => {
+    insertTextAtCursor('<br/>', '', field);
+  };
+
+  // ✅ NEW: Auto-resize textarea
+  const handleTextareaResize = (field = 'question') => {
+    const textarea = field === 'explanation'
+      ? explanationTextareaRef.current
+      : field === 'instruction'
+      ? instructionTextareaRef.current
+      : questionTextareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
+  };
+
+  // ✅ NEW: Toggle preview
+  const togglePreview = (field = 'question') => {
+    setShowQuestionPreview(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
   // ✅ Helper: Lấy instruction mặc định
   const getDefaultInstruction = (testType) => {
     const instructions = {
@@ -931,18 +1223,72 @@ function ExamManagementPage() {
     setShowQuestionForm(true);
   };
 
+  // ✅ NEW: Handle save question (save and close form)
   const handleSaveQuestion = async (e) => {
     e.preventDefault();
+    const result = await saveQuestionData();
+    if (result?.success) {
+      setShowQuestionForm(false);
+      setAutoGeneratedId(null);
+      setEditingQuestion(null);
+      alert(`✅ ${t('examManagement.config.saveSuccess')}\n\n` +
+            `❓ ${editingQuestion ? t('examManagement.questions.questionForm.questionSaved') : t('examManagement.questions.questionForm.questionAdded')} ${t('examManagement.questions.questionForm.questionSavedText')}:\n` +
+            `   - ID: ${result.questionId || 'N/A'}\n` +
+            `   - ${t('examManagement.questions.testTypes.knowledge')}: ${getTestTypeLabel(selectedTestType) || selectedTestType}\n` +
+            `   - ${t('examManagement.exams.table.title')}: ${selectedExam?.title || selectedExam?.id}\n\n` +
+            `💾 ${t('examManagement.questions.questionForm.savedToSystem')}`);
+    }
+  };
+
+  // ✅ NEW: Handle save and add new question (save, reset form, keep form open)
+  const handleSaveAndAddNew = async (e) => {
+    e.preventDefault();
+    const result = await saveQuestionData();
+    if (result?.success) {
+      // Reset form for new question
+      const nextId = nextQuestionIdSuggestion;
+      setQuestionForm({
+        id: String(nextId),
+        category: selectedTestType,
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswer: 0,
+        explanation: '',
+        audioUrl: '',
+        audioFile: null
+      });
+      setAutoGeneratedId(nextId);
+      setEditingQuestion(null);
+      
+      // Reset textarea refs
+      if (questionTextareaRef.current) {
+        questionTextareaRef.current.value = '';
+        handleTextareaResize('question');
+      }
+      if (explanationTextareaRef.current) {
+        explanationTextareaRef.current.value = '';
+        handleTextareaResize('explanation');
+      }
+      
+      alert(`✅ ${t('examManagement.config.saveSuccess')}\n\n` +
+            `❓ ${t('examManagement.questions.questionForm.questionAdded')} ${t('examManagement.questions.questionForm.questionSavedText')}:\n` +
+            `   - ID: ${result.questionId || 'N/A'}\n\n` +
+            `➕ ${t('examManagement.questions.questionForm.readyForNewQuestion') || 'Sẵn sàng thêm câu hỏi mới!'}`);
+    }
+  };
+
+  // ✅ NEW: Extract save logic to reusable function
+  const saveQuestionData = async () => {
     if (!questionForm.question || !selectedSection) {
       alert(`⚠️ ${t('examManagement.questions.questionForm.fillAllInfoGeneral')}`);
-      return;
+      return { success: false };
     }
 
     // Validate options
     const validOptions = questionForm.options.filter(opt => opt.trim() !== '');
     if (validOptions.length < 2) {
       alert('⚠️ Cần ít nhất 2 lựa chọn!');
-      return;
+      return { success: false };
     }
 
     // ✅ FIX: Kiểm tra duplicate TRƯỚC khi map để tránh lưu nhầm
@@ -960,7 +1306,7 @@ function ExamManagementPage() {
         
         if (isDuplicate) {
           alert(`⚠️ ${t('examManagement.questions.questionForm.idExistsInSection', { id: questionForm.id })}`);
-          return; // ✅ FIX: Return early, không lưu gì cả
+          return { success: false }; // ✅ FIX: Return early, không lưu gì cả
         }
       }
     }
@@ -997,7 +1343,7 @@ function ExamManagementPage() {
         console.error('❌ Error uploading audio to Supabase:', error);
         alert(`⚠️ ${t('examManagement.questions.questionForm.audioUploadError') || 'Lỗi khi upload audio file. Vui lòng thử lại.'}\n\n${error.message}`);
         setIsUploadingAudio(false);
-        return; // Stop saving if upload fails
+        return { success: false }; // Stop saving if upload fails
       } finally {
         setIsUploadingAudio(false);
       }
@@ -1031,30 +1377,17 @@ function ExamManagementPage() {
         const questionData = {
           ...questionDataWithoutFile,
           options: validOptions,
-          // ✅ FIX: Đảm bảo category được set đúng dựa trên selectedTestType
-          category: questionForm.category || selectedTestType, // ✅ Set category từ testType (knowledge/reading/listening)
-          // ✅ FIX: Save audio in appropriate format
           ...audioStorage
         };
 
-        // For listening, ensure proper structure matching ExamListeningPage
-        if (selectedTestType === 'listening') {
-          // Convert id to number format (01, 02, etc.) for listening
-          const numberStr = String(questionForm.id).padStart(2, '0');
-          questionData.number = numberStr;
-          questionData.subNumber = questionForm.id;
-          // Ensure section.id is string for key format `${section.id}-${q.number}`
-          if (typeof section.id !== 'string') {
-            section.id = String(section.id);
-          }
-        }
-        
         if (editingQuestion) {
-          const index = questions.findIndex(q => 
-            q.id === editingQuestion.id || 
-            (selectedTestType === 'listening' && q.number === editingQuestion.number)
-          );
-          if (index >= 0) {
+          const index = questions.findIndex(q => {
+            if (selectedTestType === 'listening') {
+              return q.number === editingQuestion.number;
+            }
+            return q.id === editingQuestion.id;
+          });
+          if (index !== -1) {
             questions[index] = questionData;
           } else {
             console.warn('⚠️ Question to edit not found, adding as new question');
@@ -1096,21 +1429,15 @@ function ExamManagementPage() {
 
     await saveSections(updatedSections);
     
-    // ✅ FIX: Revoke blob URL after saving (if converted to base64)
-    if (convertedAudioData && questionForm.audioUrl && questionForm.audioUrl.startsWith('blob:')) {
+    // ✅ FIX: Revoke blob URL after saving (if exists)
+    if (questionForm.audioUrl && questionForm.audioUrl.startsWith('blob:')) {
       URL.revokeObjectURL(questionForm.audioUrl);
       console.log('✅ Revoked blob URL after saving');
     }
     
-    setShowQuestionForm(false);
-    setAutoGeneratedId(null);
-    alert(`✅ ${t('examManagement.config.saveSuccess')}\n\n` +
-          `❓ ${editingQuestion ? t('examManagement.questions.questionForm.questionSaved') : t('examManagement.questions.questionForm.questionAdded')} ${t('examManagement.questions.questionForm.questionSavedText')}:\n` +
-          `   - ID: ${questionForm.id || 'N/A'}\n` +
-          `   - ${t('examManagement.questions.testTypes.knowledge')}: ${getTestTypeLabel(selectedTestType) || selectedTestType}\n` +
-          `   - ${t('examManagement.exams.table.title')}: ${selectedExam?.title || selectedExam?.id}\n\n` +
-          `💾 ${t('examManagement.questions.questionForm.savedToSystem')}`);
+    return { success: true, questionId: questionForm.id };
   };
+
 
   const handleDeleteQuestion = async (section, question) => {
     if (confirm(`⚠️ ${t('examManagement.delete.questionConfirm')}`)) {
@@ -2049,7 +2376,7 @@ function ExamManagementPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Form Input - 2 columns */}
             <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-              <form onSubmit={handleSaveQuestion} className="space-y-4 sm:space-y-6">
+              <form onSubmit={(e) => { e.preventDefault(); }} className="space-y-4 sm:space-y-6">
                 {/* Question ID */}
                 <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2123,19 +2450,109 @@ function ExamManagementPage() {
                   )}
                 </div>
 
-                {/* Question Text - Like Quiz Editor */}
+                {/* ✅ ENHANCED: Question Text with Full Features (Paste, Upload, Format, Preview) */}
                 <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('examManagement.questions.questionForm.questionLabel')}
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t('examManagement.questions.questionForm.questionLabel')}
+                    </label>
+                    {/* Toolbar */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleFormatBold('question')}
+                        className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors"
+                        title="Bold"
+                      >
+                        <strong>B</strong>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFormatItalic('question')}
+                        className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors italic"
+                        title="Italic"
+                      >
+                        I
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleInsertLineBreak('question')}
+                        className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors"
+                        title="Line Break"
+                      >
+                        ⏎
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const key = 'question';
+                          if (!imageInputRefs.current[key]) {
+                            imageInputRefs.current[key] = document.createElement('input');
+                            imageInputRefs.current[key].type = 'file';
+                            imageInputRefs.current[key].accept = 'image/jpeg,image/jpg,image/png,image/webp,image/gif';
+                            imageInputRefs.current[key].onchange = (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleImageUpload(file, 'question');
+                            };
+                          }
+                          imageInputRefs.current[key].click();
+                        }}
+                        disabled={isUploadingImage && uploadingImageField === 'question'}
+                        className={`px-2 py-1 text-xs font-black rounded border-[2px] border-black transition-colors ${
+                          isUploadingImage && uploadingImageField === 'question'
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                        title="Upload Image"
+                      >
+                        {isUploadingImage && uploadingImageField === 'question' ? '⏳' : '📷'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => togglePreview('question')}
+                        className={`px-2 py-1 text-xs font-black rounded border-[2px] border-black transition-colors ${
+                          showQuestionPreview['question']
+                            ? 'bg-green-500 text-white'
+                            : 'bg-white hover:bg-gray-100'
+                        }`}
+                        title="Toggle Preview"
+                      >
+                        👁
+                      </button>
+                    </div>
+                  </div>
                   <textarea
+                    ref={questionTextareaRef}
                     value={questionForm.question}
-                    onChange={(e) => setQuestionForm({ ...questionForm, question: e.target.value })}
+                    onChange={(e) => {
+                      setQuestionForm({ ...questionForm, question: e.target.value });
+                      handleTextareaResize('question');
+                    }}
+                    onPaste={(e) => handlePaste(e, 'question')}
+                    onInput={() => handleTextareaResize('question')}
                     required
-                    placeholder={t('examManagement.questions.questionForm.questionPlaceholder')}
-                    rows={3}
-                    className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]"
+                    placeholder={t('examManagement.questions.questionForm.questionPlaceholder') || 'Nhập câu hỏi tiếng Nhật... (Có thể paste từ Word/Google Docs hoặc paste ảnh)'}
+                    rows={6}
+                    style={{ minHeight: '150px', resize: 'vertical' }}
+                    className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white font-mono text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Tip: Paste từ Word/Google Docs sẽ tự động format. Paste ảnh (Ctrl+V) sẽ tự động upload và chèn vào.
+                  </p>
+                  {/* Preview Panel */}
+                  {showQuestionPreview['question'] && questionForm.question && (
+                    <div className="mt-3 p-3 bg-gray-50 border-[2px] border-gray-300 rounded-lg">
+                      <p className="text-xs font-bold text-gray-700 mb-2">📺 Preview:</p>
+                      <div 
+                        className="prose prose-sm max-w-none text-base leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: questionForm.question }}
+                        style={{
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word'
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Options - Grid Layout like Quiz Editor */}
@@ -2188,19 +2605,109 @@ function ExamManagementPage() {
                   </div>
                 </div>
 
-                {/* Explanation - Like Quiz Editor */}
+                {/* ✅ ENHANCED: Explanation with Full Features (Paste, Upload, Format, Preview) */}
                 <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('examManagement.questions.questionForm.explanationLabel')}
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t('examManagement.questions.questionForm.explanationLabel')}
+                    </label>
+                    {/* Toolbar */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleFormatBold('explanation')}
+                        className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors"
+                        title="Bold"
+                      >
+                        <strong>B</strong>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFormatItalic('explanation')}
+                        className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors italic"
+                        title="Italic"
+                      >
+                        I
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleInsertLineBreak('explanation')}
+                        className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors"
+                        title="Line Break"
+                      >
+                        ⏎
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const key = 'explanation';
+                          if (!imageInputRefs.current[key]) {
+                            imageInputRefs.current[key] = document.createElement('input');
+                            imageInputRefs.current[key].type = 'file';
+                            imageInputRefs.current[key].accept = 'image/jpeg,image/jpg,image/png,image/webp,image/gif';
+                            imageInputRefs.current[key].onchange = (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleImageUpload(file, 'explanation');
+                            };
+                          }
+                          imageInputRefs.current[key].click();
+                        }}
+                        disabled={isUploadingImage && uploadingImageField === 'explanation'}
+                        className={`px-2 py-1 text-xs font-black rounded border-[2px] border-black transition-colors ${
+                          isUploadingImage && uploadingImageField === 'explanation'
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                        title="Upload Image"
+                      >
+                        {isUploadingImage && uploadingImageField === 'explanation' ? '⏳' : '📷'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => togglePreview('explanation')}
+                        className={`px-2 py-1 text-xs font-black rounded border-[2px] border-black transition-colors ${
+                          showQuestionPreview['explanation']
+                            ? 'bg-green-500 text-white'
+                            : 'bg-white hover:bg-gray-100'
+                        }`}
+                        title="Toggle Preview"
+                      >
+                        👁
+                      </button>
+                    </div>
+                  </div>
                   <textarea
+                    ref={explanationTextareaRef}
                     value={questionForm.explanation}
-                    onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
+                    onChange={(e) => {
+                      setQuestionForm({ ...questionForm, explanation: e.target.value });
+                      handleTextareaResize('explanation');
+                    }}
+                    onPaste={(e) => handlePaste(e, 'explanation')}
+                    onInput={() => handleTextareaResize('explanation')}
                     required
-                    placeholder={t('examManagement.questions.questionForm.explanationPlaceholder')}
-                    rows={2}
-                    className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]"
+                    placeholder={t('examManagement.questions.questionForm.explanationPlaceholder') || 'Nhập giải thích... (Có thể paste từ Word/Google Docs hoặc paste ảnh)'}
+                    rows={4}
+                    style={{ minHeight: '100px', resize: 'vertical' }}
+                    className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white font-mono text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Tip: Paste từ Word/Google Docs sẽ tự động format. Paste ảnh (Ctrl+V) sẽ tự động upload và chèn vào.
+                  </p>
+                  {/* Preview Panel */}
+                  {showQuestionPreview['explanation'] && questionForm.explanation && (
+                    <div className="mt-3 p-3 bg-gray-50 border-[2px] border-gray-300 rounded-lg">
+                      <p className="text-xs font-bold text-gray-700 mb-2">📺 Preview:</p>
+                      <div 
+                        className="prose prose-sm max-w-none text-base leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: questionForm.explanation }}
+                        style={{
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word'
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Audio Upload Section - For Listening */}
@@ -2407,22 +2914,43 @@ function ExamManagementPage() {
                   </div>
                 )}
 
-                {/* Save Button */}
+                {/* ✅ ENHANCED: Save Buttons - Save Question & Save and Add New */}
                 <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 border-2 border-dashed border-gray-300">
-                  <button
-                    type="submit"
-                    disabled={isDuplicateQuestionId}
-                    className={`w-full px-4 sm:px-6 py-3 sm:py-4 rounded-lg transition-all font-semibold text-base sm:text-lg flex items-center justify-center gap-2 ${
-                      isDuplicateQuestionId
-                        ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
-                    }`}
-                  >
-                    <span className="text-xl sm:text-2xl">💾</span>
-                    {editingQuestion ? t('examManagement.questions.questionForm.saveChanges') : t('examManagement.questions.questionForm.addQuestion')}
-                  </button>
-                  <p className="text-center text-gray-500 text-xs sm:text-sm mt-2">
-                    {editingQuestion ? t('examManagement.questions.questionForm.saveChangesHint') : t('examManagement.questions.questionForm.addQuestionHint')}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {/* Button 1: Save Question */}
+                    <button
+                      type="button"
+                      onClick={handleSaveQuestion}
+                      disabled={isDuplicateQuestionId}
+                      className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 rounded-lg transition-all font-semibold text-base sm:text-lg flex items-center justify-center gap-2 ${
+                        isDuplicateQuestionId
+                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
+                      }`}
+                    >
+                      <span className="text-xl sm:text-2xl">💾</span>
+                      {editingQuestion ? t('examManagement.questions.questionForm.saveChanges') : t('examManagement.questions.questionForm.saveQuestion') || 'Lưu câu hỏi'}
+                    </button>
+                    
+                    {/* Button 2: Save and Add New */}
+                    <button
+                      type="button"
+                      onClick={handleSaveAndAddNew}
+                      disabled={isDuplicateQuestionId}
+                      className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 rounded-lg transition-all font-semibold text-base sm:text-lg flex items-center justify-center gap-2 ${
+                        isDuplicateQuestionId
+                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:from-blue-600 hover:to-cyan-700'
+                      }`}
+                    >
+                      <span className="text-xl sm:text-2xl">➕</span>
+                      {t('examManagement.questions.questionForm.saveAndAddNew') || 'Lưu và thêm câu mới'}
+                    </button>
+                  </div>
+                  <p className="text-center text-gray-500 text-xs sm:text-sm mt-3">
+                    {editingQuestion 
+                      ? t('examManagement.questions.questionForm.saveChangesHint') 
+                      : t('examManagement.questions.questionForm.saveButtonsHint') || 'Click "Lưu câu hỏi" để lưu và đóng form. Click "Lưu và thêm câu mới" để lưu và tiếp tục thêm câu hỏi.'}
                   </p>
                 </div>
               </form>
@@ -2786,17 +3314,108 @@ function ExamManagementPage() {
               placeholder={t('examManagement.questions.sections.titlePlaceholder')}
             />
           </div>
+          {/* ✅ ENHANCED: Instruction with Full Features (Paste, Upload, Format, Preview) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('examManagement.questions.sections.instruction')}
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                {t('examManagement.questions.sections.instruction')}
+              </label>
+              {/* Toolbar */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleFormatBold('instruction')}
+                  className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors"
+                  title="Bold"
+                >
+                  <strong>B</strong>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleFormatItalic('instruction')}
+                  className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors italic"
+                  title="Italic"
+                >
+                  I
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInsertLineBreak('instruction')}
+                  className="px-2 py-1 text-xs font-black rounded border-[2px] border-black bg-white hover:bg-gray-100 transition-colors"
+                  title="Line Break"
+                >
+                  ⏎
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const key = 'instruction';
+                    if (!imageInputRefs.current[key]) {
+                      imageInputRefs.current[key] = document.createElement('input');
+                      imageInputRefs.current[key].type = 'file';
+                      imageInputRefs.current[key].accept = 'image/jpeg,image/jpg,image/png,image/webp,image/gif';
+                      imageInputRefs.current[key].onchange = (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(file, 'instruction');
+                      };
+                    }
+                    imageInputRefs.current[key].click();
+                  }}
+                  disabled={isUploadingImage && uploadingImageField === 'instruction'}
+                  className={`px-2 py-1 text-xs font-black rounded border-[2px] border-black transition-colors ${
+                    isUploadingImage && uploadingImageField === 'instruction'
+                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                  title="Upload Image"
+                >
+                  {isUploadingImage && uploadingImageField === 'instruction' ? '⏳' : '📷'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => togglePreview('instruction')}
+                  className={`px-2 py-1 text-xs font-black rounded border-[2px] border-black transition-colors ${
+                    showQuestionPreview['instruction']
+                      ? 'bg-green-500 text-white'
+                      : 'bg-white hover:bg-gray-100'
+                  }`}
+                  title="Toggle Preview"
+                >
+                  👁
+                </button>
+              </div>
+            </div>
             <textarea
+              ref={instructionTextareaRef}
               value={sectionForm.instruction}
-              onChange={(e) => setSectionForm({ ...sectionForm, instruction: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
-              placeholder={t('examManagement.questions.sections.instructionPlaceholder')}
+              onChange={(e) => {
+                setSectionForm({ ...sectionForm, instruction: e.target.value });
+                handleTextareaResize('instruction');
+              }}
+              onPaste={(e) => handlePaste(e, 'instruction')}
+              onInput={() => handleTextareaResize('instruction')}
+              rows={4}
+              style={{ minHeight: '100px', resize: 'vertical' }}
+              className="w-full px-3 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white font-mono text-sm resize-y"
+              placeholder={t('examManagement.questions.sections.instructionPlaceholder') || 'Nhập hướng dẫn... (Có thể paste từ Word/Google Docs hoặc paste ảnh)'}
             />
+            <p className="text-xs text-gray-500 mt-1">
+              💡 Tip: Paste từ Word/Google Docs sẽ tự động format. Paste ảnh (Ctrl+V) sẽ tự động upload và chèn vào.
+            </p>
+            {/* Preview Panel */}
+            {showQuestionPreview['instruction'] && sectionForm.instruction && (
+              <div className="mt-3 p-3 bg-gray-50 border-[2px] border-gray-300 rounded-lg">
+                <p className="text-xs font-bold text-gray-700 mb-2">📺 Preview:</p>
+                <div 
+                  className="prose prose-sm max-w-none text-base leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: sectionForm.instruction }}
+                  style={{
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word'
+                  }}
+                />
+              </div>
+            )}
           </div>
           {(selectedTestType === 'knowledge' || selectedTestType === 'listening') && (
             <div>

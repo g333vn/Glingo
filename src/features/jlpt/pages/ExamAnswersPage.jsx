@@ -50,10 +50,10 @@ const QuickAnswerKey = ({ knowledgeQuestions, listeningQuestions, knowledgeAnswe
   };
 
   return (
-    <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mb-6 overflow-hidden">
+    <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mb-4 sm:mb-5 md:mb-6 overflow-hidden flex-shrink-0">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-blue-500 text-white px-6 py-4 flex items-center justify-between border-b-[3px] border-black hover:bg-[#FF5722] transition-all duration-200 font-black uppercase tracking-wide"
+        className="w-full bg-blue-500 text-white px-4 sm:px-5 md:px-6 py-3 sm:py-4 flex items-center justify-between border-b-[3px] border-black hover:bg-[#FF5722] transition-all duration-200 font-black uppercase tracking-wide text-sm sm:text-base"
       >
         <div className="flex items-center gap-3">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,11 +75,11 @@ const QuickAnswerKey = ({ knowledgeQuestions, listeningQuestions, knowledgeAnswe
       </button>
 
       {isOpen && (
-        <div className="p-6 bg-gray-50">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-4 sm:p-5 md:p-6 bg-gray-50">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
             {/* Part 1: Knowledge/Reading */}
-            <div className="bg-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4">
-              <h3 className="text-lg font-bold mb-3 text-blue-700 flex items-center gap-2">
+            <div className="bg-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-3 sm:p-4">
+              <h3 className="text-base sm:text-lg font-bold mb-2 sm:mb-3 text-blue-700 flex items-center gap-2 flex-wrap">
                 <span className="bg-blue-500 text-white px-2 py-1 rounded-md border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-black uppercase">
                   {t('jlpt.answersPage.part1Label')}
                 </span>
@@ -98,8 +98,8 @@ const QuickAnswerKey = ({ knowledgeQuestions, listeningQuestions, knowledgeAnswe
             </div>
 
             {/* Part 2: Listening */}
-            <div className="bg-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-4">
-              <h3 className="text-lg font-bold mb-3 text-purple-700 flex items-center gap-2">
+            <div className="bg-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-3 sm:p-4">
+              <h3 className="text-base sm:text-lg font-bold mb-2 sm:mb-3 text-purple-700 flex items-center gap-2 flex-wrap">
                 <span className="bg-purple-500 text-white px-2 py-1 rounded-md border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] font-black uppercase">
                   {t('jlpt.answersPage.part2Label')}
                 </span>
@@ -122,7 +122,7 @@ const QuickAnswerKey = ({ knowledgeQuestions, listeningQuestions, knowledgeAnswe
           </div>
 
           {/* Legend */}
-          <div className="mt-4 pt-4 border-t border-gray-200 flex flex-wrap gap-4 text-sm">
+          <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200 flex flex-wrap gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm">
             <div className="flex items-center gap-2">
               <span className="inline-block px-2 py-1 rounded-md border-[2px] border-black bg-green-500 text-white font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">1-A</span>
               <span className="text-gray-600">{t('jlpt.answersPage.legendCorrect', { id: '1', option: 'A' })}</span>
@@ -156,7 +156,7 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
     // ✅ UPDATED: Wrap toàn bộ card với ref và select-text
     <div 
       ref={cardRef}
-      className={`bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 mb-4 select-text ${
+      className={`bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-5 md:p-6 mb-3 sm:mb-4 select-text flex-shrink-0 ${
         isCorrect ? 'border-green-500' : 'border-red-500'
       }`}
     >
@@ -188,11 +188,16 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
             {question.passage}
           </div>
         )}
-        <div className="text-base sm:text-lg font-semibold mb-3">
-          {question.question || question.instruction}
-        </div>
+        <div 
+          className="text-base sm:text-lg font-semibold mb-3 prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: question.question || question.instruction }}
+          style={{
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word'
+          }}
+        />
         {question.text && (
-          <div className="text-base mb-3">
+          <div className="text-base mb-3 prose prose-sm max-w-none">
             {question.underline ? (
               <span>
                 {question.text.split(question.underline)[0]}
@@ -202,7 +207,13 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
                 {question.text.split(question.underline)[1]}
               </span>
             ) : (
-              question.text
+              <span 
+                dangerouslySetInnerHTML={{ __html: question.text }}
+                style={{
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word'
+                }}
+              />
             )}
           </div>
         )}
@@ -260,9 +271,14 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
           </svg>
           <span className="font-bold text-blue-800">{t('jlpt.answersPage.explanationLabel')}</span>
         </div>
-        <p className="text-gray-700 leading-relaxed">
-          {question.explanation || t('jlpt.answersPage.explanationMissing')}
-        </p>
+        <div 
+          className="text-gray-700 leading-relaxed prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: question.explanation || t('jlpt.answersPage.explanationMissing') }}
+          style={{
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word'
+          }}
+        />
       </div>
     </div>
   );
@@ -274,26 +290,26 @@ const ScoreSummary = ({ knowledgeScore, listeningScore, totalQuestions, correctA
   const { t } = useLanguage();
   
   return (
-    <div className="bg-blue-500 rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 mb-6 text-white">
-      <h2 className="text-2xl font-bold mb-4">{t('jlpt.answersPage.scoreHeading')}</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-4 backdrop-blur-sm">
-          <div className="text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreCorrect')}</div>
-          <div className="text-2xl sm:text-3xl font-bold">{correctAnswers}/{totalQuestions}</div>
+    <div className="bg-blue-500 rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 text-white flex-shrink-0">
+      <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">{t('jlpt.answersPage.scoreHeading')}</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+        <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="text-xs sm:text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreCorrect')}</div>
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold">{correctAnswers}/{totalQuestions}</div>
         </div>
-        <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-4 backdrop-blur-sm">
-          <div className="text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreAccuracy')}</div>
-          <div className="text-2xl sm:text-3xl font-bold">{percentage}%</div>
+        <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="text-xs sm:text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreAccuracy')}</div>
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold">{percentage}%</div>
         </div>
-        <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-4 backdrop-blur-sm">
-          <div className="text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreKnowledge')}</div>
-          <div className="text-2xl sm:text-3xl font-bold">
+        <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="text-xs sm:text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreKnowledge')}</div>
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold">
             {t('jlpt.answersPage.scoreValue', { score: knowledgeScore })}
           </div>
         </div>
-        <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-4 backdrop-blur-sm">
-          <div className="text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreListening')}</div>
-          <div className="text-2xl sm:text-3xl font-bold">
+        <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="text-xs sm:text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreListening')}</div>
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold">
             {t('jlpt.answersPage.scoreValue', { score: listeningScore })}
           </div>
         </div>
@@ -451,7 +467,7 @@ function ExamAnswersPage() {
       <div className="w-full pr-0 md:pr-4">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
           <Sidebar />
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden p-8 text-center">
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] overflow-hidden p-4 sm:p-6 md:p-8 text-center">
             <h1 className="text-2xl font-bold text-red-500 mb-4">{t('jlpt.commonTexts.notFoundTitle')}</h1>
             <p className="text-gray-600 mb-4">
               {t('jlpt.commonTexts.notFoundDesc', { examId, level: levelId.toUpperCase() })}
@@ -531,15 +547,15 @@ function ExamAnswersPage() {
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
           <Sidebar />
           
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
-            <div className="p-4 sm:p-5 md:p-6 border-b border-gray-300">
+          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col w-full md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] overflow-hidden">
+            <div className="pt-3 sm:pt-4 px-3 sm:px-4 md:p-5 md:px-6 pb-2 sm:pb-3 border-b border-gray-300 flex-shrink-0">
               <Breadcrumbs paths={breadcrumbPaths} />
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-3 sm:mt-4">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-2 sm:mt-3 md:mt-4 break-words">
                 {`${currentExam.title} ${t('jlpt.answersPage.titleSuffix')}`}
               </h1>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-5 md:px-6">
               <div className="max-w-4xl mx-auto">
                 <ScoreSummary
                   knowledgeScore={knowledgeScore}
@@ -555,12 +571,12 @@ function ExamAnswersPage() {
                   listeningAnswers={listeningAnswers}
                 />
 
-                <div className="mb-6 sm:mb-8">
-                  <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
-                    <span className="bg-blue-500 text-white px-2 sm:px-3 py-1 rounded text-sm sm:text-base">
+                <div className="mb-4 sm:mb-6 md:mb-8 flex-shrink-0">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 flex items-center gap-2 flex-wrap">
+                    <span className="bg-blue-500 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm md:text-base">
                       {t('jlpt.answersPage.part1Label')}
                     </span>
-                    <span className="text-base sm:text-lg md:text-xl">{t('jlpt.answersPage.part1Title')}</span>
+                    <span className="text-sm sm:text-base md:text-lg lg:text-xl">{t('jlpt.answersPage.part1Title')}</span>
                   </h2>
                   {knowledgeQuestions.map((q, idx) => (
                     <AnswerCard
@@ -573,12 +589,12 @@ function ExamAnswersPage() {
                   ))}
                 </div>
 
-                <div className="mb-6 sm:mb-8">
-                  <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
-                    <span className="bg-purple-500 text-white px-2 sm:px-3 py-1 rounded text-sm sm:text-base">
+                <div className="mb-4 sm:mb-6 md:mb-8 flex-shrink-0">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 flex items-center gap-2 flex-wrap">
+                    <span className="bg-purple-500 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm md:text-base">
                       {t('jlpt.answersPage.part2Label')}
                     </span>
-                    <span className="text-base sm:text-lg md:text-xl">{t('jlpt.answersPage.part2Title')}</span>
+                    <span className="text-sm sm:text-base md:text-lg lg:text-xl">{t('jlpt.answersPage.part2Title')}</span>
                   </h2>
                   {listeningQuestions.map((q, idx) => {
                     const questionKey = `${q.sectionId}-${q.number}`;
@@ -594,22 +610,22 @@ function ExamAnswersPage() {
                   })}
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6 sm:mt-8">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-4 sm:mt-6 md:mt-8 pb-2 sm:pb-4 flex-shrink-0">
                   <button
                     onClick={() => navigate(`/jlpt/${levelId}/${examId}/result`)}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base min-h-[48px]"
                   >
                     {t('jlpt.answersPage.buttons.backToResults')}
                   </button>
                   <button
                     onClick={() => setShowConfirmModal(true)}
-                    className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
+                    className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base min-h-[48px]"
                   >
                     {t('jlpt.answersPage.buttons.retake')}
                   </button>
                   <button
                     onClick={() => handleNavigateWithConfirm(`/jlpt/${levelId}`)}
-                    className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
+                    className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base min-h-[48px]"
                   >
                     {t('jlpt.answersPage.buttons.examList')}
                   </button>
