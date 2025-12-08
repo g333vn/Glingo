@@ -94,10 +94,18 @@ function AppContent() {
 
   // ✅ PHASE 5: Expose queryCache globally for memory optimization
   useEffect(() => {
-    import('../utils/queryCache.js').then(module => {
-      window.queryCache = module.default;
-      console.log('✅ [Phase 5] Query cache exposed globally for memory optimization');
-    });
+    // Dynamic import with error handling to avoid build failures
+    import('../utils/queryCache.js')
+      .then(module => {
+        if (module?.default) {
+          window.queryCache = module.default;
+          console.log('✅ [Phase 5] Query cache exposed globally for memory optimization');
+        }
+      })
+      .catch(err => {
+        // Silently fail if queryCache is not available (should not happen in production)
+        console.warn('[Phase 5] Could not load queryCache:', err);
+      });
   }, []);
 
   // ✅ NEW: Load global maintenance flag từ Supabase

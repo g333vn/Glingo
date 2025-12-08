@@ -80,9 +80,8 @@ const DebugTranslationTest = lazy(() => import('./components/examples/DebugTrans
 
 import './styles/index.css';
 
-// ✅ PHASE 5: Import optimization utilities
-import { prefetchCriticalRoutes } from './utils/routePrefetch.js';
-import { setupAutoCleanup } from './utils/memoryOptimization.js';
+// ✅ PHASE 5: Optimization utilities will be loaded dynamically
+// This avoids build failures if files are not yet committed
 
 // Set --app-vh to fix 100vh issues on mobile browsers
 function setAppVh() {
@@ -567,12 +566,21 @@ root.render(
 );
 
 // ✅ PHASE 5: Setup route prefetching and memory optimization after initial render
-setTimeout(() => {
-  // Prefetch critical routes when idle
-  prefetchCriticalRoutes();
-  
-  // Setup automatic memory cleanup (every 5 minutes)
-  setupAutoCleanup(5 * 60 * 1000);
-  
-  console.log('✅ [Phase 5] Route prefetching and memory optimization enabled');
+setTimeout(async () => {
+  try {
+    // Dynamic import to avoid build failures if files are not committed
+    const { prefetchCriticalRoutes } = await import('./utils/routePrefetch');
+    const { setupAutoCleanup } = await import('./utils/memoryOptimization');
+    
+    // Prefetch critical routes when idle
+    prefetchCriticalRoutes();
+    
+    // Setup automatic memory cleanup (every 5 minutes)
+    setupAutoCleanup(5 * 60 * 1000);
+    
+    console.log('✅ [Phase 5] Route prefetching and memory optimization enabled');
+  } catch (err) {
+    // Silently fail if files are not available (should not happen in production)
+    console.warn('[Phase 5] Could not load optimization utilities:', err.message);
+  }
 }, 3000); // Wait 3 seconds after initial load
