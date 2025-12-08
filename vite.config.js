@@ -3,25 +3,40 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
-// ✅ FIX: Plugin to inject process polyfill at the start of the bundle
+// ✅ FIX: Plugin to inject process polyfill at the start of ALL chunks
 const processPolyfillPlugin = () => {
+  const polyfillCode = `(function(){var p={env:{},version:'v18.0.0',browser:true};if(typeof window!=='undefined'){window.process=p;window.global=window;}if(typeof globalThis!=='undefined'){globalThis.process=p;globalThis.global=globalThis;}if(typeof process==='undefined'){var g=typeof globalThis!=='undefined'?globalThis:typeof window!=='undefined'?window:this;g.process=p;}})();`;
+  
   return {
     name: 'process-polyfill',
+    enforce: 'pre', // Run before other plugins
+    buildStart() {
+      // Ensure process is defined at the very start of the build
+      if (typeof global !== 'undefined' && typeof global.process === 'undefined') {
+        global.process = { env: {}, version: 'v18.0.0', browser: true }
+      }
+    },
     generateBundle(options, bundle) {
-      // Inject polyfill in all entry chunks
+      // Inject polyfill in ALL chunks (including vendor chunks) during build
       Object.keys(bundle).forEach(fileName => {
         const chunk = bundle[fileName]
-        if (chunk.type === 'chunk' && chunk.isEntry) {
-          chunk.code = `(function(){if(typeof process==='undefined'){window.process={env:{},version:'v18.0.0'};}if(typeof global==='undefined'){window.global=window;}})();\n${chunk.code}`
+        if (chunk.type === 'chunk') {
+          // Only inject if not already present to avoid duplication
+          if (!chunk.code.includes('window.process') && !chunk.code.includes('process.env')) {
+            chunk.code = polyfillCode + '\n' + chunk.code
+          }
         }
       })
     },
-    transformIndexHtml(html) {
-      // Also inject in HTML for dev mode
-      return html.replace(
-        '<head>',
-        `<head><script>if(typeof process==='undefined'){window.process={env:{},version:'v18.0.0'};}if(typeof global==='undefined'){window.global=window;}</script>`
-      )
+    transformIndexHtml: {
+      enforce: 'pre',
+      transform(html) {
+        // Inject blocking script in HTML head - must run before any module
+        return html.replace(
+          '<head>',
+          `<head><script>!function(){var p={env:{},version:'v18.0.0',browser:true};if(typeof window!=='undefined'){window.process=p;window.global=window;}if(typeof globalThis!=='undefined'){globalThis.process=p;globalThis.global=globalThis;}if(typeof process==='undefined'){var g=typeof globalThis!=='undefined'?globalThis:typeof window!=='undefined'?window:this;g.process=p;}}();</script>`
+        )
+      }
     }
   }
 }
