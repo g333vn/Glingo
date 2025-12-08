@@ -12,17 +12,32 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- ✅ FIX: Polyfill for process object (needed by some libraries like Supabase) -->
+    <!-- ✅ FIX: Polyfill for process object (needed by some libraries) -->
+    <!-- Must be inline and synchronous, before any module scripts -->
     <script>
-      if (typeof process === 'undefined') {
-        window.process = {
-          env: {},
-          version: 'v18.0.0'
-        };
-      }
-      if (typeof global === 'undefined') {
-        window.global = window;
-      }
+      (function() {
+        if (typeof window !== 'undefined') {
+          if (typeof window.process === 'undefined') {
+            window.process = {
+              env: {},
+              version: 'v18.0.0',
+              browser: true
+            };
+          }
+          if (typeof window.global === 'undefined') {
+            window.global = window;
+          }
+          // Also set on global scope for modules
+          if (typeof globalThis !== 'undefined') {
+            if (typeof globalThis.process === 'undefined') {
+              globalThis.process = window.process;
+            }
+            if (typeof globalThis.global === 'undefined') {
+              globalThis.global = globalThis;
+            }
+          }
+        }
+      })();
     </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>

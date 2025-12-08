@@ -3,8 +3,32 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
+// ✅ FIX: Plugin to inject process polyfill at the start of the bundle
+const processPolyfillPlugin = () => {
+  return {
+    name: 'process-polyfill',
+    generateBundle(options, bundle) {
+      // Inject polyfill in all entry chunks
+      Object.keys(bundle).forEach(fileName => {
+        const chunk = bundle[fileName]
+        if (chunk.type === 'chunk' && chunk.isEntry) {
+          chunk.code = `(function(){if(typeof process==='undefined'){window.process={env:{},version:'v18.0.0'};}if(typeof global==='undefined'){window.global=window;}})();\n${chunk.code}`
+        }
+      })
+    },
+    transformIndexHtml(html) {
+      // Also inject in HTML for dev mode
+      return html.replace(
+        '<head>',
+        `<head><script>if(typeof process==='undefined'){window.process={env:{},version:'v18.0.0'};}if(typeof global==='undefined'){window.global=window;}</script>`
+      )
+    }
+  }
+}
+
 export default defineConfig({
   plugins: [
+    processPolyfillPlugin(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -120,10 +144,12 @@ export default defineConfig({
   },
   define: {
     // ✅ FIX: Provide process polyfill for browser environment
-    // Some libraries (like Supabase) may try to access process.version
+    // Some libraries may try to access process.version or process.env
     // Vite's define does string replacement at build time
+    // Note: Only define specific properties, not the whole object to avoid conflicts
     'process.env': JSON.stringify({}),
     'process.version': JSON.stringify('v18.0.0'),
+    'process.browser': 'true',
     global: 'globalThis',
   },
   server: {

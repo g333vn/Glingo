@@ -1,3 +1,7 @@
+// ✅ CRITICAL: Import polyfills FIRST before any other imports
+// This ensures process is defined before libraries try to access it
+import './polyfills.js';
+
 import React, { lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 // ✅ Import antd patch for React 19 compatibility
