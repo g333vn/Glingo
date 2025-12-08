@@ -12,6 +12,18 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- ✅ FIX: Polyfill for process object (needed by some libraries like Supabase) -->
+    <script>
+      if (typeof process === 'undefined') {
+        window.process = {
+          env: {},
+          version: 'v18.0.0'
+        };
+      }
+      if (typeof global === 'undefined') {
+        window.global = window;
+      }
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

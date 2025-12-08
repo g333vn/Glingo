@@ -118,6 +118,14 @@ export default defineConfig({
     include: ['react', 'react-dom', 'antd'],
     force: true
   },
+  define: {
+    // ✅ FIX: Provide process polyfill for browser environment
+    // Some libraries (like Supabase) may try to access process.version
+    // Vite's define does string replacement at build time
+    'process.env': JSON.stringify({}),
+    'process.version': JSON.stringify('v18.0.0'),
+    global: 'globalThis',
+  },
   server: {
     // ✅ Cấu hình để xử lý SPA routing - redirect tất cả routes về index.html
     historyApiFallback: true
