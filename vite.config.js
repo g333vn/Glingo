@@ -114,6 +114,10 @@ export default defineConfig({
       '@services': path.resolve(__dirname, 'src/services')
     }
   },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'antd'],
+    force: true
+  },
   server: {
     // ✅ Cấu hình để xử lý SPA routing - redirect tất cả routes về index.html
     historyApiFallback: true
@@ -127,22 +131,27 @@ export default defineConfig({
       drop: [], // ✅ KHÔNG drop console hoặc debugger
       // drop: ['console', 'debugger'] // ❌ KHÔNG dùng dòng này
     },
-    rollupOptions: {
+      rollupOptions: {
       output: {
         // ✅ PHASE 1: Code Splitting - Route-based chunking strategy
         manualChunks: (id) => {
           // Vendor chunks - Tách riêng các thư viện lớn
           if (id.includes('node_modules')) {
-            // React core (react, react-dom)
-            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
-              return 'react-vendor';
-            }
-            // React Router
+            // ✅ FIX: Bundle React with Ant Design to ensure React is available
+            // Check more specific packages first to avoid false matches
+            
+            // React Router (check before react to avoid matching react-router as react)
             if (id.includes('react-router')) {
               return 'router-vendor';
             }
             // Ant Design (UI library - lớn)
             if (id.includes('antd') || id.includes('@ant-design')) {
+              return 'antd-vendor';
+            }
+            // React core (react, react-dom) - bundle with antd-vendor to ensure availability
+            // ✅ CRITICAL: Include React in antd-vendor chunk to fix createContext error
+            // This ensures React is available when Ant Design loads
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
               return 'antd-vendor';
             }
             // Supabase client
