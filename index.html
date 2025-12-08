@@ -10,8 +10,9 @@
       content="Nền tảng e-learning học và luyện thi JLPT với sách N1–N5, quiz theo chương, đề thi mô phỏng thực tế và dashboard theo dõi tiến độ."
     />
     <!-- ✅ CRITICAL: Process polyfill - must be FIRST script, runs synchronously -->
+    <!-- This MUST execute before any module scripts load -->
     <script>
-      !function(){var p={env:{},version:'v18.0.0',browser:true};if(typeof window!=='undefined'){window.process=p;window.global=window;}if(typeof globalThis!=='undefined'){globalThis.process=p;globalThis.global=globalThis;}if(typeof process==='undefined'){var g=typeof globalThis!=='undefined'?globalThis:typeof window!=='undefined'?window:this;g.process=p;}}();
+      (function(){'use strict';var p={env:{},version:'v18.0.0',browser:true};try{if(typeof window!=='undefined'){window.process=p;window.global=window;}if(typeof globalThis!=='undefined'){globalThis.process=p;globalThis.global=globalThis;}if(typeof process==='undefined'){var g=typeof globalThis!=='undefined'?globalThis:typeof window!=='undefined'?window:typeof self!=='undefined'?self:this;if(g){g.process=p;g.global=g;}}}catch(e){console.error('Polyfill error:',e);}})();
     </script>
   </head>
   <body>

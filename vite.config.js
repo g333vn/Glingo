@@ -5,7 +5,9 @@ import path from 'path'
 
 // ✅ FIX: Plugin to inject process polyfill at the start of ALL chunks
 const processPolyfillPlugin = () => {
-  const polyfillCode = `(function(){var p={env:{},version:'v18.0.0',browser:true};if(typeof window!=='undefined'){window.process=p;window.global=window;}if(typeof globalThis!=='undefined'){globalThis.process=p;globalThis.global=globalThis;}if(typeof process==='undefined'){var g=typeof globalThis!=='undefined'?globalThis:typeof window!=='undefined'?window:this;g.process=p;}})();`;
+  // CRITICAL: This polyfill MUST be the first line in each chunk
+  // It defines process before any code tries to access process.version
+  const polyfillCode = `(function(){'use strict';var p={env:{},version:'v18.0.0',browser:true};try{if(typeof window!=='undefined'){window.process=p;window.global=window;}if(typeof globalThis!=='undefined'){globalThis.process=p;globalThis.global=globalThis;}if(typeof process==='undefined'){var g=typeof globalThis!=='undefined'?globalThis:typeof window!=='undefined'?window:typeof self!=='undefined'?self:this;if(g){g.process=p;g.global=g;}}}catch(e){console.error('Polyfill error:',e);}})();`;
   
   return {
     name: 'process-polyfill',
@@ -16,13 +18,30 @@ const processPolyfillPlugin = () => {
         global.process = { env: {}, version: 'v18.0.0', browser: true }
       }
     },
+    transform(code, id) {
+      // In dev mode: Only inject into specific vendor modules that are known to need process
+      // This is more selective to avoid performance issues
+      if (id.includes('node_modules')) {
+        // Only inject into modules that are likely to access process.version
+        const needsPolyfill = id.includes('@supabase') || 
+                             id.includes('antd') || 
+                             (id.includes('vendor') && code.includes('process.version'))
+        
+        if (needsPolyfill && !code.includes('window.process') && !code.trim().startsWith('(function(){')) {
+          return polyfillCode + '\n' + code
+        }
+      }
+      return null
+    },
     generateBundle(options, bundle) {
       // Inject polyfill in ALL chunks (including vendor chunks) during build
+      // CRITICAL: Must be first line to ensure process exists before any code runs
       Object.keys(bundle).forEach(fileName => {
         const chunk = bundle[fileName]
         if (chunk.type === 'chunk') {
-          // Only inject if not already present to avoid duplication
-          if (!chunk.code.includes('window.process') && !chunk.code.includes('process.env')) {
+          // Always inject at the very beginning, even if process is referenced later
+          // This ensures process exists before any code tries to access it
+          if (!chunk.code.trim().startsWith('(function(){var p={env:{},version:')) {
             chunk.code = polyfillCode + '\n' + chunk.code
           }
         }
