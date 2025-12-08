@@ -93,20 +93,7 @@ function AppContent() {
   }, []); // Empty deps array = run once on mount
 
   // ✅ PHASE 5: Expose queryCache globally for memory optimization
-  useEffect(() => {
-    // Dynamic import with error handling to avoid build failures
-    import('../utils/queryCache.js')
-      .then(module => {
-        if (module?.default) {
-          window.queryCache = module.default;
-          console.log('✅ [Phase 5] Query cache exposed globally for memory optimization');
-        }
-      })
-      .catch(err => {
-        // Silently fail if queryCache is not available (should not happen in production)
-        console.warn('[Phase 5] Could not load queryCache:', err);
-      });
-  }, []);
+  // Loaded dynamically in main.jsx to avoid build time resolution issues
 
   // ✅ NEW: Load global maintenance flag từ Supabase
   useEffect(() => {
