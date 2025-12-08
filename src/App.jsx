@@ -92,6 +92,14 @@ function AppContent() {
       });
   }, []); // Empty deps array = run once on mount
 
+  // ✅ PHASE 5: Expose queryCache globally for memory optimization
+  useEffect(() => {
+    import('../utils/queryCache.js').then(module => {
+      window.queryCache = module.default;
+      console.log('✅ [Phase 5] Query cache exposed globally for memory optimization');
+    });
+  }, []);
+
   // ✅ NEW: Load global maintenance flag từ Supabase
   useEffect(() => {
     async function fetchMaintenance() {

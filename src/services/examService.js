@@ -153,9 +153,10 @@ export async function getExamsByLevel(level) {
   try {
     console.log('[ExamService.getExamsByLevel] 🔍 Fetching exams for level:', level);
 
+    // ✅ PHASE 3: Select only needed fields (optimize query - metadata only, no sections)
     const { data, error } = await supabase
       .from('exams')
-      .select('*')
+      .select('exam_id, level, title, date, status, image_url')
       .eq('level', level)
       .is('deleted_at', null)
       .order('date', { ascending: false });

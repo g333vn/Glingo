@@ -54,9 +54,10 @@ export async function saveBook(book, userId) {
 export async function getBooks(level) {
   try {
     console.log('[ContentService.getBooks] 🔍 Loading books for level:', level);
+    // ✅ PHASE 3: Select only needed fields (optimize query)
     const { data, error } = await supabase
       .from('books')
-      .select('*')
+      .select('id, level, title, description, image_url, series_id, order_index, category')
       .eq('level', level)
       .order('order_index', { ascending: true });
 
@@ -199,9 +200,10 @@ export async function saveChapters(bookId, level, chapters, userId) {
  */
 export async function getChapters(bookId, level) {
   try {
+    // ✅ PHASE 3: Select only needed fields (optimize query)
     const { data, error } = await supabase
       .from('chapters')
-      .select('*')
+      .select('id, book_id, level, title, description, order_index')
       .eq('book_id', bookId)
       .eq('level', level)
       .order('order_index', { ascending: true });
@@ -290,11 +292,17 @@ export async function saveLessons(bookId, chapterId, level, lessons, userId) {
  * @param {string} level - Level
  * @returns {Promise<{success: boolean, data?: Array, error?: Object}>}
  */
-export async function getLessons(bookId, chapterId, level) {
+export async function getLessons(bookId, chapterId, level, includeContent = false) {
   try {
+    // ✅ PHASE 3: Select only needed fields (optimize query)
+    // For list views, don't load full content (html_content, theory, srs)
+    const fields = includeContent
+      ? 'id, book_id, chapter_id, level, title, description, content_type, pdf_url, html_content, theory, srs, order_index'
+      : 'id, book_id, chapter_id, level, title, description, content_type, pdf_url, order_index';
+    
     const { data, error } = await supabase
       .from('lessons')
-      .select('*')
+      .select(fields)
       .eq('book_id', bookId)
       .eq('chapter_id', chapterId)
       .eq('level', level)
@@ -315,9 +323,9 @@ export async function getLessons(bookId, chapterId, level) {
       description: lesson.description,
       contentType: lesson.content_type,
       pdfUrl: lesson.pdf_url,
-      htmlContent: lesson.html_content,
-      theory: lesson.theory,
-      srs: lesson.srs,
+      htmlContent: lesson.html_content || null,
+      theory: lesson.theory || null,
+      srs: lesson.srs || null,
       orderIndex: lesson.order_index
     }));
 

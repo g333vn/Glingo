@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BookCard from '../components/BookCard.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
@@ -100,23 +100,32 @@ function LevelN1Page() {
     return categoriesWithCount.sort((a, b) => b.count - a.count);
   }, [n1Books]);
 
-  // Filter books based on category
-  const filteredBooks = selectedCategory
-    ? n1Books.filter(book => book.category === selectedCategory)
-    : n1Books;
+  // ✅ PHASE 2: Memoize filtered books to prevent unnecessary recalculations
+  const filteredBooks = useMemo(() => {
+    return selectedCategory
+      ? n1Books.filter(book => book.category === selectedCategory)
+      : n1Books;
+  }, [n1Books, selectedCategory]);
 
-  const startIndex = (currentPage - 1) * booksPerPage;
-  const endIndex = startIndex + booksPerPage;
-  const currentBooks = filteredBooks.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
+  // ✅ PHASE 2: Memoize pagination calculations
+  const paginationData = useMemo(() => {
+    const startIndex = (currentPage - 1) * booksPerPage;
+    const endIndex = startIndex + booksPerPage;
+    const currentBooks = filteredBooks.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
+    return { startIndex, endIndex, currentBooks, totalPages };
+  }, [filteredBooks, currentPage]);
 
-  const handleBookClick = (bookId) => {
+  const { currentBooks, totalPages } = paginationData;
+
+  // ✅ PHASE 2: Memoize event handlers with useCallback
+  const handleBookClick = useCallback((bookId) => {
     navigate(`/level/n1/${bookId}`);
-  };
+  }, [navigate]);
 
-  const handleCategoryClick = (category) => {
+  const handleCategoryClick = useCallback((category) => {
     setIsTransitioning(true);
-    setSelectedCategory(category === selectedCategory ? null : category);
+    setSelectedCategory(prev => category === prev ? null : category);
     setCurrentPage(1);
 
     // Smooth transition effect
@@ -124,25 +133,28 @@ function LevelN1Page() {
       setIsTransitioning(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 150);
-  };
+  }, []);
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = useCallback((newPage) => {
     setIsTransitioning(true);
     setCurrentPage(newPage);
 
     setTimeout(() => {
       setIsTransitioning(false);
     }, 150);
-  };
+  }, []);
 
-  const breadcrumbPaths = [
+  // ✅ PHASE 2: Memoize breadcrumb paths
+  const breadcrumbPaths = useMemo(() => [
     { name: 'Home', link: '/' },
     { name: 'Level', link: '/level' },
     { name: 'N1', link: '/level/n1' }
-  ];
+  ], []);
 
-  // Tạo mảng đủ 10 phần tử cho grid (placeholders for empty)
-  const gridItems = Array.from({ length: booksPerPage }, (_, i) => currentBooks[i] || null);
+  // ✅ PHASE 2: Memoize grid items
+  const gridItems = useMemo(() => {
+    return Array.from({ length: booksPerPage }, (_, i) => currentBooks[i] || null);
+  }, [currentBooks]);
 
   const GridPagination = ({ total, current, onChange }) => {
     // Logic ellipsis cho pagination

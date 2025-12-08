@@ -1,5 +1,5 @@
 // trang đề n1
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
@@ -7,6 +7,8 @@ import { jlptExams, jlptLevelInfo } from '../../../data/jlpt/jlptData.js';
 import storageManager from '../../../utils/localStorageManager.js';
 import UpcomingExamModal from '../../../components/UpcomingExamModal.jsx';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
+// ✅ PHASE 2: Import memoized ExamCard component
+import ExamCard from '../components/ExamCard.jsx';
 
 const examsPerPage = 10;
 
@@ -38,37 +40,7 @@ const getStatusType = (status = '') => {
   return 'available';
 };
 
-// Component ExamCard - ✨ NEO BRUTALISM
-const ExamCard = ({ title, date, statusLabel, statusType, memeImage }) => {
-  const badgeClasses = STATUS_BADGE_STYLES[statusType] || STATUS_BADGE_STYLES.available;
-
-  return (
-    <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 p-4 h-full hover:translate-x-[-2px] hover:translate-y-[-2px] cursor-pointer">
-      <div className="flex flex-col items-center text-center h-full">
-        {/* Ảnh meme - NEO BRUTALISM */}
-        <div className="w-full aspect-square mb-3 rounded-lg overflow-hidden bg-gray-100 border-[3px] border-black">
-          <img
-            src={memeImage}
-            alt={title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = '/book_card/placeholder.jpg';
-            }}
-          />
-        </div>
-        <div className="flex-1 flex flex-col">
-          <h3 className="font-black text-lg text-black mb-1 line-clamp-2 uppercase tracking-wide" style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}>{title}</h3>
-          <p className="text-sm text-gray-700 mb-2 font-bold">{date}</p>
-          <div className="mt-auto">
-            <span className={`inline-block text-xs px-3 py-1 rounded-md border-[2px] border-black font-black uppercase ${badgeClasses}`}>
-              {statusLabel || statusType}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+// ✅ PHASE 2: ExamCard đã được extract và memoized trong ExamCard.jsx
 
 function JLPTLevelN1Page() {
   const navigate = useNavigate();
@@ -143,26 +115,31 @@ function JLPTLevelN1Page() {
     loadExams();
   }, []);
 
-  const startIndex = (currentPage - 1) * examsPerPage;
-  const endIndex = startIndex + examsPerPage;
-  const currentExams = jlptN1Exams.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(jlptN1Exams.length / examsPerPage);
+  // ✅ PHASE 2: Memoize pagination calculations
+  const paginationData = useMemo(() => {
+    const startIndex = (currentPage - 1) * examsPerPage;
+    const endIndex = startIndex + examsPerPage;
+    const currentExams = jlptN1Exams.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(jlptN1Exams.length / examsPerPage);
+    return { startIndex, endIndex, currentExams, totalPages };
+  }, [jlptN1Exams, currentPage]);
 
-  // Function để lấy ảnh meme theo index (lặp lại 1-10 cho mỗi trang)
-  const getMemeImage = (indexInPage) => {
-    // indexInPage từ 0-9, chuyển thành 1-10 và lặp lại
+  const { currentExams, totalPages } = paginationData;
+
+  // ✅ PHASE 2: Memoize helper functions
+  const getMemeImage = useCallback((indexInPage) => {
     const memeNumber = String((indexInPage % 10) + 1).padStart(2, '0');
-    // Ảnh được đặt trong public/jlpt/meme → build & deploy vẫn giữ nguyên đường dẫn
     return `/jlpt/meme/${memeNumber}.png`;
-  };
+  }, []);
 
-  const getStatusDisplay = (status) => {
+  const getStatusDisplay = useCallback((status) => {
     const statusType = getStatusType(status);
     const statusLabel = t(`jlpt.status.${statusType}`) || status || '';
     return { statusType, statusLabel };
-  };
+  }, [t]);
 
-  const renderExamCard = (exam, index) => {
+  // ✅ PHASE 2: Memoize render function
+  const renderExamCard = useCallback((exam, index) => {
     const { statusType, statusLabel } = getStatusDisplay(exam.status);
     return (
       <ExamCard
@@ -173,9 +150,10 @@ function JLPTLevelN1Page() {
         memeImage={getMemeImage(index)}
       />
     );
-  };
+  }, [getStatusDisplay, getMemeImage]);
 
-  const handleExamClick = (examId) => {
+  // ✅ PHASE 2: Memoize event handlers
+  const handleExamClick = useCallback((examId) => {
     const exam = jlptN1Exams.find(e => e.id === examId);
 
     if (exam && getStatusType(exam.status) === 'upcoming') {
@@ -183,26 +161,29 @@ function JLPTLevelN1Page() {
       return;
     }
 
-    // Navigate to exam detail page
     navigate(`/jlpt/n1/${examId}`);
-  };
+  }, [jlptN1Exams, navigate]);
 
-  const handlePageChange = (newPage) => {
+  const handlePageChange = useCallback((newPage) => {
     setIsTransitioning(true);
     setCurrentPage(newPage);
 
     setTimeout(() => {
       setIsTransitioning(false);
     }, 150);
-  };
+  }, []);
 
-  const breadcrumbPaths = [
+  // ✅ PHASE 2: Memoize breadcrumb paths
+  const breadcrumbPaths = useMemo(() => [
     { name: t('common.home') || 'Home', link: '/' },
     { name: t('common.jlpt') || 'JLPT', link: '/jlpt' },
     { name: t('jlpt.n1Title') || 'N1', link: '/jlpt/n1' }
-  ];
+  ], [t]);
 
-  const gridItems = Array.from({ length: examsPerPage }, (_, i) => currentExams[i] || null);
+  // ✅ PHASE 2: Memoize grid items
+  const gridItems = useMemo(() => {
+    return Array.from({ length: examsPerPage }, (_, i) => currentExams[i] || null);
+  }, [currentExams]);
 
   const GridPagination = ({ total, current, onChange }) => {
     // Logic để tạo page numbers với ellipsis

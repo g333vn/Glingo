@@ -2,10 +2,12 @@
 // 💾 Unified Storage Manager - Supabase (cloud) + IndexedDB (cache) + localStorage (fallback)
 // ✅ Supports unlimited storage via IndexedDB (>100 MB)
 // ✅ Cloud sync via Supabase
+// ✅ PHASE 3: Query caching layer for performance optimization
 
 import indexedDBManager from './indexedDBManager.js';
 import * as contentService from '../services/contentService.js';
 import * as examService from '../services/examService.js';
+import queryCache from './queryCache.js';
 
 /**
  * Storage Strategy:
@@ -158,6 +160,14 @@ class LocalStorageManager {
     
     console.log('[StorageManager.getBooks] 🔍 Loading books for level:', level);
 
+    // ✅ PHASE 3: Check query cache first
+    const cacheKey = 'getBooks';
+    const cached = queryCache.get(cacheKey, { level });
+    if (cached !== null) {
+      console.log('[StorageManager.getBooks] ✅ Loaded from cache:', cached.length, 'books');
+      return cached;
+    }
+
     // 1. Try Supabase first (cloud) - nguồn dữ liệu "chuẩn"
     try {
       const { success, data } = await contentService.getBooks(level);
@@ -168,6 +178,9 @@ class LocalStorageManager {
         if (supaBooks.length > 0) {
           // ✅ Có dữ liệu trên server → dùng server làm nguồn chính
           console.log('[StorageManager.getBooks] ✅ Loaded', supaBooks.length, 'books from Supabase');
+
+          // ✅ PHASE 3: Cache result
+          queryCache.set(cacheKey, { level }, supaBooks, 5 * 60 * 1000); // 5 minutes
 
           // Cache to IndexedDB for offline support
           if (this.useIndexedDB) {
@@ -186,6 +199,9 @@ class LocalStorageManager {
         // ✅ Supabase trả về RỖNG (server hiện không có sách nào)
         //    → Xoá cache local/IndexedDB để client đồng bộ với server
         console.log('[StorageManager.getBooks] ℹ️ Supabase has 0 books for level', level, '- clearing local caches');
+
+        // ✅ PHASE 3: Cache empty result
+        queryCache.set(cacheKey, { level }, [], 5 * 60 * 1000);
 
         if (this.useIndexedDB) {
           await indexedDBManager.saveBooks(level, []); // xoá tất cả books level này trong IndexedDB
@@ -210,6 +226,8 @@ class LocalStorageManager {
       const result = await indexedDBManager.getBooks(level);
       if (result && result.length > 0) {
         console.log('[StorageManager.getBooks] ✅ Loaded', result.length, 'books from IndexedDB');
+        // ✅ PHASE 3: Cache IndexedDB result
+        queryCache.set(cacheKey, { level }, result, 5 * 60 * 1000);
         return result;
       }
     }
@@ -221,6 +239,8 @@ class LocalStorageManager {
       if (data) {
         const books = JSON.parse(data);
         console.log('[StorageManager.getBooks] ✅ Loaded', books.length, 'books from localStorage');
+        // ✅ PHASE 3: Cache localStorage result
+        queryCache.set(cacheKey, { level }, books, 5 * 60 * 1000);
         // Sync to IndexedDB for future use
         if (this.useIndexedDB) {
           await indexedDBManager.saveBooks(level, books);
@@ -270,6 +290,10 @@ class LocalStorageManager {
           const key = `adminBooks_${level}`;
           localStorage.setItem(key, JSON.stringify(books));
         }
+        
+        // ✅ PHASE 3: Invalidate cache after save
+        queryCache.invalidate('getBooks', { level });
+        
         return true;
       }
     }
@@ -279,6 +303,10 @@ class LocalStorageManager {
       const key = `adminBooks_${level}`;
       localStorage.setItem(key, JSON.stringify(books));
       console.log(`✅ Saved ${books.length} books to localStorage (${key})`);
+      
+      // ✅ PHASE 3: Invalidate cache after save
+      queryCache.invalidate('getBooks', { level });
+      
       return true;
     }
 
@@ -934,6 +962,16 @@ class LocalStorageManager {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
+    console.log('[StorageManager.getExams] 🔍 Loading exams for level:', level);
+
+    // ✅ PHASE 3: Check query cache first
+    const cacheKey = 'getExams';
+    const cached = queryCache.get(cacheKey, { level });
+    if (cached !== null) {
+      console.log('[StorageManager.getExams] ✅ Loaded from cache:', cached.length, 'exams');
+      return cached;
+    }
+
     // 1. Try Supabase first (nguồn dữ liệu chuẩn, dùng chung cho mọi user)
     try {
       const { success, data } = await examService.getExamsByLevel(level);
@@ -943,6 +981,9 @@ class LocalStorageManager {
 
         if (supaExams.length > 0) {
           console.log('[StorageManager.getExams] ✅ Loaded', supaExams.length, 'exams from Supabase for level', level);
+
+          // ✅ PHASE 3: Cache result
+          queryCache.set(cacheKey, { level }, supaExams, 5 * 60 * 1000); // 5 minutes
 
           // Cache to IndexedDB
           if (this.useIndexedDB) {
@@ -960,6 +1001,9 @@ class LocalStorageManager {
 
         // Supabase trả về rỗng → đồng bộ xoá cache local cho level này
         console.log('[StorageManager.getExams] ℹ️ Supabase has 0 exams for level', level, '- clearing local caches');
+
+        // ✅ PHASE 3: Cache empty result
+        queryCache.set(cacheKey, { level }, [], 5 * 60 * 1000);
 
         if (this.useIndexedDB) {
           await indexedDBManager.saveExams(level, []);
@@ -981,7 +1025,11 @@ class LocalStorageManager {
     // 2. Try IndexedDB (local cache)
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getExams(level);
-      if (result) return result;
+      if (result) {
+        // ✅ PHASE 3: Cache IndexedDB result
+        queryCache.set(cacheKey, { level }, result, 5 * 60 * 1000);
+        return result;
+      }
     }
 
     // 3. Fallback to localStorage
@@ -990,6 +1038,8 @@ class LocalStorageManager {
       const data = localStorage.getItem(key);
       if (data) {
         const exams = JSON.parse(data);
+        // ✅ PHASE 3: Cache localStorage result
+        queryCache.set(cacheKey, { level }, exams, 5 * 60 * 1000);
         // Sync to IndexedDB
         if (this.useIndexedDB) {
           await indexedDBManager.saveExams(level, exams);
@@ -1018,6 +1068,10 @@ class LocalStorageManager {
             console.warn('localStorage full, but exams saved to IndexedDB');
           }
         }
+        
+        // ✅ PHASE 3: Invalidate cache after save
+        queryCache.invalidate('getExams', { level });
+        
         return true;
       }
     }
@@ -1028,6 +1082,10 @@ class LocalStorageManager {
         const key = `adminExams_${level}`;
         localStorage.setItem(key, JSON.stringify(exams));
         console.log(`✅ Saved exams to localStorage (${key})`);
+        
+        // ✅ PHASE 3: Invalidate cache after save
+        queryCache.invalidate('getExams', { level });
+        
         return true;
       } catch (e) {
         if (e.name === 'QuotaExceededError') {

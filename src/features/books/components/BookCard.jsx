@@ -1,7 +1,10 @@
 // src/features/books/components/BookCard.jsx
 // ✨ NEO BRUTALISM + JAPANESE AESTHETIC - Enhanced with Placeholder
+// ✅ PHASE 2: Memoized for performance optimization
+// ✅ PHASE 4: Optimized image loading
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
+import OptimizedImage from '../../../components/OptimizedImage.jsx';
 
 function BookCard({ imageUrl, title, isComingSoon = false, status = null }) {
   const [imageError, setImageError] = useState(false);
@@ -22,12 +25,14 @@ function BookCard({ imageUrl, title, isComingSoon = false, status = null }) {
               <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
             )}
             
-            {/* Real image */}
-            <img 
-              src={imageUrl} 
-              alt={title} 
-              className={`object-cover w-full h-full transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-              loading="lazy"
+            {/* ✅ PHASE 4: Optimized image with WebP support and lazy loading */}
+            <OptimizedImage
+              src={imageUrl}
+              alt={title}
+              className="object-cover w-full h-full"
+              lazy={true}
+              priority={false}
+              sizes={[400, 800, 1200]}
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
             />
@@ -122,4 +127,13 @@ function BookCard({ imageUrl, title, isComingSoon = false, status = null }) {
   );
 }
 
-export default BookCard;
+// ✅ PHASE 2: Memoize component to prevent unnecessary re-renders
+// Only re-render if props actually change
+export default memo(BookCard, (prevProps, nextProps) => {
+  return (
+    prevProps.imageUrl === nextProps.imageUrl &&
+    prevProps.title === nextProps.title &&
+    prevProps.isComingSoon === nextProps.isComingSoon &&
+    prevProps.status === nextProps.status
+  );
+});
