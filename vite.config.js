@@ -27,16 +27,6 @@ const processPolyfillPlugin = () => {
           }
         }
       })
-    },
-    transformIndexHtml: {
-      enforce: 'pre',
-      transform(html) {
-        // Inject blocking script in HTML head - must run before any module
-        return html.replace(
-          '<head>',
-          `<head><script>!function(){var p={env:{},version:'v18.0.0',browser:true};if(typeof window!=='undefined'){window.process=p;window.global=window;}if(typeof globalThis!=='undefined'){globalThis.process=p;globalThis.global=globalThis;}if(typeof process==='undefined'){var g=typeof globalThis!=='undefined'?globalThis:typeof window!=='undefined'?window:this;g.process=p;}}();</script>`
-        )
-      }
     }
   }
 }
