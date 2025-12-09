@@ -37,26 +37,28 @@ const processPolyfillPlugin = () => {
         );
       }
       
-      // ✅ CRITICAL: Ensure antd-vendor modulepreload comes before vendor
-      // This ensures React is loaded before vendor chunk tries to use it
+      // ✅ CRITICAL: Ensure react-vendor loads FIRST, then antd-vendor, then vendor
+      // This ensures React is loaded before any other code tries to use it
       const modulepreloadRegex = /<link[^>]*rel=["']modulepreload["'][^>]*>/gi;
       const allPreloads = html.match(modulepreloadRegex) || [];
       
       if (allPreloads.length > 0) {
+        const reactVendor = allPreloads.find(link => link.includes('react-vendor'));
         const antdVendor = allPreloads.find(link => link.includes('antd-vendor'));
-        const vendor = allPreloads.find(link => link.includes('vendor') && !link.includes('antd-vendor') && !link.includes('router-vendor') && !link.includes('supabase-vendor') && !link.includes('storage-vendor'));
-        const otherPreloads = allPreloads.filter(link => link !== antdVendor && link !== vendor);
+        const vendor = allPreloads.find(link => link.includes('vendor') && !link.includes('antd-vendor') && !link.includes('react-vendor') && !link.includes('router-vendor') && !link.includes('supabase-vendor') && !link.includes('storage-vendor'));
+        const otherPreloads = allPreloads.filter(link => link !== reactVendor && link !== antdVendor && link !== vendor);
         
         // Remove all modulepreload links
         allPreloads.forEach(link => {
           html = html.replace(link, '');
         });
         
-        // Re-insert in correct order: antd-vendor first, then vendor, then others
+        // Re-insert in correct order: react-vendor FIRST, then antd-vendor, then vendor, then others
         // Insert BEFORE the module script tag, not after
         const scriptMatch = html.match(/<script[^>]*type=["']module["'][^>]*>/i);
         if (scriptMatch) {
           let newPreloads = '';
+          if (reactVendor) newPreloads += '    ' + reactVendor + '\n';
           if (antdVendor) newPreloads += '    ' + antdVendor + '\n';
           if (vendor) newPreloads += '    ' + vendor + '\n';
           otherPreloads.forEach(link => {
@@ -257,7 +259,10 @@ export default defineConfig({
         // ✅ CRITICAL: Ensure antd-vendor loads before vendor chunk
         // This prevents vendor chunk from trying to import React before it's available
         chunkFileNames: (chunkInfo) => {
-          // Ensure antd-vendor has a predictable name that loads first
+          // Ensure react-vendor has a predictable name that loads first
+          if (chunkInfo.name === 'react-vendor') {
+            return 'assets/react-vendor-[hash].js';
+          }
           if (chunkInfo.name === 'antd-vendor') {
             return 'assets/antd-vendor-[hash].js';
           }
@@ -267,26 +272,23 @@ export default defineConfig({
         manualChunks: (id) => {
           // Vendor chunks - Tách riêng các thư viện lớn
           if (id.includes('node_modules')) {
-            // ✅ FIX: Bundle React with Ant Design to ensure React is available
-            // Check more specific packages first to avoid false matches
-            
-            // ✅ CRITICAL: React core MUST be checked FIRST and put in antd-vendor
-            // This ensures React is available before any other vendor code tries to use it
-            // React core (react, react-dom, scheduler) - MUST be in antd-vendor
+            // ✅ CRITICAL: React core MUST be in a separate chunk that loads FIRST
+            // This ensures React is available before ANY other code tries to use it
+            // React core (react, react-dom, scheduler) - MUST be in react-vendor
             if (id.includes('react/') || id.includes('react-dom/') || id.includes('scheduler')) {
-              return 'antd-vendor';
+              return 'react-vendor';
             }
             // React Router (check before react to avoid matching react-router as react)
             if (id.includes('react-router')) {
               return 'router-vendor';
             }
-            // Ant Design (UI library - lớn) - includes React, so must load before vendor
+            // Ant Design (UI library - lớn) - depends on React, so loads after react-vendor
             if (id.includes('antd') || id.includes('@ant-design')) {
               return 'antd-vendor';
             }
             // Additional React-related packages that might be missed
             if (id.includes('/react') && !id.includes('react-router')) {
-              return 'antd-vendor';
+              return 'react-vendor';
             }
             // Supabase client
             if (id.includes('@supabase')) {
