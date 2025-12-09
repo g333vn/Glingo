@@ -143,7 +143,9 @@ const reactVersionTransformPlugin = () => {
                 // Only fix if reactVar is likely React (b, p, React, _react, etc.)
                 const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
                 if (reactVars.includes(reactVar)) {
-                  return `${keyword} ${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.createContext?${reactVar}.createContext:(function(){throw new Error('React.createContext is not available')}))(`;
+                  // Instead of throwing error, return a temporary Context object
+                  // This allows code to continue running until React loads
+                  return `${keyword} ${varName}=(function(d){var r=${reactVar};if(typeof r!=='undefined'&&r&&r.createContext)return r.createContext(d);var ctx={_value:d||null,Provider:function(){return null},Consumer:function(){return null}};if(typeof window!=='undefined'){var checkReact=function(){if(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.createContext){var realCtx=${reactVar}.createContext(ctx._value);Object.keys(realCtx).forEach(function(k){ctx[k]=realCtx[k]})}else{setTimeout(checkReact,10)}};setTimeout(checkReact,10)}return ctx})(`;
                 }
                 return match;
               }
@@ -155,7 +157,7 @@ const reactVersionTransformPlugin = () => {
               (match, varName, reactVar) => {
                 const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
                 if (reactVars.includes(reactVar)) {
-                  return `,${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.createContext?${reactVar}.createContext:(function(){throw new Error('React.createContext is not available')}))(`;
+                  return `,${varName}=(function(d){var r=${reactVar};if(typeof r!=='undefined'&&r&&r.createContext)return r.createContext(d);var ctx={_value:d||null,Provider:function(){return null},Consumer:function(){return null}};if(typeof window!=='undefined'){var checkReact=function(){if(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.createContext){var realCtx=${reactVar}.createContext(ctx._value);Object.keys(realCtx).forEach(function(k){ctx[k]=realCtx[k]})}else{setTimeout(checkReact,10)}};setTimeout(checkReact,10)}return ctx})(`;
                 }
                 return match;
               }
@@ -173,7 +175,7 @@ const reactVersionTransformPlugin = () => {
                     !match.includes('const ') && 
                     !match.includes('let ') &&
                     !match.startsWith(',')) {
-                  return `${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.createContext?${reactVar}.createContext:(function(){throw new Error('React.createContext is not available')}))(`;
+                  return `${varName}=(function(d){var r=${reactVar};if(typeof r!=='undefined'&&r&&r.createContext)return r.createContext(d);var ctx={_value:d||null,Provider:function(){return null},Consumer:function(){return null}};if(typeof window!=='undefined'){var checkReact=function(){if(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.createContext){var realCtx=${reactVar}.createContext(ctx._value);Object.keys(realCtx).forEach(function(k){ctx[k]=realCtx[k]})}else{setTimeout(checkReact,10)}};setTimeout(checkReact,10)}return ctx})(`;
                 }
                 return match;
               }
