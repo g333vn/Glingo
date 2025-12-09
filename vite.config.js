@@ -43,6 +43,38 @@ const reactVersionTransformPlugin = () => {
       }
       
       return code;
+    },
+    generateBundle(options, bundle) {
+      // ✅ CRITICAL: Fix p.version access in vendor chunks AFTER bundling
+      // This runs after all transforms, so we can fix the final bundled code
+      Object.keys(bundle).forEach(fileName => {
+        const chunk = bundle[fileName];
+        if (chunk.type === 'chunk') {
+          // Fix pattern: var li=Number(p.version.split(".")[0])
+          // where p is imported from react-vendor but may not be loaded yet
+          if (fileName.includes('vendor') && !fileName.includes('react-vendor') && 
+              chunk.code.includes('p.version') && chunk.code.includes('Number(p.version.split')) {
+            
+            // More aggressive replacement - handle all variations
+            chunk.code = chunk.code.replace(
+              /var\s+li\s*=\s*Number\(p\.version\.split\(["']\.["']\)\[0\]\)/g,
+              'var li=(typeof p!==\'undefined\'&&p&&p.version?Number(p.version.split(".")[0]):19)'
+            );
+            
+            // Also fix: li=Number(p.version.split(".")[0])
+            chunk.code = chunk.code.replace(
+              /li\s*=\s*Number\(p\.version\.split\(["']\.["']\)\[0\]\)/g,
+              'li=(typeof p!==\'undefined\'&&p&&p.version?Number(p.version.split(".")[0]):19)'
+            );
+            
+            // Fix: const li=Number(p.version.split(".")[0])
+            chunk.code = chunk.code.replace(
+              /const\s+li\s*=\s*Number\(p\.version\.split\(["']\.["']\)\[0\]\)/g,
+              'const li=(typeof p!==\'undefined\'&&p&&p.version?Number(p.version.split(".")[0]):19)'
+            );
+          }
+        }
+      });
     }
   }
 }
@@ -81,8 +113,8 @@ const processPolyfillPlugin = () => {
         );
       }
       
-      // ✅ CRITICAL: Ensure react-vendor loads FIRST, then antd-vendor, then vendor
-      // This ensures React is loaded before any other code tries to use it
+      // ✅ CRITICAL: Ensure react-vendor loads FIRST using BLOCKING preload
+      // modulepreload is non-blocking, we need blocking preload for react-vendor
       const modulepreloadRegex = /<link[^>]*rel=["']modulepreload["'][^>]*>/gi;
       const allPreloads = html.match(modulepreloadRegex) || [];
       
@@ -97,18 +129,33 @@ const processPolyfillPlugin = () => {
           html = html.replace(link, '');
         });
         
-        // Re-insert in correct order: react-vendor FIRST, then antd-vendor, then vendor, then others
-        // Insert BEFORE the module script tag, not after
+        // ✅ CRITICAL: Convert react-vendor to BLOCKING preload (not modulepreload)
+        // This ensures react-vendor loads BEFORE any other code executes
+        let reactVendorPreload = reactVendor;
+        if (reactVendor) {
+          // Extract href from modulepreload link
+          const hrefMatch = reactVendor.match(/href=["']([^"']+)["']/);
+          if (hrefMatch) {
+            const href = hrefMatch[1];
+            // Create BLOCKING preload link (not modulepreload)
+            // Use 'fetch' instead of 'script' to ensure it loads before module execution
+            reactVendorPreload = `<link rel="preload" href="${href}" as="fetch" crossorigin>`;
+          }
+        }
+        
+        // Re-insert in correct order: react-vendor FIRST (as blocking preload), then others
         const scriptMatch = html.match(/<script[^>]*type=["']module["'][^>]*>/i);
         if (scriptMatch) {
           let newPreloads = '';
-          if (reactVendor) newPreloads += '    ' + reactVendor + '\n';
+          // ✅ CRITICAL: react-vendor as BLOCKING preload FIRST
+          if (reactVendorPreload) newPreloads += '    ' + reactVendorPreload + '\n';
+          // Then antd-vendor and vendor as modulepreload
           if (antdVendor) newPreloads += '    ' + antdVendor + '\n';
           if (vendor) newPreloads += '    ' + vendor + '\n';
           otherPreloads.forEach(link => {
             newPreloads += '    ' + link + '\n';
           });
-          // Insert BEFORE the script tag, not inside it
+          // Insert BEFORE the script tag
           html = html.replace(scriptMatch[0], newPreloads + '    ' + scriptMatch[0]);
         }
       }
@@ -274,6 +321,9 @@ export default defineConfig({
     })
   ],
   resolve: {
+    // ✅ CRITICAL: Ensure React is only loaded once
+    // This prevents multiple React instances and ensures React is available
+    dedupe: ['react', 'react-dom'],
     alias: {
       '@components': path.resolve(__dirname, 'src/components'),
       '@features': path.resolve(__dirname, 'src/features'),
