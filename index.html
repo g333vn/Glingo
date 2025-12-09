@@ -14,6 +14,58 @@
     <script>
       (function(){'use strict';var p={env:{},version:'v18.0.0',browser:true};try{if(typeof window!=='undefined'){window.process=p;window.global=window;}if(typeof globalThis!=='undefined'){globalThis.process=p;globalThis.global=globalThis;}if(typeof process==='undefined'){var g=typeof globalThis!=='undefined'?globalThis:typeof window!=='undefined'?window:typeof self!=='undefined'?self:this;if(g){g.process=p;g.global=g;}}}catch(e){console.error('Polyfill error:',e);}})();
     </script>
+    <!-- Early safety: unregister stale service workers and caches immediately on first visit -->
+    <script>
+      (function(){
+        try{
+          var FLAG = 'sw-cleared';
+          if (sessionStorage.getItem(FLAG)) return;
+          sessionStorage.setItem(FLAG, '1');
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs){
+              regs.forEach(function(r){ try { r.unregister(); } catch(e){} });
+            }).catch(function(){});
+          }
+          if ('caches' in window) {
+            caches.keys().then(function(keys){
+              return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+            }).catch(function(){});
+          }
+
+          // If hosting accidentally serves the dev index (references /src/main.jsx), show actionable message
+          try{
+            var devScript = document.currentScript && document.currentScript.nextElementSibling && document.currentScript.nextElementSibling.src && document.currentScript.nextElementSibling.src.indexOf('/src/main.jsx')!==-1;
+            // fallback detection: look for any module script pointing to /src/main.jsx
+            if (!devScript) {
+              var scripts = document.getElementsByTagName('script');
+              for (var i=0;i<scripts.length;i++){
+                var s = scripts[i];
+                if (s.type==='module' && s.src && s.src.indexOf('/src/main.jsx')!==-1){ devScript = true; break; }
+              }
+            }
+            if (devScript && location.hostname && !/localhost|127\.|::1/.test(location.hostname)){
+              // show overlay to prevent blank white screen and guide redeploy
+              var css = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(255,255,255,0.97),#fff);z-index:2147483647;padding:24px;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;';
+              var boxCss = 'max-width:820px;width:100%;background:#fff;border:1px solid #eee;padding:28px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.08);text-align:left;color:#0f172a';
+              var btnCss = 'display:inline-block;margin-top:16px;padding:10px 14px;border-radius:8px;background:#2563eb;color:white;text-decoration:none;font-weight:600';
+              var html = '<div style="'+css+'"><div style="'+boxCss+'">'
+                + '<h2 style="margin:0 0 8px 0;font-size:18px">Glingo: Ứng dụng đang được phục vụ nhầm (dev build)</h2>'
+                + '<p style="margin:0;color:#334155">Trang hiện tại dường như đang phục vụ mã nguồn phát triển (tham chiếu tới <code>/src/main.jsx</code>). Điều này dẫn tới màn hình trắng trên môi trường production.</p>'
+                + '<p style="margin-top:12px;color:#475569">Hệ thống đã cố gắng gỡ Service Worker & xóa cache. Vui lòng liên hệ người quản trị deploy hoặc thực hiện một redeploy (hoặc mở Vercel Dashboard và trigger redeploy).</p>'
+                + '<div><a id="__deploy_reload_btn" href="#" style="'+btnCss+'">Tải lại trang (sau khi redeploy)</a></div>'
+                + '<p style="margin-top:12px;color:#9ca3af;font-size:13px">Nếu bạn là developer, đảm bảo Vercel build command là <code>npm run build</code> và output directory là <code>dist</code>.</p>'
+                + '</div></div>';
+              document.documentElement.innerHTML = html;
+              var btn = document.getElementById('__deploy_reload_btn');
+              if (btn) btn.addEventListener('click', function(e){ e.preventDefault(); try{ sessionStorage.removeItem(FLAG); }catch{} window.location.reload(true); });
+            } else {
+              // If we cleared caches, reload once to fetch fresh assets
+              try{ window.location.reload(); }catch(e){}
+            }
+          }catch(e){}
+        }catch(e){console.warn('Early SW cleanup failed', e);}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
