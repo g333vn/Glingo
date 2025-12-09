@@ -53,6 +53,7 @@ const processPolyfillPlugin = () => {
         });
         
         // Re-insert in correct order: antd-vendor first, then vendor, then others
+        // Insert BEFORE the module script tag, not after
         const scriptMatch = html.match(/<script[^>]*type=["']module["'][^>]*>/i);
         if (scriptMatch) {
           let newPreloads = '';
@@ -61,14 +62,8 @@ const processPolyfillPlugin = () => {
           otherPreloads.forEach(link => {
             newPreloads += '    ' + link + '\n';
           });
-          // Insert after the script tag closes, not inside it
-          const scriptEnd = html.indexOf('</script>', html.indexOf(scriptMatch[0]));
-          if (scriptEnd > 0) {
-            html = html.slice(0, scriptEnd) + '\n' + newPreloads + html.slice(scriptEnd);
-          } else {
-            // Fallback: insert after script tag
-            html = html.replace(scriptMatch[0], scriptMatch[0] + '\n' + newPreloads);
-          }
+          // Insert BEFORE the script tag, not inside it
+          html = html.replace(scriptMatch[0], newPreloads + '    ' + scriptMatch[0]);
         }
       }
       
