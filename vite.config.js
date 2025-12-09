@@ -98,26 +98,26 @@ const reactVersionTransformPlugin = () => {
           }
           
           // ✅ CRITICAL: Fix React methods access patterns
-          // Pattern: var en=_e()?b.useLayoutEffect:b.useEffect
+          // Pattern: var en = _e() ? b.useLayoutEffect : b.useEffect (with spaces)
+          // Pattern: var en=_e()?b.useLayoutEffect:b.useEffect (without spaces)
           // where b is React alias after minify - needs safety check
-          if (chunk.code.includes('_e()?') && (chunk.code.includes('.useLayoutEffect') || chunk.code.includes('.useEffect'))) {
-            // Pattern: var en=_e()?b.useLayoutEffect:b.useEffect
+          if (chunk.code.includes('_e()') && (chunk.code.includes('.useLayoutEffect') || chunk.code.includes('.useEffect'))) {
+            // Pattern 1: var en = _e() ? b.useLayoutEffect : b.useEffect (with spaces around ? and :)
             chunk.code = chunk.code.replace(
-              /var\s+(\w+)\s*=\s*_e\(\)\?(\w+)\.(useLayoutEffect|useEffect)\s*:\s*(\w+)\.(useLayoutEffect|useEffect)/g,
+              /var\s+(\w+)\s*=\s*_e\(\)\s*\?\s*(\w+)\.(useLayoutEffect|useEffect)\s*:\s*(\w+)\.(useLayoutEffect|useEffect)/g,
               (match, varName, reactVar1, method1, reactVar2, method2) => {
                 // Use useEffect as fallback since useLayoutEffect may not be available
                 const fallbackMethod = method1 === 'useLayoutEffect' ? 'useEffect' : method1;
                 return `var ${varName}=_e()?(typeof ${reactVar1}!=='undefined'&&${reactVar1}&&${reactVar1}.${method1}?${reactVar1}.${method1}:(typeof ${reactVar1}!=='undefined'&&${reactVar1}&&${reactVar1}.${fallbackMethod}?${reactVar1}.${fallbackMethod}:function(){})):(typeof ${reactVar2}!=='undefined'&&${reactVar2}&&${reactVar2}.${method2}?${reactVar2}.${method2}:function(){})`;
               }
             );
-          }
-          
-          // Pattern: var Ta=_e()?b.useLayoutEffect:b.useEffect (same pattern, different var name)
-          if (chunk.code.includes('_e()?') && chunk.code.includes('.useLayoutEffect')) {
+            
+            // Pattern 2: var en=_e()?b.useLayoutEffect:b.useEffect (without spaces)
             chunk.code = chunk.code.replace(
-              /var\s+(\w+)\s*=\s*_e\(\)\?(\w+)\.useLayoutEffect\s*:\s*(\w+)\.useEffect/g,
-              (match, varName, reactVar1, reactVar2) => {
-                return `var ${varName}=_e()?(typeof ${reactVar1}!=='undefined'&&${reactVar1}&&${reactVar1}.useLayoutEffect?${reactVar1}.useLayoutEffect:(typeof ${reactVar1}!=='undefined'&&${reactVar1}&&${reactVar1}.useEffect?${reactVar1}.useEffect:function(){})):(typeof ${reactVar2}!=='undefined'&&${reactVar2}&&${reactVar2}.useEffect?${reactVar2}.useEffect:function(){})`;
+              /var\s+(\w+)\s*=\s*_e\(\)\?(\w+)\.(useLayoutEffect|useEffect)\s*:\s*(\w+)\.(useLayoutEffect|useEffect)/g,
+              (match, varName, reactVar1, method1, reactVar2, method2) => {
+                const fallbackMethod = method1 === 'useLayoutEffect' ? 'useEffect' : method1;
+                return `var ${varName}=_e()?(typeof ${reactVar1}!=='undefined'&&${reactVar1}&&${reactVar1}.${method1}?${reactVar1}.${method1}:(typeof ${reactVar1}!=='undefined'&&${reactVar1}&&${reactVar1}.${fallbackMethod}?${reactVar1}.${fallbackMethod}:function(){})):(typeof ${reactVar2}!=='undefined'&&${reactVar2}&&${reactVar2}.${method2}?${reactVar2}.${method2}:function(){})`;
               }
             );
           }
