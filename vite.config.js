@@ -61,7 +61,14 @@ const processPolyfillPlugin = () => {
           otherPreloads.forEach(link => {
             newPreloads += '    ' + link + '\n';
           });
-          html = html.replace(scriptMatch[0], scriptMatch[0] + '\n' + newPreloads);
+          // Insert after the script tag closes, not inside it
+          const scriptEnd = html.indexOf('</script>', html.indexOf(scriptMatch[0]));
+          if (scriptEnd > 0) {
+            html = html.slice(0, scriptEnd) + '\n' + newPreloads + html.slice(scriptEnd);
+          } else {
+            // Fallback: insert after script tag
+            html = html.replace(scriptMatch[0], scriptMatch[0] + '\n' + newPreloads);
+          }
         }
       }
       
