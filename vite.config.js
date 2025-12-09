@@ -109,6 +109,18 @@ const processPolyfillPlugin = () => {
             }
           }
           
+          // ✅ CRITICAL FIX: If vendor chunk accesses p.version immediately after import,
+          // wrap it in a safety check to ensure p is defined
+          // Pattern: var li=Number(p.version.split(".")[0])
+          if (fileName.includes('vendor') && !fileName.includes('react-vendor') && 
+              chunk.code.includes('p.version') && chunk.code.includes('Number(p.version.split')) {
+            // Replace unsafe access with safe version
+            chunk.code = chunk.code.replace(
+              /var\s+li\s*=\s*Number\(p\.version\.split\(["']\.["']\)\[0\]\)/g,
+              'var li=(p&&p.version?Number(p.version.split(".")[0]):19)'
+            );
+          }
+          
         }
       })
     }
