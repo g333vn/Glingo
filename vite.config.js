@@ -248,6 +248,48 @@ const reactVersionTransformPlugin = () => {
               }
             );
             
+            // Pattern: b.Component.prototype, b.Component.isPrototypeOf, etc.
+            chunk.code = chunk.code.replace(
+              /(\w+)\.(Component|Fragment|PureComponent)\.(prototype|isPrototypeOf|hasOwnProperty)/g,
+              (match, reactVar, prop, method) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar)) {
+                  return `(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.${prop}?${reactVar}.${prop}:function(){}).${method}`;
+                }
+                return match;
+              }
+            );
+            
+            // Pattern: new b.Component(), instanceof b.Component
+            chunk.code = chunk.code.replace(
+              /(new|instanceof)\s+(\w+)\.(Component|PureComponent)/g,
+              (match, keyword, reactVar, prop) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar)) {
+                  return `${keyword} (typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.${prop}?${reactVar}.${prop}:function(){})`;
+                }
+                return match;
+              }
+            );
+            
+            // Pattern: Direct access b.Component (without assignment) - catch remaining cases
+            // This is a fallback for any other patterns we might have missed
+            chunk.code = chunk.code.replace(
+              /(\w+)\.(Component|Fragment|PureComponent|StrictMode|Suspense|Profiler)(\s*[.,;\)\]\}\?])/g,
+              (match, reactVar, prop, after) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                // Only fix if not already handled by previous patterns
+                if (reactVars.includes(reactVar) && 
+                    !match.includes('typeof ') && 
+                    !match.includes('extends ') &&
+                    !match.includes('new ') &&
+                    !match.includes('instanceof ')) {
+                  return `(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.${prop}?${reactVar}.${prop}:function(){})${after}`;
+                }
+                return match;
+              }
+            );
+            
             // Pattern: b.useRef, b.useState, b.useCallback, b.useMemo (in function calls)
             // These are usually safe because they're called inside React components
             // But we'll add safety check for top-level assignments
