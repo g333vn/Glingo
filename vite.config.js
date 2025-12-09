@@ -218,50 +218,38 @@ const processPolyfillPlugin = () => {
         );
       }
       
-      // ✅ CRITICAL: Ensure react-vendor loads FIRST using BLOCKING preload
-      // modulepreload is non-blocking, we need blocking preload for react-vendor
+      // ✅ CRITICAL: Ensure entry chunk (index.js) loads FIRST, BEFORE vendor chunks
+      // This ensures React (if bundled in entry) loads before vendor chunks try to use it
       const modulepreloadRegex = /<link[^>]*rel=["']modulepreload["'][^>]*>/gi;
+      const scriptModuleRegex = /<script[^>]*type=["']module["'][^>]*src=["']([^"']+)["'][^>]*>/i;
       const allPreloads = html.match(modulepreloadRegex) || [];
+      const entryScriptMatch = html.match(scriptModuleRegex);
       
-      if (allPreloads.length > 0) {
-        const reactVendor = allPreloads.find(link => link.includes('react-vendor'));
-        const antdVendor = allPreloads.find(link => link.includes('antd-vendor'));
-        const vendor = allPreloads.find(link => link.includes('vendor') && !link.includes('antd-vendor') && !link.includes('react-vendor') && !link.includes('router-vendor') && !link.includes('supabase-vendor') && !link.includes('storage-vendor'));
-        const otherPreloads = allPreloads.filter(link => link !== reactVendor && link !== antdVendor && link !== vendor);
+      if (allPreloads.length > 0 && entryScriptMatch) {
+        const entryScript = entryScriptMatch[0];
+        const entryHref = entryScriptMatch[1];
         
         // Remove all modulepreload links
         allPreloads.forEach(link => {
           html = html.replace(link, '');
         });
         
-        // ✅ CRITICAL: Convert react-vendor to BLOCKING preload (not modulepreload)
-        // This ensures react-vendor loads BEFORE any other code executes
-        let reactVendorPreload = reactVendor;
-        if (reactVendor) {
-          // Extract href from modulepreload link
-          const hrefMatch = reactVendor.match(/href=["']([^"']+)["']/);
-          if (hrefMatch) {
-            const href = hrefMatch[1];
-            // Create BLOCKING preload link (not modulepreload)
-            // Use 'fetch' instead of 'script' to ensure it loads before module execution
-            reactVendorPreload = `<link rel="preload" href="${href}" as="fetch" crossorigin>`;
-          }
-        }
+        // Remove entry script temporarily
+        html = html.replace(entryScript, '');
         
-        // Re-insert in correct order: react-vendor FIRST (as blocking preload), then others
-        const scriptMatch = html.match(/<script[^>]*type=["']module["'][^>]*>/i);
-        if (scriptMatch) {
-          let newPreloads = '';
-          // ✅ CRITICAL: react-vendor as BLOCKING preload FIRST
-          if (reactVendorPreload) newPreloads += '    ' + reactVendorPreload + '\n';
-          // Then antd-vendor and vendor as modulepreload
-          if (antdVendor) newPreloads += '    ' + antdVendor + '\n';
-          if (vendor) newPreloads += '    ' + vendor + '\n';
-          otherPreloads.forEach(link => {
-            newPreloads += '    ' + link + '\n';
-          });
-          // Insert BEFORE the script tag
-          html = html.replace(scriptMatch[0], newPreloads + '    ' + scriptMatch[0]);
+        // ✅ CRITICAL: Entry chunk FIRST as modulepreload, then vendor chunks
+        let newPreloads = '';
+        // Entry chunk FIRST (this contains React if bundled correctly)
+        newPreloads += `    <link rel="modulepreload" crossorigin href="${entryHref}">\n`;
+        // Then vendor chunks
+        allPreloads.forEach(link => {
+          newPreloads += '    ' + link + '\n';
+        });
+        
+        // Re-insert entry script AFTER preloads
+        const headEndMatch = html.match(/<\/head>/i);
+        if (headEndMatch) {
+          html = html.replace(headEndMatch[0], newPreloads + '    ' + entryScript + '\n' + headEndMatch[0]);
         }
       }
       
@@ -467,6 +455,8 @@ export default defineConfig({
       // drop: ['console', 'debugger'] // ❌ KHÔNG dùng dòng này
     },
       rollupOptions: {
+      // ✅ CRITICAL: Preserve entry signatures to keep React in entry chunk
+      preserveEntrySignatures: 'strict',
       output: {
         // ✅ CRITICAL: Ensure antd-vendor loads before vendor chunk
         // This prevents vendor chunk from trying to import React before it's available
@@ -484,12 +474,18 @@ export default defineConfig({
         // Để React ở entry chunk đảm bảo React LUÔN load TRƯỚC tất cả code khác
         // Đây là cách DUY NHẤT để fix lỗi p.version undefined
         manualChunks: (id) => {
+          // ✅ CRITICAL: React, React-DOM, Scheduler PHẢI ở entry chunk
+          // Return undefined để giữ chúng trong entry chunk
+          if (id.includes('node_modules/react/') || 
+              id.includes('node_modules/react-dom/') ||
+              id.includes('node_modules/scheduler/') ||
+              id.includes('node_modules/react/index') ||
+              id.includes('node_modules/react-dom/index')) {
+            return undefined; // ✅ Force vào entry chunk
+          }
+          
           // Vendor chunks - Tách riêng các thư viện lớn
           if (id.includes('node_modules')) {
-            // ✅ CRITICAL: KHÔNG tách React, React-DOM, Scheduler
-            // Để chúng ở trong entry chunk để load ĐỒNG BỘ
-            // ❌ KHÔNG LÀM: if (id.includes('react/') || id.includes('react-dom/')) return 'react-vendor';
-            
             // React Router
             if (id.includes('react-router')) {
               return 'router-vendor';
@@ -511,9 +507,7 @@ export default defineConfig({
               return 'storage-vendor';
             }
             // Other vendor code (but NOT React)
-            if (!id.includes('react/') && !id.includes('react-dom/') && !id.includes('scheduler')) {
-              return 'vendor';
-            }
+            return 'vendor';
           }
           
           // Feature-based chunks - Tách theo module
