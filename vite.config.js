@@ -121,6 +121,63 @@ const reactVersionTransformPlugin = () => {
               }
             );
           }
+          
+          // ✅ CRITICAL: Fix ALL React methods access at top-level (createContext, createElement, useRef, useState, etc.)
+          // Pattern: var Fa = b.createContext({})
+          // Pattern: b.createElement(...)
+          // These run immediately when module is evaluated, so need safety check
+          if (chunk.code.includes('b.createContext') || chunk.code.includes('b.createElement') || 
+              chunk.code.includes('b.useRef') || chunk.code.includes('b.useState') ||
+              chunk.code.includes('b.useCallback') || chunk.code.includes('b.useMemo') ||
+              chunk.code.includes('b.forwardRef') || chunk.code.includes('b.Component') ||
+              chunk.code.includes('b.Fragment') || chunk.code.includes('b.isValidElement') ||
+              chunk.code.includes('b.cloneElement')) {
+            
+            // Pattern: var Fa = b.createContext({})
+            chunk.code = chunk.code.replace(
+              /var\s+(\w+)\s*=\s*(\w+)\.createContext\(/g,
+              (match, varName, reactVar) => {
+                // Only fix if reactVar is likely React (b, p, React, _react, etc.)
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar)) {
+                  return `var ${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.createContext?${reactVar}.createContext:(function(){throw new Error('React.createContext is not available')}))(`;
+                }
+                return match;
+              }
+            );
+            
+            // Pattern: b.createElement(...) - only fix top-level calls (not inside functions)
+            // This is tricky, so we'll be conservative and only fix obvious patterns
+            chunk.code = chunk.code.replace(
+              /return\s+(\w+)\.createElement\(/g,
+              (match, reactVar) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar)) {
+                  return `return (typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.createElement?${reactVar}.createElement:(function(){throw new Error('React.createElement is not available')}))(`;
+                }
+                return match;
+              }
+            );
+            
+            // Pattern: b.useRef, b.useState, b.useCallback, b.useMemo (in function calls)
+            // These are usually safe because they're called inside React components
+            // But we'll add safety check for top-level assignments
+            chunk.code = chunk.code.replace(
+              /var\s+(\w+)\s*=\s*(\w+)\.(useRef|useState|useCallback|useMemo|forwardRef|Component|Fragment|isValidElement|cloneElement)\(/g,
+              (match, varName, reactVar, method) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar)) {
+                  // For hooks, return a function that throws error if React not available
+                  if (method.startsWith('use')) {
+                    return `var ${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.${method}?${reactVar}.${method}:(function(){throw new Error('React.${method} is not available')}))(`;
+                  }
+                  // For other methods
+                  return `var ${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.${method}?${reactVar}.${method}:(function(){throw new Error('React.${method} is not available')}))(`;
+                }
+                return match;
+              }
+            );
+          }
         }
       });
     }
