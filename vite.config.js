@@ -45,29 +45,52 @@ const reactVersionTransformPlugin = () => {
       return code;
     },
     generateBundle(options, bundle) {
-      // ✅ CRITICAL: Fix p.version access in vendor chunks AFTER bundling
+      // ✅ CRITICAL: Fix ALL React.version access patterns in vendor chunks AFTER bundling
       // This runs after all transforms, so we can fix the final bundled code
+      // Patterns to fix: p.version, b.version, React.version, _react.version, Xo.version, etc.
       Object.keys(bundle).forEach(fileName => {
         const chunk = bundle[fileName];
         if (chunk.type === 'chunk') {
-          // Fix pattern: var li=Number(p.version.split(".")[0])
-          // where p is imported from react-vendor but may not be loaded yet
-          if (fileName.includes('vendor') && !fileName.includes('react-vendor') && 
-              chunk.code.includes('p.version') && chunk.code.includes('Number(p.version.split')) {
+          // Fix ALL patterns: Number(anyVar.version.split(".")[0])
+          // This catches: p.version, b.version, React.version, _react.version, Xo.version, etc.
+          if (chunk.code.includes('.version.split') && chunk.code.includes('Number')) {
+            // Pattern 1: var Gi=Number(b.version.split(".")[0])
+            chunk.code = chunk.code.replace(
+              /var\s+(\w+)\s*=\s*Number\((\w+)\.version\.split\(["']\.["']\)\[0\]\)/g,
+              (match, varName, reactVar) => {
+                return `var ${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.version?Number(${reactVar}.version.split(".")[0]):19)`;
+              }
+            );
             
-            // More aggressive replacement - handle all variations
+            // Pattern 2: const Gi=Number(b.version.split(".")[0])
+            chunk.code = chunk.code.replace(
+              /const\s+(\w+)\s*=\s*Number\((\w+)\.version\.split\(["']\.["']\)\[0\]\)/g,
+              (match, varName, reactVar) => {
+                return `const ${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.version?Number(${reactVar}.version.split(".")[0]):19)`;
+              }
+            );
+            
+            // Pattern 3: Number((Xo||"").split(".")[0]) - already has fallback, but ensure safety
+            chunk.code = chunk.code.replace(
+              /Number\(\((\w+)\|\|["']{2}\)\.split\(["']\.["']\)\[0\]\)/g,
+              (match, reactVar) => {
+                return `Number((typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.version?${reactVar}.version.split(".")[0]:"19"))`;
+              }
+            );
+            
+            // Pattern 4: var li=Number(p.version.split(".")[0]) - original pattern
             chunk.code = chunk.code.replace(
               /var\s+li\s*=\s*Number\(p\.version\.split\(["']\.["']\)\[0\]\)/g,
               'var li=(typeof p!==\'undefined\'&&p&&p.version?Number(p.version.split(".")[0]):19)'
             );
             
-            // Also fix: li=Number(p.version.split(".")[0])
+            // Pattern 5: li=Number(p.version.split(".")[0])
             chunk.code = chunk.code.replace(
               /li\s*=\s*Number\(p\.version\.split\(["']\.["']\)\[0\]\)/g,
               'li=(typeof p!==\'undefined\'&&p&&p.version?Number(p.version.split(".")[0]):19)'
             );
             
-            // Fix: const li=Number(p.version.split(".")[0])
+            // Pattern 6: const li=Number(p.version.split(".")[0])
             chunk.code = chunk.code.replace(
               /const\s+li\s*=\s*Number\(p\.version\.split\(["']\.["']\)\[0\]\)/g,
               'const li=(typeof p!==\'undefined\'&&p&&p.version?Number(p.version.split(".")[0]):19)'
