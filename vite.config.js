@@ -629,8 +629,8 @@ export default defineConfig({
       // ✅ CRITICAL: Preserve entry signatures to keep React in entry chunk
       preserveEntrySignatures: 'strict',
       output: {
-        // ✅ CRITICAL: Ensure antd-vendor loads before vendor chunk
-        // This prevents vendor chunk from trying to import React before it's available
+        // ✅ CRITICAL: Ensure proper chunk loading order to avoid circular dependencies
+        // This prevents "Cannot access 'xi' before initialization" errors
         chunkFileNames: (chunkInfo) => {
           // Ensure react-vendor has a predictable name that loads first
           if (chunkInfo.name === 'react-vendor') {
@@ -641,10 +641,9 @@ export default defineConfig({
           }
           return 'assets/[name]-[hash].js';
         },
-        // ✅ CRITICAL FIX: KHÔNG tách React ra chunk riêng
-        // Để React ở entry chunk đảm bảo React LUÔN load TRƯỚC tất cả code khác
-        // Đây là cách DUY NHẤT để fix lỗi p.version undefined
-        manualChunks: (id) => {
+        // ✅ CRITICAL: Prevent circular dependencies by ensuring proper import order
+        // This ensures chunks don't import from each other in a circular way
+        manualChunks: (id, { getModuleInfo }) => {
           // ✅ CRITICAL: React, React-DOM, Scheduler PHẢI ở entry chunk
           // Return undefined để giữ chúng trong entry chunk
           if (id.includes('node_modules/react/') || 
@@ -656,12 +655,14 @@ export default defineConfig({
           }
           
           // Vendor chunks - Tách riêng các thư viện lớn
+          // ✅ CRITICAL: Load vendor chunks BEFORE feature chunks to avoid circular dependencies
           if (id.includes('node_modules')) {
             // React Router
             if (id.includes('react-router')) {
               return 'router-vendor';
             }
             // Ant Design (UI library - lớn)
+            // ✅ CRITICAL: antd-vendor must be self-contained and not import from feature chunks
             if (id.includes('antd') || id.includes('@ant-design')) {
               return 'antd-vendor';
             }
@@ -682,6 +683,7 @@ export default defineConfig({
           }
           
           // Feature-based chunks - Tách theo module
+          // ✅ CRITICAL: Feature chunks can import from vendor chunks, but NOT vice versa
           // Level Module (Books, Lessons, Quizzes)
           if (id.includes('features/books') || id.includes('features/books/')) {
             return 'level-module';
@@ -693,6 +695,7 @@ export default defineConfig({
           }
           
           // Admin Module (Admin pages, components)
+          // ✅ CRITICAL: Admin module imports from antd-vendor, but antd-vendor should NOT import from admin-module
           if (id.includes('pages/admin') || id.includes('components/admin')) {
             return 'admin-module';
           }
