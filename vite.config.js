@@ -3,6 +3,50 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
+// ✅ FIX: Plugin to transform unsafe React.version access in node_modules
+const reactVersionTransformPlugin = () => {
+  return {
+    name: 'react-version-transform',
+    enforce: 'pre', // Run before other transforms
+    transform(code, id) {
+      // ✅ CRITICAL: Transform unsafe React.version access in node_modules
+      // Fix antd and rc-util code that accesses React.version immediately
+      if (id.includes('node_modules') && 
+          (id.includes('antd') || id.includes('rc-util')) &&
+          code.includes('version.split')) {
+        
+        // Pattern 1: React.version.split('.')[0]
+        if (code.includes('React.version.split')) {
+          code = code.replace(
+            /React\.version\.split\(['"]\.['"]\)\[0\]/g,
+            '(React && React.version ? React.version.split(".")[0] : "19")'
+          );
+          code = code.replace(
+            /Number\.parseInt\(React\.version\.split\(['"]\.['"]\)\[0\]/g,
+            'Number.parseInt(React && React.version ? React.version.split(".")[0] : "19"'
+          );
+        }
+        
+        // Pattern 2: _react.version.split('.')[0] (rc-util)
+        if (code.includes('_react.version.split') || code.includes('react.version.split')) {
+          // Fix: Number(_react.version.split('.')[0])
+          code = code.replace(
+            /Number\((_react|react)\.version\.split\(['"]\.['"]\)\[0\]\)/g,
+            'Number(($1 && $1.version ? $1.version.split(".")[0] : "19"))'
+          );
+          // Fix: var ReactMajorVersion = Number(_react.version.split('.')[0]);
+          code = code.replace(
+            /(_react|react)\.version\.split\(['"]\.['"]\)\[0\]/g,
+            '($1 && $1.version ? $1.version.split(".")[0] : "19")'
+          );
+        }
+      }
+      
+      return code;
+    }
+  }
+}
+
 // ✅ FIX: Plugin to inject process polyfill at the start of ALL chunks
 const processPolyfillPlugin = () => {
   // CRITICAL: This polyfill MUST be the first line in each chunk
@@ -129,6 +173,7 @@ const processPolyfillPlugin = () => {
 
 export default defineConfig({
   plugins: [
+    reactVersionTransformPlugin(), // ✅ CRITICAL: Transform React.version access FIRST
     processPolyfillPlugin(),
     react(),
     VitePWA({
