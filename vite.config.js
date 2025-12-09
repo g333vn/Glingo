@@ -400,24 +400,25 @@ const processPolyfillPlugin = () => {
         const entryScript = entryScriptMatch[0];
         const entryHref = entryScriptMatch[1];
         
-        // Remove all modulepreload links
+        // ✅ CRITICAL: Remove all modulepreload links and entry script
         allPreloads.forEach(link => {
           html = html.replace(link, '');
         });
-        
-        // Remove entry script temporarily
         html = html.replace(entryScript, '');
         
-        // ✅ CRITICAL: Entry chunk FIRST as modulepreload, then vendor chunks
+        // ✅ CRITICAL: Use blocking preload for entry script to ensure it loads FIRST
+        // Then add modulepreload for entry, then vendor chunks
         let newPreloads = '';
-        // Entry chunk FIRST (this contains React if bundled correctly)
+        // Blocking preload for entry chunk (loads synchronously before other resources)
+        newPreloads += `    <link rel="preload" href="${entryHref}" as="script" crossorigin>\n`;
+        // Modulepreload for entry chunk (ensures it's ready when needed)
         newPreloads += `    <link rel="modulepreload" crossorigin href="${entryHref}">\n`;
-        // Then vendor chunks
+        // Then vendor chunks (these depend on entry chunk)
         allPreloads.forEach(link => {
           newPreloads += '    ' + link + '\n';
         });
         
-        // Re-insert entry script AFTER preloads
+        // Re-insert entry script AFTER all preloads
         const headEndMatch = html.match(/<\/head>/i);
         if (headEndMatch) {
           html = html.replace(headEndMatch[0], newPreloads + '    ' + entryScript + '\n' + headEndMatch[0]);
