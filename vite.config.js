@@ -375,27 +375,23 @@ export default defineConfig({
           }
           return 'assets/[name]-[hash].js';
         },
-        // ✅ PHASE 1: Code Splitting - Route-based chunking strategy
+        // ✅ CRITICAL FIX: KHÔNG tách React ra chunk riêng
+        // Để React ở entry chunk đảm bảo React LUÔN load TRƯỚC tất cả code khác
+        // Đây là cách DUY NHẤT để fix lỗi p.version undefined
         manualChunks: (id) => {
           // Vendor chunks - Tách riêng các thư viện lớn
           if (id.includes('node_modules')) {
-            // ✅ CRITICAL: React core MUST be in a separate chunk that loads FIRST
-            // This ensures React is available before ANY other code tries to use it
-            // React core (react, react-dom, scheduler) - MUST be in react-vendor
-            if (id.includes('react/') || id.includes('react-dom/') || id.includes('scheduler')) {
-              return 'react-vendor';
-            }
-            // React Router (check before react to avoid matching react-router as react)
+            // ✅ CRITICAL: KHÔNG tách React, React-DOM, Scheduler
+            // Để chúng ở trong entry chunk để load ĐỒNG BỘ
+            // ❌ KHÔNG LÀM: if (id.includes('react/') || id.includes('react-dom/')) return 'react-vendor';
+            
+            // React Router
             if (id.includes('react-router')) {
               return 'router-vendor';
             }
-            // Ant Design (UI library - lớn) - depends on React, so loads after react-vendor
+            // Ant Design (UI library - lớn)
             if (id.includes('antd') || id.includes('@ant-design')) {
               return 'antd-vendor';
-            }
-            // Additional React-related packages that might be missed
-            if (id.includes('/react') && !id.includes('react-router')) {
-              return 'react-vendor';
             }
             // Supabase client
             if (id.includes('@supabase')) {
@@ -409,8 +405,10 @@ export default defineConfig({
             if (id.includes('idb')) {
               return 'storage-vendor';
             }
-            // Other vendor code
-            return 'vendor';
+            // Other vendor code (but NOT React)
+            if (!id.includes('react/') && !id.includes('react-dom/') && !id.includes('scheduler')) {
+              return 'vendor';
+            }
           }
           
           // Feature-based chunks - Tách theo module
