@@ -7,8 +7,10 @@ import path from 'path'
 const processPolyfillPlugin = () => {
   // CRITICAL: This polyfill MUST be the first line in each chunk
   // It defines process before any code tries to access process.version
-  const polyfillCode = `(function(){'use strict';var p={env:{},version:'v18.0.0',browser:true};try{if(typeof window!=='undefined'){window.process=p;window.global=window;}if(typeof globalThis!=='undefined'){globalThis.process=p;globalThis.global=globalThis;}if(typeof process==='undefined'){var g=typeof globalThis!=='undefined'?globalThis:typeof window!=='undefined'?window:typeof self!=='undefined'?self:this;if(g){g.process=p;g.global=g;}}}catch(e){console.error('Polyfill error:',e);}})();`;
+  // Using IIFE that executes immediately and sets process on all possible global objects
+  const polyfillCode = `(function(){'use strict';var p={env:{},version:'v18.0.0',browser:true};try{if(typeof window!=='undefined'){window.process=p;window.global=window;}if(typeof globalThis!=='undefined'){globalThis.process=p;globalThis.global=globalThis;}if(typeof process==='undefined'){var g=typeof globalThis!=='undefined'?globalThis:typeof window!=='undefined'?window:typeof self!=='undefined'?self:typeof global!=='undefined'?global:this;if(g){g.process=p;g.global=g;}}}catch(e){console.error('Polyfill error:',e);}})();`;
   
+  // ✅ CRITICAL: Use blocking script (no async/defer) to ensure it runs before modulepreload
   const polyfillScript = `<script>${polyfillCode}</script>`;
   
   return {
@@ -21,11 +23,14 @@ const processPolyfillPlugin = () => {
       }
     },
     transformIndexHtml(html) {
-      // ✅ CRITICAL: Inject polyfill script into index.html BEFORE any module scripts
-      // This ensures process is defined before any vendor chunks load
+      // ✅ CRITICAL: Inject polyfill script into index.html as FIRST script
+      // Must be before any modulepreload links or module scripts
+      // Remove any existing polyfill scripts first to avoid duplicates
+      html = html.replace(/<script[^>]*>[\s\S]*?polyfill[\s\S]*?<\/script>/gi, '');
+      
       const headMatch = html.match(/<head[^>]*>/i);
       if (headMatch) {
-        // Insert polyfill right after <head> tag, before any other scripts
+        // Insert polyfill right after <head> tag, before ANY other content
         return html.replace(
           headMatch[0],
           `${headMatch[0]}\n    ${polyfillScript}`
@@ -56,11 +61,19 @@ const processPolyfillPlugin = () => {
         if (chunk.type === 'chunk') {
           // Check if polyfill is already at the start (by checking for the function pattern)
           const hasPolyfill = chunk.code.trim().startsWith('(function(){') && 
-                             chunk.code.includes('var p={env:{},version:');
+                             (chunk.code.includes('var p={env:{},version:') || 
+                              chunk.code.includes('process={env:{},version:'));
           
           // Always inject at the very beginning if not already present
+          // Use more aggressive check - if code starts with import, inject before it
           if (!hasPolyfill) {
-            chunk.code = polyfillCode + '\n' + chunk.code
+            // If chunk starts with import statement, inject polyfill before it
+            if (chunk.code.trim().startsWith('import')) {
+              chunk.code = polyfillCode + '\n' + chunk.code
+            } else {
+              // Otherwise inject at the very beginning
+              chunk.code = polyfillCode + '\n' + chunk.code
+            }
           }
         }
       })
