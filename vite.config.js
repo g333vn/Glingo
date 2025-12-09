@@ -194,11 +194,65 @@ const reactVersionTransformPlugin = () => {
               }
             );
             
+            // Pattern: b.Component, b.Fragment (property access, not function call)
+            // These are classes/constants, not functions
+            // Pattern 1: var/const/let X = b.Component
+            chunk.code = chunk.code.replace(
+              /(var|const|let)\s+(\w+)\s*=\s*(\w+)\.(Component|Fragment|PureComponent|StrictMode|Suspense|Profiler)(\s|;|,|\))/g,
+              (match, keyword, varName, reactVar, prop, after) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar)) {
+                  return `${keyword} ${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.${prop}?${reactVar}.${prop}:function(){})${after}`;
+                }
+                return match;
+              }
+            );
+            
+            // Pattern 2: ,X=b.Component (comma-separated)
+            chunk.code = chunk.code.replace(
+              /,\s*(\w+)\s*=\s*(\w+)\.(Component|Fragment|PureComponent|StrictMode|Suspense|Profiler)(\s|;|,|\))/g,
+              (match, varName, reactVar, prop, after) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar)) {
+                  return `,${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.${prop}?${reactVar}.${prop}:function(){})${after}`;
+                }
+                return match;
+              }
+            );
+            
+            // Pattern 3: X = b.Component (standalone assignment)
+            chunk.code = chunk.code.replace(
+              /(\w+)\s*=\s*(\w+)\.(Component|Fragment|PureComponent|StrictMode|Suspense|Profiler)(\s|;|,|\))/g,
+              (match, varName, reactVar, prop, after) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar) && 
+                    !match.includes('var ') && 
+                    !match.includes('const ') && 
+                    !match.includes('let ') &&
+                    !match.startsWith(',')) {
+                  return `${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.${prop}?${reactVar}.${prop}:function(){})${after}`;
+                }
+                return match;
+              }
+            );
+            
+            // Pattern: extends b.Component (class extends)
+            chunk.code = chunk.code.replace(
+              /extends\s+(\w+)\.(Component|PureComponent)/g,
+              (match, reactVar, prop) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar)) {
+                  return `extends (typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.${prop}?${reactVar}.${prop}:function(){})`;
+                }
+                return match;
+              }
+            );
+            
             // Pattern: b.useRef, b.useState, b.useCallback, b.useMemo (in function calls)
             // These are usually safe because they're called inside React components
             // But we'll add safety check for top-level assignments
             chunk.code = chunk.code.replace(
-              /var\s+(\w+)\s*=\s*(\w+)\.(useRef|useState|useCallback|useMemo|forwardRef|Component|Fragment|isValidElement|cloneElement)\(/g,
+              /var\s+(\w+)\s*=\s*(\w+)\.(useRef|useState|useCallback|useMemo|forwardRef|isValidElement|cloneElement)\(/g,
               (match, varName, reactVar, method) => {
                 const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
                 if (reactVars.includes(reactVar)) {
