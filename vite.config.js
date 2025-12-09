@@ -9,6 +9,8 @@ const processPolyfillPlugin = () => {
   // It defines process before any code tries to access process.version
   const polyfillCode = `(function(){'use strict';var p={env:{},version:'v18.0.0',browser:true};try{if(typeof window!=='undefined'){window.process=p;window.global=window;}if(typeof globalThis!=='undefined'){globalThis.process=p;globalThis.global=globalThis;}if(typeof process==='undefined'){var g=typeof globalThis!=='undefined'?globalThis:typeof window!=='undefined'?window:typeof self!=='undefined'?self:this;if(g){g.process=p;g.global=g;}}}catch(e){console.error('Polyfill error:',e);}})();`;
   
+  const polyfillScript = `<script>${polyfillCode}</script>`;
+  
   return {
     name: 'process-polyfill',
     enforce: 'pre', // Run before other plugins
@@ -17,6 +19,19 @@ const processPolyfillPlugin = () => {
       if (typeof global !== 'undefined' && typeof global.process === 'undefined') {
         global.process = { env: {}, version: 'v18.0.0', browser: true }
       }
+    },
+    transformIndexHtml(html) {
+      // ✅ CRITICAL: Inject polyfill script into index.html BEFORE any module scripts
+      // This ensures process is defined before any vendor chunks load
+      const headMatch = html.match(/<head[^>]*>/i);
+      if (headMatch) {
+        // Insert polyfill right after <head> tag, before any other scripts
+        return html.replace(
+          headMatch[0],
+          `${headMatch[0]}\n    ${polyfillScript}`
+        );
+      }
+      return html;
     },
     transform(code, id) {
       // In dev mode: Only inject into specific vendor modules that are known to need process
@@ -34,14 +49,17 @@ const processPolyfillPlugin = () => {
       return null
     },
     generateBundle(options, bundle) {
-      // Inject polyfill in ALL chunks (including vendor chunks) during build
-      // CRITICAL: Must be first line to ensure process exists before any code runs
+      // ✅ CRITICAL: Inject polyfill in ALL chunks (including vendor chunks) during build
+      // Must be first line to ensure process exists before any code runs
       Object.keys(bundle).forEach(fileName => {
         const chunk = bundle[fileName]
         if (chunk.type === 'chunk') {
-          // Always inject at the very beginning, even if process is referenced later
-          // This ensures process exists before any code tries to access it
-          if (!chunk.code.trim().startsWith('(function(){var p={env:{},version:')) {
+          // Check if polyfill is already at the start (by checking for the function pattern)
+          const hasPolyfill = chunk.code.trim().startsWith('(function(){') && 
+                             chunk.code.includes('var p={env:{},version:');
+          
+          // Always inject at the very beginning if not already present
+          if (!hasPolyfill) {
             chunk.code = polyfillCode + '\n' + chunk.code
           }
         }
