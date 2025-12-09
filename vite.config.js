@@ -290,11 +290,24 @@ const reactVersionTransformPlugin = () => {
               }
             );
             
+            // Pattern: b.forwardRef (special handling - return no-op function instead of throwing)
+            chunk.code = chunk.code.replace(
+              /var\s+(\w+)\s*=\s*(\w+)\.forwardRef\(/g,
+              (match, varName, reactVar) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar)) {
+                  // Return a no-op function that returns the component as-is until React loads
+                  return `var ${varName}=(function(comp){var r=${reactVar};if(typeof r!=='undefined'&&r&&r.forwardRef)return r.forwardRef(comp);var noop=function(props,ref){return typeof comp==='function'?comp(props,ref):comp};if(typeof window!=='undefined'){var checkReact=function(){if(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.forwardRef){noop=${reactVar}.forwardRef(comp)}else{setTimeout(checkReact,10)}};setTimeout(checkReact,10)}return noop})(`;
+                }
+                return match;
+              }
+            );
+            
             // Pattern: b.useRef, b.useState, b.useCallback, b.useMemo (in function calls)
             // These are usually safe because they're called inside React components
             // But we'll add safety check for top-level assignments
             chunk.code = chunk.code.replace(
-              /var\s+(\w+)\s*=\s*(\w+)\.(useRef|useState|useCallback|useMemo|forwardRef|isValidElement|cloneElement)\(/g,
+              /var\s+(\w+)\s*=\s*(\w+)\.(useRef|useState|useCallback|useMemo|isValidElement|cloneElement)\(/g,
               (match, varName, reactVar, method) => {
                 const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
                 if (reactVars.includes(reactVar)) {
@@ -304,6 +317,33 @@ const reactVersionTransformPlugin = () => {
                   }
                   // For other methods
                   return `var ${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.${method}?${reactVar}.${method}:(function(){throw new Error('React.${method} is not available')}))(`;
+                }
+                return match;
+              }
+            );
+            
+            // Pattern: const/let X = b.forwardRef(...)
+            chunk.code = chunk.code.replace(
+              /(const|let)\s+(\w+)\s*=\s*(\w+)\.forwardRef\(/g,
+              (match, keyword, varName, reactVar) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar)) {
+                  return `${keyword} ${varName}=(function(comp){var r=${reactVar};if(typeof r!=='undefined'&&r&&r.forwardRef)return r.forwardRef(comp);var noop=function(props,ref){return typeof comp==='function'?comp(props,ref):comp};if(typeof window!=='undefined'){var checkReact=function(){if(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.forwardRef){noop=${reactVar}.forwardRef(comp)}else{setTimeout(checkReact,10)}};setTimeout(checkReact,10)}return noop})(`;
+                }
+                return match;
+              }
+            );
+            
+            // Pattern: X = b.forwardRef(...) (standalone assignment)
+            chunk.code = chunk.code.replace(
+              /(\w+)\s*=\s*(\w+)\.forwardRef\(/g,
+              (match, varName, reactVar) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar) && 
+                    !match.includes('var ') && 
+                    !match.includes('const ') && 
+                    !match.includes('let ')) {
+                  return `${varName}=(function(comp){var r=${reactVar};if(typeof r!=='undefined'&&r&&r.forwardRef)return r.forwardRef(comp);var noop=function(props,ref){return typeof comp==='function'?comp(props,ref):comp};if(typeof window!=='undefined'){var checkReact=function(){if(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.forwardRef){noop=${reactVar}.forwardRef(comp)}else{setTimeout(checkReact,10)}};setTimeout(checkReact,10)}return noop})(`;
                 }
                 return match;
               }
