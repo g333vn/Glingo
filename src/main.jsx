@@ -96,6 +96,33 @@ setAppVh();
 window.addEventListener('resize', setAppVh);
 window.addEventListener('orientationchange', setAppVh);
 
+// ✅ SAFETY: Force-clear any old service workers & caches to avoid stale vendor chunks
+// This prevents the app from loading outdated JS like vendor-Cq1Fhkgr.js
+async function clearStaleServiceWorkers() {
+  try {
+    const FLAG = 'sw-cleared';
+    if (sessionStorage.getItem(FLAG)) {
+      return;
+    }
+    sessionStorage.setItem(FLAG, '1');
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+    // Trigger a hard reload to fetch fresh assets after clearing caches
+    window.location.reload();
+  } catch (err) {
+    console.warn('SW cleanup failed:', err);
+  }
+}
+
+// Run SW cleanup as early as possible
+clearStaleServiceWorkers();
+
 // Component placeholder cho level chưa implement
 const LevelPlaceholder = ({ levelId = 'Unknown', type = 'LEVEL' }) => (
   <div className="p-8 text-center bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg mx-4">
