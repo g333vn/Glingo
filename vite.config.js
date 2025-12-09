@@ -134,13 +134,46 @@ const reactVersionTransformPlugin = () => {
               chunk.code.includes('b.cloneElement')) {
             
             // Pattern: var Fa = b.createContext({})
+            // Pattern: const Fa = b.createContext({})
+            // Pattern: Fa = b.createContext({})
+            // Pattern: var Fa=b.createContext({}) (no spaces)
             chunk.code = chunk.code.replace(
-              /var\s+(\w+)\s*=\s*(\w+)\.createContext\(/g,
-              (match, varName, reactVar) => {
+              /(var|const|let)\s+(\w+)\s*=\s*(\w+)\.createContext\(/g,
+              (match, keyword, varName, reactVar) => {
                 // Only fix if reactVar is likely React (b, p, React, _react, etc.)
                 const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
                 if (reactVars.includes(reactVar)) {
-                  return `var ${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.createContext?${reactVar}.createContext:(function(){throw new Error('React.createContext is not available')}))(`;
+                  return `${keyword} ${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.createContext?${reactVar}.createContext:(function(){throw new Error('React.createContext is not available')}))(`;
+                }
+                return match;
+              }
+            );
+            
+            // Pattern: ,Fa=b.createContext({}) (comma-separated declarations)
+            chunk.code = chunk.code.replace(
+              /,\s*(\w+)\s*=\s*(\w+)\.createContext\(/g,
+              (match, varName, reactVar) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                if (reactVars.includes(reactVar)) {
+                  return `,${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.createContext?${reactVar}.createContext:(function(){throw new Error('React.createContext is not available')}))(`;
+                }
+                return match;
+              }
+            );
+            
+            // Pattern: Fa = b.createContext({}) (assignment without var/const/let) - AFTER comma pattern
+            chunk.code = chunk.code.replace(
+              /(\w+)\s*=\s*(\w+)\.createContext\(/g,
+              (match, varName, reactVar) => {
+                const reactVars = ['b', 'p', 'React', '_react', 'x', 'c', 'r'];
+                // Only fix if it's NOT already handled by var/const/let/comma patterns above
+                // Check if this is a standalone assignment (not part of var declaration)
+                if (reactVars.includes(reactVar) && 
+                    !match.includes('var ') && 
+                    !match.includes('const ') && 
+                    !match.includes('let ') &&
+                    !match.startsWith(',')) {
+                  return `${varName}=(typeof ${reactVar}!=='undefined'&&${reactVar}&&${reactVar}.createContext?${reactVar}.createContext:(function(){throw new Error('React.createContext is not available')}))(`;
                 }
                 return match;
               }
