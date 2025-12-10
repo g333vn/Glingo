@@ -802,10 +802,46 @@ class LocalStorageManager {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
 
-    // Try IndexedDB first
+    // ✅ FIXED: Load from Supabase first if level provided (for multi-device sync)
+    if (level) {
+      try {
+        const { success, data } = await contentService.getAllQuizzesByLevel(level);
+        if (success && data && data.length > 0) {
+          console.log(`[StorageManager.getAllQuizzes] ✅ Loaded ${data.length} quizzes from Supabase for level ${level}`);
+          
+          // Cache to IndexedDB
+          if (this.useIndexedDB) {
+            for (const quiz of data) {
+              await indexedDBManager.saveQuiz(quiz.bookId, quiz.chapterId, quiz.lessonId, quiz, level);
+            }
+          }
+          
+          // Cache to localStorage
+          if (this.storageAvailable) {
+            for (const quiz of data) {
+              try {
+                const key = `adminQuiz_${level}_${quiz.bookId}_${quiz.chapterId}_${quiz.lessonId}`;
+                localStorage.setItem(key, JSON.stringify(quiz));
+              } catch (e) {
+                console.warn('localStorage full, but quiz cached to IndexedDB');
+              }
+            }
+          }
+          
+          return data;
+        } else if (success && (!data || data.length === 0)) {
+          console.log(`[StorageManager.getAllQuizzes] ℹ️ No quizzes found in Supabase for level ${level}`);
+        }
+      } catch (err) {
+        console.warn('[StorageManager] Supabase getAllQuizzes failed, trying local cache:', err);
+      }
+    }
+
+    // Try IndexedDB (local cache)
     if (this.useIndexedDB) {
       const quizzes = await indexedDBManager.getAllQuizzes(level);
       if (quizzes && quizzes.length > 0) {
+        console.log(`[StorageManager.getAllQuizzes] ✅ Loaded ${quizzes.length} quizzes from IndexedDB`);
         return quizzes;
       }
     }
@@ -841,6 +877,9 @@ class LocalStorageManager {
             console.warn(`Error parsing quiz from key ${key}:`, e);
           }
         }
+      }
+      if (allQuizzes.length > 0) {
+        console.log(`[StorageManager.getAllQuizzes] ✅ Loaded ${allQuizzes.length} quizzes from localStorage`);
       }
     }
 

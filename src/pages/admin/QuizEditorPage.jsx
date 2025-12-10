@@ -876,8 +876,28 @@ function QuizEditorPage() {
     });
 
     // Save to Supabase + IndexedDB/localStorage
-    const userId =
-      user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+    // ✅ FIXED: Try to get userId from user object or session
+    let userId = null;
+    if (user && typeof user.id === 'string' && user.id.length > 20) {
+      userId = user.id;
+    } else {
+      // Try to get userId from Supabase session
+      try {
+        const { supabase } = await import('../../services/supabaseClient.js');
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.id) {
+          userId = session.user.id;
+          console.log(`[QuizEditor] ✅ Got userId from session: ${userId}`);
+        }
+      } catch (err) {
+        console.warn('[QuizEditor] Could not get userId from session:', err);
+      }
+    }
+    
+    if (!userId) {
+      console.warn('[QuizEditor] ⚠️ No userId available - quiz will be saved locally only, not to Supabase');
+      console.warn('[QuizEditor] ⚠️ User must be logged in to sync quiz across devices');
+    }
 
     console.log(`💾 Calling storageManager.saveQuiz(${selectedBook}, ${selectedChapter}, ${finalLessonId}, level=${selectedLevel}, userId=${userId})...`);
     const success = await storageManager.saveQuiz(

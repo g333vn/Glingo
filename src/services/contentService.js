@@ -424,6 +424,47 @@ export async function getQuiz(bookId, chapterId, lessonId, level) {
 }
 
 /**
+ * Get all quizzes by level from Supabase
+ * @param {string} level - Level (n1, n2, ...)
+ * @returns {Promise<{success: boolean, data?: Array, error?: Object}>}
+ */
+export async function getAllQuizzesByLevel(level) {
+  try {
+    console.log('[ContentService.getAllQuizzesByLevel] 🔍 Loading quizzes for level:', level);
+    const { data, error } = await supabase
+      .from('quizzes')
+      .select('*')
+      .eq('level', level)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('[ContentService] Error fetching quizzes:', error);
+      return { success: false, error };
+    }
+
+    // Transform to app format
+    const quizzes = (data || []).map(quiz => ({
+      id: quiz.id,
+      bookId: quiz.book_id,
+      chapterId: quiz.chapter_id,
+      lessonId: quiz.lesson_id,
+      level: quiz.level,
+      title: quiz.title,
+      description: quiz.description,
+      questions: quiz.questions,
+      timeLimit: quiz.time_limit,
+      passingScore: quiz.passing_score
+    }));
+
+    console.log('[ContentService.getAllQuizzesByLevel] ✅ Loaded', quizzes.length, 'quizzes from Supabase');
+    return { success: true, data: quizzes };
+  } catch (err) {
+    console.error('[ContentService] Unexpected error:', err);
+    return { success: false, error: err };
+  }
+}
+
+/**
  * Save series to Supabase
  * @param {string} level - Level
  * @param {Array} series - Array of series
