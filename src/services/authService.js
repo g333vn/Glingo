@@ -257,14 +257,10 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
     let existing = await getUserProfile(userId);
     if (existing.success && existing.profile) {
       console.log('[AuthService] ✅ Profile already exists for user:', userId);
-      // ✅ AUTO: Update profile if role or other data changed
-      if (profileData.role && existing.profile.role !== profileData.role) {
-        console.log('[AuthService] 🔄 Updating profile role from', existing.profile.role, 'to', profileData.role);
-        const updateResult = await updateUserProfile(userId, { role: profileData.role });
-        if (updateResult.success) {
-          return { success: true, profile: updateResult.profile };
-        }
-      }
+      // ✅ FIXED: Don't auto-update role if profile exists - preserve existing role (especially admin)
+      // Only update if explicitly requested via updateUserProfile
+      // This prevents accidentally resetting admin role to 'user' when profile load fails
+      console.log('[AuthService] Preserving existing profile role:', existing.profile.role);
       return { success: true, profile: existing.profile };
     }
 

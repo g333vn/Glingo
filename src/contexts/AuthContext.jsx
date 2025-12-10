@@ -137,7 +137,10 @@ export function AuthProvider({ children }) {
         profileResult = await Promise.race([profilePromise, timeoutPromise]);
       } catch (timeoutError) {
         console.error('[AuthContext] Profile load timeout or error:', timeoutError);
-        // Continue without profile - user can still use the app
+        // ✅ FIXED: Don't reset profile on timeout - keep existing profile if available
+        // This prevents role reset when network is slow or database is temporarily unavailable
+        // Profile will be reloaded on next successful connection
+        console.warn('[AuthContext] Profile load failed, but preserving existing profile to prevent role reset');
         profileResult = { success: false, profile: null };
       }
 
@@ -146,22 +149,46 @@ export function AuthProvider({ children }) {
       if (success && profileData) {
         setProfile(profileData);
       } else {
-        // Try to create profile if it doesn't exist
+        // ✅ FIXED: Only create profile if it truly doesn't exist (not just load failure)
+        // Retry loading profile first before creating new one
+        console.log('[AuthContext] Profile not loaded, retrying...');
         try {
-          await authService.createUserProfile(authUser.id, {
+          // Retry getting profile with a short delay (up to 3 retries)
+          let retryResult = null;
+          for (let retry = 0; retry < 3; retry++) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * (retry + 1)));
+            retryResult = await authService.getUserProfile(authUser.id);
+            
+            if (retryResult.success && retryResult.profile) {
+              console.log(`[AuthContext] ✅ Profile found on retry ${retry + 1}`);
+              setProfile(retryResult.profile);
+              return; // Exit early if profile found
+            }
+          }
+          
+          // Profile truly doesn't exist after all retries - only then create it
+          console.log('[AuthContext] Profile not found after retries, creating new profile...');
+          const createResult = await authService.createUserProfile(authUser.id, {
             display_name: authUser.email?.split('@')[0] || 'User',
             email: authUser.email,
             role: 'user',
           });
 
-          // Try to get profile again
-          const { profile: newProfile } = await authService.getUserProfile(authUser.id);
-          if (newProfile) {
-            setProfile(newProfile);
+          // Try to get profile again after creation
+          if (createResult.success && createResult.profile) {
+            setProfile(createResult.profile);
+          } else {
+            // Final retry to get profile (might have been created by trigger)
+            const finalRetry = await authService.getUserProfile(authUser.id);
+            if (finalRetry.success && finalRetry.profile) {
+              setProfile(finalRetry.profile);
+            }
           }
         } catch (createError) {
-          console.warn('[AuthContext] Could not create profile:', createError);
-          // Continue without profile - user can still use the app
+          console.warn('[AuthContext] Could not create/load profile:', createError);
+          // ✅ FIXED: Don't reset profile on error - keep existing profile to prevent role reset
+          // Continue without updating profile - user can still use the app
+          // Profile will be reloaded on next successful connection
         }
       }
 
