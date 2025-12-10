@@ -182,16 +182,17 @@ function LessonPage() {
         // ✅ Try to load all quizzes that might match this lesson
         // ✅ FIXED: Chỉ load quiz có lessonId chính xác (không load quiz cũ không có lessonId)
         try {
-          const allQuizzesFromStorage = await storageManager.getAllQuizzes();
+          const allQuizzesFromStorage = await storageManager.getAllQuizzes(levelId);
           const filteredQuizzes = allQuizzesFromStorage.filter(q => {
             // Chỉ match quiz có lessonId chính xác
             const matchesLesson = q.lessonId === finalLessonId;
             // Phải có bookId và chapterId khớp
             const matchesBookChapter = q.bookId === bookId && q.chapterId === finalChapterId;
+            const matchesLevel = !q.level || q.level === levelId;
             // Quiz phải có questions hợp lệ (không rỗng)
             const hasValidQuestions = q.questions && Array.isArray(q.questions) && q.questions.length > 0;
             
-            return matchesBookChapter && matchesLesson && hasValidQuestions;
+            return matchesBookChapter && matchesLesson && matchesLevel && hasValidQuestions;
           });
           // Add unique quizzes (avoid duplicates)
           filteredQuizzes.forEach(q => {

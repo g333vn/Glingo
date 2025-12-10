@@ -437,11 +437,11 @@ class LocalStorageManager {
         if (success && data && data.length > 0) {
           // Cache to IndexedDB
           if (this.useIndexedDB) {
-            await indexedDBManager.saveChapters(bookId, data);
+            await indexedDBManager.saveChapters(bookId, data, level);
           }
           // Cache to localStorage
           if (this.storageAvailable) {
-            const key = `adminChapters_${bookId}`;
+            const key = `adminChapters_${level}_${bookId}`;
             localStorage.setItem(key, JSON.stringify(data));
           }
           return data;
@@ -453,19 +453,19 @@ class LocalStorageManager {
     
     // 2. Try IndexedDB (local cache)
     if (this.useIndexedDB) {
-      const result = await indexedDBManager.getChapters(bookId);
+      const result = await indexedDBManager.getChapters(bookId, level);
       if (result) return result;
     }
 
     // 3. Fallback to localStorage
-    if (this.storageAvailable) {
-      const key = `adminChapters_${bookId}`;
+    if (this.storageAvailable && level) {
+      const key = `adminChapters_${level}_${bookId}`;
       const data = localStorage.getItem(key);
       if (data) {
         const chapters = JSON.parse(data);
         // Sync to IndexedDB
         if (this.useIndexedDB) {
-          await indexedDBManager.saveChapters(bookId, chapters);
+          await indexedDBManager.saveChapters(bookId, chapters, level);
         }
         return chapters;
       }
@@ -492,12 +492,12 @@ class LocalStorageManager {
     
     // 2. Save to IndexedDB (local cache)
     if (this.useIndexedDB) {
-      const success = await indexedDBManager.saveChapters(bookId, chapters);
+      const success = await indexedDBManager.saveChapters(bookId, chapters, level);
       if (success) {
         // Also save to localStorage for backward compatibility
         if (this.storageAvailable) {
           try {
-            const key = `adminChapters_${bookId}`;
+            const key = level ? `adminChapters_${level}_${bookId}` : `adminChapters_${bookId}`;
             localStorage.setItem(key, JSON.stringify(chapters));
           } catch (e) {
             // localStorage might be full, that's OK - IndexedDB has it
@@ -509,9 +509,9 @@ class LocalStorageManager {
     }
 
     // 3. Fallback to localStorage only
-    if (this.storageAvailable) {
+    if (this.storageAvailable && level) {
       try {
-        const key = `adminChapters_${bookId}`;
+        const key = `adminChapters_${level}_${bookId}`;
         localStorage.setItem(key, JSON.stringify(chapters));
         console.log(`✅ Saved ${chapters.length} chapters to localStorage (${key})`);
         return true;
@@ -527,15 +527,15 @@ class LocalStorageManager {
     return false;
   }
 
-  async deleteChapters(bookId) {
+  async deleteChapters(bookId, level = null) {
     // Delete from IndexedDB
     if (this.useIndexedDB) {
-      await indexedDBManager.deleteChapters(bookId);
+      await indexedDBManager.deleteChapters(bookId, level);
     }
 
     // Delete from localStorage
-    if (this.storageAvailable) {
-      const key = `adminChapters_${bookId}`;
+    if (this.storageAvailable && level) {
+      const key = `adminChapters_${level}_${bookId}`;
       localStorage.removeItem(key);
       console.log(`🗑️ Deleted ${key}`);
     }
@@ -554,11 +554,11 @@ class LocalStorageManager {
         if (success && data && data.length > 0) {
           // Cache to IndexedDB
           if (this.useIndexedDB) {
-            await indexedDBManager.saveLessons(bookId, chapterId, data);
+            await indexedDBManager.saveLessons(bookId, chapterId, data, level);
           }
           // Cache to localStorage
           if (this.storageAvailable) {
-            const key = `adminLessons_${bookId}_${chapterId}`;
+            const key = `adminLessons_${level}_${bookId}_${chapterId}`;
             localStorage.setItem(key, JSON.stringify(data));
           }
           return data;
@@ -570,19 +570,19 @@ class LocalStorageManager {
     
     // 2. Try IndexedDB (local cache)
     if (this.useIndexedDB) {
-      const result = await indexedDBManager.getLessons(bookId, chapterId);
+      const result = await indexedDBManager.getLessons(bookId, chapterId, level);
       if (result) return result;
     }
 
     // 3. Fallback to localStorage
-    if (this.storageAvailable) {
-      const key = `adminLessons_${bookId}_${chapterId}`;
+    if (this.storageAvailable && level) {
+      const key = `adminLessons_${level}_${bookId}_${chapterId}`;
       const data = localStorage.getItem(key);
       if (data) {
         const lessons = JSON.parse(data);
         // Sync to IndexedDB
         if (this.useIndexedDB) {
-          await indexedDBManager.saveLessons(bookId, chapterId, lessons);
+          await indexedDBManager.saveLessons(bookId, chapterId, lessons, level);
         }
         return lessons;
       }
@@ -609,12 +609,12 @@ class LocalStorageManager {
     
     // 2. Save to IndexedDB (local cache)
     if (this.useIndexedDB) {
-      const success = await indexedDBManager.saveLessons(bookId, chapterId, lessons);
+      const success = await indexedDBManager.saveLessons(bookId, chapterId, lessons, level);
       if (success) {
         // Also save to localStorage for backward compatibility
         if (this.storageAvailable) {
           try {
-            const key = `adminLessons_${bookId}_${chapterId}`;
+            const key = level ? `adminLessons_${level}_${bookId}_${chapterId}` : `adminLessons_${bookId}_${chapterId}`;
             localStorage.setItem(key, JSON.stringify(lessons));
           } catch (e) {
             console.warn('localStorage full, but data saved to IndexedDB');
@@ -625,9 +625,9 @@ class LocalStorageManager {
     }
 
     // 3. Fallback to localStorage only
-    if (this.storageAvailable) {
+    if (this.storageAvailable && level) {
       try {
-        const key = `adminLessons_${bookId}_${chapterId}`;
+        const key = `adminLessons_${level}_${bookId}_${chapterId}`;
         localStorage.setItem(key, JSON.stringify(lessons));
         console.log(`✅ Saved ${lessons.length} lessons to localStorage (${key})`);
         return true;
@@ -642,15 +642,15 @@ class LocalStorageManager {
     return false;
   }
 
-  async deleteLessons(bookId, chapterId) {
+  async deleteLessons(bookId, chapterId, level = null) {
     // Delete from IndexedDB
     if (this.useIndexedDB) {
-      await indexedDBManager.deleteLessons(bookId, chapterId);
+      await indexedDBManager.deleteLessons(bookId, chapterId, level);
     }
 
     // Delete from localStorage
-    if (this.storageAvailable) {
-      const key = `adminLessons_${bookId}_${chapterId}`;
+    if (this.storageAvailable && level) {
+      const key = `adminLessons_${level}_${bookId}_${chapterId}`;
       localStorage.removeItem(key);
       console.log(`🗑️ Deleted ${key}`);
     }
@@ -674,11 +674,11 @@ class LocalStorageManager {
         if (success && data) {
           // Cache to IndexedDB
           if (this.useIndexedDB) {
-            await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, data);
+            await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, data, level);
           }
           // Cache to localStorage
           if (this.storageAvailable) {
-            const key = `adminQuiz_${bookId}_${chapterId}_${finalLessonId}`;
+            const key = `adminQuiz_${level}_${bookId}_${chapterId}_${finalLessonId}`;
             localStorage.setItem(key, JSON.stringify(data));
           }
           console.log(`✅ Found quiz in Supabase`);
@@ -691,7 +691,7 @@ class LocalStorageManager {
     
     // 2. Try IndexedDB (local cache)
     if (this.useIndexedDB) {
-      const result = await indexedDBManager.getQuiz(bookId, chapterId, finalLessonId);
+      const result = await indexedDBManager.getQuiz(bookId, chapterId, finalLessonId, level);
       if (result) {
         console.log(`✅ Found quiz in IndexedDB`);
         return result;
@@ -699,24 +699,16 @@ class LocalStorageManager {
       console.log(`❌ Quiz not found in IndexedDB`);
     }
 
-    // 3. Fallback to localStorage
-    if (this.storageAvailable) {
-      // Try new format first: adminQuiz_bookId_chapterId_lessonId
-      let key = `adminQuiz_${bookId}_${chapterId}_${finalLessonId}`;
-      let data = localStorage.getItem(key);
-      
-      // Fallback to old format: adminQuiz_bookId_chapterId (backward compatibility)
-      if (!data) {
-        key = `adminQuiz_${bookId}_${chapterId}`;
-        data = localStorage.getItem(key);
-      }
-      
+    // 3. Fallback to localStorage (scoped by level)
+    if (this.storageAvailable && level) {
+      const key = `adminQuiz_${level}_${bookId}_${chapterId}_${finalLessonId}`;
+      const data = localStorage.getItem(key);
       if (data) {
         const quiz = JSON.parse(data);
         console.log(`✅ Found quiz in localStorage`);
         // Sync to IndexedDB for future use (with lessonId)
         if (this.useIndexedDB) {
-          await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, quiz);
+          await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, quiz, level);
         }
         return quiz;
       }
@@ -761,14 +753,14 @@ class LocalStorageManager {
     // 2. Save to IndexedDB (local cache)
     if (this.useIndexedDB) {
       console.log(`💾 Attempting to save to IndexedDB...`);
-      const success = await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, quiz);
+      const success = await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, quiz, level);
       console.log(`   - IndexedDB save result: ${success ? 'SUCCESS' : 'FAILED'}`);
       if (success) {
         // Try to save to localStorage for backward compatibility
         // But don't fail if localStorage is full (IndexedDB has it)
-        if (this.storageAvailable) {
+        if (this.storageAvailable && level) {
           try {
-            const key = `adminQuiz_${bookId}_${chapterId}_${finalLessonId}`;
+            const key = `adminQuiz_${level}_${bookId}_${chapterId}_${finalLessonId}`;
             localStorage.setItem(key, JSON.stringify(quiz));
             console.log(`✅ Also saved to localStorage: ${key}`);
           } catch (e) {
@@ -784,9 +776,9 @@ class LocalStorageManager {
     }
 
     // 3. Fallback to localStorage only (might fail if too large)
-    if (this.storageAvailable) {
+    if (this.storageAvailable && level) {
       try {
-        const key = `adminQuiz_${bookId}_${chapterId}_${finalLessonId}`;
+        const key = `adminQuiz_${level}_${bookId}_${chapterId}_${finalLessonId}`;
         console.log(`💾 Attempting to save to localStorage with key: ${key}`);
         localStorage.setItem(key, JSON.stringify(quiz));
         console.log(`✅ Saved quiz to localStorage (${key}, ${quiz.questions?.length || 0} questions)`);
@@ -806,13 +798,13 @@ class LocalStorageManager {
     return false;
   }
 
-  async getAllQuizzes() {
+  async getAllQuizzes(level = null) {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
 
     // Try IndexedDB first
     if (this.useIndexedDB) {
-      const quizzes = await indexedDBManager.getAllQuizzes();
+      const quizzes = await indexedDBManager.getAllQuizzes(level);
       if (quizzes && quizzes.length > 0) {
         return quizzes;
       }
@@ -828,20 +820,21 @@ class LocalStorageManager {
             const data = localStorage.getItem(key);
             if (data) {
               const quiz = JSON.parse(data);
-              // Extract bookId, chapterId, lessonId from key format
-              // New format: adminQuiz_bookId_chapterId_lessonId
-              // Old format: adminQuiz_bookId_chapterId
+              // Extract level, bookId, chapterId, lessonId from new key format
+              // New format: adminQuiz_level_bookId_chapterId_lessonId
               const parts = key.replace('adminQuiz_', '').split('_');
-              if (parts.length >= 2) {
-                const bookId = parts[0];
-                const chapterId = parts[1];
-                const lessonId = parts.length >= 3 ? parts.slice(2).join('_') : chapterId; // Fallback to chapterId
-                allQuizzes.push({
-                  bookId,
-                  chapterId,
-                  lessonId,
-                  ...quiz
-                });
+              if (parts.length >= 4) {
+                const [quizLevel, bookId, chapterId, ...lessonParts] = parts;
+                const lessonId = lessonParts.join('_');
+                if (!level || quizLevel === level) {
+                  allQuizzes.push({
+                    level: quizLevel,
+                    bookId,
+                    chapterId,
+                    lessonId,
+                    ...quiz
+                  });
+                }
               }
             }
           } catch (e) {
@@ -887,17 +880,17 @@ class LocalStorageManager {
     // ✅ FIXED: Xóa tất cả quiz liên quan từ local storage (cả quiz cũ không có lessonId)
     // Delete from IndexedDB
     if (this.useIndexedDB) {
-      await indexedDBManager.deleteQuiz(bookId, chapterId, finalLessonId);
+      await indexedDBManager.deleteQuiz(bookId, chapterId, finalLessonId, level);
       // ✅ Cũng thử xóa quiz cũ không có lessonId (backward compatibility)
       try {
-        const allQuizzes = await indexedDBManager.getAllQuizzes();
+        const allQuizzes = await indexedDBManager.getAllQuizzes(level);
         const relatedQuizzes = allQuizzes.filter(q => 
           q.bookId === bookId && 
           q.chapterId === chapterId && 
           (!q.lessonId || q.lessonId === chapterId) // Quiz cũ dùng chapterId làm lessonId
         );
         for (const q of relatedQuizzes) {
-          await indexedDBManager.deleteQuiz(bookId, chapterId, q.lessonId || chapterId);
+          await indexedDBManager.deleteQuiz(bookId, chapterId, q.lessonId || chapterId, level);
         }
       } catch (e) {
         console.warn('[StorageManager] Error cleaning up old quizzes from IndexedDB:', e);
@@ -905,26 +898,22 @@ class LocalStorageManager {
     }
 
     // Delete from localStorage (both old and new format)
-    if (this.storageAvailable) {
+    if (this.storageAvailable && level) {
       // Delete new format
-      const newKey = `adminQuiz_${bookId}_${chapterId}_${finalLessonId}`;
+      const newKey = `adminQuiz_${level}_${bookId}_${chapterId}_${finalLessonId}`;
       localStorage.removeItem(newKey);
-      
-      // Delete old format (backward compatibility)
-      const oldKey = `adminQuiz_${bookId}_${chapterId}`;
-      localStorage.removeItem(oldKey);
       
       // ✅ FIXED: Xóa tất cả quiz liên quan (có thể có nhiều quiz với các lessonId khác nhau)
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const key = localStorage.key(i);
-        if (key && key.startsWith(`adminQuiz_${bookId}_${chapterId}_`)) {
+        if (key && key.startsWith(`adminQuiz_${level}_${bookId}_${chapterId}_`)) {
           // Xóa tất cả quiz của chapter này (có thể có quiz cũ với lessonId khác)
           localStorage.removeItem(key);
           console.log(`🗑️ Deleted related quiz key: ${key}`);
         }
       }
       
-      console.log(`🗑️ Deleted quiz keys: ${newKey}, ${oldKey} and all related quizzes`);
+      console.log(`🗑️ Deleted quiz keys for level ${level}: ${newKey} and related quizzes`);
     }
   }
 
@@ -1299,7 +1288,7 @@ class LocalStorageManager {
     // Export chapters for books in this level
     if (data.books && Array.isArray(data.books)) {
       for (const book of data.books) {
-        const chaptersKey = `adminChapters_${book.id}`;
+        const chaptersKey = `adminChapters_${level}_${book.id}`;
         const chapters = localStorage.getItem(chaptersKey);
         if (chapters) {
           try {
@@ -1317,7 +1306,7 @@ class LocalStorageManager {
         // Get chapters first
         const chapters = data.chapters[book.id] || [];
         for (const chapter of chapters) {
-          const lessonsKey = `adminLessons_${book.id}_${chapter.id}`;
+          const lessonsKey = `adminLessons_${level}_${book.id}_${chapter.id}`;
           const lessons = localStorage.getItem(lessonsKey);
           if (lessons) {
             try {
@@ -1337,7 +1326,7 @@ class LocalStorageManager {
         for (const chapter of chapters) {
           const lessons = data.lessons[`${book.id}_${chapter.id}`] || [];
           for (const lesson of lessons) {
-            const quizKey = `adminQuiz_${book.id}_${chapter.id}_${lesson.id}`;
+            const quizKey = `adminQuiz_${level}_${book.id}_${chapter.id}_${lesson.id}`;
             const quiz = localStorage.getItem(quizKey);
             if (quiz) {
               try {
@@ -1382,13 +1371,21 @@ class LocalStorageManager {
             if (!data.series[level]) data.series[level] = [];
             data.series[level] = value;
           } else if (key.startsWith('adminChapters_')) {
-            const bookId = key.replace('adminChapters_', '');
-            data.chapters[bookId] = value;
+            const parts = key.replace('adminChapters_', '').split('_');
+            const level = parts.shift();
+            const bookId = parts.join('_');
+            if (level && bookId) {
+              data.chapters[`${level}_${bookId}`] = value;
+            }
           } else if (key.startsWith('adminQuiz_')) {
             const parts = key.replace('adminQuiz_', '').split('_');
-            const bookId = parts[0];
-            const chapterId = parts.slice(1).join('_');
-            data.quizzes[`${bookId}_${chapterId}`] = value;
+            const level = parts.shift();
+            const bookId = parts.shift();
+            const chapterId = parts.shift();
+            const lessonId = parts.join('_');
+            if (level && bookId && chapterId && lessonId) {
+              data.quizzes[`${level}_${bookId}_${chapterId}_${lessonId}`] = value;
+            }
           } else if (key.startsWith('adminExam_')) {
             const parts = key.replace('adminExam_', '').split('_');
             const level = parts[0];
@@ -1491,24 +1488,28 @@ class LocalStorageManager {
       }
 
       // Import chapters
-      for (const bookId in data.chapters) {
-        const key = `adminChapters_${bookId}`;
+      for (const scopedBookId in data.chapters) {
+        const [level, ...bookParts] = scopedBookId.split('_');
+        const bookId = bookParts.join('_');
+        const key = level ? `adminChapters_${level}_${bookId}` : `adminChapters_${scopedBookId}`;
         try {
-          localStorage.setItem(key, JSON.stringify(data.chapters[bookId]));
+          localStorage.setItem(key, JSON.stringify(data.chapters[scopedBookId]));
           imported++;
         } catch (e) {
-          console.warn(`Failed to import chapters for ${bookId}:`, e);
+          console.warn(`Failed to import chapters for ${scopedBookId}:`, e);
         }
       }
 
       // Import quizzes
-      for (const key in data.quizzes) {
-        const storageKey = `adminQuiz_${key}`;
+      for (const scopedKey in data.quizzes) {
+        const parts = scopedKey.split('_');
+        const level = parts.shift();
+        const storageKey = level ? `adminQuiz_${scopedKey}` : `adminQuiz_${parts.join('_')}`;
         try {
-          localStorage.setItem(storageKey, JSON.stringify(data.quizzes[key]));
+          localStorage.setItem(storageKey, JSON.stringify(data.quizzes[scopedKey]));
           imported++;
         } catch (e) {
-          console.warn(`Failed to import quiz ${key}:`, e);
+          console.warn(`Failed to import quiz ${scopedKey}:`, e);
         }
       }
 

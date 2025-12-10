@@ -27,12 +27,12 @@ function AllLevelsOverview({ onLevelClick, refreshTrigger }) {
         let quizzesCount = 0;
         
         for (const book of books || []) {
-          const chapters = await storageManager.getChapters(book.id);
+          const chapters = await storageManager.getChapters(book.id, level);
           for (const chapter of chapters || []) {
-            const lessons = await storageManager.getLessons(book.id, chapter.id);
+            const lessons = await storageManager.getLessons(book.id, chapter.id, level);
             lessonsCount += (lessons || []).length;
             for (const lesson of lessons || []) {
-              const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id);
+              const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id, level);
               if (quiz) quizzesCount++;
             }
           }
@@ -60,7 +60,7 @@ function AllLevelsOverview({ onLevelClick, refreshTrigger }) {
             // Check if books have content
             let hasContent = false;
             for (const book of seriesBooks) {
-              const chapters = await storageManager.getChapters(book.id);
+              const chapters = await storageManager.getChapters(book.id, level);
               if (chapters && chapters.length > 0) {
                 hasContent = true;
                 break;

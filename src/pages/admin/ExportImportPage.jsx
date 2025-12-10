@@ -102,7 +102,7 @@ function ExportImportPage() {
   React.useEffect(() => {
     const loadChapters = async () => {
       if (exportType === 'chapter' && exportItemId) {
-        const loadedChapters = await storageManager.getChapters(exportItemId);
+          const loadedChapters = await storageManager.getChapters(exportItemId, exportLevel);
         setChapters({ [exportItemId]: loadedChapters || [] });
       }
     };
@@ -115,7 +115,7 @@ function ExportImportPage() {
       if (exportType === 'lesson' && exportItemId) {
         const [bookId, chapterId] = exportItemId.split('_');
         if (bookId && chapterId) {
-          const loadedLessons = await storageManager.getLessons(bookId, chapterId);
+            const loadedLessons = await storageManager.getLessons(bookId, chapterId, exportLevel);
           setLessons({ [exportItemId]: loadedLessons || [] });
         }
       }
@@ -505,7 +505,7 @@ function ExportImportPage() {
   React.useEffect(() => {
     const loadChaptersForBook = async () => {
       if ((exportType === 'lesson' || exportType === 'quiz') && exportItemId && exportItemId.includes('_') === false) {
-        const loadedChapters = await storageManager.getChapters(exportItemId);
+        const loadedChapters = await storageManager.getChapters(exportItemId, exportLevel);
         setChapters({ [exportItemId]: loadedChapters || [] });
       }
     };

@@ -9,7 +9,14 @@ class IndexedDBManager {
   constructor() {
     this.db = null;
     this.dbName = 'elearning-db';
-    this.dbVersion = 3; // ✅ Phase 3: Added SRS tables
+    // ✅ Version 4: scope chapters/lessons/quizzes by level to prevent data leakage across levels/series
+    this.dbVersion = 4;
+  }
+
+  // ✅ Helper: scope keys by level to avoid cross-level data mixing
+  getScopedId(level, id) {
+    if (!level) return id;
+    return `${level}::${id}`;
   }
 
   // Initialize database
@@ -39,46 +46,40 @@ class IndexedDBManager {
               console.log('✅ Created series store');
             }
 
-            // Chapters store: bookId as keyPath, stores array of chapters
-            if (!db.objectStoreNames.contains('chapters')) {
-              db.createObjectStore('chapters', { keyPath: 'bookId' });
-              console.log('✅ Created chapters store');
+            // Chapters store: scope by level + bookId
+            if (oldVersion < 4 && db.objectStoreNames.contains('chapters')) {
+              db.deleteObjectStore('chapters');
+            }
+            if (oldVersion < 4 || !db.objectStoreNames.contains('chapters')) {
+              const chaptersStore = db.createObjectStore('chapters', { keyPath: ['level', 'bookId'] });
+              chaptersStore.createIndex('level', 'level');
+              chaptersStore.createIndex('bookId', 'bookId');
+              console.log('✅ Created chapters store (scoped by level)');
             }
 
-            // Lessons store: { bookId, chapterId } as keyPath, stores array of lessons
-            if (!db.objectStoreNames.contains('lessons')) {
-              const lessonsStore = db.createObjectStore('lessons', { keyPath: ['bookId', 'chapterId'] });
+            // Lessons store: scope by level + bookId + chapterId
+            if (oldVersion < 4 && db.objectStoreNames.contains('lessons')) {
+              db.deleteObjectStore('lessons');
+            }
+            if (oldVersion < 4 || !db.objectStoreNames.contains('lessons')) {
+              const lessonsStore = db.createObjectStore('lessons', { keyPath: ['level', 'bookId', 'chapterId'] });
+              lessonsStore.createIndex('level', 'level');
               lessonsStore.createIndex('bookId', 'bookId');
               lessonsStore.createIndex('chapterId', 'chapterId');
-              console.log('✅ Created lessons store');
+              console.log('✅ Created lessons store (scoped by level)');
             }
 
-            // Quizzes store: { bookId, chapterId, lessonId } as keyPath
-            if (oldVersion < 2 && db.objectStoreNames.contains('quizzes')) {
-              // Upgrade từ version 1: migrate data và thêm lessonId
-              console.log('🔄 Upgrading quizzes store to include lessonId...');
-              
-              // Lưu reference để migrate sau
-              // Note: Không thể dùng await trong upgrade callback
-              // Sẽ migrate data sau khi upgrade xong (trong init function)
-              
-              // Xóa store cũ
+            // Quizzes store: scope by level + bookId + chapterId + lessonId
+            if (oldVersion < 4 && db.objectStoreNames.contains('quizzes')) {
               db.deleteObjectStore('quizzes');
-              
-              // Tạo store mới với key [bookId, chapterId, lessonId]
-              const newQuizStore = db.createObjectStore('quizzes', { keyPath: ['bookId', 'chapterId', 'lessonId'] });
-              newQuizStore.createIndex('bookId', 'bookId');
-              newQuizStore.createIndex('chapterId', 'chapterId');
-              newQuizStore.createIndex('lessonId', 'lessonId');
-              
-              console.log('✅ Created new quizzes store with lessonId (migration will happen on next access)');
-            } else if (!db.objectStoreNames.contains('quizzes')) {
-              // Tạo mới store
-              const quizStore = db.createObjectStore('quizzes', { keyPath: ['bookId', 'chapterId', 'lessonId'] });
+            }
+            if (oldVersion < 4 || !db.objectStoreNames.contains('quizzes')) {
+              const quizStore = db.createObjectStore('quizzes', { keyPath: ['level', 'bookId', 'chapterId', 'lessonId'] });
+              quizStore.createIndex('level', 'level');
               quizStore.createIndex('bookId', 'bookId');
               quizStore.createIndex('chapterId', 'chapterId');
               quizStore.createIndex('lessonId', 'lessonId');
-              console.log('✅ Created quizzes store with lessonId');
+              console.log('✅ Created quizzes store (scoped by level)');
             }
 
             // Exams store: { level, examId } as keyPath
@@ -385,13 +386,14 @@ class IndexedDBManager {
 
   // ==================== CHAPTERS ====================
 
-  async getChapters(bookId) {
+  async getChapters(bookId, level = null) {
     if (!(await this.isAvailable())) return null;
 
     try {
       const tx = this.db.transaction('chapters', 'readonly');
       const store = tx.objectStore('chapters');
-      const result = await store.get(bookId);
+      const key = [level || 'default', bookId];
+      const result = await store.get(key);
       return result ? result.chapters : null;
     } catch (error) {
       console.error('Error getting chapters:', error);
@@ -399,7 +401,7 @@ class IndexedDBManager {
     }
   }
 
-  async saveChapters(bookId, chapters) {
+  async saveChapters(bookId, chapters, level = null) {
     if (!(await this.isAvailable())) return false;
 
     try {
@@ -416,8 +418,9 @@ class IndexedDBManager {
         return this.addMetadata(chapter, !existingChapter);
       });
       
-      await store.put({ 
-        bookId, 
+      await store.put({
+        level: level || 'default',
+        bookId,
         chapters: chaptersWithMetadata,
         updatedAt: new Date().toISOString()
       });
@@ -430,13 +433,13 @@ class IndexedDBManager {
     }
   }
 
-  async deleteChapters(bookId) {
+  async deleteChapters(bookId, level = null) {
     if (!(await this.isAvailable())) return false;
 
     try {
       const tx = this.db.transaction('chapters', 'readwrite');
       const store = tx.objectStore('chapters');
-      await store.delete(bookId);
+      await store.delete([level || 'default', bookId]);
       await tx.done;
       console.log(`🗑️ Deleted chapters for book ${bookId}`);
       return true;
@@ -448,13 +451,13 @@ class IndexedDBManager {
 
   // ==================== LESSONS ====================
 
-  async getLessons(bookId, chapterId) {
+  async getLessons(bookId, chapterId, level = null) {
     if (!(await this.isAvailable())) return null;
 
     try {
       const tx = this.db.transaction('lessons', 'readonly');
       const store = tx.objectStore('lessons');
-      const key = [bookId, chapterId];
+      const key = [level || 'default', bookId, chapterId];
       const result = await store.get(key);
       return result ? result.lessons : null;
     } catch (error) {
@@ -463,7 +466,7 @@ class IndexedDBManager {
     }
   }
 
-  async saveLessons(bookId, chapterId, lessons) {
+  async saveLessons(bookId, chapterId, lessons, level = null) {
     if (!(await this.isAvailable())) return false;
 
     try {
@@ -471,7 +474,7 @@ class IndexedDBManager {
       const store = tx.objectStore('lessons');
       
       // Get existing lessons to preserve metadata
-      const existing = await store.get([bookId, chapterId]);
+      const existing = await store.get([level || 'default', bookId, chapterId]);
       const existingLessons = existing ? existing.lessons : [];
       
       // Add metadata to each lesson
@@ -481,6 +484,7 @@ class IndexedDBManager {
       });
       
       await store.put({ 
+        level: level || 'default',
         bookId, 
         chapterId, 
         lessons: lessonsWithMetadata,
@@ -495,13 +499,13 @@ class IndexedDBManager {
     }
   }
 
-  async deleteLessons(bookId, chapterId) {
+  async deleteLessons(bookId, chapterId, level = null) {
     if (!(await this.isAvailable())) return false;
 
     try {
       const tx = this.db.transaction('lessons', 'readwrite');
       const store = tx.objectStore('lessons');
-      await store.delete([bookId, chapterId]);
+      await store.delete([level || 'default', bookId, chapterId]);
       await tx.done;
       console.log(`🗑️ Deleted lessons (${bookId}/${chapterId})`);
       return true;
@@ -513,7 +517,7 @@ class IndexedDBManager {
 
   // ==================== QUIZZES ====================
 
-  async getQuiz(bookId, chapterId, lessonId) {
+  async getQuiz(bookId, chapterId, lessonId, level = null) {
     if (!(await this.isAvailable())) {
       console.log(`❌ IndexedDB not available for getQuiz(${bookId}, ${chapterId}, ${lessonId})`);
       return null;
@@ -522,7 +526,7 @@ class IndexedDBManager {
     try {
       const tx = this.db.transaction('quizzes', 'readonly');
       const store = tx.objectStore('quizzes');
-      const key = [bookId, chapterId, lessonId];
+      const key = [level || 'default', bookId, chapterId, lessonId];
       console.log(`🔍 IndexedDB: Looking for quiz with key:`, key);
       const result = await store.get(key);
       console.log(`📦 IndexedDB: Quiz result:`, result ? 'Found' : 'Not found');
@@ -534,7 +538,7 @@ class IndexedDBManager {
     }
   }
 
-  async saveQuiz(bookId, chapterId, lessonId, quizData) {
+  async saveQuiz(bookId, chapterId, lessonId, quizData, level = null) {
     if (!(await this.isAvailable())) {
       console.log(`❌ IndexedDB not available for saveQuiz(${bookId}, ${chapterId}, ${lessonId})`);
       return false;
@@ -543,12 +547,13 @@ class IndexedDBManager {
     try {
       const tx = this.db.transaction('quizzes', 'readwrite');
       const store = tx.objectStore('quizzes');
-      const key = [bookId, chapterId, lessonId];
+      const key = [level || 'default', bookId, chapterId, lessonId];
       // Get existing quiz to preserve metadata
       const existing = await store.get(key);
       const isNew = !existing;
       
       const dataToSave = {
+        level: level || 'default',
         bookId,
         chapterId,
         lessonId,
@@ -568,13 +573,13 @@ class IndexedDBManager {
     }
   }
 
-  async deleteQuiz(bookId, chapterId, lessonId) {
+  async deleteQuiz(bookId, chapterId, lessonId, level = null) {
     if (!(await this.isAvailable())) return false;
 
     try {
       const tx = this.db.transaction('quizzes', 'readwrite');
       const store = tx.objectStore('quizzes');
-      await store.delete([bookId, chapterId, lessonId]);
+      await store.delete([level || 'default', bookId, chapterId, lessonId]);
       await tx.done;
       console.log(`🗑️ Deleted quiz (${bookId}/${chapterId}/${lessonId})`);
       return true;
@@ -585,7 +590,7 @@ class IndexedDBManager {
   }
 
   // Get all quizzes for a chapter (for backward compatibility)
-  async getQuizzesByChapter(bookId, chapterId) {
+  async getQuizzesByChapter(bookId, chapterId, level = null) {
     if (!(await this.isAvailable())) return [];
 
     try {
@@ -593,21 +598,22 @@ class IndexedDBManager {
       const store = tx.objectStore('quizzes');
       const index = store.index('chapterId');
       const quizzes = await index.getAll(chapterId);
-      return quizzes.filter(q => q.bookId === bookId) || [];
+      return quizzes.filter(q => q.bookId === bookId && (level ? q.level === level : true)) || [];
     } catch (error) {
       console.error('Error getting quizzes by chapter:', error);
       return [];
     }
   }
 
-  async getAllQuizzes() {
+  async getAllQuizzes(level = null) {
     if (!(await this.isAvailable())) return [];
 
     try {
       const tx = this.db.transaction('quizzes', 'readonly');
       const store = tx.objectStore('quizzes');
       const allQuizzes = await store.getAll();
-      return allQuizzes || [];
+      if (!allQuizzes) return [];
+      return level ? allQuizzes.filter(q => q.level === level) : allQuizzes;
     } catch (error) {
       console.error('Error getting all quizzes:', error);
       return [];
@@ -1054,17 +1060,17 @@ class IndexedDBManager {
 
       // Export chapters, lessons, quizzes for all books in series
       for (const book of seriesBooks) {
-        const chapters = await this.getChapters(book.id);
+        const chapters = await this.getChapters(book.id, level);
         if (chapters && chapters.length > 0) {
           data.chapters[book.id] = chapters;
 
           for (const chapter of chapters) {
-            const lessons = await this.getLessons(book.id, chapter.id);
+            const lessons = await this.getLessons(book.id, chapter.id, level);
             if (lessons && lessons.length > 0) {
               data.lessons[`${book.id}_${chapter.id}`] = lessons;
 
               for (const lesson of lessons) {
-                const quiz = await this.getQuiz(book.id, chapter.id, lesson.id);
+                const quiz = await this.getQuiz(book.id, chapter.id, lesson.id, level);
                 if (quiz) {
                   data.quizzes[`${book.id}_${chapter.id}_${lesson.id}`] = quiz;
                 }
@@ -1105,17 +1111,17 @@ class IndexedDBManager {
       };
 
       // Export chapters, lessons, quizzes
-      const chapters = await this.getChapters(bookId);
+      const chapters = await this.getChapters(bookId, level);
       if (chapters && chapters.length > 0) {
         data.chapters[bookId] = chapters;
 
         for (const chapter of chapters) {
-          const lessons = await this.getLessons(bookId, chapter.id);
+          const lessons = await this.getLessons(bookId, chapter.id, level);
           if (lessons && lessons.length > 0) {
             data.lessons[`${bookId}_${chapter.id}`] = lessons;
 
             for (const lesson of lessons) {
-              const quiz = await this.getQuiz(bookId, chapter.id, lesson.id);
+              const quiz = await this.getQuiz(bookId, chapter.id, lesson.id, level);
               if (quiz) {
                 data.quizzes[`${bookId}_${chapter.id}_${lesson.id}`] = quiz;
               }
@@ -1137,7 +1143,7 @@ class IndexedDBManager {
 
     try {
       // Get chapter
-      const chapters = await this.getChapters(bookId);
+      const chapters = await this.getChapters(bookId, book.level);
       const chapter = chapters.find(ch => ch.id === chapterId);
       if (!chapter) {
         throw new Error(`Chapter not found: ${chapterId}`);
@@ -1161,12 +1167,12 @@ class IndexedDBManager {
       };
 
       // Export lessons and quizzes
-      const lessons = await this.getLessons(bookId, chapterId);
+      const lessons = await this.getLessons(bookId, chapterId, book.level);
       if (lessons && lessons.length > 0) {
         data.lessons[`${bookId}_${chapterId}`] = lessons;
 
         for (const lesson of lessons) {
-          const quiz = await this.getQuiz(bookId, chapterId, lesson.id);
+        const quiz = await this.getQuiz(bookId, chapterId, lesson.id, book.level);
           if (quiz) {
             data.quizzes[`${bookId}_${chapterId}_${lesson.id}`] = quiz;
           }
@@ -1185,18 +1191,23 @@ class IndexedDBManager {
     if (!(await this.isAvailable())) return null;
 
     try {
+      // Get book info first to determine level
+      const book = await this.getBook(bookId);
+      if (!book) {
+        throw new Error(`Book not found: ${bookId}`);
+      }
+
       // Get lesson
-      const lessons = await this.getLessons(bookId, chapterId);
+      const lessons = await this.getLessons(bookId, chapterId, book.level);
       const lesson = lessons.find(l => l.id === lessonId);
       if (!lesson) {
         throw new Error(`Lesson not found: ${lessonId}`);
       }
 
       // Get book and chapter info
-      const book = await this.getBook(bookId);
-      const chapters = await this.getChapters(bookId);
+      const chapters = await this.getChapters(bookId, book.level);
       const chapter = chapters.find(ch => ch.id === chapterId);
-      if (!book || !chapter) {
+      if (!chapter) {
         throw new Error(`Book or Chapter not found`);
       }
 
@@ -1212,7 +1223,7 @@ class IndexedDBManager {
       };
 
       // Export quiz if exists
-      const quiz = await this.getQuiz(bookId, chapterId, lessonId);
+      const quiz = await this.getQuiz(bookId, chapterId, lessonId, book.level);
       if (quiz) {
         data.quiz = quiz;
       }
@@ -1229,17 +1240,21 @@ class IndexedDBManager {
     if (!(await this.isAvailable())) return null;
 
     try {
+      const book = await this.getBook(bookId);
+      if (!book) {
+        throw new Error(`Book not found: ${bookId}`);
+      }
+
       // Get quiz
-      const quiz = await this.getQuiz(bookId, chapterId, lessonId);
+      const quiz = await this.getQuiz(bookId, chapterId, lessonId, book.level);
       if (!quiz) {
         throw new Error(`Quiz not found`);
       }
 
       // Get book, chapter, lesson info
-      const book = await this.getBook(bookId);
-      const chapters = await this.getChapters(bookId);
+      const chapters = await this.getChapters(bookId, book.level);
       const chapter = chapters.find(ch => ch.id === chapterId);
-      const lessons = await this.getLessons(bookId, chapterId);
+      const lessons = await this.getLessons(bookId, chapterId, book.level);
       const lesson = lessons.find(l => l.id === lessonId);
       if (!book || !chapter || !lesson) {
         throw new Error(`Book, Chapter, or Lesson not found`);
@@ -1523,17 +1538,17 @@ class IndexedDBManager {
             
             // Include related data if requested
             if (includeRelated) {
-              const chapters = await this.getChapters(book.id);
+              const chapters = await this.getChapters(book.id, level);
               if (chapters && chapters.length > 0) {
                 data.chapters[book.id] = chapters;
                 
                 for (const chapter of chapters) {
-                  const lessons = await this.getLessons(book.id, chapter.id);
+                  const lessons = await this.getLessons(book.id, chapter.id, level);
                   if (lessons && lessons.length > 0) {
                     data.lessons[`${book.id}_${chapter.id}`] = lessons;
                     
                     for (const lesson of lessons) {
-                      const quiz = await this.getQuiz(book.id, chapter.id, lesson.id);
+                      const quiz = await this.getQuiz(book.id, chapter.id, lesson.id, level);
                       if (quiz) {
                         data.quizzes[`${book.id}_${chapter.id}_${lesson.id}`] = quiz;
                       }
@@ -1699,20 +1714,20 @@ class IndexedDBManager {
         // Import chapters, lessons, quizzes
         if (data.chapters) {
           for (const bookId in data.chapters) {
-            await this.saveChapters(bookId, data.chapters[bookId]);
+          await this.saveChapters(bookId, data.chapters[bookId], data.level);
           }
         }
         if (data.lessons) {
           for (const key in data.lessons) {
             const [bookId, chapterId] = key.split('_');
-            await this.saveLessons(bookId, chapterId, data.lessons[key]);
+          await this.saveLessons(bookId, chapterId, data.lessons[key], data.level);
           }
         }
         if (data.quizzes) {
           for (const key in data.quizzes) {
             const quiz = data.quizzes[key];
             const lessonId = quiz.lessonId || quiz.chapterId;
-            await this.saveQuiz(quiz.bookId, quiz.chapterId, lessonId, quiz);
+          await this.saveQuiz(quiz.bookId, quiz.chapterId, lessonId, quiz, data.level);
           }
         }
 
@@ -1754,23 +1769,23 @@ class IndexedDBManager {
         }
 
         // Import chapter
-        const chapters = await this.getChapters(data.book.id);
+      const chapters = await this.getChapters(data.book.id, data.level);
         const updatedChapters = chapters.filter(ch => ch.id !== data.chapter.id);
         updatedChapters.push(data.chapter);
-        await this.saveChapters(data.book.id, updatedChapters);
+      await this.saveChapters(data.book.id, updatedChapters, data.level);
 
         // Import lessons, quizzes
         if (data.lessons) {
           for (const key in data.lessons) {
             const [bookId, chapterId] = key.split('_');
-            await this.saveLessons(bookId, chapterId, data.lessons[key]);
+          await this.saveLessons(bookId, chapterId, data.lessons[key], data.level);
           }
         }
         if (data.quizzes) {
           for (const key in data.quizzes) {
             const quiz = data.quizzes[key];
             const lessonId = quiz.lessonId || quiz.chapterId;
-            await this.saveQuiz(quiz.bookId, quiz.chapterId, lessonId, quiz);
+          await this.saveQuiz(quiz.bookId, quiz.chapterId, lessonId, quiz, data.level);
           }
         }
 
@@ -1782,21 +1797,21 @@ class IndexedDBManager {
           books.push(data.book);
           await this.saveBooks(data.level, books);
         }
-        const chapters = await this.getChapters(data.book.id);
+        const chapters = await this.getChapters(data.book.id, data.level);
         if (!chapters.find(ch => ch.id === data.chapter.id)) {
           chapters.push(data.chapter);
-          await this.saveChapters(data.book.id, chapters);
+          await this.saveChapters(data.book.id, chapters, data.level);
         }
 
         // Import lesson
-        const lessons = await this.getLessons(data.book.id, data.chapter.id);
+        const lessons = await this.getLessons(data.book.id, data.chapter.id, data.level);
         const updatedLessons = lessons.filter(l => l.id !== data.lesson.id);
         updatedLessons.push(data.lesson);
-        await this.saveLessons(data.book.id, data.chapter.id, updatedLessons);
+        await this.saveLessons(data.book.id, data.chapter.id, updatedLessons, data.level);
 
         // Import quiz if exists
         if (data.quiz) {
-          await this.saveQuiz(data.book.id, data.chapter.id, data.lesson.id, data.quiz);
+          await this.saveQuiz(data.book.id, data.chapter.id, data.lesson.id, data.quiz, data.level);
         }
 
         return { success: true, imported: 'lesson' };
@@ -1807,19 +1822,19 @@ class IndexedDBManager {
           books.push(data.book);
           await this.saveBooks(data.level, books);
         }
-        const chapters = await this.getChapters(data.book.id);
+        const chapters = await this.getChapters(data.book.id, data.level);
         if (!chapters.find(ch => ch.id === data.chapter.id)) {
           chapters.push(data.chapter);
-          await this.saveChapters(data.book.id, chapters);
+          await this.saveChapters(data.book.id, chapters, data.level);
         }
-        const lessons = await this.getLessons(data.book.id, data.chapter.id);
+        const lessons = await this.getLessons(data.book.id, data.chapter.id, data.level);
         if (!lessons.find(l => l.id === data.lesson.id)) {
           lessons.push(data.lesson);
-          await this.saveLessons(data.book.id, data.chapter.id, lessons);
+          await this.saveLessons(data.book.id, data.chapter.id, lessons, data.level);
         }
 
         // Import quiz
-        await this.saveQuiz(data.book.id, data.chapter.id, data.lesson.id, data.quiz);
+        await this.saveQuiz(data.book.id, data.chapter.id, data.lesson.id, data.quiz, data.level);
 
         return { success: true, imported: 'quiz' };
       } else if (data.type === 'exam') {

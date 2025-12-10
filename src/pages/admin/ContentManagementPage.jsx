@@ -245,7 +245,7 @@ function ContentManagementPage() {
     const loadChapters = async () => {
       const newChaptersData = {};
       for (const book of books) {
-        const savedChapters = await storageManager.getChapters(book.id);
+        const savedChapters = await storageManager.getChapters(book.id, selectedLevel);
         if (savedChapters && savedChapters.length > 0) {
           newChaptersData[book.id] = savedChapters;
         }
@@ -264,7 +264,7 @@ function ContentManagementPage() {
       for (const book of books) {
         const chapters = chaptersData[book.id] || [];
         for (const chapter of chapters) {
-          const lessons = await storageManager.getLessons(book.id, chapter.id);
+          const lessons = await storageManager.getLessons(book.id, chapter.id, selectedLevel);
           if (lessons && lessons.length > 0) {
             const key = `${book.id}_${chapter.id}`;
             newLessonsData[key] = lessons;
@@ -287,7 +287,7 @@ function ContentManagementPage() {
         for (const chapter of chapters) {
           const lessons = lessonsData[`${book.id}_${chapter.id}`] || [];
           for (const lesson of lessons) {
-            const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id);
+            const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id, selectedLevel);
             if (quiz) {
               const key = `${book.id}_${chapter.id}_${lesson.id}`;
               newQuizzesData[key] = quiz;
@@ -673,7 +673,7 @@ function ContentManagementPage() {
     
     // ✅ FIXED: Load existing chapters from storage (prioritize storage over static data)
     // This ensures chapters created by admin are visible when adding new chapters
-    let existingChapters = await storageManager.getChapters(book.id);
+    let existingChapters = await storageManager.getChapters(book.id, selectedLevel);
     
     // If no chapters in storage, try to get from static data
     if (!existingChapters || existingChapters.length === 0) {
@@ -706,7 +706,7 @@ function ContentManagementPage() {
     
     // ✅ FIXED: Load existing chapters from storage (prioritize storage over static data)
     // This ensures chapters created by admin are visible when editing with other accounts
-    let existingChapters = await storageManager.getChapters(book.id);
+    let existingChapters = await storageManager.getChapters(book.id, selectedLevel);
     
     // If no chapters in storage, try to get from static data
     if (!existingChapters || existingChapters.length === 0) {
@@ -733,7 +733,7 @@ function ContentManagementPage() {
     }
 
     // Get existing chapters from IndexedDB/localStorage or default data
-    let chapters = await storageManager.getChapters(selectedBook.id);
+    let chapters = await storageManager.getChapters(selectedBook.id, selectedLevel);
     
     // If no chapters in storage, try to get from static data
     if (!chapters || chapters.length === 0) {
@@ -806,7 +806,7 @@ function ContentManagementPage() {
       return;
     }
 
-    let chapters = await storageManager.getChapters(book.id);
+    let chapters = await storageManager.getChapters(book.id, selectedLevel);
     
     // If no chapters in storage, get from static data
     if (!chapters || chapters.length === 0) {
@@ -860,7 +860,7 @@ function ContentManagementPage() {
     setEditingLesson(null);
     
     // Load existing lessons
-    let existingLessons = await storageManager.getLessons(book.id, chapter.id);
+    let existingLessons = await storageManager.getLessons(book.id, chapter.id, selectedLevel);
     if (!existingLessons) existingLessons = [];
     
     // ✅ Auto-generate lesson ID
@@ -898,7 +898,7 @@ function ContentManagementPage() {
     });
     
     // Load existing lessons to avoid duplicate
-    let existingLessons = await storageManager.getLessons(book.id, chapter.id);
+    let existingLessons = await storageManager.getLessons(book.id, chapter.id, selectedLevel);
     if (!existingLessons) existingLessons = [];
     
     setSelectedChapter({ ...chapter, existingLessons });
@@ -947,7 +947,7 @@ function ContentManagementPage() {
         hasSRS: finalLessonData.srs?.enabled
       });
 
-      let lessons = await storageManager.getLessons(selectedBook.id, selectedChapter.id);
+      let lessons = await storageManager.getLessons(selectedBook.id, selectedChapter.id, selectedLevel);
       if (!lessons) lessons = [];
 
       if (editingLesson) {
@@ -1017,7 +1017,7 @@ function ContentManagementPage() {
       return;
     }
 
-    let lessons = await storageManager.getLessons(book.id, chapter.id);
+    let lessons = await storageManager.getLessons(book.id, chapter.id, selectedLevel);
     if (!lessons) lessons = [];
 
     lessons = lessons.filter(l => l.id !== lesson.id);
@@ -1078,7 +1078,7 @@ function ContentManagementPage() {
     setSelectedChapter(chapter);
     setSelectedLesson(lesson);
     
-    const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id);
+    const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id, selectedLevel);
     if (quiz) {
       setEditingQuiz(quiz);
       // ✅ Ensure all questions have audioUrl field
@@ -1232,7 +1232,7 @@ function ContentManagementPage() {
           for (const chapter of chapters) {
             const lessons = lessonsData[`${book.id}_${chapter.id}`] || [];
             for (const lesson of lessons) {
-              const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id);
+              const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id, selectedLevel);
               if (quiz) {
                 const key = `${book.id}_${chapter.id}_${lesson.id}`;
                 newQuizzesData[key] = quiz;

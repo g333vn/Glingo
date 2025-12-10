@@ -48,7 +48,7 @@ export async function cleanupInvalidQuizzes(level = null) {
   
   try {
     // 1. Lấy tất cả quiz từ storage
-    const allQuizzes = await storageManager.getAllQuizzes();
+    const allQuizzes = await storageManager.getAllQuizzes(level);
     console.log(`📦 Found ${allQuizzes.length} total quizzes in storage`);
     
     // 2. Filter quiz theo level nếu có

@@ -11,10 +11,10 @@ import storageManager from './localStorageManager.js';
  * @param {string} newTitle - Optional custom title for duplicate
  * @returns {Promise<Object>} - New lesson object
  */
-export async function duplicateLesson(bookId, chapterId, lessonId, newTitle = null) {
+export async function duplicateLesson(bookId, chapterId, lessonId, newTitle = null, level = null) {
   try {
     // Get existing lessons
-    const lessons = await storageManager.getLessons(bookId, chapterId);
+    const lessons = await storageManager.getLessons(bookId, chapterId, level);
     if (!lessons) {
       throw new Error('Lessons not found');
     }
@@ -43,17 +43,17 @@ export async function duplicateLesson(bookId, chapterId, lessonId, newTitle = nu
     const updatedLessons = [...lessons, duplicateLesson];
     
     // Save to storage
-    await storageManager.saveLessons(bookId, chapterId, updatedLessons);
+    await storageManager.saveLessons(bookId, chapterId, updatedLessons, level);
     
     // Also duplicate quiz if exists
-    const originalQuiz = await storageManager.getQuiz(bookId, chapterId, lessonId);
+    const originalQuiz = await storageManager.getQuiz(bookId, chapterId, lessonId, level);
     if (originalQuiz) {
       await storageManager.saveQuiz(bookId, chapterId, newId, {
         ...originalQuiz,
         title: `${originalQuiz.title} (Copy)`,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      });
+      }, level);
     }
     
     console.log(`✅ Duplicated lesson: ${lessonId} -> ${newId}`);
@@ -71,10 +71,10 @@ export async function duplicateLesson(bookId, chapterId, lessonId, newTitle = nu
  * @param {string} newTitle - Optional custom title
  * @returns {Promise<Object>} - New chapter object
  */
-export async function duplicateChapter(bookId, chapterId, newTitle = null) {
+export async function duplicateChapter(bookId, chapterId, newTitle = null, level = null) {
   try {
     // Get existing chapters
-    const chapters = await storageManager.getChapters(bookId);
+    const chapters = await storageManager.getChapters(bookId, level);
     if (!chapters) {
       throw new Error('Chapters not found');
     }
@@ -101,10 +101,10 @@ export async function duplicateChapter(bookId, chapterId, newTitle = null) {
     
     // Add to chapters array
     const updatedChapters = [...chapters, duplicateChapter];
-    await storageManager.saveChapters(bookId, updatedChapters);
+    await storageManager.saveChapters(bookId, updatedChapters, level);
     
     // Duplicate all lessons in this chapter
-    const originalLessons = await storageManager.getLessons(bookId, chapterId);
+    const originalLessons = await storageManager.getLessons(bookId, chapterId, level);
     if (originalLessons && originalLessons.length > 0) {
       const duplicatedLessons = originalLessons.map(lesson => ({
         ...lesson,
@@ -114,18 +114,18 @@ export async function duplicateChapter(bookId, chapterId, newTitle = null) {
         published: false
       }));
       
-      await storageManager.saveLessons(bookId, newChapterId, duplicatedLessons);
+      await storageManager.saveLessons(bookId, newChapterId, duplicatedLessons, level);
       
       // Duplicate quizzes for each lesson
       for (const originalLesson of originalLessons) {
-        const originalQuiz = await storageManager.getQuiz(bookId, chapterId, originalLesson.id);
+        const originalQuiz = await storageManager.getQuiz(bookId, chapterId, originalLesson.id, level);
         if (originalQuiz) {
           const newLessonId = `${originalLesson.id}_copy_${timestamp}`;
           await storageManager.saveQuiz(bookId, newChapterId, newLessonId, {
             ...originalQuiz,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
-          });
+          }, level);
         }
       }
       
@@ -180,7 +180,7 @@ export async function duplicateBook(levelId, bookId, newTitle = null) {
     await storageManager.saveBooks(levelId, updatedBooks);
     
     // Duplicate all chapters
-    const originalChapters = await storageManager.getChapters(bookId);
+    const originalChapters = await storageManager.getChapters(bookId, levelId);
     if (originalChapters && originalChapters.length > 0) {
       const duplicatedChapters = originalChapters.map(chapter => ({
         ...chapter,
@@ -190,14 +190,14 @@ export async function duplicateBook(levelId, bookId, newTitle = null) {
         published: false
       }));
       
-      await storageManager.saveChapters(newBookId, duplicatedChapters);
+      await storageManager.saveChapters(newBookId, duplicatedChapters, levelId);
       
       // Duplicate lessons and quizzes for each chapter
       for (let i = 0; i < originalChapters.length; i++) {
         const originalChapter = originalChapters[i];
         const newChapterId = duplicatedChapters[i].id;
         
-        const originalLessons = await storageManager.getLessons(bookId, originalChapter.id);
+        const originalLessons = await storageManager.getLessons(bookId, originalChapter.id, levelId);
         if (originalLessons && originalLessons.length > 0) {
           const duplicatedLessons = originalLessons.map(lesson => ({
             ...lesson,
@@ -207,20 +207,20 @@ export async function duplicateBook(levelId, bookId, newTitle = null) {
             published: false
           }));
           
-          await storageManager.saveLessons(newBookId, newChapterId, duplicatedLessons);
+          await storageManager.saveLessons(newBookId, newChapterId, duplicatedLessons, levelId);
           
           // Duplicate quizzes
           for (let j = 0; j < originalLessons.length; j++) {
             const originalLesson = originalLessons[j];
             const newLessonId = duplicatedLessons[j].id;
             
-            const originalQuiz = await storageManager.getQuiz(bookId, originalChapter.id, originalLesson.id);
+            const originalQuiz = await storageManager.getQuiz(bookId, originalChapter.id, originalLesson.id, levelId);
             if (originalQuiz) {
               await storageManager.saveQuiz(newBookId, newChapterId, newLessonId, {
                 ...originalQuiz,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
-              });
+              }, levelId);
             }
           }
         }

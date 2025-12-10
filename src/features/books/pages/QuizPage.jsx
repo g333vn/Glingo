@@ -78,7 +78,7 @@ function QuizPage() {
     const loadTitles = async () => {
       try {
         // Load chapters
-        let chapters = await storageManager.getChapters(bookId);
+        let chapters = await storageManager.getChapters(bookId, levelId);
         if (!chapters || chapters.length === 0) {
           const bookStatic = bookData[bookId] || bookData.default;
           chapters = bookStatic?.contents || [];
@@ -88,7 +88,7 @@ function QuizPage() {
         setChapterTitle(chapter?.title || finalChapterId);
 
         // Load lessons for this chapter
-        let lessons = await storageManager.getLessons(bookId, finalChapterId);
+        let lessons = await storageManager.getLessons(bookId, finalChapterId, levelId);
         if (!lessons || lessons.length === 0) {
           // Fallback: dùng chính chapter làm lesson
           lessons = [{ id: finalChapterId, title: chapter?.title || finalChapterId }];
@@ -112,7 +112,7 @@ function QuizPage() {
       try {
         // 1. Try IndexedDB/localStorage first (highest priority)
         console.log(`🔍 Loading quiz: bookId=${bookId}, chapterId=${finalChapterId}, lessonId=${finalLessonId}`);
-        let savedQuiz = await storageManager.getQuiz(bookId, finalChapterId, finalLessonId);
+        let savedQuiz = await storageManager.getQuiz(bookId, finalChapterId, finalLessonId, levelId);
         
         // ✅ FALLBACK: Try demo quizzes if not in storage
         if (!savedQuiz && bookId === 'demo-complete-001') {

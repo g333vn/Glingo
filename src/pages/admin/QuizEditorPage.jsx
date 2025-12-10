@@ -172,7 +172,7 @@ function QuizEditorPage() {
       }
       
       // ✅ Load from storage first (prioritize storage over static data)
-      let chapters = await storageManager.getChapters(selectedBook);
+      let chapters = await storageManager.getChapters(selectedBook, selectedLevel);
       
       // If no chapters in storage, try to get from static data
       if (!chapters || chapters.length === 0) {
@@ -288,7 +288,7 @@ function QuizEditorPage() {
       setIsLoadingQuiz(true);
       try {
         const finalLessonId = selectedLesson || selectedChapter;
-        const quiz = await storageManager.getQuiz(selectedBook, selectedChapter, finalLessonId);
+        const quiz = await storageManager.getQuiz(selectedBook, selectedChapter, finalLessonId, selectedLevel);
         
         if (quiz) {
           setExistingQuiz(quiz);

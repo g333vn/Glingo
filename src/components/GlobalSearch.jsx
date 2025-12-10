@@ -504,7 +504,7 @@ function GlobalSearch() {
             if (books) {
               for (const book of books) {
                 // Search chapters
-                const chapters = await storageManager.getChapters(book.id);
+                const chapters = await storageManager.getChapters(book.id, level);
                 if (chapters) {
                   const matchedChapters = chapters.filter(chapter =>
                     chapter.title?.toLowerCase().includes(queryLower) ||
