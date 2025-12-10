@@ -665,84 +665,76 @@ class LocalStorageManager {
     // Nếu không có lessonId, dùng chapterId làm lessonId (backward compatibility)
     const finalLessonId = lessonId || chapterId;
     
-    console.log(`🔍 storageManager.getQuiz(${bookId}, ${chapterId}, ${finalLessonId}, level=${level})`);
-    
-    // 1. Try Supabase first if level provided
+    console.log(`[StorageManager.getQuiz] 🔍 Loading quiz for:`, { bookId, chapterId, lessonId: finalLessonId, level });
+
+    // ✅ FIXED: Bắt chước logic getBooks/getChapters/getLessons - luôn load từ Supabase trước nếu có level
+    // 1. Try Supabase first if level provided (giống như getBooks/getChapters/getLessons)
     if (level) {
       try {
-        console.log(`[StorageManager] 🔍 Attempting to load quiz from Supabase...`);
-        const { success, data, error } = await contentService.getQuiz(bookId, chapterId, finalLessonId, level);
-        console.log(`[StorageManager] Supabase response:`, { success, hasData: !!data, error: error?.message || error });
-        
-        if (success && data) {
-          console.log(`[StorageManager] ✅ Found quiz in Supabase:`, { id: data.id, title: data.title, questionsCount: data.questions?.length });
-          // Cache to IndexedDB
-          if (this.useIndexedDB) {
-            await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, data, level);
-            console.log(`[StorageManager] ✅ Cached quiz to IndexedDB`);
-          }
-          // Cache to localStorage
-          if (this.storageAvailable) {
-            try {
-              const key = `adminQuiz_${level}_${bookId}_${chapterId}_${finalLessonId}`;
-              localStorage.setItem(key, JSON.stringify(data));
-              console.log(`[StorageManager] ✅ Cached quiz to localStorage: ${key}`);
-            } catch (e) {
-              console.warn('[StorageManager] ⚠️ Failed to cache to localStorage:', e);
+        const { success, data } = await contentService.getQuiz(bookId, chapterId, finalLessonId, level);
+
+        if (success) {
+          // ✅ FIXED: Giống getBooks - nếu Supabase trả về data thì dùng, nếu không thì fallback
+          if (data) {
+            console.log('[StorageManager.getQuiz] ✅ Loaded quiz from Supabase:', { id: data.id, title: data.title, questionsCount: data.questions?.length });
+
+            // Cache to IndexedDB
+            if (this.useIndexedDB) {
+              await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, data, level);
             }
+            // Cache to localStorage
+            if (this.storageAvailable) {
+              try {
+                const key = `adminQuiz_${level}_${bookId}_${chapterId}_${finalLessonId}`;
+                localStorage.setItem(key, JSON.stringify(data));
+              } catch (e) {
+                console.warn('[StorageManager.getQuiz] ⚠️ Failed to cache to localStorage:', e);
+              }
+            }
+
+            return data;
           }
-          return data;
-        } else if (success && !data) {
-          // Quiz not found in Supabase (may be RLS/permission issue for anonymous users)
-          console.log(`[StorageManager] ℹ️ Quiz not found in Supabase (may be RLS/permission issue), trying local storage...`);
-          // Continue to local storage fallback
-        } else if (!success) {
-          console.warn(`[StorageManager] ⚠️ Supabase getQuiz failed:`, error);
-          // Continue to local storage fallback
+
+          // ✅ Supabase trả về success nhưng data = null (quiz không tồn tại)
+          //    → Giống getBooks, không fallback về cache cũ, return null
+          console.log('[StorageManager.getQuiz] ℹ️ Quiz not found in Supabase, will try local caches');
+        } else {
+          console.log('[StorageManager.getQuiz] ⚠️ Supabase request not successful, will try local caches');
         }
       } catch (err) {
-        console.warn('[StorageManager] ⚠️ Supabase getQuiz exception:', err);
-        // Continue to local storage fallback
+        console.warn('[StorageManager.getQuiz] ❌ Supabase getQuiz failed, trying local:', err);
       }
-    } else {
-      console.log(`[StorageManager] ℹ️ No level provided, skipping Supabase load`);
     }
     
-    // 2. Try IndexedDB (local cache)
+    // 2. Try IndexedDB (local cache) - giống getBooks/getChapters/getLessons
     if (this.useIndexedDB) {
-      console.log(`[StorageManager] 🔍 Checking IndexedDB...`);
       const result = await indexedDBManager.getQuiz(bookId, chapterId, finalLessonId, level);
       if (result) {
-        console.log(`[StorageManager] ✅ Found quiz in IndexedDB:`, { id: result.id, title: result.title, questionsCount: result.questions?.length });
+        console.log('[StorageManager.getQuiz] ✅ Loaded quiz from IndexedDB');
         return result;
       }
-      console.log(`[StorageManager] ❌ Quiz not found in IndexedDB`);
     }
 
-    // 3. Fallback to localStorage (scoped by level)
+    // 3. Fallback to localStorage (scoped by level) - giống getBooks/getChapters/getLessons
     if (this.storageAvailable && level) {
-      console.log(`[StorageManager] 🔍 Checking localStorage...`);
       const key = `adminQuiz_${level}_${bookId}_${chapterId}_${finalLessonId}`;
       const data = localStorage.getItem(key);
       if (data) {
         try {
           const quiz = JSON.parse(data);
-          console.log(`[StorageManager] ✅ Found quiz in localStorage:`, { id: quiz.id, title: quiz.title, questionsCount: quiz.questions?.length });
-          // Sync to IndexedDB for future use (with lessonId)
+          console.log('[StorageManager.getQuiz] ✅ Loaded quiz from localStorage');
+          // Sync to IndexedDB
           if (this.useIndexedDB) {
             await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, quiz, level);
           }
           return quiz;
         } catch (e) {
-          console.warn(`[StorageManager] ⚠️ Failed to parse quiz from localStorage:`, e);
+          console.warn('[StorageManager.getQuiz] ⚠️ Failed to parse quiz from localStorage:', e);
         }
       }
-      console.log(`[StorageManager] ❌ Quiz not found in localStorage (key: ${key})`);
-    } else if (!level) {
-      console.log(`[StorageManager] ℹ️ No level provided, skipping localStorage check`);
     }
 
-    console.log(`[StorageManager] ❌ Quiz not found in any storage`);
+    console.log('[StorageManager.getQuiz] ❌ No quiz found anywhere');
     return null;
   }
 
@@ -850,68 +842,86 @@ class LocalStorageManager {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
 
-    // ✅ FIXED: Load from Supabase first if level provided (for multi-device sync)
+    console.log(`[StorageManager.getAllQuizzes] 🔍 Loading quizzes for level:`, level);
+
+    // ✅ FIXED: Bắt chước logic getBooks - luôn load từ Supabase trước nếu có level
+    // 1. Try Supabase first if level provided (giống như getBooks)
     if (level) {
       try {
-        console.log(`[StorageManager.getAllQuizzes] 🔍 Attempting to load quizzes from Supabase for level ${level}...`);
-        const { success, data, error } = await contentService.getAllQuizzesByLevel(level);
-        console.log(`[StorageManager.getAllQuizzes] Supabase response:`, { success, count: data?.length || 0, error: error?.message || error });
-        
-        if (success && data && data.length > 0) {
-          console.log(`[StorageManager.getAllQuizzes] ✅ Loaded ${data.length} quizzes from Supabase for level ${level}`);
-          
-          // Cache to IndexedDB
-          if (this.useIndexedDB) {
-            for (const quiz of data) {
-              await indexedDBManager.saveQuiz(quiz.bookId, quiz.chapterId, quiz.lessonId, quiz, level);
-            }
-            console.log(`[StorageManager.getAllQuizzes] ✅ Cached ${data.length} quizzes to IndexedDB`);
-          }
-          
-          // Cache to localStorage
-          if (this.storageAvailable) {
-            let cachedCount = 0;
-            for (const quiz of data) {
-              try {
-                const key = `adminQuiz_${level}_${quiz.bookId}_${quiz.chapterId}_${quiz.lessonId}`;
-                localStorage.setItem(key, JSON.stringify(quiz));
-                cachedCount++;
-              } catch (e) {
-                console.warn('[StorageManager] ⚠️ localStorage full, but quiz cached to IndexedDB');
+        const { success, data } = await contentService.getAllQuizzesByLevel(level);
+
+        if (success) {
+          const supaQuizzes = Array.isArray(data) ? data : [];
+
+          if (supaQuizzes.length > 0) {
+            // ✅ Có dữ liệu trên server → dùng server làm nguồn chính (giống getBooks)
+            console.log('[StorageManager.getAllQuizzes] ✅ Loaded', supaQuizzes.length, 'quizzes from Supabase');
+
+            // Cache to IndexedDB for offline support
+            if (this.useIndexedDB) {
+              for (const quiz of supaQuizzes) {
+                await indexedDBManager.saveQuiz(quiz.bookId, quiz.chapterId, quiz.lessonId, quiz, level);
               }
             }
-            console.log(`[StorageManager.getAllQuizzes] ✅ Cached ${cachedCount} quizzes to localStorage`);
-          }
-          
-          return data;
-        } else if (success && (!data || data.length === 0)) {
-          console.log(`[StorageManager.getAllQuizzes] ℹ️ No quizzes found in Supabase for level ${level}${error ? ` (error: ${error})` : ''}`);
-          // Continue to local storage fallback
-        } else if (!success) {
-          console.warn(`[StorageManager.getAllQuizzes] ⚠️ Failed to load from Supabase:`, error);
-          // Continue to local storage fallback
-        }
-      } catch (err) {
-        console.warn('[StorageManager.getAllQuizzes] ⚠️ Supabase exception:', err);
-        // Continue to local storage fallback
-      }
-    } else {
-      console.log(`[StorageManager.getAllQuizzes] ℹ️ No level provided, skipping Supabase load`);
-    }
 
-    // Try IndexedDB (local cache)
+            // Also cache to localStorage
+            if (this.storageAvailable) {
+              for (const quiz of supaQuizzes) {
+                try {
+                  const key = `adminQuiz_${level}_${quiz.bookId}_${quiz.chapterId}_${quiz.lessonId}`;
+                  localStorage.setItem(key, JSON.stringify(quiz));
+                } catch (e) {
+                  console.warn('[StorageManager.getAllQuizzes] ⚠️ localStorage full, but quiz cached to IndexedDB');
+                }
+              }
+            }
+
+            return supaQuizzes;
+          }
+
+          // ✅ Supabase trả về RỖNG (server hiện không có quiz nào)
+          //    → Xoá cache local/IndexedDB để client đồng bộ với server (giống getBooks)
+          console.log('[StorageManager.getAllQuizzes] ℹ️ Supabase has 0 quizzes for level', level, '- clearing local caches');
+
+          if (this.useIndexedDB) {
+            // Clear quizzes for this level from IndexedDB
+            const allQuizzes = await indexedDBManager.getAllQuizzes();
+            const filteredQuizzes = allQuizzes.filter(q => q.level !== level);
+            // Note: IndexedDB doesn't have a direct way to delete by level, so we'll just return empty
+          }
+
+          if (this.storageAvailable) {
+            // Clear localStorage keys for this level
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && key.startsWith(`adminQuiz_${level}_`)) {
+                keysToRemove.push(key);
+              }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+          }
+
+          // Trả về mảng rỗng, KHÔNG fallback sang cache cũ nữa (giống getBooks)
+          return [];
+        }
+
+        console.log('[StorageManager.getAllQuizzes] ⚠️ Supabase request not successful, will try local caches');
+      } catch (err) {
+        console.warn('[StorageManager.getAllQuizzes] ❌ Supabase getAllQuizzes failed, trying local:', err);
+      }
+    }
+    
+    // 2. Try IndexedDB (local cache) - giống getBooks
     if (this.useIndexedDB) {
-      console.log(`[StorageManager.getAllQuizzes] 🔍 Checking IndexedDB...`);
       const quizzes = await indexedDBManager.getAllQuizzes(level);
       if (quizzes && quizzes.length > 0) {
-        console.log(`[StorageManager.getAllQuizzes] ✅ Loaded ${quizzes.length} quizzes from IndexedDB`);
+        console.log('[StorageManager.getAllQuizzes] ✅ Loaded', quizzes.length, 'quizzes from IndexedDB');
         return quizzes;
       }
-      console.log(`[StorageManager.getAllQuizzes] ❌ No quizzes found in IndexedDB`);
     }
 
-    // Fallback to localStorage
-    console.log(`[StorageManager.getAllQuizzes] 🔍 Checking localStorage...`);
+    // 3. Fallback to localStorage - giống getBooks
     const allQuizzes = [];
     if (this.storageAvailable) {
       for (let i = 0; i < localStorage.length; i++) {
@@ -944,12 +954,11 @@ class LocalStorageManager {
         }
       }
       if (allQuizzes.length > 0) {
-        console.log(`[StorageManager.getAllQuizzes] ✅ Loaded ${allQuizzes.length} quizzes from localStorage`);
-      } else {
-        console.log(`[StorageManager.getAllQuizzes] ❌ No quizzes found in localStorage`);
+        console.log('[StorageManager.getAllQuizzes] ✅ Loaded', allQuizzes.length, 'quizzes from localStorage');
       }
     }
 
+    console.log('[StorageManager.getAllQuizzes] ❌ No quizzes found anywhere');
     return allQuizzes;
   }
 
