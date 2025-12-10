@@ -394,6 +394,12 @@ export async function getQuiz(bookId, chapterId, lessonId, level) {
       if (error.code === 'PGRST116') {
         return { success: true, data: null };
       }
+      // ✅ FIXED: Handle RLS/permission errors gracefully for anonymous users
+      if (error.code === '42501' || error.message?.includes('row-level security') || error.message?.includes('permission denied')) {
+        console.warn('[ContentService] RLS/permission error (may be anonymous user):', error.message);
+        // Return success with null data so caller can fallback to local storage
+        return { success: true, data: null };
+      }
       console.error('[ContentService] Error fetching quiz:', error);
       return { success: false, error };
     }
@@ -419,7 +425,8 @@ export async function getQuiz(bookId, chapterId, lessonId, level) {
     return { success: true, data: quiz };
   } catch (err) {
     console.error('[ContentService] Unexpected error:', err);
-    return { success: false, error: err };
+    // ✅ FIXED: Return success with null on error so caller can fallback
+    return { success: true, data: null, error: err.message };
   }
 }
 
@@ -438,6 +445,12 @@ export async function getAllQuizzesByLevel(level) {
       .order('updated_at', { ascending: false });
 
     if (error) {
+      // ✅ FIXED: Handle RLS/permission errors gracefully for anonymous users
+      if (error.code === '42501' || error.message?.includes('row-level security') || error.message?.includes('permission denied')) {
+        console.warn('[ContentService] RLS/permission error (may be anonymous user):', error.message);
+        // Return success with empty array so caller can fallback to local storage
+        return { success: true, data: [] };
+      }
       console.error('[ContentService] Error fetching quizzes:', error);
       return { success: false, error };
     }
@@ -460,7 +473,8 @@ export async function getAllQuizzesByLevel(level) {
     return { success: true, data: quizzes };
   } catch (err) {
     console.error('[ContentService] Unexpected error:', err);
-    return { success: false, error: err };
+    // ✅ FIXED: Return success with empty array on error so caller can fallback
+    return { success: true, data: [], error: err.message };
   }
 }
 

@@ -670,7 +670,7 @@ class LocalStorageManager {
     // 1. Try Supabase first if level provided
     if (level) {
       try {
-        const { success, data } = await contentService.getQuiz(bookId, chapterId, finalLessonId, level);
+        const { success, data, error } = await contentService.getQuiz(bookId, chapterId, finalLessonId, level);
         if (success && data) {
           // Cache to IndexedDB
           if (this.useIndexedDB) {
@@ -683,9 +683,17 @@ class LocalStorageManager {
           }
           console.log(`✅ Found quiz in Supabase`);
           return data;
+        } else if (success && !data) {
+          // Quiz not found in Supabase (may be RLS/permission issue for anonymous users)
+          console.log(`[StorageManager] Quiz not found in Supabase, trying local storage...`);
+          // Continue to local storage fallback
+        } else if (!success) {
+          console.warn(`[StorageManager] Supabase getQuiz failed:`, error);
+          // Continue to local storage fallback
         }
       } catch (err) {
         console.warn('[StorageManager] Supabase getQuiz failed, trying local:', err);
+        // Continue to local storage fallback
       }
     }
     
@@ -805,7 +813,7 @@ class LocalStorageManager {
     // ✅ FIXED: Load from Supabase first if level provided (for multi-device sync)
     if (level) {
       try {
-        const { success, data } = await contentService.getAllQuizzesByLevel(level);
+        const { success, data, error } = await contentService.getAllQuizzesByLevel(level);
         if (success && data && data.length > 0) {
           console.log(`[StorageManager.getAllQuizzes] ✅ Loaded ${data.length} quizzes from Supabase for level ${level}`);
           
@@ -830,10 +838,15 @@ class LocalStorageManager {
           
           return data;
         } else if (success && (!data || data.length === 0)) {
-          console.log(`[StorageManager.getAllQuizzes] ℹ️ No quizzes found in Supabase for level ${level}`);
+          console.log(`[StorageManager.getAllQuizzes] ℹ️ No quizzes found in Supabase for level ${level}${error ? ` (${error})` : ''}`);
+          // Continue to local storage fallback
+        } else if (!success) {
+          console.warn(`[StorageManager.getAllQuizzes] ⚠️ Failed to load from Supabase:`, error);
+          // Continue to local storage fallback
         }
       } catch (err) {
         console.warn('[StorageManager] Supabase getAllQuizzes failed, trying local cache:', err);
+        // Continue to local storage fallback
       }
     }
 
