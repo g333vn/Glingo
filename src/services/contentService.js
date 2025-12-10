@@ -336,36 +336,59 @@ export async function getLessons(bookId, chapterId, level) {
  */
 export async function saveQuiz(quiz, userId) {
   try {
+    const quizId = quiz.id || `${quiz.bookId}_${quiz.chapterId}_${quiz.lessonId}`;
+    
+    console.log('[ContentService.saveQuiz] 🔍 Attempting to save quiz:', {
+      id: quizId,
+      bookId: quiz.bookId,
+      chapterId: quiz.chapterId,
+      lessonId: quiz.lessonId,
+      level: quiz.level,
+      title: quiz.title,
+      questionsCount: quiz.questions?.length || 0,
+      userId: userId ? `${userId.substring(0, 8)}...` : 'NULL'
+    });
+    
+    const upsertData = {
+      id: quizId,
+      book_id: quiz.bookId,
+      chapter_id: quiz.chapterId,
+      lesson_id: quiz.lessonId,
+      level: quiz.level,
+      title: quiz.title,
+      description: quiz.description || null,
+      questions: quiz.questions || [],
+      time_limit: quiz.timeLimit || null,
+      passing_score: quiz.passingScore || 60,
+      created_by: userId,
+      updated_at: new Date().toISOString()
+    };
+    
+    console.log('[ContentService.saveQuiz] 📤 Upsert data:', JSON.stringify(upsertData, null, 2));
+    
     const { data, error } = await supabase
       .from('quizzes')
-      .upsert({
-        id: quiz.id || `${quiz.bookId}_${quiz.chapterId}_${quiz.lessonId}`,
-        book_id: quiz.bookId,
-        chapter_id: quiz.chapterId,
-        lesson_id: quiz.lessonId,
-        level: quiz.level,
-        title: quiz.title,
-        description: quiz.description || null,
-        questions: quiz.questions || [],
-        time_limit: quiz.timeLimit || null,
-        passing_score: quiz.passingScore || 60,
-        created_by: userId,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'id,book_id,chapter_id,lesson_id,level'
+      .upsert(upsertData, {
+        onConflict: 'id'
       })
       .select()
       .single();
 
     if (error) {
-      console.error('[ContentService] Error saving quiz:', error);
+      console.error('[ContentService.saveQuiz] ❌ Error saving quiz:', error);
+      console.error('[ContentService.saveQuiz] ❌ Error code:', error.code);
+      console.error('[ContentService.saveQuiz] ❌ Error message:', error.message);
+      console.error('[ContentService.saveQuiz] ❌ Error details:', error.details);
+      console.error('[ContentService.saveQuiz] ❌ Error hint:', error.hint);
       return { success: false, error };
     }
 
-    console.log('[ContentService] ✅ Saved quiz to Supabase:', data);
+    console.log('[ContentService.saveQuiz] ✅ Successfully saved quiz to Supabase');
+    console.log('[ContentService.saveQuiz] ✅ Saved data:', data);
     return { success: true, data };
   } catch (err) {
-    console.error('[ContentService] Unexpected error:', err);
+    console.error('[ContentService.saveQuiz] ❌ Unexpected error:', err);
+    console.error('[ContentService.saveQuiz] ❌ Error stack:', err.stack);
     return { success: false, error: err };
   }
 }

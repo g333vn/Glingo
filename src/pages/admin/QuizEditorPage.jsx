@@ -832,6 +832,9 @@ function QuizEditorPage() {
     console.log(`   - selectedBook: ${selectedBook}`);
     console.log(`   - selectedChapter: ${selectedChapter}`);
     console.log(`   - quizTitle: ${quizTitle}`);
+    console.log(`   - user object:`, user);
+    console.log(`   - user.id:`, user?.id);
+    console.log(`   - user type:`, typeof user?.id);
     console.log(`   - questions count: ${questions.length}`);
     
     if (!isValid()) {
@@ -880,6 +883,7 @@ function QuizEditorPage() {
     let userId = null;
     if (user && typeof user.id === 'string' && user.id.length > 20) {
       userId = user.id;
+      console.log(`[QuizEditor] ✅ Got userId from user object: ${userId}`);
     } else {
       // Try to get userId from Supabase session
       try {
@@ -888,18 +892,49 @@ function QuizEditorPage() {
         if (session?.user?.id) {
           userId = session.user.id;
           console.log(`[QuizEditor] ✅ Got userId from session: ${userId}`);
+        } else {
+          console.warn('[QuizEditor] ⚠️ No session found');
         }
       } catch (err) {
-        console.warn('[QuizEditor] Could not get userId from session:', err);
+        console.error('[QuizEditor] ❌ Error getting userId from session:', err);
       }
     }
     
+    // ✅ VALIDATION: Kiểm tra selectedLevel và userId trước khi save
+    console.log(`[QuizEditor] 📋 Save validation:`, {
+      selectedLevel,
+      userId: userId ? `${userId.substring(0, 8)}...` : 'NULL',
+      selectedBook,
+      selectedChapter,
+      finalLessonId
+    });
+    
+    if (!selectedLevel) {
+      alert('⚠️ Vui lòng chọn Level trước khi lưu quiz!');
+      console.error('[QuizEditor] ❌ selectedLevel is empty!');
+      return;
+    }
+    
     if (!userId) {
+      const confirmSave = confirm(
+        '⚠️ KHÔNG TÌM THẤY USER ID!\n\n' +
+        'Quiz sẽ chỉ được lưu vào thiết bị này (local storage) và KHÔNG được sync lên Supabase.\n\n' +
+        'Điều này có nghĩa là:\n' +
+        '- Quiz sẽ không hiển thị trên thiết bị khác\n' +
+        '- Quiz sẽ không hiển thị trong trình duyệt ẩn danh\n\n' +
+        'Bạn có muốn tiếp tục lưu quiz vào local storage không?\n\n' +
+        '- OK: Lưu vào local storage (chỉ thiết bị này)\n' +
+        '- Cancel: Hủy, đăng nhập lại và thử lại'
+      );
+      if (!confirmSave) {
+        console.warn('[QuizEditor] ⚠️ User cancelled save - no userId');
+        return;
+      }
       console.warn('[QuizEditor] ⚠️ No userId available - quiz will be saved locally only, not to Supabase');
       console.warn('[QuizEditor] ⚠️ User must be logged in to sync quiz across devices');
     }
 
-    console.log(`💾 Calling storageManager.saveQuiz(${selectedBook}, ${selectedChapter}, ${finalLessonId}, level=${selectedLevel}, userId=${userId})...`);
+    console.log(`💾 Calling storageManager.saveQuiz(${selectedBook}, ${selectedChapter}, ${finalLessonId}, level=${selectedLevel}, userId=${userId ? userId.substring(0, 8) + '...' : 'NULL'})...`);
     const success = await storageManager.saveQuiz(
       selectedBook,
       selectedChapter,
