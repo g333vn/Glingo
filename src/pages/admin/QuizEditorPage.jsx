@@ -43,8 +43,11 @@ function QuizEditorPage() {
   ]);
 
   const [exportedJSON, setExportedJSON] = useState('');
+  const [importStatus, setImportStatus] = useState('');
+  const [showImportTemplate, setShowImportTemplate] = useState(false);
   const [showPreview, setShowPreview] = useState(false); // For quiz preview
   const [showQuestionPreview, setShowQuestionPreview] = useState({}); // Per question preview
+  const importInputRef = React.useRef(null);
   
   // ✅ NEW: Lưu directory handle để tự động lưu vào đúng thư mục
   const [savedDirectoryHandle, setSavedDirectoryHandle] = useState(null);
@@ -197,7 +200,7 @@ function QuizEditorPage() {
       }
       
       // ✅ Load from storage first
-      let lessons = await storageManager.getLessons(selectedBook, selectedChapter);
+      let lessons = await storageManager.getLessons(selectedBook, selectedChapter, selectedLevel);
       
       // If no lessons in storage, use chapters as lessons (backward compatibility)
       if (!lessons || lessons.length === 0) {
@@ -209,7 +212,7 @@ function QuizEditorPage() {
     };
     
     loadLessons();
-  }, [selectedBook, selectedChapter]);
+  }, [selectedBook, selectedChapter, selectedLevel]);
 
   // ✅ NEW: Reset series, book, chapter, and lesson when level changes
   useEffect(() => {
@@ -803,6 +806,121 @@ function QuizEditorPage() {
     };
 
     return JSON.stringify(quizData, null, 2);
+  };
+
+  // ✅ NEW: Normalize options to 4 choices (A-D) to fit editor structure
+  const normalizeOptions = (options = []) => {
+    const defaultLabels = ['A', 'B', 'C', 'D'];
+    const safeOptions = Array.isArray(options) ? options : [];
+
+    const normalized = safeOptions.map((opt, idx) => {
+      const label = opt?.label || defaultLabels[idx] || `Option ${idx + 1}`;
+      const text =
+        typeof opt === 'string'
+          ? opt
+          : opt?.text || opt?.value || opt?.answer || '';
+      return { label, text };
+    });
+
+    // Pad to 4 options for compatibility with the editor UI
+    while (normalized.length < 4) {
+      const idx = normalized.length;
+      normalized.push({ label: defaultLabels[idx] || `Option ${idx + 1}`, text: '' });
+    }
+
+    // Ensure only 4 options are kept (UI supports 4)
+    return normalized.slice(0, 4);
+  };
+
+  // ✅ NEW: Apply imported quiz JSON into editor state
+  const applyImportedQuiz = (data, sourceName = 'JSON file') => {
+    if (!data) {
+      alert(t('quizEditor.actions.importEmpty', 'File JSON trống hoặc không hợp lệ.'));
+      return;
+    }
+
+    // Hỗ trợ nhiều kiểu JSON:
+    // - Mảng thuần: [{...}]
+    // - { questions: [...] }
+    // - { quiz: { questions: [...] } }
+    // - { data: { questions: [...] } }
+    // - { items: [...] }
+    const questionsPayload = (() => {
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data.questions)) return data.questions;
+      if (Array.isArray(data.items)) return data.items;
+      if (data.quiz && Array.isArray(data.quiz.questions)) return data.quiz.questions;
+      if (data.data && Array.isArray(data.data.questions)) return data.data.questions;
+      return [];
+    })();
+
+    const normalizedQuestions = questionsPayload.map((q, idx) => {
+      const options = normalizeOptions(q?.options || q?.answers || []);
+      const defaultCorrect = options[0]?.label || 'A';
+      const correctCandidate = q?.correct || q?.correctAnswer || q?.answer || q?.answersKey || defaultCorrect;
+      const correct = options.some(opt => opt.label === correctCandidate) ? correctCandidate : defaultCorrect;
+
+      return {
+        id: q?.id || idx + 1,
+        text: q?.text || q?.question || '',
+        options,
+        correct,
+        explanation: q?.explanation || q?.explain || '',
+        audioUrl: q?.audioUrl || '',
+        audioPath: q?.audioPath || '',
+        audioName: q?.audioName || ''
+      };
+    });
+
+    if (normalizedQuestions.length === 0) {
+      console.warn('❌ Import JSON: không tìm thấy mảng câu hỏi hợp lệ trong file.', { data });
+      alert(t('quizEditor.actions.importNoQuestions', 'File JSON không chứa danh sách câu hỏi hợp lệ.'));
+      return;
+    }
+
+    setQuizTitle(!Array.isArray(data) ? (data.title || '') : '');
+    setQuestions(normalizedQuestions);
+
+    // Optional: hydrate location metadata nếu có
+    const meta = !Array.isArray(data) ? (data.metadata || data.meta || {}) : {};
+    if (meta.level) setSelectedLevel(meta.level);
+    if (meta.bookId) setSelectedBook(meta.bookId);
+    if (meta.chapterId) setSelectedChapter(meta.chapterId);
+    if (meta.lessonId) setSelectedLesson(meta.lessonId);
+
+    setImportStatus(`${sourceName} • ${normalizedQuestions.length} câu hỏi`);
+    setShowPreview(true);
+    alert(t('quizEditor.actions.importSuccess', 'Đã tải JSON vào editor, hãy kiểm tra và lưu lại.'));
+  };
+
+  // ✅ NEW: Handle upload JSON to create quizzes in bulk
+  const handleImportFile = (event) => {
+    const inputEl = event.target;
+    const file = inputEl.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        applyImportedQuiz(parsed, file.name);
+      } catch (error) {
+        console.error('❌ Failed to parse JSON file', error);
+        alert(t('quizEditor.actions.importInvalidJSON', 'Không đọc được file JSON. Vui lòng kiểm tra nội dung.'));
+        setImportStatus('');
+      } finally {
+        // Reset so the same file can be re-selected
+        inputEl.value = '';
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  };
+
+  const handleImportClick = () => {
+    if (importInputRef.current) {
+      importInputRef.current.value = '';
+      importInputRef.current.click();
+    }
   };
 
   // Export JSON (chỉ export, không lưu vào hệ thống)
@@ -2353,6 +2471,67 @@ function QuizEditorPage() {
                 >
                   {showPreview ? `👁️ ${t('quizEditor.actions.hidePreview', 'Hide Preview')}` : `👁️ ${t('quizEditor.actions.viewPreview')}`}
                 </button>
+
+                {/* ✅ NEW: Import JSON to create/update quiz quickly */}
+                <input
+                  type="file"
+                  accept="application/json"
+                  ref={importInputRef}
+                  className="hidden"
+                  onChange={handleImportFile}
+                />
+                <div className="border-[3px] border-black rounded-lg p-3 bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  <button
+                    onClick={handleImportClick}
+                    className="w-full px-4 py-2 bg-emerald-500 text-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black"
+                    title={t('quizEditor.actions.importDescription', 'Tải file JSON có sẵn để điền nhanh quiz')}
+                  >
+                    📥 {t('quizEditor.actions.importJSON', 'Upload JSON')}
+                  </button>
+                  <p className="text-xs text-gray-600 mt-1 text-center font-black">
+                    📥 {t('quizEditor.actions.importDescription', 'Upload file JSON để tạo quiz hàng loạt (không lưu tự động)')}
+                  </p>
+                  {importStatus && (
+                    <p className="text-xs text-green-600 mt-1 text-center font-black">
+                      ✅ {importStatus}
+                    </p>
+                  )}
+
+                  <button
+                    onClick={() => setShowImportTemplate(!showImportTemplate)}
+                    className="mt-2 w-full text-xs font-semibold text-blue-700 underline"
+                  >
+                    {showImportTemplate ? 'Ẩn cấu trúc mẫu JSON' : 'Xem cấu trúc mẫu JSON'}
+                  </button>
+                  {showImportTemplate && (
+                    <div className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-[11px] leading-4 font-mono text-gray-800 overflow-x-auto">
+{`{
+  "title": "Quiz sample",
+  "questions": [
+    {
+      "id": 1,
+      "text": "Câu hỏi 1?",
+      "options": [
+        { "label": "A", "text": "Đáp án A" },
+        { "label": "B", "text": "Đáp án B" },
+        { "label": "C", "text": "Đáp án C" },
+        { "label": "D", "text": "Đáp án D" }
+      ],
+      "correct": "A",
+      "explanation": "Giải thích",
+      "audioUrl": ""
+    }
+  ],
+  "metadata": {
+    "level": "n5",
+    "bookId": "book-001",
+    "chapterId": "chapter-1",
+    "lessonId": "lesson-1-1" // optional, có thể bỏ trống để dùng chapter
+  }
+}`}
+                    </div>
+                  )}
+                </div>
 
                 {/* ✅ Export JSON - Chỉ export, không lưu vào hệ thống */}
                 <div className="border-[3px] border-black rounded-lg p-3 bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">

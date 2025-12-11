@@ -165,19 +165,7 @@ function EnhancedLessonModal({
       }
     }
     
-    // ✅ Content validation: Require at least ONE of: Theory OR Flashcards
-    const hasTheory = lessonData.theory?.pdfUrl || 
-                     lessonData.theory?.htmlContent || 
-                     lessonData.theory?.videoUrl || 
-                     lessonData.theory?.audioUrl;
-    
-    const hasFlashcards = lessonData.srs?.enabled && 
-                         lessonData.srs?.cards && 
-                         lessonData.srs.cards.length > 0;
-    
-    if (!hasTheory && !hasFlashcards) {
-      errors.push(t('contentManagement.lessonModal.validation.needContent'));
-    }
+    // ✅ Content can be empty (allow creating shell lesson and add quiz later)
     
     // SRS validation (if enabled)
     if (lessonData.srs?.enabled) {
