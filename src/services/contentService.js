@@ -349,6 +349,104 @@ export async function saveQuiz(quiz, userId) {
       userId: userId ? `${userId.substring(0, 8)}...` : 'NULL'
     });
     
+    // ✅ NEW: Tự động tạo book/chapter/lesson nếu chưa có (để tránh foreign key error)
+    // Thứ tự: Book → Chapter → Lesson (vì foreign key constraints)
+    
+    // 1. Kiểm tra và tạo book nếu chưa có
+    console.log('[ContentService.saveQuiz] 🔍 Checking if book exists...');
+    const { data: existingBook } = await supabase
+      .from('books')
+      .select('id')
+      .eq('id', quiz.bookId)
+      .eq('level', quiz.level)
+      .maybeSingle();
+    
+    if (!existingBook) {
+      console.log('[ContentService.saveQuiz] ℹ️ Book does not exist, creating it...');
+      const { error: createBookError } = await supabase
+        .from('books')
+        .insert({
+          id: quiz.bookId,
+          level: quiz.level,
+          title: `Book ${quiz.bookId}`,
+          created_by: userId,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (createBookError) {
+        console.warn('[ContentService.saveQuiz] ⚠️ Failed to create book (may already exist):', createBookError);
+      } else {
+        console.log('[ContentService.saveQuiz] ✅ Created book:', quiz.bookId);
+      }
+    }
+    
+    // 2. Kiểm tra và tạo chapter nếu chưa có
+    console.log('[ContentService.saveQuiz] 🔍 Checking if chapter exists...');
+    const { data: existingChapter } = await supabase
+      .from('chapters')
+      .select('id')
+      .eq('id', quiz.chapterId)
+      .eq('book_id', quiz.bookId)
+      .eq('level', quiz.level)
+      .maybeSingle();
+    
+    if (!existingChapter) {
+      console.log('[ContentService.saveQuiz] ℹ️ Chapter does not exist, creating it...');
+      const { error: createChapterError } = await supabase
+        .from('chapters')
+        .insert({
+          id: quiz.chapterId,
+          book_id: quiz.bookId,
+          level: quiz.level,
+          title: `Chapter ${quiz.chapterId}`,
+          created_by: userId,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (createChapterError) {
+        console.warn('[ContentService.saveQuiz] ⚠️ Failed to create chapter (may already exist):', createChapterError);
+      } else {
+        console.log('[ContentService.saveQuiz] ✅ Created chapter:', quiz.chapterId);
+      }
+    }
+    
+    // 3. Kiểm tra và tạo lesson nếu chưa có
+    console.log('[ContentService.saveQuiz] 🔍 Checking if lesson exists...');
+    const { data: existingLesson } = await supabase
+      .from('lessons')
+      .select('id')
+      .eq('id', quiz.lessonId)
+      .eq('book_id', quiz.bookId)
+      .eq('chapter_id', quiz.chapterId)
+      .eq('level', quiz.level)
+      .maybeSingle();
+    
+    if (!existingLesson) {
+      console.log('[ContentService.saveQuiz] ℹ️ Lesson does not exist, creating it...');
+      const { error: createLessonError } = await supabase
+        .from('lessons')
+        .insert({
+          id: quiz.lessonId,
+          book_id: quiz.bookId,
+          chapter_id: quiz.chapterId,
+          level: quiz.level,
+          title: `Lesson ${quiz.lessonId}`, // Default title, can be updated later
+          description: null,
+          content_type: 'pdf',
+          order_index: 0,
+          created_by: userId,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (createLessonError) {
+        console.warn('[ContentService.saveQuiz] ⚠️ Failed to create lesson (may already exist):', createLessonError);
+      } else {
+        console.log('[ContentService.saveQuiz] ✅ Created lesson:', quiz.lessonId);
+      }
+    } else {
+      console.log('[ContentService.saveQuiz] ✅ Lesson already exists');
+    }
+    
     const upsertData = {
       id: quizId,
       book_id: quiz.bookId,
@@ -366,11 +464,13 @@ export async function saveQuiz(quiz, userId) {
     
     console.log('[ContentService.saveQuiz] 📤 Upsert data:', JSON.stringify(upsertData, null, 2));
     
+    // ✅ FIXED: Bảng quizzes có composite primary key (id, book_id, chapter_id, lesson_id, level)
+    // Lỗi 42P10: "there is no unique or exclusion constraint matching the ON CONFLICT specification"
+    // Nguyên nhân: Code đang dùng onConflict: 'id' nhưng id không phải unique constraint đơn lẻ
+    // Giải pháp: Không dùng onConflict, Supabase sẽ tự detect composite primary key
     const { data, error } = await supabase
       .from('quizzes')
-      .upsert(upsertData, {
-        onConflict: 'id'
-      })
+      .upsert(upsertData)
       .select()
       .single();
 
@@ -380,6 +480,19 @@ export async function saveQuiz(quiz, userId) {
       console.error('[ContentService.saveQuiz] ❌ Error message:', error.message);
       console.error('[ContentService.saveQuiz] ❌ Error details:', error.details);
       console.error('[ContentService.saveQuiz] ❌ Error hint:', error.hint);
+      
+      // ✅ NEW: Hiển thị thông tin chi tiết cho foreign key error
+      if (error.code === '23503') {
+        console.error('[ContentService.saveQuiz] ❌ Foreign Key Constraint Error!');
+        console.error('[ContentService.saveQuiz] ❌ Quiz đang cố reference đến book/chapter/lesson không tồn tại');
+        console.error('[ContentService.saveQuiz] ❌ Kiểm tra:');
+        console.error('[ContentService.saveQuiz]   - book_id:', upsertData.book_id, 'level:', upsertData.level);
+        console.error('[ContentService.saveQuiz]   - chapter_id:', upsertData.chapter_id);
+        console.error('[ContentService.saveQuiz]   - lesson_id:', upsertData.lesson_id);
+        console.error('[ContentService.saveQuiz] ❌ Vui lòng đảm bảo book/chapter/lesson tồn tại trong database');
+        console.error('[ContentService.saveQuiz] ❌ Chạy script: fix_quizzes_foreign_key_error.sql để kiểm tra');
+      }
+      
       return { success: false, error };
     }
 

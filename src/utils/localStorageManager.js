@@ -434,30 +434,58 @@ class LocalStorageManager {
     if (level) {
       try {
         const { success, data } = await contentService.getChapters(bookId, level);
-        if (success && data && data.length > 0) {
-          // Cache to IndexedDB
-          if (this.useIndexedDB) {
-            await indexedDBManager.saveChapters(bookId, data, level);
+        if (success) {
+          // ✅ FIXED: Nếu Supabase trả về data (có thể là empty array), dùng data đó
+          if (data && data.length > 0) {
+            // Cache to IndexedDB
+            if (this.useIndexedDB) {
+              await indexedDBManager.saveChapters(bookId, data, level);
+            }
+            // Cache to localStorage
+            if (this.storageAvailable) {
+              const key = `adminChapters_${level}_${bookId}`;
+              localStorage.setItem(key, JSON.stringify(data));
+            }
+            return data;
           }
-          // Cache to localStorage
-          if (this.storageAvailable) {
-            const key = `adminChapters_${level}_${bookId}`;
-            localStorage.setItem(key, JSON.stringify(data));
+          
+          // ✅ FIXED: Nếu Supabase trả về empty array (data = []), clear cache cũ và return []
+          // Điều này đảm bảo không hiển thị chapters cũ từ cache khi Supabase đã confirm là không có
+          if (Array.isArray(data) && data.length === 0) {
+            console.log('[StorageManager.getChapters] ℹ️ Supabase returned empty array - clearing old cache');
+            // Clear IndexedDB cache
+            if (this.useIndexedDB) {
+              await indexedDBManager.saveChapters(bookId, [], level);
+            }
+            // Clear localStorage cache
+            if (this.storageAvailable) {
+              const key = `adminChapters_${level}_${bookId}`;
+              localStorage.removeItem(key);
+            }
+            return [];
           }
-          return data;
+          
+          // ✅ Supabase trả về success nhưng data = null (có thể là error hoặc không tồn tại)
+          //    → Không clear cache, fallback về local cache
+          console.log('[StorageManager.getChapters] ℹ️ Supabase returned null, will try local cache');
+        } else {
+          console.log('[StorageManager.getChapters] ⚠️ Supabase request not successful, will try local cache');
         }
       } catch (err) {
         console.warn('[StorageManager] Supabase getChapters failed, trying local:', err);
       }
     }
     
-    // 2. Try IndexedDB (local cache)
+    // 2. Try IndexedDB (local cache) - chỉ khi Supabase không trả về empty array
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getChapters(bookId, level);
-      if (result) return result;
+      if (result) {
+        console.log('[StorageManager.getChapters] ✅ Loaded chapters from IndexedDB');
+        return result;
+      }
     }
 
-    // 3. Fallback to localStorage
+    // 3. Fallback to localStorage - chỉ khi Supabase không trả về empty array
     if (this.storageAvailable && level) {
       const key = `adminChapters_${level}_${bookId}`;
       const data = localStorage.getItem(key);
@@ -467,10 +495,12 @@ class LocalStorageManager {
         if (this.useIndexedDB) {
           await indexedDBManager.saveChapters(bookId, chapters, level);
         }
+        console.log('[StorageManager.getChapters] ✅ Loaded chapters from localStorage');
         return chapters;
       }
     }
 
+    console.log('[StorageManager.getChapters] ❌ No chapters found anywhere');
     return null;
   }
 
@@ -795,6 +825,22 @@ class LocalStorageManager {
               '⚠️ LỖI: Quiz đã tồn tại trong Supabase!\n\n' +
               'Quiz với ID này đã được tạo trước đó.\n' +
               'Hệ thống sẽ cập nhật quiz hiện có.\n\n' +
+              'Error: ' + (result.error?.message || 'Unknown error')
+            );
+          } else if (result.error?.code === '23503') {
+            console.error('[StorageManager.saveQuiz] ❌ Foreign Key Constraint Error');
+            console.error('[StorageManager.saveQuiz] ❌ Quiz đang cố reference đến book/chapter/lesson không tồn tại');
+            alert(
+              '⚠️ LỖI: Foreign Key Constraint Violation!\n\n' +
+              'Quiz đang cố reference đến book/chapter/lesson KHÔNG TỒN TẠI trong database.\n\n' +
+              'Nguyên nhân:\n' +
+              '- Book với id và level này chưa được tạo\n' +
+              '- Hoặc Chapter với id, book_id, level này chưa được tạo\n' +
+              '- Hoặc Lesson với id, book_id, chapter_id, level này chưa được tạo\n\n' +
+              'Giải pháp:\n' +
+              '1. Kiểm tra Console log để xem book_id, chapter_id, lesson_id, level\n' +
+              '2. Tạo book/chapter/lesson trong Supabase trước khi save quiz\n' +
+              '3. Hoặc chạy script: fix_quizzes_foreign_key_error.sql\n\n' +
               'Error: ' + (result.error?.message || 'Unknown error')
             );
           } else {
