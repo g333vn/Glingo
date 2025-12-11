@@ -771,7 +771,42 @@ class LocalStorageManager {
         
         if (!result.success) {
           console.error('[StorageManager.saveQuiz] ❌ Failed to save quiz to Supabase:', result.error);
+          console.error('[StorageManager.saveQuiz] ❌ Error code:', result.error?.code);
+          console.error('[StorageManager.saveQuiz] ❌ Error message:', result.error?.message);
           console.error('[StorageManager.saveQuiz] ❌ Error details:', JSON.stringify(result.error, null, 2));
+          
+          // ✅ NEW: Hiển thị alert cho user biết lỗi cụ thể
+          if (result.error?.code === '42501') {
+            console.error('[StorageManager.saveQuiz] ❌ RLS Policy Error - User không có quyền INSERT');
+            alert(
+              '⚠️ LỖI: Bạn không có quyền lưu quiz lên Supabase!\n\n' +
+              'Nguyên nhân có thể:\n' +
+              '1. User không có role = "admin" trong bảng profiles\n' +
+              '2. RLS policies chưa được setup đúng\n\n' +
+              'Vui lòng:\n' +
+              '- Kiểm tra user role trong Supabase\n' +
+              '- Chạy script: update_user_role_to_admin.sql\n' +
+              '- Chạy script: fix_quizzes_rls_for_anonymous.sql\n\n' +
+              'Quiz đã được lưu vào local storage nhưng KHÔNG sync lên Supabase.'
+            );
+          } else if (result.error?.code === '23505') {
+            console.error('[StorageManager.saveQuiz] ❌ Unique Constraint Error - Quiz đã tồn tại');
+            alert(
+              '⚠️ LỖI: Quiz đã tồn tại trong Supabase!\n\n' +
+              'Quiz với ID này đã được tạo trước đó.\n' +
+              'Hệ thống sẽ cập nhật quiz hiện có.\n\n' +
+              'Error: ' + (result.error?.message || 'Unknown error')
+            );
+          } else {
+            console.error('[StorageManager.saveQuiz] ❌ Unknown error:', result.error);
+            alert(
+              '⚠️ LỖI khi lưu quiz lên Supabase!\n\n' +
+              'Error code: ' + (result.error?.code || 'Unknown') + '\n' +
+              'Error message: ' + (result.error?.message || 'Unknown error') + '\n\n' +
+              'Quiz đã được lưu vào local storage nhưng KHÔNG sync lên Supabase.\n' +
+              'Vui lòng kiểm tra Console để xem chi tiết.'
+            );
+          }
         } else {
           console.log(`[StorageManager.saveQuiz] ✅ Successfully saved quiz to Supabase`);
           console.log(`[StorageManager.saveQuiz] ✅ Supabase response:`, result.data);
