@@ -577,7 +577,27 @@ class LocalStorageManager {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
-    // 1. Try Supabase first if level provided
+    // 1. Try IndexedDB (local cache) first
+    if (this.useIndexedDB) {
+      const result = await indexedDBManager.getLessons(bookId, chapterId, level);
+      if (result && result.length > 0) return result;
+    }
+
+    // 2. Try localStorage
+    if (this.storageAvailable && level) {
+      const key = `adminLessons_${level}_${bookId}_${chapterId}`;
+      const data = localStorage.getItem(key);
+      if (data) {
+        const lessons = JSON.parse(data);
+        // Sync to IndexedDB
+        if (this.useIndexedDB) {
+          await indexedDBManager.saveLessons(bookId, chapterId, lessons, level);
+        }
+        if (lessons && lessons.length > 0) return lessons;
+      }
+    }
+
+    // 3. Try Supabase (fallback)
     if (level) {
       try {
         const { success, data } = await contentService.getLessons(bookId, chapterId, level);
@@ -594,27 +614,7 @@ class LocalStorageManager {
           return data;
         }
       } catch (err) {
-        console.warn('[StorageManager] Supabase getLessons failed, trying local:', err);
-      }
-    }
-    
-    // 2. Try IndexedDB (local cache)
-    if (this.useIndexedDB) {
-      const result = await indexedDBManager.getLessons(bookId, chapterId, level);
-      if (result) return result;
-    }
-
-    // 3. Fallback to localStorage
-    if (this.storageAvailable && level) {
-      const key = `adminLessons_${level}_${bookId}_${chapterId}`;
-      const data = localStorage.getItem(key);
-      if (data) {
-        const lessons = JSON.parse(data);
-        // Sync to IndexedDB
-        if (this.useIndexedDB) {
-          await indexedDBManager.saveLessons(bookId, chapterId, lessons, level);
-        }
-        return lessons;
+        console.warn('[StorageManager] Supabase getLessons failed:', err);
       }
     }
 

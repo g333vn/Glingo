@@ -1723,6 +1723,33 @@ function ContentManagementPage() {
             onDeleteChapter={handleDeleteChapter}
             onDeleteLesson={handleDeleteLesson}
             onDeleteQuiz={handleDeleteQuiz}
+            onReorderLessons={async (book, chapter, fromIndex, toIndex, sortedLessons) => {
+              // Reorder lessons array
+              const reorderedLessons = [...sortedLessons];
+              const [movedLesson] = reorderedLessons.splice(fromIndex, 1);
+              reorderedLessons.splice(toIndex, 0, movedLesson);
+              
+              // Update order field for all lessons
+              const updatedLessons = reorderedLessons.map((lesson, index) => ({
+                ...lesson,
+                order: index + 1
+              }));
+              
+              // Save to storage
+              const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+              const success = await storageManager.saveLessons(book.id, chapter.id, updatedLessons, selectedLevel, userId);
+              
+              if (success) {
+                const key = `${book.id}_${chapter.id}`;
+                setLessonsData(prev => ({
+                  ...prev,
+                  [key]: updatedLessons
+                }));
+                console.log('✅ Lessons reordered successfully');
+              } else {
+                alert('❌ Không thể lưu thứ tự mới. Vui lòng thử lại.');
+              }
+            }}
           />
         </div>
       )}

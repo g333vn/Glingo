@@ -150,6 +150,27 @@ function BookDetailPage() {
 
   // Load book, chapters, and lessons
   useEffect(() => {
+    const sortLessons = (lessons = []) => {
+      const arr = [...lessons];
+      return arr.sort((a, b) => {
+        const getNum = (item) => {
+          if (item.order !== undefined) return item.order;
+          if (item.orderIndex !== undefined) return item.orderIndex;
+          const id = (item.id || '').toString();
+          const title = (item.title || '').toString();
+          const titleMatch = title.match(/(\d+)\s*$/);
+          if (titleMatch) return parseInt(titleMatch[1], 10);
+          const idMatch = id.match(/(\d+)/);
+          if (idMatch) return parseInt(idMatch[1], 10);
+          return Number.MAX_SAFE_INTEGER;
+        };
+        const numA = getNum(a);
+        const numB = getNum(b);
+        if (numA !== numB) return numA - numB;
+        return (a.title || a.id || '').localeCompare(b.title || b.id || '');
+      });
+    };
+
     const loadData = async () => {
       // ✅ UPDATED: Get book info from booksMetadata (from storage) first
       const bookFromStorage = booksMetadata.find(b => b.id === bookId);
@@ -175,7 +196,7 @@ function BookDetailPage() {
         const savedLessons = await storageManager.getLessons(bookId, chapterId, levelId);
         
         if (savedLessons && savedLessons.length > 0) {
-          setBookContents(savedLessons);
+          setBookContents(sortLessons(savedLessons));
           console.log(`✅ Loaded ${savedLessons.length} lessons for chapter ${chapterId}`);
         } else {
           // Fallback: use chapter as a single lesson (backward compatibility)
@@ -214,7 +235,7 @@ function BookDetailPage() {
             const lessons = await storageManager.getLessons(bookId, chapter.id, levelId);
             
             if (lessons && lessons.length > 0) {
-              lessonsMap[chapter.id] = lessons;
+              lessonsMap[chapter.id] = sortLessons(lessons);
             }
           }
           setAllChapterLessons(lessonsMap);

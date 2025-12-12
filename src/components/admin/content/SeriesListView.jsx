@@ -40,6 +40,7 @@ function SeriesListView({
   onEditLesson,
   onDeleteLesson,
   onDeleteQuiz, // ✅ NEW: Delete quiz handler
+  onReorderLessons, // ✅ NEW: Reorder lessons handler
 }) {
   const { t } = useLanguage();
   // ✅ Helper: Wrap onAddBook để truyền series name
@@ -233,6 +234,7 @@ function SeriesListView({
               onAddLesson={onAddLesson}
               onAddQuiz={onAddQuiz}
               onDeleteQuiz={onDeleteQuiz}
+              onReorderLessons={onReorderLessons}
             />
           ) : null}
           

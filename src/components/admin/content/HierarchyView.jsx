@@ -39,6 +39,7 @@ function HierarchyView({
   onDeleteChapter,
   onDeleteLesson,
   onDeleteQuiz,
+  onReorderLessons, // ✅ NEW: Reorder lessons handler
 }) {
   const { t } = useLanguage();
   // Group books by series (use seriesId as key để ổn định theo Supabase)
@@ -116,6 +117,7 @@ function HierarchyView({
         onDeleteLesson={onDeleteLesson}
         onAddQuiz={onAddQuiz}
         onDeleteQuiz={onDeleteQuiz}
+        onReorderLessons={onReorderLessons}
         onSeriesClick={(seriesId) => {
           setHierarchyPath({ ...hierarchyPath, series: seriesId });
         }}

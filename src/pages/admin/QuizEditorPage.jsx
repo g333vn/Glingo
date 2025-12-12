@@ -1894,6 +1894,31 @@ function QuizEditorPage() {
     return `src/data/level/${selectedLevel}/${bookFolder}/quizzes/${finalLessonId}.json`;
   };
 
+  // ✅ NEW: Extract lesson number from lessonId for title generation
+  const getLessonNumber = (lessonId) => {
+    if (!lessonId || lessonId === 'chưa-chọn') return null;
+    
+    // Format: lesson-1-7 → extract 7
+    const match = lessonId.match(/lesson-(\d+)-(\d+)/);
+    if (match && match[2]) {
+      return parseInt(match[2], 10);
+    }
+    
+    // Format: lesson-1 → extract 1
+    const simpleMatch = lessonId.match(/lesson-(\d+)/);
+    if (simpleMatch && simpleMatch[1]) {
+      return parseInt(simpleMatch[1], 10);
+    }
+    
+    // Try to extract any number from the end
+    const numberMatch = lessonId.match(/(\d+)$/);
+    if (numberMatch) {
+      return parseInt(numberMatch[1], 10);
+    }
+    
+    return null;
+  };
+
   // Validate form
   const isValid = () => {
     console.log('🔍 Validating quiz:', {
@@ -2834,13 +2859,12 @@ function QuizEditorPage() {
                   >
                     {showImportTemplate ? 'Ẩn cấu trúc mẫu JSON' : 'Xem cấu trúc mẫu JSON'}
                   </button>
-                  {showImportTemplate && (
-                    <div className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-[11px] leading-relaxed font-mono text-gray-800 overflow-x-auto">
-                      <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800 font-semibold">
-                        ✨ Metadata tự động cập nhật theo location bạn chọn ở trên!
-                      </div>
-                      <pre className="whitespace-pre-wrap break-words text-[10px] leading-relaxed font-mono" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.6' }}>{`{
-  "title": "Trắc nghiệm mẫu - ${quizTitle || 'Nhập tên quiz'}",
+                  {showImportTemplate && (() => {
+                    const finalLessonId = selectedLesson || selectedChapter || 'chưa-chọn';
+                    const lessonNumber = getLessonNumber(finalLessonId);
+                    const titleSuffix = lessonNumber ? `Bài ${lessonNumber}` : (quizTitle || 'Nhập tên quiz');
+                    const jsonTemplate = `{
+  "title": "Trắc nghiệm mẫu - Trắc nghiệm Từ vựng Minna no Nihongo - ${titleSuffix}",
   "questions": [
     {
       "id": 1,
@@ -2879,50 +2903,57 @@ D: いしゃ (isha) nghĩa là bác sĩ",
     "level": "${selectedLevel || 'n5'}",
     "bookId": "${selectedBook || 'chưa-chọn'}",
     "chapterId": "${selectedChapter || 'chưa-chọn'}",
-    "lessonId": "${selectedLesson || selectedChapter || 'chưa-chọn'}"
+    "lessonId": "${finalLessonId}"
   }
-}`}</pre>
-                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-800 text-[10px]">
-                        <p className="font-bold mb-1">💡 LƯU Ý VỀ EXPLANATION:</p>
-                        <p className="mb-1">Trong JSON, dùng <code className="bg-white px-1 rounded">\\n</code> để xuống dòng. Khi hiển thị sẽ tự động format:</p>
-                        <div className="bg-white p-2 rounded border border-green-300 font-mono text-[9px] whitespace-pre-line">
-                          A: わたし (watashi) có nghĩa là Tôi{'\n'}
-                          B: あなた (anata) có nghĩa là Bạn{'\n'}
-                          C: あのひと (anohito) có nghĩa là Người kia{'\n'}
-                          D: みなさん (minasan) có nghĩa là Mọi người
+}`;
+                    return (
+                      <div className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-[11px] leading-relaxed font-mono text-gray-800 overflow-x-auto">
+                        <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800 font-semibold">
+                          ✨ Metadata tự động cập nhật theo location bạn chọn ở trên!
                         </div>
-                      </div>
-                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-[10px]">
-                        <p className="font-bold mb-1">⚠️ QUAN TRỌNG VỀ EXPLANATION:</p>
-                        <p className="mb-2 text-[9px]">Trong JSON file thực tế, bạn có thể:</p>
-                        <div className="bg-white p-2 rounded border border-yellow-300 mb-2">
-                          <p className="font-bold text-[9px] mb-1">Cách 1: Dùng \\n (khuyến nghị):</p>
-                          <pre className="font-mono text-[8px] whitespace-pre-wrap break-words">"explanation": "A: わたし (watashi) có nghĩa là Tôi\\nB: あなた (anata) có nghĩa là Bạn\\nC: あのひと (anohito) có nghĩa là Người kia\\nD: みなさん (minasan) có nghĩa là Mọi người"</pre>
+                        <pre className="whitespace-pre-wrap break-words text-[10px] leading-relaxed font-mono" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.6' }}>{jsonTemplate}</pre>
+                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-800 text-[10px]">
+                          <p className="font-bold mb-1">💡 LƯU Ý VỀ EXPLANATION:</p>
+                          <p className="mb-1">Trong JSON, dùng <code className="bg-white px-1 rounded">\\n</code> để xuống dòng. Khi hiển thị sẽ tự động format:</p>
+                          <div className="bg-white p-2 rounded border border-green-300 font-mono text-[9px] whitespace-pre-line">
+                            A: わたし (watashi) có nghĩa là Tôi{'\n'}
+                            B: あなた (anata) có nghĩa là Bạn{'\n'}
+                            C: あのひと (anohito) có nghĩa là Người kia{'\n'}
+                            D: みなさん (minasan) có nghĩa là Mọi người
+                          </div>
                         </div>
-                        <div className="bg-white p-2 rounded border border-yellow-300">
-                          <p className="font-bold text-[9px] mb-1">Cách 2: Xuống dòng thực sự (như mẫu trên):</p>
-                          <pre className="font-mono text-[8px] whitespace-pre-wrap break-words">"explanation": "A: わたし (watashi) có nghĩa là Tôi
+                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-[10px]">
+                          <p className="font-bold mb-1">⚠️ QUAN TRỌNG VỀ EXPLANATION:</p>
+                          <p className="mb-2 text-[9px]">Trong JSON file thực tế, bạn có thể:</p>
+                          <div className="bg-white p-2 rounded border border-yellow-300 mb-2">
+                            <p className="font-bold text-[9px] mb-1">Cách 1: Dùng \\n (khuyến nghị):</p>
+                            <pre className="font-mono text-[8px] whitespace-pre-wrap break-words">"explanation": "A: わたし (watashi) có nghĩa là Tôi\\nB: あなた (anata) có nghĩa là Bạn\\nC: あのひと (anohito) có nghĩa là Người kia\\nD: みなさん (minasan) có nghĩa là Mọi người"</pre>
+                          </div>
+                          <div className="bg-white p-2 rounded border border-yellow-300">
+                            <p className="font-bold text-[9px] mb-1">Cách 2: Xuống dòng thực sự (như mẫu trên):</p>
+                            <pre className="font-mono text-[8px] whitespace-pre-wrap break-words">"explanation": "A: わたし (watashi) có nghĩa là Tôi
 B: あなた (anata) có nghĩa là Bạn
 C: あのひと (anohito) có nghĩa là Người kia
 D: みなさん (minasan) có nghĩa là Mọi người"</pre>
+                          </div>
+                          <p className="mt-2 text-[9px] font-semibold">✅ Khi hiển thị trong app, mỗi đáp án sẽ tự động xuống dòng riêng.</p>
                         </div>
-                        <p className="mt-2 text-[9px] font-semibold">✅ Khi hiển thị trong app, mỗi đáp án sẽ tự động xuống dòng riêng.</p>
+                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-xs">
+                          <p className="font-bold mb-1">📝 GHI CHÚ:</p>
+                          {!selectedBook || !selectedChapter 
+                            ? <p>⚠️ Vui lòng CHỌN LOCATION ở trên để metadata tự động cập nhật!</p>
+                            : <p>✅ Metadata đã được cập nhật theo location bạn chọn!</p>
+                          }
+                          <ul className="list-disc list-inside mt-1 space-y-1">
+                            <li>Đường dẫn sẽ lưu vào: <code className="bg-gray-100 px-1 rounded">{getFilePath()}</code></li>
+                            <li>Copy JSON này và thay thế phần "questions" bằng câu hỏi của bạn</li>
+                            <li>Giữ nguyên phần "metadata" để tự động set location khi import</li>
+                            <li>Trong "explanation", mỗi đáp án xuống dòng riêng (như mẫu trên)</li>
+                          </ul>
+                        </div>
                       </div>
-                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-xs">
-                        <p className="font-bold mb-1">📝 GHI CHÚ:</p>
-                        ${!selectedBook || !selectedChapter 
-                          ? '<p>⚠️ Vui lòng CHỌN LOCATION ở trên để metadata tự động cập nhật!</p>' 
-                          : '<p>✅ Metadata đã được cập nhật theo location bạn chọn!</p>'
-                        }
-                        <ul className="list-disc list-inside mt-1 space-y-1">
-                          <li>Đường dẫn sẽ lưu vào: <code className="bg-gray-100 px-1 rounded">${getFilePath()}</code></li>
-                          <li>Copy JSON này và thay thế phần "questions" bằng câu hỏi của bạn</li>
-                          <li>Giữ nguyên phần "metadata" để tự động set location khi import</li>
-                          <li>Trong "explanation", mỗi đáp án xuống dòng riêng (như mẫu trên)</li>
-                        </ul>
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
 
                 {/* ✅ Export JSON - Chỉ export, không lưu vào hệ thống */}
