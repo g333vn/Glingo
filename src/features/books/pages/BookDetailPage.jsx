@@ -296,16 +296,9 @@ function BookDetailPage() {
       return;
     }
 
-    // Tìm book đầu tiên có category này
-    const firstBookInCategory = booksMetadata.find(book => book.category === categoryName);
-    
-    if (firstBookInCategory) {
-      // Navigate đến book đầu tiên của category
-      navigate(`/level/${levelId}/${firstBookInCategory.id}`);
-    } else {
-      // Nếu không tìm thấy, navigate về level page
-      navigate(`/level/${levelId}`);
-    }
+    // ✅ Navigate về level page và filter theo category (hiển thị danh sách sách trong bộ đó)
+    // Sử dụng URL query parameter để truyền category
+    navigate(`/level/${levelId}?category=${encodeURIComponent(categoryName)}`);
   };
 
   // Create grid items from paginated contents

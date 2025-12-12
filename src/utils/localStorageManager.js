@@ -577,13 +577,68 @@ class LocalStorageManager {
     // ✅ Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
-    // 1. Try IndexedDB (local cache) first
-    if (this.useIndexedDB) {
-      const result = await indexedDBManager.getLessons(bookId, chapterId, level);
-      if (result && result.length > 0) return result;
+    console.log(`[StorageManager.getLessons] 🔍 Loading lessons: ${level}/${bookId}/${chapterId}`);
+
+    // ✅ FIXED: Ưu tiên Supabase trước (giống getBooks và getChapters) để tránh dùng cache cũ
+    // 1. Try Supabase first (cloud) - nguồn dữ liệu "chuẩn"
+    if (level) {
+      try {
+        const { success, data } = await contentService.getLessons(bookId, chapterId, level);
+
+        if (success) {
+          const supaLessons = Array.isArray(data) ? data : [];
+
+          if (supaLessons.length > 0) {
+            // ✅ Có dữ liệu trên server → dùng server làm nguồn chính
+            console.log(`[StorageManager.getLessons] ✅ Loaded ${supaLessons.length} lessons from Supabase: ${level}/${bookId}/${chapterId}`);
+
+            // Cache to IndexedDB for offline support
+            if (this.useIndexedDB) {
+              await indexedDBManager.saveLessons(bookId, chapterId, supaLessons, level);
+            }
+
+            // Also cache to localStorage
+            if (this.storageAvailable) {
+              const key = `adminLessons_${level}_${bookId}_${chapterId}`;
+              localStorage.setItem(key, JSON.stringify(supaLessons));
+            }
+
+            return supaLessons;
+          }
+
+          // ✅ Supabase trả về RỖNG (server hiện không có lessons nào)
+          //    → Xoá cache local/IndexedDB để client đồng bộ với server
+          console.log(`[StorageManager.getLessons] ℹ️ Supabase has 0 lessons for ${level}/${bookId}/${chapterId} - clearing local caches`);
+
+          if (this.useIndexedDB) {
+            await indexedDBManager.saveLessons(bookId, chapterId, [], level); // xoá tất cả lessons trong IndexedDB
+          }
+
+          if (this.storageAvailable) {
+            const key = `adminLessons_${level}_${bookId}_${chapterId}`;
+            localStorage.removeItem(key);
+          }
+
+          // Trả về mảng rỗng, KHÔNG fallback sang cache cũ nữa
+          return [];
+        }
+
+        console.log(`[StorageManager.getLessons] ⚠️ Supabase request not successful, will try local caches`);
+      } catch (err) {
+        console.warn('[StorageManager] Supabase getLessons failed, trying local cache:', err);
+      }
     }
 
-    // 2. Try localStorage
+    // 2. Fallback: Try IndexedDB (local cache)
+    if (this.useIndexedDB) {
+      const result = await indexedDBManager.getLessons(bookId, chapterId, level);
+      if (result && result.length > 0) {
+        console.log(`[StorageManager.getLessons] ✅ Loaded ${result.length} lessons from IndexedDB (fallback): ${level}/${bookId}/${chapterId}`);
+        return result;
+      }
+    }
+
+    // 3. Fallback: Try localStorage
     if (this.storageAvailable && level) {
       const key = `adminLessons_${level}_${bookId}_${chapterId}`;
       const data = localStorage.getItem(key);
@@ -593,31 +648,14 @@ class LocalStorageManager {
         if (this.useIndexedDB) {
           await indexedDBManager.saveLessons(bookId, chapterId, lessons, level);
         }
-        if (lessons && lessons.length > 0) return lessons;
-      }
-    }
-
-    // 3. Try Supabase (fallback)
-    if (level) {
-      try {
-        const { success, data } = await contentService.getLessons(bookId, chapterId, level);
-        if (success && data && data.length > 0) {
-          // Cache to IndexedDB
-          if (this.useIndexedDB) {
-            await indexedDBManager.saveLessons(bookId, chapterId, data, level);
-          }
-          // Cache to localStorage
-          if (this.storageAvailable) {
-            const key = `adminLessons_${level}_${bookId}_${chapterId}`;
-            localStorage.setItem(key, JSON.stringify(data));
-          }
-          return data;
+        if (lessons && lessons.length > 0) {
+          console.log(`[StorageManager.getLessons] ✅ Loaded ${lessons.length} lessons from localStorage (fallback): ${level}/${bookId}/${chapterId}`);
+          return lessons;
         }
-      } catch (err) {
-        console.warn('[StorageManager] Supabase getLessons failed:', err);
       }
     }
 
+    console.log(`[StorageManager.getLessons] ⚠️ No lessons found in any storage: ${level}/${bookId}/${chapterId}`);
     return null;
   }
 

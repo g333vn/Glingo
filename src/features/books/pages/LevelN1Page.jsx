@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import BookCard from '../components/BookCard.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
@@ -11,6 +11,7 @@ const booksPerPage = 10;
 
 function LevelN1Page() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useLanguage();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -78,6 +79,15 @@ function LevelN1Page() {
 
     loadBooks();
   }, []);
+
+  // ✅ Đọc category từ URL query parameter khi component mount hoặc URL thay đổi
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get('category');
+    if (categoryFromUrl) {
+      setSelectedCategory(decodeURIComponent(categoryFromUrl));
+      setCurrentPage(1);
+    }
+  }, [searchParams]);
 
   // ✅ Extract unique categories from books for Sidebar - Sort by number of books (most first)
   const categories = React.useMemo(() => {

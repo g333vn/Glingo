@@ -53,14 +53,43 @@ function QuizPage() {
   const quizContentRef = useRef(null);
   useDictionaryDoubleClick(quizContentRef);
 
-  // ✅ UPDATED: Load books metadata for category navigation
+  // ✅ UPDATED: Load books metadata for category navigation (và đồng bộ category từ seriesId)
   useEffect(() => {
     const loadBooksMetadata = async () => {
       // ✅ Load from IndexedDB/localStorage first (via storageManager)
       const savedBooks = await storageManager.getBooks(levelId);
+      
       if (savedBooks && savedBooks.length > 0) {
-        setBooksMetadata(savedBooks);
-        console.log(`✅ Loaded ${savedBooks.length} books from storage for ${levelId}`);
+        let booksWithCategory = savedBooks;
+
+        // ✅ Đồng bộ lại category từ seriesId nếu thiếu
+        try {
+          const seriesList = await storageManager.getSeries(levelId);
+          if (Array.isArray(seriesList) && seriesList.length > 0) {
+            const seriesMap = {};
+            seriesList.forEach(s => {
+              if (s && s.id) {
+                seriesMap[s.id] = s.name || s.id;
+              }
+            });
+
+            booksWithCategory = savedBooks.map(book => {
+              if (book.category && book.category.length > 0) return book;
+              const seriesName = book.seriesId ? seriesMap[book.seriesId] : null;
+              return {
+                ...book,
+                category: seriesName || book.category || null,
+              };
+            });
+          }
+        } catch (err) {
+          console.warn('[QuizPage] ⚠️ Could not load series for category mapping:', err);
+        }
+
+        setBooksMetadata(booksWithCategory);
+        // Lưu lại metadata đã có category để các trang khác dùng chung
+        await storageManager.saveBooks(levelId, booksWithCategory);
+        console.log(`✅ Loaded ${booksWithCategory.length} books from storage for ${levelId} (categories synced)`);
       } else {
         // Fallback to default based on level
         if (levelId === 'n1') {
@@ -205,6 +234,24 @@ function QuizPage() {
   // ✅ Tìm category của book hiện tại để highlight trong sidebar
   const currentBookCategory = currentBookMeta?.category || null;
 
+  // ✅ Tạo danh sách categories (bộ sách) từ booksMetadata để hiển thị ở Sidebar
+  const categories = React.useMemo(() => {
+    const categoryCounts = {};
+    if (Array.isArray(booksMetadata)) {
+      booksMetadata.forEach(book => {
+        if (book.category) {
+          categoryCounts[book.category] = (categoryCounts[book.category] || 0) + 1;
+        }
+      });
+    }
+
+    return Object.keys(categoryCounts).map(name => ({
+      name,
+      id: name,
+      count: categoryCounts[name],
+    }));
+  }, [booksMetadata]);
+
   // ✅ Handler cho category click trong sidebar (phải định nghĩa trước khi dùng)
   const handleCategoryClick = (categoryName) => {
     if (!categoryName) {
@@ -213,19 +260,9 @@ function QuizPage() {
       return;
     }
 
-    // Tìm book đầu tiên có category này (chỉ khi booksMetadata đã được load)
-    if (Array.isArray(booksMetadata) && booksMetadata.length > 0) {
-      const firstBookInCategory = booksMetadata.find(book => book.category === categoryName);
-      
-      if (firstBookInCategory) {
-        // Navigate đến book đầu tiên của category
-        navigate(`/level/${levelId}/${firstBookInCategory.id}`);
-        return;
-      }
-    }
-    
-    // Nếu không tìm thấy, navigate về level page
-    navigate(`/level/${levelId}`);
+    // ✅ Navigate về level page và filter theo category (hiển thị danh sách sách trong bộ đó)
+    // Sử dụng URL query parameter để truyền category
+    navigate(`/level/${levelId}?category=${encodeURIComponent(categoryName)}`);
   };
   
   // Loading state / not found
@@ -249,6 +286,7 @@ function QuizPage() {
             <Sidebar 
               selectedCategory={currentBookCategory}
               onCategoryClick={handleCategoryClick}
+              categories={categories}
             />
             <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
               <div className="flex-1 flex items-center justify-center md:overflow-y-auto overflow-x-hidden">
@@ -380,6 +418,7 @@ function QuizPage() {
             <Sidebar 
               selectedCategory={currentBookCategory}
               onCategoryClick={handleCategoryClick}
+              categories={categories}
             />
             <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
               <div className="pt-3 px-3 sm:px-4 md:px-5 pb-1 flex-shrink-0">
@@ -555,6 +594,7 @@ function QuizPage() {
           <Sidebar 
             selectedCategory={currentBookCategory}
             onCategoryClick={handleCategoryClick}
+            categories={categories}
           />
 
           <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">

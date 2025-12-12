@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import BookCard from '../components/BookCard.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
@@ -11,6 +11,7 @@ const booksPerPage = 10;
 
 function LevelN3Page() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { t } = useLanguage();
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -33,11 +34,38 @@ function LevelN3Page() {
             const savedBooksRaw = await storageManager.getBooks('n3');
             const cleanedSaved = filterDemoAndExtraBooks(savedBooksRaw);
 
-            if (cleanedSaved && cleanedSaved.length > 0) {
-                setN3Books(cleanedSaved);
-                await storageManager.saveBooks('n3', cleanedSaved);
-                console.log(`✅ Loaded ${cleanedSaved.length} N3 books (demo/extra removed)`);
+            // 1b. Lấy danh sách series để gán lại category (tên bộ sách) nếu thiếu
+            let booksWithCategory = cleanedSaved;
+            try {
+                const seriesList = await storageManager.getSeries('n3');
+                if (Array.isArray(seriesList) && seriesList.length > 0) {
+                    const seriesMap = {};
+                    seriesList.forEach(s => {
+                        if (s && s.id) {
+                            seriesMap[s.id] = s.name || s.id;
+                        }
+                    });
+
+                    booksWithCategory = cleanedSaved.map(book => {
+                        if (book.category && book.category.length > 0) return book;
+                        const seriesName = book.seriesId ? seriesMap[book.seriesId] : null;
+                        return {
+                            ...book,
+                            category: seriesName || book.category || null,
+                        };
+                    });
+                }
+            } catch (err) {
+                console.warn('[LevelN3Page] ⚠️ Could not load series for category mapping:', err);
+            }
+
+            if (booksWithCategory && booksWithCategory.length > 0) {
+                setN3Books(booksWithCategory);
+                // Ghi đè lại storage để xoá sạch demo/extra cũ và lưu category đã khôi phục
+                await storageManager.saveBooks('n3', booksWithCategory);
+                console.log(`✅ Loaded ${booksWithCategory.length} N3 books (demo/extra removed, categories synced)`);
             } else {
+                // 2. Không có data trong storage → dùng metadata mặc định (đã được clean)
                 const cleanedDefaults = filterDemoAndExtraBooks(n3BooksMetadata);
                 setN3Books(cleanedDefaults);
                 await storageManager.saveBooks('n3', cleanedDefaults);
@@ -46,6 +74,15 @@ function LevelN3Page() {
         };
         loadBooks();
     }, []);
+
+    // ✅ Đọc category từ URL query parameter khi component mount hoặc URL thay đổi
+    useEffect(() => {
+        const categoryFromUrl = searchParams.get('category');
+        if (categoryFromUrl) {
+            setSelectedCategory(decodeURIComponent(categoryFromUrl));
+            setCurrentPage(1);
+        }
+    }, [searchParams]);
 
     const categories = React.useMemo(() => {
         // Đếm số lượng books trong mỗi category

@@ -303,13 +303,9 @@ function LessonPage() {
       return;
     }
 
-    const firstBookInCategory = booksMetadata.find(book => book.category === categoryName);
-
-    if (firstBookInCategory) {
-      navigate(`/level/${levelId}/${firstBookInCategory.id}`);
-    } else {
-      navigate(`/level/${levelId}`);
-    }
+    // ✅ Navigate về level page và filter theo category (hiển thị danh sách sách trong bộ đó)
+    // Sử dụng URL query parameter để truyền category
+    navigate(`/level/${levelId}?category=${encodeURIComponent(categoryName)}`);
   };
   
   // Toggle lesson completion

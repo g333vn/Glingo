@@ -239,6 +239,33 @@ export async function getChapters(bookId, level) {
  */
 export async function saveLessons(bookId, chapterId, level, lessons, userId) {
   try {
+    // ✅ LOG: Kiểm tra số lượng lessons trước khi xóa
+    const { data: existingLessons } = await supabase
+      .from('lessons')
+      .select('id')
+      .eq('book_id', bookId)
+      .eq('chapter_id', chapterId)
+      .eq('level', level);
+    
+    const existingCount = existingLessons?.length || 0;
+    const newCount = lessons?.length || 0;
+    
+    console.log(`[ContentService.saveLessons] 📊 Saving lessons:`, {
+      location: `${level}/${bookId}/${chapterId}`,
+      existingCount,
+      newCount,
+      difference: newCount - existingCount
+    });
+    
+    // ⚠️ CẢNH BÁO nếu số lượng giảm đáng kể
+    if (existingCount > 0 && newCount < existingCount * 0.5) {
+      console.warn(`[ContentService.saveLessons] ⚠️ WARNING: Lesson count decreased significantly!`, {
+        existingCount,
+        newCount,
+        lost: existingCount - newCount
+      });
+    }
+
     // Delete existing lessons for this chapter
     await supabase
       .from('lessons')

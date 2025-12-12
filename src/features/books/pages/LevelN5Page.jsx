@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import BookCard from '../components/BookCard.jsx';
 import Sidebar from '../../../components/Sidebar.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
@@ -11,6 +11,7 @@ const booksPerPage = 10;
 
 function LevelN5Page() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { t } = useLanguage();
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -33,11 +34,47 @@ function LevelN5Page() {
             const savedBooksRaw = await storageManager.getBooks('n5');
             const cleanedSaved = filterDemoAndExtraBooks(savedBooksRaw);
 
-            if (cleanedSaved && cleanedSaved.length > 0) {
-                setN5Books(cleanedSaved);
-                await storageManager.saveBooks('n5', cleanedSaved);
-                console.log(`✅ Loaded ${cleanedSaved.length} N5 books (demo/extra removed)`);
+            // 1b. Lấy danh sách series để gán lại category (tên bộ sách) nếu thiếu
+            let booksWithCategory = cleanedSaved;
+            try {
+                const seriesList = await storageManager.getSeries('n5');
+                console.log('[LevelN5Page] 📚 Series list:', seriesList);
+                
+                if (Array.isArray(seriesList) && seriesList.length > 0) {
+                    const seriesMap = {};
+                    seriesList.forEach(s => {
+                        if (s && s.id) {
+                            seriesMap[s.id] = s.name || s.id;
+                        }
+                    });
+                    console.log('[LevelN5Page] 📚 Series map:', seriesMap);
+
+                    booksWithCategory = cleanedSaved.map(book => {
+                        if (book.category && book.category.length > 0) return book;
+                        const seriesName = book.seriesId ? seriesMap[book.seriesId] : null;
+                        const bookWithCategory = {
+                            ...book,
+                            category: seriesName || book.category || null,
+                        };
+                        console.log(`[LevelN5Page] 📖 Book ${book.id}: seriesId=${book.seriesId}, category=${bookWithCategory.category}`);
+                        return bookWithCategory;
+                    });
+                } else {
+                    console.warn('[LevelN5Page] ⚠️ No series found for n5');
+                }
+            } catch (err) {
+                console.warn('[LevelN5Page] ⚠️ Could not load series for category mapping:', err);
+            }
+            
+            console.log('[LevelN5Page] 📚 Books with categories:', booksWithCategory.map(b => ({ id: b.id, title: b.title, category: b.category, seriesId: b.seriesId })));
+
+            if (booksWithCategory && booksWithCategory.length > 0) {
+                setN5Books(booksWithCategory);
+                // Ghi đè lại storage để xoá sạch demo/extra cũ và lưu category đã khôi phục
+                await storageManager.saveBooks('n5', booksWithCategory);
+                console.log(`✅ Loaded ${booksWithCategory.length} N5 books (demo/extra removed, categories synced)`);
             } else {
+                // 2. Không có data trong storage → dùng metadata mặc định (đã được clean)
                 const cleanedDefaults = filterDemoAndExtraBooks(n5BooksMetadata);
                 setN5Books(cleanedDefaults);
                 await storageManager.saveBooks('n5', cleanedDefaults);
@@ -46,6 +83,15 @@ function LevelN5Page() {
         };
         loadBooks();
     }, []);
+
+    // ✅ Đọc category từ URL query parameter khi component mount hoặc URL thay đổi
+    useEffect(() => {
+        const categoryFromUrl = searchParams.get('category');
+        if (categoryFromUrl) {
+            setSelectedCategory(decodeURIComponent(categoryFromUrl));
+            setCurrentPage(1);
+        }
+    }, [searchParams]);
 
     const categories = React.useMemo(() => {
         // Đếm số lượng books trong mỗi category
@@ -56,6 +102,8 @@ function LevelN5Page() {
             }
         });
 
+        console.log('[LevelN5Page] 📊 Category counts:', categoryCounts);
+
         // Tạo array categories với số lượng books
         const categoriesWithCount = Object.keys(categoryCounts).map(cat => ({
             name: cat,
@@ -64,7 +112,9 @@ function LevelN5Page() {
         }));
 
         // ✅ Sort theo số lượng books (nhiều nhất trước)
-        return categoriesWithCount.sort((a, b) => b.count - a.count);
+        const sorted = categoriesWithCount.sort((a, b) => b.count - a.count);
+        console.log('[LevelN5Page] 📊 Final categories for sidebar:', sorted);
+        return sorted;
     }, [n5Books]);
 
     // Filter books based on category
