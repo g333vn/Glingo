@@ -278,7 +278,7 @@ function ContentManagementPage() {
     }
   }, [books, chaptersData, selectedLevel]);
 
-  // ✅ UPDATED: Load quizzes for all lessons (with lessonId)
+  // ✅ UPDATED: Load quizzes for all lessons (with lessonId) - Verify against Supabase
   useEffect(() => {
     const loadQuizzes = async () => {
       const newQuizzesData = {};
@@ -289,8 +289,47 @@ function ContentManagementPage() {
           for (const lesson of lessons) {
             const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id, selectedLevel);
             if (quiz) {
-              const key = `${book.id}_${chapter.id}_${lesson.id}`;
-              newQuizzesData[key] = quiz;
+              // ✅ Verify quiz exists in Supabase (if level is provided)
+              let isValidQuiz = true;
+              if (selectedLevel) {
+                try {
+                  const { contentService } = await import('../../services/contentService.js');
+                  const { success, data } = await contentService.getQuiz(book.id, chapter.id, lesson.id, selectedLevel);
+                  
+                  // If quiz exists in local storage but NOT in Supabase, check if it's valid
+                  if (!success || !data) {
+                    // Check if quiz has valid content
+                    const hasValidContent = quiz.questions && Array.isArray(quiz.questions) && quiz.questions.length > 0 &&
+                      quiz.questions.some(q => {
+                        const text = (q.text || q.question || '').trim();
+                        const hasOptions = q.options && Array.isArray(q.options) && q.options.length > 0;
+                        return text.length > 0 && hasOptions;
+                      });
+                    
+                    if (!hasValidContent) {
+                      // Quiz is ghost - exists in storage but not in Supabase and has no valid content
+                      console.warn(`⚠️ [Load Quizzes] Found ghost quiz: ${book.id}/${chapter.id}/${lesson.id} - skipping`);
+                      isValidQuiz = false;
+                      
+                      // Auto-cleanup ghost quiz
+                      try {
+                        await storageManager.deleteQuiz(book.id, chapter.id, lesson.id, selectedLevel);
+                        console.log(`✅ [Load Quizzes] Auto-deleted ghost quiz: ${book.id}/${chapter.id}/${lesson.id}`);
+                      } catch (err) {
+                        console.error(`❌ [Load Quizzes] Error auto-deleting ghost quiz:`, err);
+                      }
+                    }
+                  }
+                } catch (err) {
+                  console.warn(`⚠️ [Load Quizzes] Error verifying quiz in Supabase:`, err);
+                  // Continue to show quiz if verification fails (network issue)
+                }
+              }
+              
+              if (isValidQuiz) {
+                const key = `${book.id}_${chapter.id}_${lesson.id}`;
+                newQuizzesData[key] = quiz;
+              }
             }
           }
         }
@@ -1190,23 +1229,62 @@ function ContentManagementPage() {
   };
 
   const handleDeleteQuiz = async (book, chapter, lesson) => {
-    if (!confirm(t('contentManagement.confirm.deleteQuiz', { title: lesson.title }))) {
+    if (!confirm(t('contentManagement.confirm.deleteQuiz', { title: lesson.title }) || `⚠️ Bạn có chắc muốn xóa quiz cho "${lesson.title}"?\n\nQuiz sẽ bị xóa khỏi cả IndexedDB, localStorage và Supabase.`)) {
       return;
     }
 
-    const success = await storageManager.deleteQuiz(book.id, chapter.id, lesson.id, selectedLevel);
+    console.log(`🗑️ [Delete Quiz] Starting deletion: ${book.id}/${chapter.id}/${lesson.id}`);
     
-    if (success) {
-      const key = `${book.id}_${chapter.id}_${lesson.id}`;
-      setQuizzesData(prev => {
-        const newData = { ...prev };
-        delete newData[key];
-        return newData;
-      });
+    try {
+      // ✅ Step 1: Xóa từ Supabase trước (nếu có)
+      if (selectedLevel) {
+        try {
+          const { supabase } = await import('../../services/supabaseClient.js');
+          const { error } = await supabase
+            .from('quizzes')
+            .delete()
+            .eq('book_id', book.id)
+            .eq('chapter_id', chapter.id)
+            .eq('lesson_id', lesson.id)
+            .eq('level', selectedLevel);
+          
+          if (error) {
+            console.warn('⚠️ [Delete Quiz] Supabase delete error (may not exist):', error);
+          } else {
+            console.log('✅ [Delete Quiz] Deleted from Supabase');
+          }
+        } catch (err) {
+          console.warn('⚠️ [Delete Quiz] Error deleting from Supabase:', err);
+        }
+      }
       
-      alert(t('contentManagement.messages.quizDeleted'));
-    } else {
-      alert(t('contentManagement.errors.deleteQuiz'));
+      // ✅ Step 2: Xóa từ storage (IndexedDB + localStorage)
+      const success = await storageManager.deleteQuiz(book.id, chapter.id, lesson.id, selectedLevel);
+      
+      if (success) {
+        const key = `${book.id}_${chapter.id}_${lesson.id}`;
+        setQuizzesData(prev => {
+          const newData = { ...prev };
+          delete newData[key];
+          return newData;
+        });
+        
+        console.log('✅ [Delete Quiz] Successfully deleted from all storage');
+        alert(t('contentManagement.messages.quizDeleted') || '✅ Đã xóa quiz thành công!');
+      } else {
+        // Even if storage delete fails, remove from UI if Supabase delete succeeded
+        const key = `${book.id}_${chapter.id}_${lesson.id}`;
+        setQuizzesData(prev => {
+          const newData = { ...prev };
+          delete newData[key];
+          return newData;
+        });
+        console.warn('⚠️ [Delete Quiz] Storage delete failed, but removed from UI');
+        alert('⚠️ Đã xóa quiz khỏi Supabase, nhưng có thể còn trong local storage. Vui lòng refresh trang.');
+      }
+    } catch (error) {
+      console.error('❌ [Delete Quiz] Error:', error);
+      alert(`❌ Lỗi khi xóa quiz: ${error.message}`);
     }
   };
 
@@ -1217,6 +1295,7 @@ function ContentManagementPage() {
     }
     
     try {
+      console.log('🧹 [Cleanup] Starting cleanup process...');
       const result = await cleanupInvalidQuizzes(selectedLevel);
       const message = result.cleaned > 0
         ? `✅ Đã dọn dẹp ${result.cleaned} quiz không hợp lệ${result.errors > 0 ? `\n⚠️ ${result.errors} lỗi xảy ra` : ''}`
@@ -1234,8 +1313,34 @@ function ContentManagementPage() {
             for (const lesson of lessons) {
               const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id, selectedLevel);
               if (quiz) {
-                const key = `${book.id}_${chapter.id}_${lesson.id}`;
-                newQuizzesData[key] = quiz;
+                // ✅ Verify quiz exists in Supabase before adding
+                let isValidQuiz = true;
+                if (selectedLevel) {
+                  try {
+                    const { contentService } = await import('../../services/contentService.js');
+                    const { success, data } = await contentService.getQuiz(book.id, chapter.id, lesson.id, selectedLevel);
+                    
+                    if (!success || !data) {
+                      const hasValidContent = quiz.questions && Array.isArray(quiz.questions) && quiz.questions.length > 0 &&
+                        quiz.questions.some(q => {
+                          const text = (q.text || q.question || '').trim();
+                          const hasOptions = q.options && Array.isArray(q.options) && q.options.length > 0;
+                          return text.length > 0 && hasOptions;
+                        });
+                      
+                      if (!hasValidContent) {
+                        isValidQuiz = false;
+                      }
+                    }
+                  } catch (err) {
+                    console.warn(`⚠️ [Cleanup] Error verifying quiz:`, err);
+                  }
+                }
+                
+                if (isValidQuiz) {
+                  const key = `${book.id}_${chapter.id}_${lesson.id}`;
+                  newQuizzesData[key] = quiz;
+                }
               }
             }
           }

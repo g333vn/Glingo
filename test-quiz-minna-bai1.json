@@ -1,0 +1,266 @@
+{
+  "title": "Trắc nghiệm Từ vựng Minna no Nihongo - Bài 1 (Tổng hợp)",
+  "questions": [
+    {
+      "id": 1,
+      "text": "Từ nào sau đây có nghĩa là \"Tôi\"?",
+      "options": [
+        { "label": "A", "text": "わたし" },
+        { "label": "B", "text": "あなた" },
+        { "label": "C", "text": "あのひと" },
+        { "label": "D", "text": "みなさん" }
+      ],
+      "correct": "A",
+      "explanation": "A: わたし (Tôi). B: あなた (Bạn). C: あのひと (Người kia). D: みなさん (Mọi người).",
+      "audioUrl": ""
+    },
+    {
+      "id": 2,
+      "text": "Từ \"がくせい\" có nghĩa là gì?",
+      "options": [
+        { "label": "A", "text": "Giáo viên" },
+        { "label": "B", "text": "Học sinh, sinh viên" },
+        { "label": "C", "text": "Nhân viên công ty" },
+        { "label": "D", "text": "Bác sĩ" }
+      ],
+      "correct": "B",
+      "explanation": "B: がくせい (Học sinh/sinh viên). A: せんせい. C: かいしゃいん. D: いしゃ.",
+      "audioUrl": ""
+    },
+    {
+      "id": 3,
+      "text": "Nghề \"Kỹ sư\" trong tiếng Nhật viết là gì?",
+      "options": [
+        { "label": "A", "text": "せんせい" },
+        { "label": "B", "text": "エンジニア" },
+        { "label": "C", "text": "けんきゅうしゃ" },
+        { "label": "D", "text": "いしゃ" }
+      ],
+      "correct": "B",
+      "explanation": "B: エンジニア (Kỹ sư). A: せんせい (Giáo viên). C: けんきゅうしゃ (Nhà nghiên cứu). D: いしゃ (Bác sĩ).",
+      "audioUrl": ""
+    },
+    {
+      "id": 4,
+      "text": "Câu chào nào dùng cho lần đầu tiên gặp mặt?",
+      "options": [
+        { "label": "A", "text": "おはようございます" },
+        { "label": "B", "text": "はじめまして" },
+        { "label": "C", "text": "失礼ですが" },
+        { "label": "D", "text": "いいえ" }
+      ],
+      "correct": "B",
+      "explanation": "B: はじめまして (Rất hân hạnh được gặp anh/chị - dùng khi gặp lần đầu). A: Chào buổi sáng. C: Xin lỗi (khi hỏi tên...). D: Không.",
+      "audioUrl": ""
+    },
+    {
+      "id": 5,
+      "text": "Từ \"ちゅうごく\" chỉ quốc gia nào?",
+      "options": [
+        { "label": "A", "text": "Hàn Quốc" },
+        { "label": "B", "text": "Nhật Bản" },
+        { "label": "C", "text": "Trung Quốc" },
+        { "label": "D", "text": "Thái Lan" }
+      ],
+      "correct": "C",
+      "explanation": "C: ちゅうごく (Trung Quốc). A: かんこく (Hàn Quốc). B: にほん (Nhật Bản). D: タイ (Thái Lan).",
+      "audioUrl": ""
+    },
+    {
+      "id": 6,
+      "text": "\"Nhân viên ngân hàng\" tiếng Nhật là gì?",
+      "options": [
+        { "label": "A", "text": "かいしゃいん" },
+        { "label": "B", "text": "ぎんこういん" },
+        { "label": "C", "text": "しゃいん" },
+        { "label": "D", "text": "きょうし" }
+      ],
+      "correct": "B",
+      "explanation": "B: ぎんこういん (Nhân viên ngân hàng). A: かいしゃいん (Nhân viên công ty). C: しゃいん (Nhân viên - kèm tên cty). D: きょうし (Giáo viên - nghề nghiệp).",
+      "audioUrl": ""
+    },
+    {
+      "id": 7,
+      "text": "Hậu tố \"~じん\" (～人) dùng để chỉ điều gì?",
+      "options": [
+        { "label": "A", "text": "Tuổi tác" },
+        { "label": "B", "text": "Tên bé trai" },
+        { "label": "C", "text": "Người nước nào" },
+        { "label": "D", "text": "Tên bé gái" }
+      ],
+      "correct": "C",
+      "explanation": "C: ～じん (Người nước ~). A: ～さい (Tuổi). B: ～くん. D: ～ちゃん.",
+      "audioUrl": ""
+    },
+    {
+      "id": 8,
+      "text": "Từ nào dùng để hỏi \"Vị nào\" một cách lịch sự?",
+      "options": [
+        { "label": "A", "text": "だれ" },
+        { "label": "B", "text": "どなた" },
+        { "label": "C", "text": "あのかた" },
+        { "label": "D", "text": "あのひと" }
+      ],
+      "correct": "B",
+      "explanation": "B: どなた (Vị nào - lịch sự). A: だれ (Ai - thông thường). C, D: Vị kia, Người kia (đại từ, không phải từ để hỏi).",
+      "audioUrl": ""
+    },
+    {
+      "id": 9,
+      "text": "Từ \"けんきゅうしゃ\" nghĩa là gì?",
+      "options": [
+        { "label": "A", "text": "Nhà nghiên cứu" },
+        { "label": "B", "text": "Bác sĩ" },
+        { "label": "C", "text": "Kỹ sư" },
+        { "label": "D", "text": "Học sinh" }
+      ],
+      "correct": "A",
+      "explanation": "A: けんきゅうしゃ (Nhà nghiên cứu). B: いしゃ. C: エンジニア. D: がくせい.",
+      "audioUrl": ""
+    },
+    {
+      "id": 10,
+      "text": "Đâu là từ chỉ nước \"Mỹ\"?",
+      "options": [
+        { "label": "A", "text": "イギリス" },
+        { "label": "B", "text": "フランス" },
+        { "label": "C", "text": "アメリカ" },
+        { "label": "D", "text": "ブラジル" }
+      ],
+      "correct": "C",
+      "explanation": "C: アメリカ (Mỹ). A: イギリス (Anh). B: フランス (Pháp). D: ブラジル (Brazil).",
+      "audioUrl": ""
+    },
+    {
+      "id": 11,
+      "text": "Từ \"びょういん\" có nghĩa là gì?",
+      "options": [
+        { "label": "A", "text": "Trường đại học" },
+        { "label": "B", "text": "Bệnh viện" },
+        { "label": "C", "text": "Điện" },
+        { "label": "D", "text": "Ngân hàng" }
+      ],
+      "correct": "B",
+      "explanation": "B: びょういん (Bệnh viện). A: だいがく. C: でんき. D: ぎんこう.",
+      "audioUrl": ""
+    },
+    {
+      "id": 12,
+      "text": "Để hỏi tên người khác lịch sự: \"_____ wa?\"",
+      "options": [
+        { "label": "A", "text": "おなまえ" },
+        { "label": "B", "text": "なんさい" },
+        { "label": "C", "text": "せんせい" },
+        { "label": "D", "text": "くに" }
+      ],
+      "correct": "A",
+      "explanation": "A: おなまえ (Tên). Câu hỏi: 'Onamae wa?'. B: Tuổi. C: Giáo viên. D: Đất nước (không có trong bài 1 nhưng là từ vựng thông dụng).",
+      "audioUrl": ""
+    },
+    {
+      "id": 13,
+      "text": "Quốc gia \"Đức\" trong tiếng Nhật là?",
+      "options": [
+        { "label": "A", "text": "ドイツ" },
+        { "label": "B", "text": "インド" },
+        { "label": "C", "text": "インドネシア" },
+        { "label": "D", "text": "フランス" }
+      ],
+      "correct": "A",
+      "explanation": "A: ドイツ (Đức). B: インド (Ấn Độ). C: インドネシア (Indonesia). D: フランス (Pháp).",
+      "audioUrl": ""
+    },
+    {
+      "id": 14,
+      "text": "Sau khi giới thiệu bản thân, ta nói câu gì để mong được giúp đỡ?",
+      "options": [
+        { "label": "A", "text": "はじめまして" },
+        { "label": "B", "text": "どうぞよろしく [おねがいします]" },
+        { "label": "C", "text": "しつれいですが" },
+        { "label": "D", "text": "～からきました" }
+      ],
+      "correct": "B",
+      "explanation": "B: Douzo yoroshiku... (Rất mong được sự giúp đỡ của anh/chị). A: Chào lần đầu gặp. C: Xin lỗi. D: Tôi đến từ ~.",
+      "audioUrl": ""
+    },
+    {
+      "id": 15,
+      "text": "Từ \"だいがく\" nghĩa là nơi nào?",
+      "options": [
+        { "label": "A", "text": "Công ty" },
+        { "label": "B", "text": "Bệnh viện" },
+        { "label": "C", "text": "Trường đại học" },
+        { "label": "D", "text": "Trường học" }
+      ],
+      "correct": "C",
+      "explanation": "C: だいがく (Đại học). A: かいしゃ. B: びょういん. D: がっこう (không có trong list bài 1, nhưng Gakusei là học sinh).",
+      "audioUrl": ""
+    },
+    {
+      "id": 16,
+      "text": "Hậu tố \"~ちゃん\" thường dùng cho đối tượng nào?",
+      "options": [
+        { "label": "A", "text": "Người lớn tuổi" },
+        { "label": "B", "text": "Bé trai" },
+        { "label": "C", "text": "Bé gái (hoặc thân mật)" },
+        { "label": "D", "text": "Thầy giáo" }
+      ],
+      "correct": "C",
+      "explanation": "C: ～ちゃん (Dùng cho bé gái hoặc gọi thân mật). B: Thường dùng ～くん. A, D: Thường dùng ～さん hoặc ～せんせい.",
+      "audioUrl": ""
+    },
+    {
+      "id": 17,
+      "text": "Để hỏi \"Bao nhiêu tuổi\", ta dùng từ nào?",
+      "options": [
+        { "label": "A", "text": "どなた" },
+        { "label": "B", "text": "なんさい" },
+        { "label": "C", "text": "～さい" },
+        { "label": "D", "text": "だれ" }
+      ],
+      "correct": "B",
+      "explanation": "B: なんさい (Mấy tuổi/Bao nhiêu tuổi). C: ～さい là hậu tố đếm tuổi. A, D: Hỏi người.",
+      "audioUrl": ""
+    },
+    {
+      "id": 18,
+      "text": "Từ \"かんこく\" chỉ quốc gia nào?",
+      "options": [
+        { "label": "A", "text": "Trung Quốc" },
+        { "label": "B", "text": "Hàn Quốc" },
+        { "label": "C", "text": "Nhật Bản" },
+        { "label": "D", "text": "Thái Lan" }
+      ],
+      "correct": "B",
+      "explanation": "B: かんこく (Hàn Quốc). A: ちゅうごく. C: にほん. D: タイ.",
+      "audioUrl": ""
+    },
+    {
+      "id": 19,
+      "text": "\"Tôi đến từ Việt Nam\" - Cụm từ \"đến từ\" là gì?",
+      "options": [
+        { "label": "A", "text": "～じん" },
+        { "label": "B", "text": "～さん" },
+        { "label": "C", "text": "～から きました" },
+        { "label": "D", "text": "～です" }
+      ],
+      "correct": "C",
+      "explanation": "C: ～から きました (Đến từ ~). A: Người nước ~. B: Ông/bà ~. D: Là ~.",
+      "audioUrl": ""
+    },
+    {
+      "id": 20,
+      "text": "Từ \"でんき\" (Denki) nghĩa là gì?",
+      "options": [
+        { "label": "A", "text": "Điện, đèn điện" },
+        { "label": "B", "text": "Tàu điện" },
+        { "label": "C", "text": "Điện thoại" },
+        { "label": "D", "text": "Máy tính" }
+      ],
+      "correct": "A",
+      "explanation": "A: でんき (Điện/Đèn điện). B: でんしゃ (chưa học). C: でんわ (chưa học). D: コンピューター (chưa học).",
+      "audioUrl": ""
+    }
+  ]
+}
+

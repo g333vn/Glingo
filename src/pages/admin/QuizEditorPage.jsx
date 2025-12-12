@@ -2,7 +2,7 @@
 // Tool nhập liệu quiz - Dễ dàng tạo quiz mới và export ra JSON
 // ⚠️ PROTECTED: Chỉ admin mới có thể truy cập (bảo vệ bằng ProtectedRoute)
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, startTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';
@@ -47,7 +47,20 @@ function QuizEditorPage() {
   const [showImportTemplate, setShowImportTemplate] = useState(false);
   const [showPreview, setShowPreview] = useState(false); // For quiz preview
   const [showQuestionPreview, setShowQuestionPreview] = useState({}); // Per question preview
+  const [isImporting, setIsImporting] = useState(false); // ✅ NEW: Flag to prevent auto-reload during import
+  const [justImported, setJustImported] = useState(false); // ✅ NEW: Flag to prevent loading old quiz after import
   const importInputRef = React.useRef(null);
+  const importedMetadataRef = React.useRef(null); // ✅ Store imported metadata to compare with current selection
+
+  // ✅ DEBUG: Watch questions changes
+  useEffect(() => {
+    console.log('🔍 [Questions State Changed]', {
+      count: questions.length,
+      firstQuestionText: questions[0]?.text?.substring(0, 50),
+      isImporting,
+      justImported
+    });
+  }, [questions, isImporting, justImported]);
   
   // ✅ NEW: Lưu directory handle để tự động lưu vào đúng thư mục
   const [savedDirectoryHandle, setSavedDirectoryHandle] = useState(null);
@@ -216,29 +229,57 @@ function QuizEditorPage() {
 
   // ✅ NEW: Reset series, book, chapter, and lesson when level changes
   useEffect(() => {
+    // ✅ CRITICAL: NEVER reset if justImported - imported data is sacred
+    if (isImporting || justImported) {
+      console.log('🛑 [useEffect Level] BLOCKED by protection flags', { isImporting, justImported });
+      return;
+    }
+    
+    console.log('🔄 [useEffect Level] User changed level manually, resetting location');
     setSelectedSeries('');
     setSelectedBook('');
     setSelectedChapter('');
     setSelectedLesson('');
-  }, [selectedLevel]);
+  }, [selectedLevel, isImporting, justImported]);
 
   // ✅ NEW: Reset book, chapter, and lesson when series changes
   useEffect(() => {
+    // ✅ CRITICAL: NEVER reset if justImported - imported data is sacred
+    if (isImporting || justImported) {
+      console.log('🛑 [useEffect Series] BLOCKED by protection flags', { isImporting, justImported });
+      return;
+    }
+    
+    console.log('🔄 [useEffect Series] User changed series manually, resetting location');
     setSelectedBook('');
     setSelectedChapter('');
     setSelectedLesson('');
-  }, [selectedSeries]);
+  }, [selectedSeries, isImporting, justImported]);
 
   // ✅ NEW: Reset chapter and lesson when book changes
   useEffect(() => {
+    // ✅ CRITICAL: NEVER reset if justImported - imported data is sacred
+    if (isImporting || justImported) {
+      console.log('🛑 [useEffect Book] BLOCKED by protection flags', { isImporting, justImported });
+      return;
+    }
+    
+    console.log('🔄 [useEffect Book] User changed book manually, resetting location');
     setSelectedChapter('');
     setSelectedLesson('');
-  }, [selectedBook]);
+  }, [selectedBook, isImporting, justImported]);
 
   // ✅ NEW: Reset lesson when chapter changes
   useEffect(() => {
+    // ✅ CRITICAL: NEVER reset if justImported - imported data is sacred
+    if (isImporting || justImported) {
+      console.log('🛑 [useEffect Chapter] BLOCKED by protection flags', { isImporting, justImported });
+      return;
+    }
+    
+    console.log('🔄 [useEffect Chapter] User changed chapter manually, resetting lesson');
     setSelectedLesson('');
-  }, [selectedChapter]);
+  }, [selectedChapter, isImporting, justImported]);
 
   // ✅ NEW: Track loaded quiz and prevent redundant fetches
   const [existingQuiz, setExistingQuiz] = useState(null);
@@ -247,8 +288,39 @@ function QuizEditorPage() {
 
   useEffect(() => {
     const loadExistingQuiz = async () => {
+      console.log('🔄 [useEffect loadExistingQuiz] Triggered', {
+        selectedBook,
+        selectedChapter,
+        selectedLesson,
+        isImporting,
+        justImported,
+        isUploadingAudio,
+        currentQuestionsCount: questions.length
+      });
+      
+      // ✅ CRITICAL: Check import flags FIRST before any other logic
+      // This prevents questions from being reset during import
+      if (isImporting) {
+        console.log('🛑 JSON import in progress, skipping quiz reload to preserve imported data');
+        return;
+      }
+      
+      if (isUploadingAudio) {
+        console.log('🛑 Audio upload in progress, skipping quiz reload');
+        return;
+      }
+      
       // ✅ Track current selection to prevent unnecessary reloads
       const currentKey = `${selectedBook}_${selectedChapter}_${selectedLesson}`;
+      
+      // ✅ NEW: Only prevent reload if we just imported AND location matches
+      // If user selected a different location, we MUST load the quiz for that location
+      if (justImported && currentKey === loadedQuizKey && loadedQuizKey !== '') {
+        console.log('✅ Just imported JSON for this location, skipping reload to keep imported data');
+        console.log(`  - Questions count: ${questions.length}`);
+        console.log(`  - Location key: ${currentKey}`);
+        return;
+      }
       
       // ⚠️ IMPORTANT: Only skip if same selection AND not uploading audio
       // This allows manual refresh to work
@@ -261,31 +333,49 @@ function QuizEditorPage() {
       console.log(`🔄 Loading quiz for: ${currentKey}`);
       
       if (!selectedBook || (!selectedChapter && !selectedLesson)) {
+        // ✅ CRITICAL: If just imported, keep the imported questions even if location is not set
+        // This allows importing JSON without metadata and selecting location later
+        if (justImported) {
+          console.log('🛑 [PROTECTION] No location but justImported=true; KEEPING imported questions');
+          console.log(`  - Questions count: ${questions.length}`);
+          console.log(`  - First question: ${questions[0]?.text?.substring(0, 50)}`);
+          return; // Keep questions, don't reset
+        }
+        
+        // ✅ ADDITIONAL CHECK: If questions have actual content, don't reset
+        if (questions.length > 1 || (questions.length === 1 && questions[0].text !== '')) {
+          console.log('🛑 [PROTECTION] No location but questions have content; KEEPING questions');
+          console.log(`  - Questions count: ${questions.length}`);
+          return; // Keep questions, don't reset
+        }
+        
         setExistingQuiz(null);
         setLoadedQuizKey('');
-        // Only reset if different from current
-        if (questions.length !== 1 || questions[0].text !== '') {
-          setQuestions([{
-            id: 1,
-            text: '',
-            audioUrl: '',
-            options: [
-              { label: 'A', text: '' },
-              { label: 'B', text: '' },
-              { label: 'C', text: '' },
-              { label: 'D', text: '' }
-            ],
-            correct: 'A',
-            explanation: ''
-          }]);
-        }
+        console.log('🔄 No location and no content, can reset to empty safely');
+        setQuestions([{
+          id: 1,
+          text: '',
+          audioUrl: '',
+          options: [
+            { label: 'A', text: '' },
+            { label: 'B', text: '' },
+            { label: 'C', text: '' },
+            { label: 'D', text: '' }
+          ],
+          correct: 'A',
+          explanation: ''
+        }]);
         return;
       }
-
-      // ✅ FIXED: Don't reload if uploading audio
-      if (isUploadingAudio) {
-        console.log('Audio upload in progress, skipping quiz reload');
-        return;
+      
+      // ✅ IMPORTANT: If location changed, clear flags to allow loading new quiz
+      if (currentKey !== loadedQuizKey && loadedQuizKey !== '') {
+        console.log('🔄 Location changed, clearing import flags and loadedQuizKey');
+        console.log(`  - Old key: ${loadedQuizKey}`);
+        console.log(`  - New key: ${currentKey}`);
+        setJustImported(false);
+        setLoadedQuizKey(''); // Clear to force reload for new location
+        // Continue to load quiz for new location
       }
 
       setIsLoadingQuiz(true);
@@ -316,6 +406,7 @@ function QuizEditorPage() {
             console.log(`📥 Loaded ${convertedQuestions.length} questions from database`);
             setQuestions(convertedQuestions);
           } else {
+            console.log('📥 Quiz found but no questions, resetting to empty');
             setQuestions([{
               id: 1,
               text: '',
@@ -330,25 +421,39 @@ function QuizEditorPage() {
               explanation: ''
             }]);
           }
+          
+          // ✅ Mark this location as loaded
+          setLoadedQuizKey(currentKey);
+          console.log(`✅ [LoadQuiz] Set loadedQuizKey: ${currentKey}`);
         } else {
           setExistingQuiz(null);
-          setQuestions([{
-            id: 1,
-            text: '',
-            audioUrl: '',
-            options: [
-              { label: 'A', text: '' },
-              { label: 'B', text: '' },
-              { label: 'C', text: '' },
-              { label: 'D', text: '' }
-            ],
-            correct: 'A',
-            explanation: ''
-          }]);
+          // ✅ IMPORTANT: If location changed or no quiz found, ALWAYS reset questions
+          // Only keep questions if we just imported for THIS exact location
+          const shouldKeepQuestions = justImported && currentKey === loadedQuizKey && loadedQuizKey !== '';
+          
+          if (!shouldKeepQuestions) {
+            console.log('🔄 [LoadQuiz] No quiz found, resetting questions to empty');
+            setQuestions([{
+              id: 1,
+              text: '',
+              audioUrl: '',
+              options: [
+                { label: 'A', text: '' },
+                { label: 'B', text: '' },
+                { label: 'C', text: '' },
+                { label: 'D', text: '' }
+              ],
+              correct: 'A',
+              explanation: ''
+            }]);
+          } else {
+            console.log('✅ [LoadQuiz] Just imported for this location, keeping imported questions:', questions.length);
+          }
+          
+          // ✅ Mark this location as loaded (even if no quiz found)
+          setLoadedQuizKey(currentKey);
+          console.log(`✅ [LoadQuiz] Set loadedQuizKey (no quiz found): ${currentKey}`);
         }
-        
-        // Mark this selection as loaded
-        setLoadedQuizKey(currentKey);
       } catch (error) {
         console.error('Error loading existing quiz:', error);
         setExistingQuiz(null);
@@ -358,7 +463,7 @@ function QuizEditorPage() {
     };
 
     loadExistingQuiz();
-  }, [selectedBook, selectedChapter, selectedLesson, isUploadingAudio]);
+  }, [selectedBook, selectedChapter, selectedLesson, isUploadingAudio, isImporting, justImported]);
 
   // ✅ NEW: Auto-fill quiz title from lesson or chapter (only if no existing quiz)
   useEffect(() => {
@@ -834,7 +939,19 @@ function QuizEditorPage() {
 
   // ✅ NEW: Apply imported quiz JSON into editor state
   const applyImportedQuiz = (data, sourceName = 'JSON file') => {
+    console.log('📥 [Import] Starting...', { sourceName, dataKeys: Object.keys(data || {}) });
+    console.log('📥 [Import] Raw data:', JSON.stringify(data).substring(0, 500));
+    
+    // ✅ CRITICAL: Set importing flag FIRST before any other state changes
+    // This prevents useEffect from triggering and resetting questions
+    console.log('🔒 [Import] Setting isImporting = true to prevent useEffect from resetting questions');
+    setIsImporting(true);
+    setLoadedQuizKey(''); // Clear loaded key to allow fresh data
+    setExistingQuiz(null); // Clear existing quiz to prevent conflicts
+    
     if (!data) {
+      console.error('❌ [Import] Data is null/undefined');
+      setIsImporting(false);
       alert(t('quizEditor.actions.importEmpty', 'File JSON trống hoặc không hợp lệ.'));
       return;
     }
@@ -846,13 +963,36 @@ function QuizEditorPage() {
     // - { data: { questions: [...] } }
     // - { items: [...] }
     const questionsPayload = (() => {
-      if (Array.isArray(data)) return data;
-      if (Array.isArray(data.questions)) return data.questions;
-      if (Array.isArray(data.items)) return data.items;
-      if (data.quiz && Array.isArray(data.quiz.questions)) return data.quiz.questions;
-      if (data.data && Array.isArray(data.data.questions)) return data.data.questions;
+      if (Array.isArray(data)) {
+        console.log('✅ [Import] Found array format, length:', data.length);
+        return data;
+      }
+      if (Array.isArray(data.questions)) {
+        console.log('✅ [Import] Found data.questions, length:', data.questions.length);
+        return data.questions;
+      }
+      if (Array.isArray(data.items)) {
+        console.log('✅ [Import] Found data.items, length:', data.items.length);
+        return data.items;
+      }
+      if (data.quiz && Array.isArray(data.quiz.questions)) {
+        console.log('✅ [Import] Found data.quiz.questions, length:', data.quiz.questions.length);
+        return data.quiz.questions;
+      }
+      if (data.data && Array.isArray(data.data.questions)) {
+        console.log('✅ [Import] Found data.data.questions, length:', data.data.questions.length);
+        return data.data.questions;
+      }
+      
+      console.warn('⚠️ [Import] No valid questions array found. Data structure:', Object.keys(data));
+      console.warn('⚠️ [Import] Sample data:', JSON.stringify(data).substring(0, 200));
       return [];
     })();
+
+    console.log('📋 [Import] Questions payload length:', questionsPayload.length);
+    if (questionsPayload.length > 0) {
+      console.log('📋 [Import] First question sample:', questionsPayload[0]);
+    }
 
     const normalizedQuestions = questionsPayload.map((q, idx) => {
       const options = normalizeOptions(q?.options || q?.answers || []);
@@ -860,37 +1000,192 @@ function QuizEditorPage() {
       const correctCandidate = q?.correct || q?.correctAnswer || q?.answer || q?.answersKey || defaultCorrect;
       const correct = options.some(opt => opt.label === correctCandidate) ? correctCandidate : defaultCorrect;
 
-      return {
+      // ✅ Convert \n to <br/> in explanation for proper display in textarea/HTML
+      let explanation = q?.explanation || q?.explain || '';
+      if (explanation && typeof explanation === 'string') {
+        // Replace \n with <br/> for HTML display
+        explanation = explanation.replace(/\n/g, '<br/>');
+        // Also handle escaped newlines \\n
+        explanation = explanation.replace(/\\n/g, '<br/>');
+      }
+
+      const normalized = {
         id: q?.id || idx + 1,
         text: q?.text || q?.question || '',
         options,
         correct,
-        explanation: q?.explanation || q?.explain || '',
+        explanation: explanation,
         audioUrl: q?.audioUrl || '',
         audioPath: q?.audioPath || '',
         audioName: q?.audioName || ''
       };
+      
+      if (idx === 0) {
+        console.log('📝 [Import] First normalized question:', {
+          id: normalized.id,
+          text: normalized.text?.substring(0, 50) + '...',
+          optionsCount: normalized.options.length,
+          correct: normalized.correct
+        });
+      }
+      
+      return normalized;
     });
 
     if (normalizedQuestions.length === 0) {
-      console.warn('❌ Import JSON: không tìm thấy mảng câu hỏi hợp lệ trong file.', { data });
-      alert(t('quizEditor.actions.importNoQuestions', 'File JSON không chứa danh sách câu hỏi hợp lệ.'));
+      console.error('❌ [Import] No questions after normalization. Original data:', data);
+      setIsImporting(false);
+      alert(t('quizEditor.actions.importNoQuestions', 'File JSON không chứa danh sách câu hỏi hợp lệ. Vui lòng kiểm tra Console (F12) để xem chi tiết.'));
+      setImportStatus('');
       return;
     }
 
-    setQuizTitle(!Array.isArray(data) ? (data.title || '') : '');
-    setQuestions(normalizedQuestions);
-
-    // Optional: hydrate location metadata nếu có
+    console.log('✅ [Import] Normalized', normalizedQuestions.length, 'questions');
+    console.log('📋 [Import] Sample normalized question:', normalizedQuestions[0]);
+    
+    // ✅ IMPORTANT: Set ALL state in correct order to prevent conflicts
     const meta = !Array.isArray(data) ? (data.metadata || data.meta || {}) : {};
-    if (meta.level) setSelectedLevel(meta.level);
-    if (meta.bookId) setSelectedBook(meta.bookId);
-    if (meta.chapterId) setSelectedChapter(meta.chapterId);
-    if (meta.lessonId) setSelectedLesson(meta.lessonId);
-
+    const title = !Array.isArray(data) ? (data.title || '') : '';
+    
+    console.log('📋 [Import] Extracted metadata:', meta);
+    console.log('📋 [Import] Extracted title:', title);
+    
+    // ✅ Step 1: Calculate final location values FIRST (before setting any state)
+    const finalLessonId = meta.lessonId || meta.chapterId || selectedLesson || selectedChapter;
+    const finalBookId = meta.bookId || selectedBook;
+    const finalChapterId = meta.chapterId || selectedChapter;
+    const importKey = (finalBookId && finalChapterId) 
+      ? `${finalBookId}_${finalChapterId}_${finalLessonId || ''}` 
+      : '';
+    
+    console.log('📋 [Import] Final location values:', {
+      finalBookId,
+      finalChapterId,
+      finalLessonId,
+      importKey,
+      hasMetadata: Object.keys(meta).length > 0
+    });
+    
+    // ✅ Step 2: Prepare questions data BEFORE setting any state that might trigger useEffect
+    const questionsToSet = normalizedQuestions.map(q => {
+      // ✅ Ensure explanation has <br/> instead of \n for proper display
+      let explanation = q.explanation || '';
+      if (explanation && typeof explanation === 'string') {
+        // Replace \n with <br/> for HTML display (if not already converted)
+        if (!explanation.includes('<br/>')) {
+          explanation = explanation.replace(/\n/g, '<br/>');
+          explanation = explanation.replace(/\\n/g, '<br/>');
+        }
+      }
+      
+      return {
+        id: q.id,
+        text: q.text || '',
+        audioUrl: q.audioUrl || '',
+        audioPath: q.audioPath || '',
+        audioName: q.audioName || '',
+        options: q.options.map(opt => ({ label: opt.label, text: opt.text || '' })),
+        correct: q.correct || 'A',
+        explanation: explanation
+      };
+    });
+    
+    console.log('💾 [Import] Questions to set:', questionsToSet.length);
+    console.log('💾 [Import] First question in array:', {
+      id: questionsToSet[0]?.id,
+      text: questionsToSet[0]?.text?.substring(0, 50),
+      optionsCount: questionsToSet[0]?.options?.length
+    });
+    
+    // ✅ Step 3: Set flags and loadedQuizKey FIRST to prevent any reloads
+    // This must be done BEFORE setting metadata to prevent useEffect from running
+    console.log('🔒 [Import] Setting protection flags BEFORE metadata');
+    setJustImported(true);
+    setIsImporting(true);
+    setExistingQuiz(null);
+    
+    // ✅ Store imported metadata for comparison
+    importedMetadataRef.current = {
+      level: meta.level || selectedLevel,
+      bookId: meta.bookId || selectedBook,
+      chapterId: meta.chapterId || selectedChapter,
+      lessonId: meta.lessonId || selectedLesson
+    };
+    console.log('💾 [Import] Stored imported metadata:', importedMetadataRef.current);
+    
+    // ✅ IMPORTANT: Set loadedQuizKey with final values (even if undefined) to prevent reset
+    const finalImportKey = importKey || `${selectedBook || 'temp'}_${selectedChapter || 'temp'}_${selectedLesson || 'temp'}`;
+    setLoadedQuizKey(finalImportKey);
+    console.log('✅ [Import] Set loadedQuizKey FIRST to prevent reload:', finalImportKey);
+    
+    // ✅ Step 4: Set location metadata with delay to ensure flags are applied
+    // Use setTimeout to batch all metadata updates together
+    setTimeout(() => {
+      console.log('📍 [Import] Now setting metadata (flags are active)...');
+      
+      if (meta.level) {
+        console.log('📍 [Import] Setting level:', meta.level);
+        setSelectedLevel(meta.level);
+      }
+      if (meta.bookId) {
+        console.log('📍 [Import] Setting bookId:', meta.bookId);
+        setSelectedBook(meta.bookId);
+      }
+      if (meta.chapterId) {
+        console.log('📍 [Import] Setting chapterId:', meta.chapterId);
+        setSelectedChapter(meta.chapterId);
+      }
+      if (meta.lessonId) {
+        console.log('📍 [Import] Setting lessonId:', meta.lessonId);
+        setSelectedLesson(meta.lessonId);
+      }
+      
+      // Update loadedQuizKey with actual values after metadata is set
+      if (importKey) {
+        setTimeout(() => {
+          setLoadedQuizKey(importKey);
+          console.log('✅ [Import] Updated loadedQuizKey with actual metadata:', importKey);
+        }, 100);
+      }
+    }, 50); // Small delay to ensure flags are applied first
+    
+    // Set title
+    console.log('📌 [Import] Setting title:', title);
+    setQuizTitle(title);
+    
+    // ✅ Step 5: Set questions IMMEDIATELY - React will batch all state updates
+    console.log('💾 [Import] Setting questions state with', questionsToSet.length, 'items');
+    console.log('💾 [Import] First question text:', questionsToSet[0]?.text?.substring(0, 50));
+    console.log('💾 [Import] All questions data:', JSON.stringify(questionsToSet).substring(0, 500));
+    setQuestions(questionsToSet);
+    
+    // ✅ Verify questions were set
+    setTimeout(() => {
+      console.log('🔍 [Import] Verification after 100ms - checking questions state...');
+    }, 100);
+    
+    // ✅ Step 7: Set status and preview
     setImportStatus(`${sourceName} • ${normalizedQuestions.length} câu hỏi`);
     setShowPreview(true);
-    alert(t('quizEditor.actions.importSuccess', 'Đã tải JSON vào editor, hãy kiểm tra và lưu lại.'));
+    
+    console.log('✅ [Import] Completed successfully!');
+    alert(t('quizEditor.actions.importSuccess', `✅ Đã tải ${normalizedQuestions.length} câu hỏi vào editor!\n\nHãy kiểm tra danh sách câu hỏi bên dưới và lưu lại.`));
+    
+    // ✅ Step 8: Clear isImporting after short delay, but KEEP justImported FOREVER
+    // justImported protects data from being reset and only clears when user manually changes location
+    console.log('🔒 [Import] Keeping protection flags:');
+    console.log('   - isImporting: will clear after 3 seconds (allow useEffect to settle)');
+    console.log('   - justImported: will NEVER auto-clear (only cleared by user action)');
+    
+    // Clear isImporting after short delay to allow other features to work
+    setTimeout(() => {
+      console.log('🔓 [Import] Clearing isImporting flag...');
+      setIsImporting(false);
+      console.log('🔒 [Import] BUT justImported=true remains ACTIVE to protect data');
+    }, 3000); // 3 seconds - enough for all state updates
+    
+    // justImported will NEVER be cleared automatically
+    // It will only be cleared when user manually changes location (handled in useEffect)
   };
 
   // ✅ NEW: Handle upload JSON to create quizzes in bulk
@@ -1686,7 +1981,15 @@ function QuizEditorPage() {
                 </label>
                 <select
                   value={selectedLevel}
-                  onChange={(e) => setSelectedLevel(e.target.value)}
+                  onChange={(e) => {
+                    // Clear justImported when user manually changes location
+                    if (justImported) {
+                      console.log('👤 [User Action] Clearing justImported - user changed level manually');
+                      setJustImported(false);
+                      importedMetadataRef.current = null;
+                    }
+                    setSelectedLevel(e.target.value);
+                  }}
                   className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white"
                   required
                 >
@@ -1705,7 +2008,14 @@ function QuizEditorPage() {
                 </label>
                 <select
                   value={selectedSeries}
-                  onChange={(e) => setSelectedSeries(e.target.value)}
+                  onChange={(e) => {
+                    if (justImported) {
+                      console.log('👤 [User Action] Clearing justImported - user changed series manually');
+                      setJustImported(false);
+                      importedMetadataRef.current = null;
+                    }
+                    setSelectedSeries(e.target.value);
+                  }}
                   disabled={!selectedLevel || availableSeries.length === 0}
                   className="w-full px-3 sm:px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black text-sm sm:text-base bg-white font-bold disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
@@ -1730,7 +2040,14 @@ function QuizEditorPage() {
                 </label>
                 <select
                   value={selectedBook}
-                  onChange={(e) => setSelectedBook(e.target.value)}
+                  onChange={(e) => {
+                    if (justImported) {
+                      console.log('👤 [User Action] Clearing justImported - user changed book manually');
+                      setJustImported(false);
+                      importedMetadataRef.current = null;
+                    }
+                    setSelectedBook(e.target.value);
+                  }}
                   disabled={!selectedLevel || availableBooks.length === 0}
                   className="w-full px-3 sm:px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black text-sm sm:text-base bg-white font-bold disabled:bg-gray-100 disabled:cursor-not-allowed"
                   required
@@ -1751,7 +2068,14 @@ function QuizEditorPage() {
                 </label>
                 <select
                   value={selectedChapter}
-                  onChange={(e) => setSelectedChapter(e.target.value)}
+                  onChange={(e) => {
+                    if (justImported) {
+                      console.log('👤 [User Action] Clearing justImported - user changed chapter manually');
+                      setJustImported(false);
+                      importedMetadataRef.current = null;
+                    }
+                    setSelectedChapter(e.target.value);
+                  }}
                   disabled={!selectedBook || availableChapters.length === 0}
                   className="w-full px-3 sm:px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black text-sm sm:text-base bg-white font-bold disabled:bg-gray-100 disabled:cursor-not-allowed"
                   required
@@ -1772,7 +2096,14 @@ function QuizEditorPage() {
                 </label>
                 <select
                   value={selectedLesson}
-                  onChange={(e) => setSelectedLesson(e.target.value)}
+                  onChange={(e) => {
+                    if (justImported) {
+                      console.log('👤 [User Action] Clearing justImported - user changed lesson manually');
+                      setJustImported(false);
+                      importedMetadataRef.current = null;
+                    }
+                    setSelectedLesson(e.target.value);
+                  }}
                   disabled={!selectedChapter || availableLessons.length === 0}
                   className="w-full px-3 sm:px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black text-sm sm:text-base bg-white font-bold disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
@@ -2411,7 +2742,7 @@ function QuizEditorPage() {
         {/* Sidebar - Preview & Export */}
         <div className="space-y-4 sm:space-y-6">
           {/* Actions */}
-          <div className="bg-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-6 sticky top-6">
+          <div className="bg-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-6 sticky top-6 z-40">
               <h2 className="text-xl font-black text-gray-800 mb-4 uppercase tracking-wide">{t('quizEditor.actions.title')}</h2>
               
               <div className="space-y-3">
@@ -2504,31 +2835,92 @@ function QuizEditorPage() {
                     {showImportTemplate ? 'Ẩn cấu trúc mẫu JSON' : 'Xem cấu trúc mẫu JSON'}
                   </button>
                   {showImportTemplate && (
-                    <div className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-[11px] leading-4 font-mono text-gray-800 overflow-x-auto">
-{`{
-  "title": "Quiz sample",
+                    <div className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-[11px] leading-relaxed font-mono text-gray-800 overflow-x-auto">
+                      <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800 font-semibold">
+                        ✨ Metadata tự động cập nhật theo location bạn chọn ở trên!
+                      </div>
+                      <pre className="whitespace-pre-wrap break-words text-[10px] leading-relaxed font-mono" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.6' }}>{`{
+  "title": "Trắc nghiệm mẫu - ${quizTitle || 'Nhập tên quiz'}",
   "questions": [
     {
       "id": 1,
-      "text": "Câu hỏi 1?",
+      "text": "Từ nào sau đây có nghĩa là \\"Tôi\\"?",
       "options": [
-        { "label": "A", "text": "Đáp án A" },
-        { "label": "B", "text": "Đáp án B" },
-        { "label": "C", "text": "Đáp án C" },
-        { "label": "D", "text": "Đáp án D" }
+        { "label": "A", "text": "わたし" },
+        { "label": "B", "text": "あなた" },
+        { "label": "C", "text": "あのひと" },
+        { "label": "D", "text": "みなさん" }
       ],
       "correct": "A",
-      "explanation": "Giải thích",
+      "explanation": "A: わたし (watashi) có nghĩa là Tôi
+B: あなた (anata) có nghĩa là Bạn
+C: あのひと (anohito) có nghĩa là Người kia
+D: みなさん (minasan) có nghĩa là Mọi người",
+      "audioUrl": ""
+    },
+    {
+      "id": 2,
+      "text": "Từ \\"がくせい\\" có nghĩa là gì?",
+      "options": [
+        { "label": "A", "text": "Giáo viên" },
+        { "label": "B", "text": "Học sinh, sinh viên" },
+        { "label": "C", "text": "Nhân viên công ty" },
+        { "label": "D", "text": "Bác sĩ" }
+      ],
+      "correct": "B",
+      "explanation": "B: がくせい (gakusei) nghĩa là học sinh/sinh viên
+A: せんせい (sensei) nghĩa là giáo viên
+C: かいしゃいん (kaishain) nghĩa là nhân viên công ty
+D: いしゃ (isha) nghĩa là bác sĩ",
       "audioUrl": ""
     }
   ],
   "metadata": {
-    "level": "n5",
-    "bookId": "book-001",
-    "chapterId": "chapter-1",
-    "lessonId": "lesson-1-1" // optional, có thể bỏ trống để dùng chapter
+    "level": "${selectedLevel || 'n5'}",
+    "bookId": "${selectedBook || 'chưa-chọn'}",
+    "chapterId": "${selectedChapter || 'chưa-chọn'}",
+    "lessonId": "${selectedLesson || selectedChapter || 'chưa-chọn'}"
   }
-}`}
+}`}</pre>
+                      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-800 text-[10px]">
+                        <p className="font-bold mb-1">💡 LƯU Ý VỀ EXPLANATION:</p>
+                        <p className="mb-1">Trong JSON, dùng <code className="bg-white px-1 rounded">\\n</code> để xuống dòng. Khi hiển thị sẽ tự động format:</p>
+                        <div className="bg-white p-2 rounded border border-green-300 font-mono text-[9px] whitespace-pre-line">
+                          A: わたし (watashi) có nghĩa là Tôi{'\n'}
+                          B: あなた (anata) có nghĩa là Bạn{'\n'}
+                          C: あのひと (anohito) có nghĩa là Người kia{'\n'}
+                          D: みなさん (minasan) có nghĩa là Mọi người
+                        </div>
+                      </div>
+                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-[10px]">
+                        <p className="font-bold mb-1">⚠️ QUAN TRỌNG VỀ EXPLANATION:</p>
+                        <p className="mb-2 text-[9px]">Trong JSON file thực tế, bạn có thể:</p>
+                        <div className="bg-white p-2 rounded border border-yellow-300 mb-2">
+                          <p className="font-bold text-[9px] mb-1">Cách 1: Dùng \\n (khuyến nghị):</p>
+                          <pre className="font-mono text-[8px] whitespace-pre-wrap break-words">"explanation": "A: わたし (watashi) có nghĩa là Tôi\\nB: あなた (anata) có nghĩa là Bạn\\nC: あのひと (anohito) có nghĩa là Người kia\\nD: みなさん (minasan) có nghĩa là Mọi người"</pre>
+                        </div>
+                        <div className="bg-white p-2 rounded border border-yellow-300">
+                          <p className="font-bold text-[9px] mb-1">Cách 2: Xuống dòng thực sự (như mẫu trên):</p>
+                          <pre className="font-mono text-[8px] whitespace-pre-wrap break-words">"explanation": "A: わたし (watashi) có nghĩa là Tôi
+B: あなた (anata) có nghĩa là Bạn
+C: あのひと (anohito) có nghĩa là Người kia
+D: みなさん (minasan) có nghĩa là Mọi người"</pre>
+                        </div>
+                        <p className="mt-2 text-[9px] font-semibold">✅ Khi hiển thị trong app, mỗi đáp án sẽ tự động xuống dòng riêng.</p>
+                      </div>
+                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-xs">
+                        <p className="font-bold mb-1">📝 GHI CHÚ:</p>
+                        ${!selectedBook || !selectedChapter 
+                          ? '<p>⚠️ Vui lòng CHỌN LOCATION ở trên để metadata tự động cập nhật!</p>' 
+                          : '<p>✅ Metadata đã được cập nhật theo location bạn chọn!</p>'
+                        }
+                        <ul className="list-disc list-inside mt-1 space-y-1">
+                          <li>Đường dẫn sẽ lưu vào: <code className="bg-gray-100 px-1 rounded">${getFilePath()}</code></li>
+                          <li>Copy JSON này và thay thế phần "questions" bằng câu hỏi của bạn</li>
+                          <li>Giữ nguyên phần "metadata" để tự động set location khi import</li>
+                          <li>Trong "explanation", mỗi đáp án xuống dòng riêng (như mẫu trên)</li>
+                        </ul>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2595,27 +2987,42 @@ function QuizEditorPage() {
 
             {/* Preview */}
             {showPreview && (
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Preview</h2>
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="font-semibold text-blue-800">{quizTitle || 'Untitled Quiz'}</p>
+              <div className="bg-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-6 mt-4 sm:mt-6 sticky top-6 z-50 max-h-[calc(100vh-200px)] overflow-y-auto">
+                <h2 className="text-xl font-black text-gray-800 mb-4 uppercase tracking-wide">📺 {t('quizEditor.actions.preview', 'Preview')}</h2>
+                <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
+                  <div className="p-3 bg-blue-50 border-[2px] border-blue-200 rounded-lg">
+                    <p className="font-bold text-blue-800 text-lg">{quizTitle || 'Untitled Quiz'}</p>
                   </div>
                   {questions.map((q, idx) => (
-                    <div key={idx} className="p-3 bg-gray-50 rounded-lg">
-                      <p className="font-medium text-gray-800 mb-2">
-                        {t('quizEditor.questionForm.questionHeader', { id: q.id })}: {q.text || t('quizEditor.questions.notEntered')}
+                    <div key={idx} className="p-3 bg-gray-50 border-[2px] border-gray-200 rounded-lg">
+                      <p className="font-semibold text-gray-800 mb-2">
+                        <span className="text-blue-600">{t('quizEditor.questionForm.questionHeader', { id: q.id })}:</span>{' '}
+                        {q.text ? (
+                          <span className="text-gray-700" dangerouslySetInnerHTML={{ __html: q.text.substring(0, 100) + (q.text.length > 100 ? '...' : '') }} />
+                        ) : (
+                          <span className="text-yellow-600 italic">{t('quizEditor.questions.notEntered')}</span>
+                        )}
                       </p>
-                      <div className="space-y-1 text-sm">
+                      <div className="space-y-1 text-sm mt-2">
                         {q.options.map((opt) => (
                           <p
                             key={opt.label}
-                            className={q.correct === opt.label ? 'text-green-600 font-semibold' : 'text-gray-600'}
+                            className={`p-2 rounded ${
+                              q.correct === opt.label 
+                                ? 'text-green-700 font-bold bg-green-100 border-[2px] border-green-300' 
+                                : 'text-gray-600 bg-white border border-gray-200'
+                            }`}
                           >
-                            {opt.label}. {opt.text || t('quizEditor.questions.answerNotEntered', 'No answer')}
+                            <span className="font-bold">{opt.label}.</span> {opt.text || t('quizEditor.questions.answerNotEntered', 'No answer')}
                           </p>
                         ))}
                       </div>
+                      {q.explanation && (
+                        <div className="mt-2 p-2 bg-purple-50 border border-purple-200 rounded text-xs">
+                          <p className="font-semibold text-purple-800 mb-1">💡 {t('quizEditor.questions.explanation')}:</p>
+                          <p className="text-purple-700" dangerouslySetInnerHTML={{ __html: q.explanation.substring(0, 150) + (q.explanation.length > 150 ? '...' : '') }} />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
