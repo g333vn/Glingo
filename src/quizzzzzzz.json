@@ -1,264 +1,264 @@
 {
-    "title": "Trắc nghiệm Từ vựng Minna no Nihongo - Bài 1",
+    "title": "Trắc nghiệm Từ vựng Minna no Nihongo - Bài 2",
     "questions": [
       {
         "id": 1,
-        "text": "Từ nào sau đây có nghĩa là \"Tôi\"?",
+        "text": "Từ nào sau đây có nghĩa là \"Quyển vở\"?",
         "options": [
-          { "label": "A", "text": "わたし" },
-          { "label": "B", "text": "あなた" },
-          { "label": "C", "text": "あのひと" },
-          { "label": "D", "text": "みなさん" }
+          { "label": "A", "text": "ほん" },
+          { "label": "B", "text": "ノート" },
+          { "label": "C", "text": "じしょ" },
+          { "label": "D", "text": "ざっし" }
         ],
-        "correct": "A",
-        "explanation": "A: わたし có nghĩa là Tôi.\nB: あなた có nghĩa là Bạn (ngôi thứ 2).\nC: あのひと có nghĩa là Người kia.\nD: みなさん có nghĩa là Mọi người.",
+        "correct": "B",
+        "explanation": "B: ノート có nghĩa là Vở.\nA: ほん có nghĩa là Sách.\nC: じしょ có nghĩa là Từ điển.\nD: ざっし có nghĩa là Tạp chí.",
         "audioUrl": ""
       },
       {
         "id": 2,
-        "text": "Từ \"がくせい\" có nghĩa là gì?",
+        "text": "Từ \"これ\" dùng để chỉ vật ở vị trí nào?",
         "options": [
-          { "label": "A", "text": "Giáo viên" },
-          { "label": "B", "text": "Học sinh, sinh viên" },
-          { "label": "C", "text": "Nhân viên công ty" },
-          { "label": "D", "text": "Bác sĩ" }
+          { "label": "A", "text": "Vật ở xa cả người nói và người nghe" },
+          { "label": "B", "text": "Vật ở gần người nghe" },
+          { "label": "C", "text": "Vật ở gần người nói" },
+          { "label": "D", "text": "Vật không xác định" }
         ],
-        "correct": "B",
-        "explanation": "B: がくせい có nghĩa là Học sinh, sinh viên.\nA: せんせい có nghĩa là Giáo viên.\nC: かいしゃいん có nghĩa là Nhân viên công ty.\nD: いしゃ có nghĩa là Bác sĩ.",
+        "correct": "C",
+        "explanation": "C: これ có nghĩa là Cái này, đây (vật ở gần người nói).\nA: あれ là vật ở xa cả hai người.\nB: それ là vật ở gần người nghe.\nD: どれ là từ để hỏi cái nào.",
         "audioUrl": ""
       },
       {
         "id": 3,
-        "text": "Từ nào sau đây có nghĩa là \"Giáo viên\" (thường dùng để gọi người khác)?",
+        "text": "Từ \"かばん\" có nghĩa là gì?",
         "options": [
-          { "label": "A", "text": "きょうし" },
-          { "label": "B", "text": "けんきゅうしゃ" },
-          { "label": "C", "text": "せんせい" },
-          { "label": "D", "text": "ぎんこういん" }
+          { "label": "A", "text": "Cái ô" },
+          { "label": "B", "text": "Đồng hồ" },
+          { "label": "C", "text": "Cặp sách, túi sách" },
+          { "label": "D", "text": "Chìa khóa" }
         ],
         "correct": "C",
-        "explanation": "C: せんせい có nghĩa là Giáo viên (dùng để gọi hoặc chỉ nghề nghiệp).\nA: きょうし là Giáo viên (dùng khi nói về nghề nghiệp của bản thân).\nB: けんきゅうしゃ là Nhà nghiên cứu.\nD: ぎんこういん là Nhân viên ngân hàng.",
+        "explanation": "C: かばん có nghĩa là Cặp sách, túi sách.\nA: かさ có nghĩa là Cái ô, dù.\nB: とけい có nghĩa là Đồng hồ.\nD: かぎ có nghĩa là Chìa khóa.",
         "audioUrl": ""
       },
       {
         "id": 4,
-        "text": "Từ \"かいしゃいん\" có nghĩa là gì?",
+        "text": "Từ nào sau đây có nghĩa là \"Báo\" (Tân văn)?",
         "options": [
-          { "label": "A", "text": "Nhân viên ngân hàng" },
-          { "label": "B", "text": "Nhân viên công ty" },
-          { "label": "C", "text": "Kỹ sư" },
-          { "label": "D", "text": "Nhà nghiên cứu" }
+          { "label": "A", "text": "てちょう" },
+          { "label": "B", "text": "しんぶん" },
+          { "label": "C", "text": "めいし" },
+          { "label": "D", "text": "カード" }
         ],
         "correct": "B",
-        "explanation": "B: かいしゃいん có nghĩa là Nhân viên công ty.\nA: ぎんこういん có nghĩa là Nhân viên ngân hàng.\nC: エンジニア có nghĩa là Kỹ sư.\nD: けんきゅうしゃ có nghĩa là Nhà nghiên cứu.",
+        "explanation": "B: しんぶん có nghĩa là Báo.\nA: てちょう có nghĩa là Sổ tay.\nC: めいし có nghĩa là Danh thiếp.\nD: カード có nghĩa là Thẻ, cạc.",
         "audioUrl": ""
       },
       {
         "id": 5,
-        "text": "Từ nào sau đây có nghĩa là \"Bác sĩ\"?",
+        "text": "Từ \"じどうしゃ\" có nghĩa là gì?",
         "options": [
-          { "label": "A", "text": "いしゃ" },
-          { "label": "B", "text": "しゃいん" },
-          { "label": "C", "text": "だいがく" },
-          { "label": "D", "text": "びょういん" }
+          { "label": "A", "text": "Xe đạp" },
+          { "label": "B", "text": "Xe máy" },
+          { "label": "C", "text": "Ô tô, xe hơi" },
+          { "label": "D", "text": "Tàu điện" }
         ],
-        "correct": "A",
-        "explanation": "A: いしゃ có nghĩa là Bác sĩ.\nB: しゃいん có nghĩa là Nhân viên (của một công ty cụ thể).\nC: だいがく có nghĩa là Trường đại học.\nD: びょういん có nghĩa là Bệnh viện.",
+        "correct": "C",
+        "explanation": "C: じどうしゃ có nghĩa là Ô tô, xe hơi.\nA: じてんしゃ là xe đạp.\nB: バイク là xe máy.\nD: でんしゃ là tàu điện.",
         "audioUrl": ""
       },
       {
         "id": 6,
-        "text": "Từ \"ぎんこういん\" có nghĩa là gì?",
+        "text": "Từ nào sau đây có nghĩa là \"Bút chì kim\"?",
         "options": [
-          { "label": "A", "text": "Nhân viên điện lực" },
-          { "label": "B", "text": "Nhân viên ngân hàng" },
-          { "label": "C", "text": "Giáo sư" },
-          { "label": "D", "text": "Học sinh" }
+          { "label": "A", "text": "えんぴつ" },
+          { "label": "B", "text": "ボールペン" },
+          { "label": "C", "text": "シャープペンシル" },
+          { "label": "D", "text": "まんねんひつ" }
         ],
-        "correct": "B",
-        "explanation": "B: ぎんこういん có nghĩa là Nhân viên ngân hàng.\nA: Có thể liên quan đến từ 'でんき' (điện).\nC: Có thể nhầm với 'きょうし' hoặc 'せんせい'.\nD: がくせい là Học sinh.",
+        "correct": "C",
+        "explanation": "C: シャープペンシル có nghĩa là Bút chì kim, bút chì bấm.\nA: えんぴつ có nghĩa là Bút chì gỗ.\nB: ボールペン có nghĩa là Bút bi.\nD: まんねんひつ (không có trong ảnh này nhưng thường đi cùng nhóm) là bút máy.",
         "audioUrl": ""
       },
       {
         "id": 7,
-        "text": "Câu chào \"はじめまして\" được dùng khi nào?",
+        "text": "Từ \"つくえ\" có nghĩa là gì?",
         "options": [
-          { "label": "A", "text": "Khi tạm biệt" },
-          { "label": "B", "text": "Khi xin lỗi" },
-          { "label": "C", "text": "Lần đầu gặp mặt" },
-          { "label": "D", "text": "Khi cảm ơn" }
+          { "label": "A", "text": "Cái ghế" },
+          { "label": "B", "text": "Cái bàn" },
+          { "label": "C", "text": "Máy tính" },
+          { "label": "D", "text": "Đài radio" }
         ],
-        "correct": "C",
-        "explanation": "C: はじめまして có nghĩa là 'Rất hân hạnh được gặp anh/chị' (dùng khi lần đầu gặp).\nA: さようなら dùng khi tạm biệt.\nB: すみません dùng khi xin lỗi.\nD: ありがとう dùng khi cảm ơn.",
+        "correct": "B",
+        "explanation": "B: つくえ có nghĩa là Cái bàn.\nA: いす có nghĩa là Cái ghế.\nC: コンピューター có nghĩa là Máy vi tính.\nD: ラジオ có nghĩa là Đài Radio.",
         "audioUrl": ""
       },
       {
         "id": 8,
-        "text": "Từ nào chỉ đất nước \"Việt Nam\"?",
+        "text": "Cụm từ \"ほんのきもち\" thường dùng trong trường hợp nào?",
         "options": [
-          { "label": "A", "text": "アメリカ" },
-          { "label": "B", "text": "ベトナム" },
-          { "label": "C", "text": "イギリス" },
-          { "label": "D", "text": "タイ" }
+          { "label": "A", "text": "Khi chào hỏi" },
+          { "label": "B", "text": "Khi tặng quà (Chỉ là chút lòng thành)" },
+          { "label": "C", "text": "Khi xin lỗi" },
+          { "label": "D", "text": "Khi cảm ơn" }
         ],
         "correct": "B",
-        "explanation": "B: ベトナム là Việt Nam.\nA: アメリカ là Mỹ.\nC: イギリス là Anh.\nD: タイ là Thái Lan.",
+        "explanation": "B: ほんのきもち có nghĩa là Chỉ là chút lòng thành thôi (dùng khi tặng quà).\nA: こんにちは dùng khi chào hỏi.\nC: すみません dùng khi xin lỗi.\nD: ありがとうございます dùng khi cảm ơn.",
         "audioUrl": ""
       },
       {
         "id": 9,
-        "text": "Từ \"だいがく\" có nghĩa là gì?",
+        "text": "Từ \"えいご\" chỉ ngôn ngữ nào?",
         "options": [
-          { "label": "A", "text": "Bệnh viện" },
-          { "label": "B", "text": "Trường đại học" },
-          { "label": "C", "text": "Ngân hàng" },
-          { "label": "D", "text": "Điện" }
+          { "label": "A", "text": "Tiếng Nhật" },
+          { "label": "B", "text": "Tiếng Việt" },
+          { "label": "C", "text": "Tiếng Anh" },
+          { "label": "D", "text": "Tiếng Pháp" }
         ],
-        "correct": "B",
-        "explanation": "B: だいがく có nghĩa là Trường đại học.\nA: びょういん là Bệnh viện.\nC: ぎんこう là Ngân hàng.\nD: でんき là Điện/Đèn điện.",
+        "correct": "C",
+        "explanation": "C: えいご có nghĩa là Tiếng Anh.\nA: にほんご có nghĩa là Tiếng Nhật.\nB: ベトナムご là Tiếng Việt.\nD: フランスご là Tiếng Pháp.",
         "audioUrl": ""
       },
       {
         "id": 10,
-        "text": "Từ nào sau đây có nghĩa là \"Ai\" (hỏi người)?",
+        "text": "Từ nào sau đây có nghĩa là \"Sô-cô-la\"?",
         "options": [
-          { "label": "A", "text": "だれ" },
-          { "label": "B", "text": "なん" },
-          { "label": "C", "text": "はい" },
-          { "label": "D", "text": "いいえ" }
+          { "label": "A", "text": "コーヒー" },
+          { "label": "B", "text": "チョコレート" },
+          { "label": "C", "text": "ラジオ" },
+          { "label": "D", "text": "テレビ" }
         ],
-        "correct": "A",
-        "explanation": "A: だれ có nghĩa là Ai.\nB: なん/なに có nghĩa là Cái gì.\nC: はい có nghĩa là Vâng/Có.\nD: いいえ có nghĩa là Không.",
+        "correct": "B",
+        "explanation": "B: チョコレート có nghĩa là Sô-cô-la.\nA: コーヒー có nghĩa là Cà phê.\nC: ラジオ có nghĩa là Đài Radio.\nD: テレビ có nghĩa là Tivi.",
         "audioUrl": ""
       },
       {
         "id": 11,
-        "text": "Cụm từ \"～からきました\" có nghĩa là gì?",
+        "text": "Từ \"その～\" có cách sử dụng như thế nào?",
         "options": [
-          { "label": "A", "text": "Tôi tên là ~" },
-          { "label": "B", "text": "Đây là ngài ~" },
-          { "label": "C", "text": "(Tôi) đến từ ~" },
-          { "label": "D", "text": "Rất mong được giúp đỡ" }
+          { "label": "A", "text": "Đứng một mình làm chủ ngữ" },
+          { "label": "B", "text": "Đi kèm với danh từ (Cái ~ đó)" },
+          { "label": "C", "text": "Dùng để hỏi người" },
+          { "label": "D", "text": "Dùng để cảm ơn" }
         ],
-        "correct": "C",
-        "explanation": "C: ～からきました có nghĩa là (Tôi) đến từ ~.\nA: わたしは～です nghĩa là Tôi tên là ~.\nB: こちらは～さんです nghĩa là Đây là anh/chị ~.\nD: どうぞよろしく nghĩa là Rất mong được giúp đỡ.",
+        "correct": "B",
+        "explanation": "B: その～ (Cái ~ đó) luôn đi kèm danh từ đằng sau (Ví dụ: そのほん).\nA: それ mới đứng một mình làm chủ ngữ.\nC: だれ dùng để hỏi người.\nD: どうも dùng để cảm ơn.",
         "audioUrl": ""
       },
       {
         "id": 12,
-        "text": "Từ \"けんきゅうしゃ\" có nghĩa là gì?",
+        "text": "Từ \"かぎ\" có nghĩa là gì?",
         "options": [
-          { "label": "A", "text": "Kỹ sư" },
-          { "label": "B", "text": "Nhà nghiên cứu" },
-          { "label": "C", "text": "Bác sĩ" },
-          { "label": "D", "text": "Giáo viên" }
+          { "label": "A", "text": "Cái ô" },
+          { "label": "B", "text": "Chìa khóa" },
+          { "label": "C", "text": "Đồng hồ" },
+          { "label": "D", "text": "Cặp sách" }
         ],
         "correct": "B",
-        "explanation": "B: けんきゅうしゃ có nghĩa là Nhà nghiên cứu.\nA: エンジニア là Kỹ sư.\nC: いしゃ là Bác sĩ.\nD: せんせい là Giáo viên.",
+        "explanation": "B: かぎ có nghĩa là Chìa khóa.\nA: かさ có nghĩa là Cái ô.\nC: とけい có nghĩa là Đồng hồ.\nD: かばん có nghĩa là Cặp sách.",
         "audioUrl": ""
       },
       {
         "id": 13,
-        "text": "Từ nào sau đây có nghĩa là \"Bệnh viện\"?",
+        "text": "Từ \"てちょう\" có nghĩa là gì?",
         "options": [
-          { "label": "A", "text": "びょういん" },
-          { "label": "B", "text": "びよういん" },
-          { "label": "C", "text": "だいがく" },
-          { "label": "D", "text": "かいしゃ" }
+          { "label": "A", "text": "Tạp chí" },
+          { "label": "B", "text": "Sổ tay" },
+          { "label": "C", "text": "Danh thiếp" },
+          { "label": "D", "text": "Thư từ" }
         ],
-        "correct": "A",
-        "explanation": "A: びょういん (chữ 'yo' nhỏ) có nghĩa là Bệnh viện.\nB: びよういん (chữ 'yo' lớn) thường chỉ Thẩm mỹ viện/Tiệm tóc.\nC: だいがく là Đại học.\nD: かいしゃ là Công ty.",
+        "correct": "B",
+        "explanation": "B: てちょう có nghĩa là Sổ tay.\nA: ざっし có nghĩa là Tạp chí.\nC: めいし có nghĩa là Danh thiếp.\nD: てがみ là thư từ.",
         "audioUrl": ""
       },
       {
         "id": 14,
-        "text": "Từ \"にほん\" chỉ quốc gia nào?",
+        "text": "Khi muốn nói \"Thế à / Vậy à\" để biểu lộ sự đồng tình/quan tâm, ta dùng câu nào?",
         "options": [
-          { "label": "A", "text": "Hàn Quốc" },
-          { "label": "B", "text": "Trung Quốc" },
-          { "label": "C", "text": "Nhật Bản" },
-          { "label": "D", "text": "Ấn Độ" }
+          { "label": "A", "text": "そうですか" },
+          { "label": "B", "text": "ちがいます" },
+          { "label": "C", "text": "あのう" },
+          { "label": "D", "text": "どうぞ" }
         ],
-        "correct": "C",
-        "explanation": "C: にほん có nghĩa là Nhật Bản.\nA: かんこく là Hàn Quốc.\nB: ちゅうごく là Trung Quốc.\nD: インド là Ấn Độ.",
+        "correct": "A",
+        "explanation": "A: そうですか có nghĩa là Thế à, vậy à.\nB: ちがいます có nghĩa là Sai rồi, không phải.\nC: あのう có nghĩa là À, ờ (ngập ngừng khi bắt đầu nói chuyện).\nD: どうぞ có nghĩa là Xin mời.",
         "audioUrl": ""
       },
       {
         "id": 15,
-        "text": "Hậu tố \"～さい\" dùng để nói về điều gì?",
+        "text": "Từ \"じしょ\" có nghĩa là gì?",
         "options": [
-          { "label": "A", "text": "Tên người" },
-          { "label": "B", "text": "Quốc tịch" },
-          { "label": "C", "text": "Tuổi" },
-          { "label": "D", "text": "Nghề nghiệp" }
+          { "label": "A", "text": "Từ điển" },
+          { "label": "B", "text": "Tạp chí" },
+          { "label": "C", "text": "Báo" },
+          { "label": "D", "text": "Sách giáo khoa" }
         ],
-        "correct": "C",
-        "explanation": "C: ～さい dùng để đếm tuổi (tuổi).\nA: ～さん là hậu tố thêm vào sau tên người.\nB: ～じん chỉ người nước nào (quốc tịch).\nD: Không phải hậu tố chỉ nghề nghiệp chung.",
+        "correct": "A",
+        "explanation": "A: じしょ có nghĩa là Từ điển.\nB: ざっし có nghĩa là Tạp chí.\nC: しんぶん có nghĩa là Báo.\nD: きょうかしょ là sách giáo khoa.",
         "audioUrl": ""
       },
       {
         "id": 16,
-        "text": "Từ \"エンジニア\" có nghĩa là gì?",
+        "text": "Cụm từ \"これからおせわになります\" có nghĩa là gì?",
         "options": [
-          { "label": "A", "text": "Kỹ sư" },
-          { "label": "B", "text": "Người nước ngoài" },
-          { "label": "C", "text": "Nhân viên" },
-          { "label": "D", "text": "Giám đốc" }
+          { "label": "A", "text": "Tôi xin lỗi vì đã làm phiền" },
+          { "label": "B", "text": "Từ nay tôi rất mong sự giúp đỡ của anh/chị" },
+          { "label": "C", "text": "Chính tôi mới phải xin ông giúp đỡ cho" },
+          { "label": "D", "text": "Rất hân hạnh được gặp" }
         ],
-        "correct": "A",
-        "explanation": "A: エンジニア (từ vựng Katakana) có nghĩa là Kỹ sư.\nB: がいこくじん là Người nước ngoài.\nC: しゃいん là Nhân viên.\nD: しゃちょう là Giám đốc.",
+        "correct": "B",
+        "explanation": "B: これからおせわになります có nghĩa là Từ nay tôi rất mong sự giúp đỡ của anh/chị.\nA: しつれいします là xin phép/xin lỗi.\nC: こちらこそ よろしく là Chính tôi mới phải xin ông giúp đỡ.\nD: はじめまして là Rất hân hạnh được gặp.",
         "audioUrl": ""
       },
       {
         "id": 17,
-        "text": "Cụm từ \"しつれいですが\" dùng để làm gì?",
+        "text": "Từ \"テープ\" (trong [カセット]テープ) có nghĩa là gì?",
         "options": [
-          { "label": "A", "text": "Chào tạm biệt" },
-          { "label": "B", "text": "Xin lỗi khi muốn hỏi thông tin cá nhân" },
-          { "label": "C", "text": "Cảm ơn ai đó" },
-          { "label": "D", "text": "Chúc ngủ ngon" }
+          { "label": "A", "text": "Máy ghi âm" },
+          { "label": "B", "text": "Băng [cát-xét]" },
+          { "label": "C", "text": "Máy ảnh" },
+          { "label": "D", "text": "Cái bàn" }
         ],
         "correct": "B",
-        "explanation": "B: しつれいですが có nghĩa là 'Xin lỗi,...' (dùng mở đầu câu chuyện hoặc hỏi tên/tuổi).\nA: さようなら là Tạm biệt.\nC: ありがとうございます là Cảm ơn.\nD: おやすみなさい là Chúc ngủ ngon.",
+        "explanation": "B: [カセット]テープ có nghĩa là Băng [cát-xét].\nA: テープレコーダー có nghĩa là Máy ghi âm.\nC: カメラ có nghĩa là Máy ảnh.\nD: つくえ có nghĩa là Cái bàn.",
         "audioUrl": ""
       },
       {
         "id": 18,
-        "text": "Từ \"ちゅうごく\" có nghĩa là gì?",
+        "text": "Từ \"どうぞ\" dùng khi nào?",
         "options": [
-          { "label": "A", "text": "Hàn Quốc" },
-          { "label": "B", "text": "Trung Quốc" },
-          { "label": "C", "text": "Thái Lan" },
-          { "label": "D", "text": "Đức" }
+          { "label": "A", "text": "Khi từ chối" },
+          { "label": "B", "text": "Khi mời ai đó dùng/làm gì (Xin mời)" },
+          { "label": "C", "text": "Khi chào tạm biệt" },
+          { "label": "D", "text": "Khi hỏi thăm sức khỏe" }
         ],
         "correct": "B",
-        "explanation": "B: ちゅうごく có nghĩa là Trung Quốc.\nA: かんこく là Hàn Quốc.\nC: タイ là Thái Lan.\nD: ドイツ là Đức.",
+        "explanation": "B: どうぞ có nghĩa là Xin mời (dùng khi mời ai đó vào nhà, mời ngồi, mời uống...).\nA: いいえ là Không (từ chối/phủ định).\nC: さようなら là Tạm biệt.\nD: おげんきですか là Bạn có khỏe không?",
         "audioUrl": ""
       },
       {
         "id": 19,
-        "text": "Để hỏi \"Bạn bao nhiêu tuổi?\", ta dùng từ để hỏi nào?",
+        "text": "Từ \"カード\" có nghĩa là gì?",
         "options": [
-          { "label": "A", "text": "どなた" },
-          { "label": "B", "text": "なんさい" },
-          { "label": "C", "text": "だれ" },
-          { "label": "D", "text": "なん" }
+          { "label": "A", "text": "Thẻ, các (card)" },
+          { "label": "B", "text": "Xe ô tô" },
+          { "label": "C", "text": "Rèm cửa" },
+          { "label": "D", "text": "Lịch" }
         ],
-        "correct": "B",
-        "explanation": "B: なんさい có nghĩa là Mấy tuổi/Bao nhiêu tuổi.\nA: どなた là Vị nào (lịch sự của Ai).\nC: だれ là Ai.\nD: なん là Cái gì.",
+        "correct": "A",
+        "explanation": "A: カード có nghĩa là Thẻ, các, các-vi-dít (gốc tiếng Anh: Card).\nB: カー (car) hoặc じどうしゃ là ô tô.\nC: カーテン là rèm cửa.\nD: カレンダー là lịch.",
         "audioUrl": ""
       },
       {
         "id": 20,
-        "text": "Từ \"かんこく\" chỉ quốc gia nào?",
+        "text": "Từ nào sau đây có nghĩa là \"Máy ảnh\"?",
         "options": [
-          { "label": "A", "text": "Trung Quốc" },
-          { "label": "B", "text": "Hàn Quốc" },
-          { "label": "C", "text": "Mỹ" },
-          { "label": "D", "text": "Pháp" }
+          { "label": "A", "text": "カラオケ" },
+          { "label": "B", "text": "カメラ" },
+          { "label": "C", "text": "ラジオ" },
+          { "label": "D", "text": "テレビ" }
         ],
         "correct": "B",
-        "explanation": "B: かんこく có nghĩa là Hàn Quốc.\nA: ちゅうごく là Trung Quốc.\nC: アメリカ là Mỹ.\nD: フランス là Pháp.",
+        "explanation": "B: カメラ có nghĩa là Máy ảnh.\nA: カラオケ là Karaoke.\nC: ラジオ là Đài Radio.\nD: テレビ là Tivi.",
         "audioUrl": ""
       }
     ],
@@ -266,6 +266,6 @@
       "level": "n5",
       "bookId": "book-001",
       "chapterId": "chapter-1",
-      "lessonId": "lesson-1-1"
+      "lessonId": "lesson-1-2"
     }
   }

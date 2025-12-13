@@ -8,7 +8,7 @@ import { useLanguage } from '../contexts/LanguageContext.jsx';
 import { hasAccess } from '../utils/accessControlManager.js';
 
 function AccessGuard({ children, module, levelId: propLevelId }) {
-  const { user, isLoading } = useAuth();
+  const { user, profile, isLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const params = useParams();
@@ -24,8 +24,15 @@ function AccessGuard({ children, module, levelId: propLevelId }) {
       return;
     }
 
+    // ✅ FIXED: Merge user and profile to get role
+    // Role is stored in profile, not user object
+    const userWithRole = user ? {
+      ...user,
+      role: profile?.role || user.role || null
+    } : null;
+
     // Check access (user can be null for guest users)
-    const hasLevelAccess = hasAccess(moduleType, levelId, user);
+    const hasLevelAccess = hasAccess(moduleType, levelId, userWithRole);
     
     if (!hasLevelAccess) {
       // No access
@@ -43,7 +50,7 @@ function AccessGuard({ children, module, levelId: propLevelId }) {
 
     // Access granted
     setChecked(true);
-  }, [user, isLoading, levelId, moduleType, navigate, t]);
+  }, [user, profile, isLoading, levelId, moduleType, navigate, t]);
 
   // Show loading while checking
   if (isLoading || !checked) {
@@ -58,7 +65,12 @@ function AccessGuard({ children, module, levelId: propLevelId }) {
   }
 
   // If no access, don't render children (will be redirected)
-  const hasLevelAccess = hasAccess(moduleType, levelId, user);
+  // ✅ FIXED: Merge user and profile to get role
+  const userWithRole = user ? {
+    ...user,
+    role: profile?.role || user.role || null
+  } : null;
+  const hasLevelAccess = hasAccess(moduleType, levelId, userWithRole);
   if (!hasLevelAccess) {
     return null;
   }

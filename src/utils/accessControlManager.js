@@ -153,37 +153,55 @@ export function setModuleAccessConfig(module, config) {
  * @returns {boolean} True if user has access
  */
 export function hasAccess(module, levelId, user) {
+  // ✅ DEBUG: Log access check
+  console.log(`[ACCESS] Checking access for:`, {
+    module,
+    levelId,
+    userId: user?.id || 'guest',
+    userRole: user?.role || 'guest',
+    hasUser: !!user
+  });
+
   // Admin always has access
   if (user?.role === 'admin') {
+    console.log(`[ACCESS] ✅ Admin user - granted access`);
     return true;
   }
 
   // Check module-level access control first
   const moduleConfig = getModuleAccessConfig(module);
+  console.log(`[ACCESS] Module config:`, moduleConfig);
   
   // If module is blocked, deny access
   if (moduleConfig.accessType === 'none') {
+    console.log(`[ACCESS] ❌ Module blocked (accessType: none) - denied`);
     return false;
   }
 
   // If module allows all, continue to level-specific check
   if (moduleConfig.accessType === 'all') {
+    console.log(`[ACCESS] Module allows all - checking level-specific config`);
     // Continue to level-specific check
   } else if (moduleConfig.accessType === 'role') {
     // Role-based blocking at module level
+    console.log(`[ACCESS] Module role-based blocking - checking roles:`, moduleConfig.allowedRoles);
     if (!user) {
       // If "guest" is in blocked roles, deny access
       if (moduleConfig.allowedRoles.includes('guest')) {
+        console.log(`[ACCESS] ❌ Guest user blocked at module level - denied`);
         return false;
       }
     } else {
       // If user's role is in blocked list, deny access
       if (moduleConfig.allowedRoles.includes(user.role)) {
+        console.log(`[ACCESS] ❌ User role "${user.role}" blocked at module level - denied`);
         return false;
       }
     }
+    console.log(`[ACCESS] User not blocked at module level - checking level-specific config`);
   } else if (moduleConfig.accessType === 'user') {
     // User-specific blocking at module level
+    console.log(`[ACCESS] Module user-based blocking - checking users:`, moduleConfig.allowedUsers);
     if (user?.id) {
       const userId = user.id;
       const isBlocked = moduleConfig.allowedUsers.some(blockedId => 
@@ -192,38 +210,52 @@ export function hasAccess(module, levelId, user) {
         Number(blockedId) === Number(userId)
       );
       if (isBlocked) {
+        console.log(`[ACCESS] ❌ User ID "${userId}" blocked at module level - denied`);
         return false;
       }
     }
+    console.log(`[ACCESS] User not blocked at module level - checking level-specific config`);
   }
 
   // Now check level-specific access control
   const config = getAccessConfig(module, levelId);
+  console.log(`[ACCESS] Level config for ${levelId}:`, config);
 
   // No access
   if (config.accessType === 'none') {
+    console.log(`[ACCESS] ❌ Level blocked (accessType: none) - denied`);
     return false;
   }
 
   // All users have access
   if (config.accessType === 'all') {
+    console.log(`[ACCESS] ✅ Level allows all - granted`);
     return true;
   }
 
   // Role-based blocking: Selected roles are BLOCKED, others are allowed
   if (config.accessType === 'role') {
+    console.log(`[ACCESS] Level role-based blocking - checking roles:`, config.allowedRoles);
     // Handle guest users (not logged in)
     if (!user) {
       // If "guest" is in blocked roles, deny access
-      return !config.allowedRoles.includes('guest');
+      const isGuestBlocked = config.allowedRoles.includes('guest');
+      console.log(`[ACCESS] Guest user - blocked: ${isGuestBlocked}`);
+      return !isGuestBlocked;
     }
     // If user's role is in blocked list, deny access
-    return !config.allowedRoles.includes(user.role);
+    const isRoleBlocked = config.allowedRoles.includes(user.role);
+    console.log(`[ACCESS] User role "${user.role}" - blocked: ${isRoleBlocked}`);
+    return !isRoleBlocked;
   }
 
   // User-specific blocking: Selected users are BLOCKED, others are allowed
   if (config.accessType === 'user') {
-    if (!user?.id) return true; // No user ID = allow (or handle as needed)
+    console.log(`[ACCESS] Level user-based blocking - checking users:`, config.allowedUsers);
+    if (!user?.id) {
+      console.log(`[ACCESS] ✅ No user ID - allowed (guest)`);
+      return true; // No user ID = allow (or handle as needed)
+    }
     // Handle both number and string IDs
     const userId = user.id;
     const isBlocked = config.allowedUsers.some(blockedId => 
@@ -232,9 +264,11 @@ export function hasAccess(module, levelId, user) {
       Number(blockedId) === Number(userId)
     );
     // If user is in blocked list, deny access
+    console.log(`[ACCESS] User ID "${userId}" - blocked: ${isBlocked}`);
     return !isBlocked;
   }
 
+  console.log(`[ACCESS] ❌ Unknown access type or no match - denied`);
   return false;
 }
 

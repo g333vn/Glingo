@@ -9,7 +9,7 @@ import { useAuth } from '../../../contexts/AuthContext.jsx';
 function LevelPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -27,12 +27,18 @@ function LevelPage() {
 
   // Check access for all levels
   const accessMap = useMemo(() => {
+    // ✅ FIXED: Merge user and profile to get role
+    const userWithRole = user ? {
+      ...user,
+      role: profile?.role || user.role || null
+    } : null;
+    
     const map = {};
     levels.forEach(level => {
-      map[level.id] = hasAccess('level', level.id, user);
+      map[level.id] = hasAccess('level', level.id, userWithRole);
     });
     return map;
-  }, [user]);
+  }, [user, profile]);
 
   const handleLevelClick = (levelId) => {
     if (!accessMap[levelId]) {
