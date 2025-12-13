@@ -25,6 +25,22 @@ function LevelPage() {
     { id: 'n5', titleKey: 'level.n5Title', descKey: 'level.n5Desc', bgColor: '#A78BFA' },
   ];
 
+  // State to force re-render when access control updates
+  const [accessControlVersion, setAccessControlVersion] = useState(0);
+
+  // ✅ NEW: Listen for access control updates
+  useEffect(() => {
+    const handleAccessControlUpdate = () => {
+      console.log('[LevelPage] 🔄 Access control updated, re-checking access...');
+      setAccessControlVersion(prev => prev + 1);
+    };
+
+    window.addEventListener('accessControlUpdated', handleAccessControlUpdate);
+    return () => {
+      window.removeEventListener('accessControlUpdated', handleAccessControlUpdate);
+    };
+  }, []);
+
   // Check access for all levels
   const accessMap = useMemo(() => {
     // ✅ FIXED: Merge user and profile to get role
@@ -36,7 +52,8 @@ function LevelPage() {
     console.log('[LevelPage] 🔍 Checking access for levels:', {
       userId: userWithRole?.id || 'guest',
       userRole: userWithRole?.role || 'guest',
-      hasUser: !!userWithRole
+      hasUser: !!userWithRole,
+      accessControlVersion
     });
     
     const map = {};
@@ -48,7 +65,7 @@ function LevelPage() {
     
     console.log('[LevelPage] 📊 Access map:', map);
     return map;
-  }, [user, profile]);
+  }, [user, profile, accessControlVersion]);
 
   const handleLevelClick = (levelId) => {
     if (!accessMap[levelId]) {

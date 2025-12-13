@@ -13,6 +13,8 @@ import { useAuth } from './contexts/AuthContext.jsx';
 import { initJLPTDictionary } from './services/api_translate/dictionaryService.js';
 // Global app settings (maintenance)
 import { getGlobalMaintenanceMode } from './services/appSettingsService.js';
+// Access control sync
+import { getAccessControlFromSupabase, subscribeToAccessControl } from './services/accessControlService.js';
 
 // ✅ NOTE: ToastProvider is now in main.jsx
 
@@ -40,6 +42,7 @@ function AppContent() {
   const [settings, setSettings] = useState(getSettings());
   const [globalMaintenance, setGlobalMaintenance] = useState(null);
   const [maintenanceChecked, setMaintenanceChecked] = useState(false); // ✅ NEW: Track if maintenance check is complete
+  const [accessControlLoaded, setAccessControlLoaded] = useState(false); // ✅ NEW: Track if access control is loaded from Supabase
 
   // Get role from profile (role is in profile, not user)
   const userRole = profile?.role || user?.role;
@@ -141,6 +144,89 @@ function AppContent() {
     // ✅ Poll lại mỗi 30s để bắt trạng thái mới từ Supabase (reduced from 60s for faster updates)
     const interval = setInterval(fetchMaintenance, 30000);
     return () => clearInterval(interval);
+  }, []); // Empty deps - only run on mount
+
+  // ✅ NEW: Load and sync access control from Supabase on app start
+  useEffect(() => {
+    async function loadAccessControl() {
+      try {
+        console.log('[App] 🔄 Loading access control from Supabase...');
+        const { success, data } = await getAccessControlFromSupabase();
+        if (success && data) {
+          console.log('[App] ✅ Loaded access control from Supabase:', {
+            levelConfigs: Object.keys(data.levelConfigs || {}).length,
+            jlptConfigs: Object.keys(data.jlptConfigs || {}).length,
+            levelModule: data.levelModuleConfig,
+            jlptModule: data.jlptModuleConfig
+          });
+          
+          // ✅ CRITICAL: Sync to localStorage FIRST before marking as loaded
+          if (data.levelConfigs) {
+            localStorage.setItem('levelAccessControl', JSON.stringify(data.levelConfigs));
+            console.log('[App] ✅ Synced levelConfigs to localStorage');
+          }
+          if (data.jlptConfigs) {
+            localStorage.setItem('jlptAccessControl', JSON.stringify(data.jlptConfigs));
+            console.log('[App] ✅ Synced jlptConfigs to localStorage');
+          }
+          if (data.levelModuleConfig) {
+            localStorage.setItem('levelModuleAccessControl', JSON.stringify(data.levelModuleConfig));
+            console.log('[App] ✅ Synced levelModuleConfig to localStorage:', data.levelModuleConfig);
+          }
+          if (data.jlptModuleConfig) {
+            localStorage.setItem('jlptModuleAccessControl', JSON.stringify(data.jlptModuleConfig));
+            console.log('[App] ✅ Synced jlptModuleConfig to localStorage:', data.jlptModuleConfig);
+          }
+          
+          // ✅ Mark as loaded AFTER syncing to localStorage
+          setAccessControlLoaded(true);
+          
+          // Dispatch event to notify components
+          window.dispatchEvent(new CustomEvent('accessControlUpdated', { 
+            detail: data 
+          }));
+        } else {
+          console.warn('[App] ⚠️ Failed to load access control from Supabase, using localStorage');
+          // Still mark as loaded to allow app to continue
+          setAccessControlLoaded(true);
+        }
+      } catch (error) {
+        console.error('[App] ❌ Error loading access control from Supabase:', error);
+        // Still mark as loaded to allow app to continue
+        setAccessControlLoaded(true);
+      }
+    }
+    
+    // Load immediately on mount
+    loadAccessControl();
+
+    // ✅ Subscribe to real-time changes
+    const unsubscribe = subscribeToAccessControl((updatedData) => {
+      console.log('[App] 🔄 Access control updated via real-time subscription');
+      
+      // Sync to localStorage
+      if (updatedData.levelConfigs) {
+        localStorage.setItem('levelAccessControl', JSON.stringify(updatedData.levelConfigs));
+      }
+      if (updatedData.jlptConfigs) {
+        localStorage.setItem('jlptAccessControl', JSON.stringify(updatedData.jlptConfigs));
+      }
+      if (updatedData.levelModuleConfig) {
+        localStorage.setItem('levelModuleAccessControl', JSON.stringify(updatedData.levelModuleConfig));
+      }
+      if (updatedData.jlptModuleConfig) {
+        localStorage.setItem('jlptModuleAccessControl', JSON.stringify(updatedData.jlptModuleConfig));
+      }
+      
+      // Dispatch event to notify components
+      window.dispatchEvent(new CustomEvent('accessControlUpdated', { 
+        detail: updatedData 
+      }));
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []); // Empty deps - only run on mount
 
   // ✅ NEW: Re-check maintenance when route changes (to catch route navigation)

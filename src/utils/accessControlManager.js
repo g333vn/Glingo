@@ -89,11 +89,20 @@ export function getAccessConfigSync(module, levelId) {
 
     const stored = localStorage.getItem(storageKey);
     if (!stored) {
+      console.log(`[ACCESS] ⚠️ No ${storageKey} in localStorage, using default config for ${module}/${levelId}`);
       return { ...DEFAULT_ACCESS_CONFIG };
     }
 
     const config = JSON.parse(stored);
-    return config[levelId] || { ...DEFAULT_ACCESS_CONFIG };
+    const levelConfig = config[levelId] || { ...DEFAULT_ACCESS_CONFIG };
+    
+    console.log(`[ACCESS] 📖 Read config for ${module}/${levelId} from localStorage:`, {
+      accessType: levelConfig.accessType,
+      allowedRoles: levelConfig.allowedRoles,
+      allowedUsers: levelConfig.allowedUsers
+    });
+    
+    return levelConfig;
   } catch (error) {
     console.error(`[ACCESS] Error getting config for ${module}/${levelId}:`, error);
     return { ...DEFAULT_ACCESS_CONFIG };
@@ -233,10 +242,18 @@ export function getModuleAccessConfigSync(module) {
 
     const stored = localStorage.getItem(storageKey);
     if (!stored) {
+      console.log(`[ACCESS] ⚠️ No ${storageKey} in localStorage, using default module config for ${module}`);
       return { ...DEFAULT_ACCESS_CONFIG };
     }
 
-    return JSON.parse(stored);
+    const config = JSON.parse(stored);
+    console.log(`[ACCESS] 📖 Read module config for ${module} from localStorage:`, {
+      accessType: config.accessType,
+      allowedRoles: config.allowedRoles,
+      allowedUsers: config.allowedUsers
+    });
+    
+    return config;
   } catch (error) {
     console.error(`[ACCESS] Error getting module-level config for ${module}:`, error);
     return { ...DEFAULT_ACCESS_CONFIG };
@@ -311,7 +328,12 @@ export function hasAccess(module, levelId, user) {
   // Check module-level access control first
   // ✅ FIXED: Use sync version for hasAccess (called frequently, needs to be fast)
   const moduleConfig = getModuleAccessConfigSync(module);
-  console.log(`[ACCESS] Module config:`, moduleConfig);
+  console.log(`[ACCESS] Module config for ${module}:`, {
+    accessType: moduleConfig.accessType,
+    allowedRoles: moduleConfig.allowedRoles,
+    allowedUsers: moduleConfig.allowedUsers,
+    source: 'localStorage (synced from Supabase)'
+  });
   
   // If module is blocked, deny access
   if (moduleConfig.accessType === 'none') {
@@ -361,7 +383,12 @@ export function hasAccess(module, levelId, user) {
   // Now check level-specific access control
   // ✅ FIXED: Use sync version for hasAccess (called frequently, needs to be fast)
   const config = getAccessConfigSync(module, levelId);
-  console.log(`[ACCESS] Level config for ${module}/${levelId}:`, config);
+  console.log(`[ACCESS] Level config for ${module}/${levelId}:`, {
+    accessType: config.accessType,
+    allowedRoles: config.allowedRoles,
+    allowedUsers: config.allowedUsers,
+    source: 'localStorage (synced from Supabase)'
+  });
 
   // No access
   if (config.accessType === 'none') {

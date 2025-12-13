@@ -187,3 +187,41 @@ export async function saveModuleAccessConfigToSupabase(module, config) {
   }
 }
 
+/**
+ * Subscribe to real-time changes in access_control
+ * @param {Function} callback - Callback function that receives the updated access_control
+ * @returns {Function} Unsubscribe function
+ */
+export function subscribeToAccessControl(callback) {
+  const channel = supabase
+    .channel('access_control_changes')
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'app_settings',
+        filter: `id=eq.${APP_SETTINGS_ID}`
+      },
+      (payload) => {
+        console.log('[AccessControlService] 🔄 Real-time access_control update received:', payload);
+        if (payload.new?.access_control && callback) {
+          const accessControl = payload.new.access_control;
+          const data = {
+            levelConfigs: accessControl.level || {},
+            jlptConfigs: accessControl.jlpt || {},
+            levelModuleConfig: accessControl.levelModule || { accessType: 'all', allowedRoles: [], allowedUsers: [] },
+            jlptModuleConfig: accessControl.jlptModule || { accessType: 'all', allowedRoles: [], allowedUsers: [] }
+          };
+          callback(data);
+        }
+      }
+    )
+    .subscribe();
+
+  // Return unsubscribe function
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
