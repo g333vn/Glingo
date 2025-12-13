@@ -12,8 +12,10 @@ import {
   initializeDefaultConfigs,
   resetModuleConfigs,
   getModuleAccessConfig,
+  getModuleAccessConfigSync,
   setModuleAccessConfig
 } from '../../utils/accessControlManager.js';
+import { getAccessControlFromSupabase } from '../../services/accessControlService.js';
 import {
   getDashboardAccessConfig,
   setDashboardAccessConfig,
@@ -43,24 +45,65 @@ function NewControlPage() {
     loadData();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
     // Load users
     const allUsers = getUsers();
     setUsers(allUsers);
 
-    // Initialize and load configs
+    // ✅ FIXED: Initialize default configs (only for levels without config)
+    // This will NOT overwrite existing configs
     initializeDefaultConfigs('level');
     initializeDefaultConfigs('jlpt');
     
-    setLevelConfigs(getAllAccessConfigs('level'));
-    setJlptConfigs(getAllAccessConfigs('jlpt'));
-    
-    // Load module-level configs
-    setLevelModuleConfig(getModuleAccessConfig('level'));
-    setJlptModuleConfig(getModuleAccessConfig('jlpt'));
+    // ✅ NEW: Try to load from Supabase first, then fallback to localStorage
+    try {
+      const { success, data } = await getAccessControlFromSupabase();
+      if (success && data) {
+        console.log('[NewControlPage] ✅ Loaded access configs from Supabase');
+        // Update state with Supabase data
+        setLevelConfigs(data.levelConfigs || {});
+        setJlptConfigs(data.jlptConfigs || {});
+        setLevelModuleConfig(data.levelModuleConfig || { accessType: 'all', allowedRoles: [], allowedUsers: [] });
+        setJlptModuleConfig(data.jlptModuleConfig || { accessType: 'all', allowedRoles: [], allowedUsers: [] });
+        
+        // Also sync to localStorage for offline access
+        if (data.levelConfigs) {
+          localStorage.setItem('levelAccessControl', JSON.stringify(data.levelConfigs));
+        }
+        if (data.jlptConfigs) {
+          localStorage.setItem('jlptAccessControl', JSON.stringify(data.jlptConfigs));
+        }
+        if (data.levelModuleConfig) {
+          localStorage.setItem('levelModuleAccessControl', JSON.stringify(data.levelModuleConfig));
+        }
+        if (data.jlptModuleConfig) {
+          localStorage.setItem('jlptModuleAccessControl', JSON.stringify(data.jlptModuleConfig));
+        }
+      } else {
+        // Fallback to localStorage
+        console.log('[NewControlPage] ⚠️ Failed to load from Supabase, using localStorage');
+        setLevelConfigs(getAllAccessConfigs('level'));
+        setJlptConfigs(getAllAccessConfigs('jlpt'));
+        setLevelModuleConfig(getModuleAccessConfigSync('level'));
+        setJlptModuleConfig(getModuleAccessConfigSync('jlpt'));
+      }
+    } catch (err) {
+      console.warn('[NewControlPage] ⚠️ Error loading from Supabase, using localStorage:', err);
+      setLevelConfigs(getAllAccessConfigs('level'));
+      setJlptConfigs(getAllAccessConfigs('jlpt'));
+      setLevelModuleConfig(getModuleAccessConfigSync('level'));
+      setJlptModuleConfig(getModuleAccessConfigSync('jlpt'));
+    }
     
     // Load dashboard config
     setDashboardConfig(getDashboardAccessConfig());
+    
+    console.log('[NewControlPage] ✅ Loaded access configs:', {
+      levelConfigs: Object.keys(getAllAccessConfigs('level')).length,
+      jlptConfigs: Object.keys(getAllAccessConfigs('jlpt')).length,
+      levelModule: getModuleAccessConfigSync('level'),
+      jlptModule: getModuleAccessConfigSync('jlpt')
+    });
   };
 
   const handleEdit = (module, levelId) => {
@@ -121,7 +164,7 @@ function NewControlPage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editingConfig) return;
 
     const { module, levelId, ...config } = editingConfig;
@@ -132,25 +175,31 @@ function NewControlPage() {
       setDashboardConfig(getDashboardAccessConfig());
     } else if (levelId === null) {
       // Module-level config
-      setModuleAccessConfig(module, config);
-      if (module === 'level') {
-        setLevelModuleConfig(getModuleAccessConfig('level'));
-      } else {
-        setJlptModuleConfig(getModuleAccessConfig('jlpt'));
+      // ✅ FIXED: Save to Supabase (async)
+      const success = await setModuleAccessConfig(module, config);
+      if (success) {
+        if (module === 'level') {
+          setLevelModuleConfig(getModuleAccessConfigSync('level'));
+        } else {
+          setJlptModuleConfig(getModuleAccessConfigSync('jlpt'));
+        }
       }
     } else {
       // Level-specific config
-      setAccessConfig(module, levelId, config);
-      if (module === 'level') {
-        setLevelConfigs(getAllAccessConfigs('level'));
-      } else {
-        setJlptConfigs(getAllAccessConfigs('jlpt'));
+      // ✅ FIXED: Save to Supabase (async)
+      const success = await setAccessConfig(module, levelId, config);
+      if (success) {
+        if (module === 'level') {
+          setLevelConfigs(getAllAccessConfigs('level'));
+        } else {
+          setJlptConfigs(getAllAccessConfigs('jlpt'));
+        }
       }
     }
 
     setShowModal(false);
     setEditingConfig(null);
-    alert(t('accessControl.save') === 'Lưu' ? 'Đã lưu thành công' : t('dashboardAccess.saveSuccess'));
+    alert(t('accessControl.save') === 'Lưu' ? 'Đã lưu thành công và đồng bộ lên Supabase' : t('dashboardAccess.saveSuccess'));
   };
 
   const handleResetModule = (module) => {

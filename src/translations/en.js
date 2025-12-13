@@ -12,6 +12,9 @@ common: {
   jlpt: 'JLPT'
 },
 maintenance: {
+  title: 'System Under Maintenance',
+  message: 'We are currently performing maintenance and upgrades to serve you better. Please come back in a few minutes.',
+  contact: 'If you need urgent support, please contact',
   loggedInNonAdmin: 'You are logged in with a non-admin account. During maintenance, only admins can use the system.',
   note: 'Admins can still access the admin area to monitor and complete the maintenance process.'
 },
@@ -2848,7 +2851,8 @@ accessControl: {
         allowedUsers: 'Allowed Users',
           searchUsers: 'Search users...'
   },
-  adminNote: 'Note: Admin always has full access, not affected by this configuration'
+  adminNote: 'Note: Admin always has full access, not affected by this configuration',
+  noAccessMessage: 'You do not have permission to access {level}. Please contact Admin to get access.'
 },
 
 // ============================================================================

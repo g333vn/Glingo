@@ -1,6 +1,13 @@
 // src/utils/accessControlManager.js
 // 🔒 ACCESS CONTROL MANAGEMENT SYSTEM
 // Quản lý quyền truy cập cho các module LEVEL và JLPT
+// ✅ UPDATED: Sync với Supabase để quản trị toàn hệ thống thời gian thực
+
+import {
+  getAccessControlFromSupabase,
+  saveLevelAccessConfigToSupabase,
+  saveModuleAccessConfigToSupabase
+} from '../services/accessControlService.js';
 
 const STORAGE_KEYS = {
   level: 'levelAccessControl',
@@ -17,11 +24,62 @@ const DEFAULT_ACCESS_CONFIG = {
 
 /**
  * Get access control config for a module and level
+ * ✅ UPDATED: Priority: Supabase > localStorage
  * @param {string} module - 'level' or 'jlpt'
  * @param {string} levelId - 'n1', 'n2', 'n3', 'n4', 'n5'
  * @returns {Object} Access control config
  */
-export function getAccessConfig(module, levelId) {
+export async function getAccessConfig(module, levelId) {
+  try {
+    // ✅ NEW: Try Supabase first (real-time sync)
+    try {
+      const { success, data } = await getAccessControlFromSupabase();
+      if (success && data) {
+        const moduleConfigs = module === 'level' ? data.levelConfigs : data.jlptConfigs;
+        if (moduleConfigs && moduleConfigs[levelId]) {
+          console.log(`[ACCESS] ✅ Loaded ${module}/${levelId} config from Supabase`);
+          // Cache to localStorage for offline access
+          const storageKey = STORAGE_KEYS[module];
+          if (storageKey) {
+            const stored = localStorage.getItem(storageKey);
+            const allConfigs = stored ? JSON.parse(stored) : {};
+            allConfigs[levelId] = moduleConfigs[levelId];
+            localStorage.setItem(storageKey, JSON.stringify(allConfigs));
+          }
+          return { ...DEFAULT_ACCESS_CONFIG, ...moduleConfigs[levelId] };
+        }
+      }
+    } catch (err) {
+      console.warn(`[ACCESS] ⚠️ Failed to load from Supabase, using localStorage:`, err);
+    }
+
+    // Fallback to localStorage
+    const storageKey = STORAGE_KEYS[module];
+    if (!storageKey) {
+      console.warn(`[ACCESS] Unknown module: ${module}`);
+      return { ...DEFAULT_ACCESS_CONFIG };
+    }
+
+    const stored = localStorage.getItem(storageKey);
+    if (!stored) {
+      return { ...DEFAULT_ACCESS_CONFIG };
+    }
+
+    const config = JSON.parse(stored);
+    return config[levelId] || { ...DEFAULT_ACCESS_CONFIG };
+  } catch (error) {
+    console.error(`[ACCESS] Error getting config for ${module}/${levelId}:`, error);
+    return { ...DEFAULT_ACCESS_CONFIG };
+  }
+}
+
+/**
+ * Synchronous version for backward compatibility (uses localStorage only)
+ * @param {string} module - 'level' or 'jlpt'
+ * @param {string} levelId - 'n1', 'n2', 'n3', 'n4', 'n5'
+ * @returns {Object} Access control config
+ */
+export function getAccessConfigSync(module, levelId) {
   try {
     const storageKey = STORAGE_KEYS[module];
     if (!storageKey) {
@@ -98,10 +156,56 @@ export function getAllAccessConfigs(module) {
 
 /**
  * Get module-level access control config
+ * ✅ UPDATED: Priority: Supabase > localStorage
  * @param {string} module - 'level' or 'jlpt'
  * @returns {Object} Module-level access control config
  */
-export function getModuleAccessConfig(module) {
+export async function getModuleAccessConfig(module) {
+  try {
+    // ✅ NEW: Try Supabase first (real-time sync)
+    try {
+      const { success, data } = await getAccessControlFromSupabase();
+      if (success && data) {
+        const moduleConfig = module === 'level' ? data.levelModuleConfig : data.jlptModuleConfig;
+        if (moduleConfig && Object.keys(moduleConfig).length > 0) {
+          console.log(`[ACCESS] ✅ Loaded ${module} module config from Supabase`);
+          // Cache to localStorage
+          const storageKey = STORAGE_KEYS[`${module}Module`];
+          if (storageKey) {
+            localStorage.setItem(storageKey, JSON.stringify(moduleConfig));
+          }
+          return { ...DEFAULT_ACCESS_CONFIG, ...moduleConfig };
+        }
+      }
+    } catch (err) {
+      console.warn(`[ACCESS] ⚠️ Failed to load from Supabase, using localStorage:`, err);
+    }
+
+    // Fallback to localStorage
+    const storageKey = STORAGE_KEYS[`${module}Module`];
+    if (!storageKey) {
+      console.warn(`[ACCESS] Unknown module for module-level: ${module}`);
+      return { ...DEFAULT_ACCESS_CONFIG };
+    }
+
+    const stored = localStorage.getItem(storageKey);
+    if (!stored) {
+      return { ...DEFAULT_ACCESS_CONFIG };
+    }
+
+    return JSON.parse(stored);
+  } catch (error) {
+    console.error(`[ACCESS] Error getting module-level config for ${module}:`, error);
+    return { ...DEFAULT_ACCESS_CONFIG };
+  }
+}
+
+/**
+ * Synchronous version for backward compatibility (uses localStorage only)
+ * @param {string} module - 'level' or 'jlpt'
+ * @returns {Object} Module-level access control config
+ */
+export function getModuleAccessConfigSync(module) {
   try {
     const storageKey = STORAGE_KEYS[`${module}Module`];
     if (!storageKey) {
@@ -123,21 +227,39 @@ export function getModuleAccessConfig(module) {
 
 /**
  * Set module-level access control config
+ * ✅ UPDATED: Save to both Supabase (real-time) and localStorage (cache)
  * @param {string} module - 'level' or 'jlpt'
  * @param {Object} config - Access control config
+ * @returns {Promise<boolean>} Success status
  */
-export function setModuleAccessConfig(module, config) {
+export async function setModuleAccessConfig(module, config) {
   try {
+    const finalConfig = {
+      ...DEFAULT_ACCESS_CONFIG,
+      ...config
+    };
+
+    // ✅ NEW: Save to Supabase first (real-time sync)
+    try {
+      const { success, error } = await saveModuleAccessConfigToSupabase(module, finalConfig);
+      if (success) {
+        console.log(`[ACCESS] ✅ Saved ${module} module config to Supabase`);
+      } else {
+        console.warn(`[ACCESS] ⚠️ Failed to save to Supabase, saving to localStorage only:`, error);
+      }
+    } catch (err) {
+      console.warn(`[ACCESS] ⚠️ Error saving to Supabase:`, err);
+    }
+
+    // Also save to localStorage (cache for offline access)
     const storageKey = STORAGE_KEYS[`${module}Module`];
     if (!storageKey) {
       console.warn(`[ACCESS] Unknown module for module-level: ${module}`);
       return false;
     }
 
-    localStorage.setItem(storageKey, JSON.stringify({
-      ...DEFAULT_ACCESS_CONFIG,
-      ...config
-    }));
+    localStorage.setItem(storageKey, JSON.stringify(finalConfig));
+    console.log(`[ACCESS] ✅ Saved ${module} module config to localStorage`);
     return true;
   } catch (error) {
     console.error(`[ACCESS] Error setting module-level config for ${module}:`, error);
@@ -169,7 +291,8 @@ export function hasAccess(module, levelId, user) {
   }
 
   // Check module-level access control first
-  const moduleConfig = getModuleAccessConfig(module);
+  // ✅ FIXED: Use sync version for hasAccess (called frequently, needs to be fast)
+  const moduleConfig = getModuleAccessConfigSync(module);
   console.log(`[ACCESS] Module config:`, moduleConfig);
   
   // If module is blocked, deny access
@@ -218,8 +341,9 @@ export function hasAccess(module, levelId, user) {
   }
 
   // Now check level-specific access control
-  const config = getAccessConfig(module, levelId);
-  console.log(`[ACCESS] Level config for ${levelId}:`, config);
+  // ✅ FIXED: Use sync version for hasAccess (called frequently, needs to be fast)
+  const config = getAccessConfigSync(module, levelId);
+  console.log(`[ACCESS] Level config for ${module}/${levelId}:`, config);
 
   // No access
   if (config.accessType === 'none') {
@@ -280,9 +404,14 @@ export function initializeDefaultConfigs(module) {
   const levels = ['n1', 'n2', 'n3', 'n4', 'n5'];
   const allConfigs = getAllAccessConfigs(module);
 
+  console.log(`[ACCESS] Initializing default configs for ${module}:`, allConfigs);
+
   levels.forEach(levelId => {
     if (!allConfigs[levelId]) {
+      console.log(`[ACCESS] Setting default config for ${module}/${levelId} (not exists)`);
       setAccessConfig(module, levelId, { ...DEFAULT_ACCESS_CONFIG });
+    } else {
+      console.log(`[ACCESS] Keeping existing config for ${module}/${levelId}:`, allConfigs[levelId]);
     }
   });
 }

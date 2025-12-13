@@ -34,17 +34,40 @@ function AppContent() {
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [settings, setSettings] = useState(getSettings());
   const [globalMaintenance, setGlobalMaintenance] = useState(null);
+  const [maintenanceChecked, setMaintenanceChecked] = useState(false); // ✅ NEW: Track if maintenance check is complete
 
   // Get role from profile (role is in profile, not user)
   const userRole = profile?.role || user?.role;
   const isAdmin = userRole === 'admin';
   const localMaintenance = settings?.system?.maintenanceMode;
-  // Ưu tiên maintenance global từ Supabase; nếu null thì fallback local
+  
+  // ✅ FIXED: Priority: globalMaintenance > localMaintenance
+  // If globalMaintenance is null (still loading), use localMaintenance as fallback
+  // If globalMaintenance is false but localMaintenance is true, use localMaintenance (sync issue)
   const effectiveMaintenance =
-    globalMaintenance === null ? localMaintenance : globalMaintenance;
+    globalMaintenance !== null ? globalMaintenance : localMaintenance;
+  
   const isLoginRoute = location.pathname.startsWith('/login');
-  // Show maintenance page for all non-admin users except on login route
+  
+  // ✅ FIXED: Show maintenance page only if:
+  // 1. Maintenance is enabled (either global or local)
+  // 2. User is not admin
+  // 3. Not on login route
   const showMaintenanceForUser = effectiveMaintenance && !isAdmin && !isLoginRoute;
+
+  // ✅ DEBUG: Log maintenance state
+  useEffect(() => {
+    console.log('[App][Maintenance] State:', {
+      globalMaintenance,
+      localMaintenance,
+      effectiveMaintenance,
+      isAdmin,
+      userRole,
+      isLoginRoute,
+      showMaintenanceForUser,
+      maintenanceChecked
+    });
+  }, [globalMaintenance, localMaintenance, effectiveMaintenance, isAdmin, userRole, isLoginRoute, showMaintenanceForUser, maintenanceChecked]);
 
   const handleOpenLoginModal = () => { setShowLoginModal(true); };
   const handleCloseLoginModal = () => { setShowLoginModal(false); };
@@ -92,21 +115,42 @@ function AppContent() {
       });
   }, []); // Empty deps array = run once on mount
 
-  // ✅ NEW: Load global maintenance flag từ Supabase
+  // ✅ FIXED: Load global maintenance flag từ Supabase
   useEffect(() => {
     async function fetchMaintenance() {
       const { success, maintenance } = await getGlobalMaintenanceMode();
       if (success) {
         setGlobalMaintenance(maintenance);
+        setMaintenanceChecked(true); // ✅ Mark as checked
         console.log('[App][Maintenance] Global maintenance_mode =', maintenance);
+      } else {
+        // ✅ If fetch fails, still mark as checked to use local maintenance
+        setMaintenanceChecked(true);
+        console.warn('[App][Maintenance] Failed to fetch global maintenance, using local:', localMaintenance);
       }
     }
+    
+    // ✅ Fetch immediately on mount
     fetchMaintenance();
 
-    // Optional: poll lại mỗi 60s để bắt trạng thái mới từ Supabase UI
-    const interval = setInterval(fetchMaintenance, 60000);
+    // ✅ Poll lại mỗi 30s để bắt trạng thái mới từ Supabase (reduced from 60s for faster updates)
+    const interval = setInterval(fetchMaintenance, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, []); // Empty deps - only run on mount
+
+  // ✅ NEW: Re-check maintenance when route changes (to catch route navigation)
+  useEffect(() => {
+    if (maintenanceChecked) {
+      async function recheckMaintenance() {
+        const { success, maintenance } = await getGlobalMaintenanceMode();
+        if (success) {
+          setGlobalMaintenance(maintenance);
+          console.log('[App][Maintenance] Re-checked on route change, maintenance_mode =', maintenance);
+        }
+      }
+      recheckMaintenance();
+    }
+  }, [location.pathname, maintenanceChecked]);
 
 
 
@@ -138,7 +182,15 @@ function AppContent() {
       <Header onUserIconClick={handleOpenLoginModal} isMaintenanceLock={showMaintenanceForUser} />
 
       <main className="flex-1 relative pt-20 md:pt-24 pb-12 overflow-x-hidden">
-        {showMaintenanceForUser ? (
+        {/* ✅ FIXED: Show loading while checking maintenance, then show maintenance page or content */}
+        {!maintenanceChecked && !isLoginRoute ? (
+          <div className="min-h-[60vh] flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-600">Đang kiểm tra hệ thống...</p>
+            </div>
+          </div>
+        ) : showMaintenanceForUser ? (
           <MaintenancePage />
         ) : (
           <div className="relative z-0 flex justify-center items-start px-3 sm:px-4">

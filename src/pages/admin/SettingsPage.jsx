@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';
 import { getSettings, saveSettings, resetSettings, exportSettings, importSettings } from '../../utils/settingsManager.js';
+import { setGlobalMaintenanceMode } from '../../services/appSettingsService.js';
 import { resetToFactoryDefaults } from '../../utils/seedManager.js';
 import { clearDeletedUsers } from '../../data/users.js';
 import { SEED_CONFIG } from '../../data/seedData.js';
@@ -37,7 +38,7 @@ function SettingsPage() {
   }, [currentLanguage]);
 
   // Update setting helper
-  const updateSetting = (category, key, value) => {
+  const updateSetting = async (category, key, value) => {
     setSettings(prev => ({
       ...prev,
       [category]: {
@@ -46,6 +47,20 @@ function SettingsPage() {
       }
     }));
     setHasChanges(true);
+
+    // ✅ FIXED: If updating maintenanceMode, also update Supabase immediately
+    if (category === 'system' && key === 'maintenanceMode') {
+      try {
+        const { success, error } = await setGlobalMaintenanceMode(value);
+        if (success) {
+          console.log('[SettingsPage] ✅ Updated global maintenance_mode to', value);
+        } else {
+          console.warn('[SettingsPage] ⚠️ Failed to update global maintenance_mode:', error);
+        }
+      } catch (err) {
+        console.error('[SettingsPage] ❌ Error updating global maintenance_mode:', err);
+      }
+    }
   };
 
   // Translate text using Google Translate API

@@ -33,10 +33,20 @@ function LevelPage() {
       role: profile?.role || user.role || null
     } : null;
     
+    console.log('[LevelPage] 🔍 Checking access for levels:', {
+      userId: userWithRole?.id || 'guest',
+      userRole: userWithRole?.role || 'guest',
+      hasUser: !!userWithRole
+    });
+    
     const map = {};
     levels.forEach(level => {
-      map[level.id] = hasAccess('level', level.id, userWithRole);
+      const hasAccessResult = hasAccess('level', level.id, userWithRole);
+      map[level.id] = hasAccessResult;
+      console.log(`[LevelPage] ${level.id.toUpperCase()}: ${hasAccessResult ? '✅ ALLOWED' : '❌ BLOCKED'}`);
     });
+    
+    console.log('[LevelPage] 📊 Access map:', map);
     return map;
   }, [user, profile]);
 

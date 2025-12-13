@@ -18,6 +18,7 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import AccessGuard from './components/AccessGuard.jsx';
 import DashboardAccessGuard from './components/DashboardAccessGuard.jsx';
+import ModuleAccessGuard from './components/ModuleAccessGuard.jsx';
 import AdminLayout from './components/admin/AdminLayout.jsx';
 import EditorLayout from './components/editor/EditorLayout.jsx';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';

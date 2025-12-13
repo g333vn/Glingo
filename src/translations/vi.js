@@ -12,6 +12,9 @@ const vi = {
         jlpt: 'JLPT'
     },
     maintenance: {
+        title: 'Hệ thống đang bảo trì',
+        message: 'Chúng tôi đang bảo trì và nâng cấp hệ thống để phục vụ bạn tốt hơn. Vui lòng quay lại sau ít phút.',
+        contact: 'Nếu cần hỗ trợ khẩn cấp, vui lòng liên hệ',
         loggedInNonAdmin: 'Bạn đang đăng nhập với tài khoản không phải admin. Trong thời gian bảo trì, chỉ admin mới có thể sử dụng hệ thống.',
         note: 'Admin vẫn có thể truy cập khu vực quản trị để giám sát và hoàn tất bảo trì.'
     },
@@ -2831,7 +2834,8 @@ const vi = {
             allowedUsers: 'Users được phép',
             searchUsers: 'Tìm kiếm user...'
         },
-        adminNote: 'Lưu ý: Admin luôn có quyền truy cập đầy đủ, không bị ảnh hưởng bởi cấu hình này'
+        adminNote: 'Lưu ý: Admin luôn có quyền truy cập đầy đủ, không bị ảnh hưởng bởi cấu hình này',
+        noAccessMessage: 'Bạn không có quyền truy cập {level}. Vui lòng liên hệ Admin để được cấp quyền.'
     },
 
     // ============================================================================
@@ -2857,8 +2861,7 @@ const vi = {
         adminNote: 'Lưu ý: Admin luôn có quyền truy cập đầy đủ, không bị ảnh hưởng bởi cấu hình này',
         info: {
             point1: 'Khi Dashboard bị khóa, chỉ Admin và các users/roles được phép mới có thể truy cập'
-        },
-        noAccessMessage: 'Bạn không có quyền truy cập Dashboard. Vui lòng liên hệ Admin để được cấp quyền.'
+        }
     }
     };
 

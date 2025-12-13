@@ -58,21 +58,32 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
   const burgerButtonRef = useRef(null);
 
   // Check access for all levels
+  // ✅ FIXED: Merge user and profile to get role
+  const userWithRole = useMemo(() => {
+    return user ? {
+      ...user,
+      role: profile?.role || user.role || null
+    } : null;
+  }, [user, profile]);
+
   const levelAccessMap = useMemo(() => {
     const map = {};
     ['n1', 'n2', 'n3', 'n4', 'n5'].forEach(level => {
-      map[level] = hasAccess('level', level, user);
+      map[level] = hasAccess('level', level, userWithRole);
     });
     return map;
-  }, [user]);
+  }, [userWithRole]);
 
   const jlptAccessMap = useMemo(() => {
     const map = {};
     ['n1', 'n2', 'n3', 'n4', 'n5'].forEach(level => {
-      map[level] = hasAccess('jlpt', level, user);
+      map[level] = hasAccess('jlpt', level, userWithRole);
     });
     return map;
-  }, [user]);
+  }, [userWithRole]);
+
+  // ✅ REMOVED: Module-level access check - Allow access to selection pages
+  // Level-specific access will be checked in LevelPage and JLPTPage
 
   // ✨ NEW: Scroll listener
   useEffect(() => {

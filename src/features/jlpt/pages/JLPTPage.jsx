@@ -33,10 +33,20 @@ function JLPTPage() {
       role: profile?.role || user.role || null
     } : null;
     
+    console.log('[JLPTPage] 🔍 Checking access for levels:', {
+      userId: userWithRole?.id || 'guest',
+      userRole: userWithRole?.role || 'guest',
+      hasUser: !!userWithRole
+    });
+    
     const map = {};
     jlptLevels.forEach(level => {
-      map[level.id] = hasAccess('jlpt', level.id, userWithRole);
+      const hasAccessResult = hasAccess('jlpt', level.id, userWithRole);
+      map[level.id] = hasAccessResult;
+      console.log(`[JLPTPage] ${level.id.toUpperCase()}: ${hasAccessResult ? '✅ ALLOWED' : '❌ BLOCKED'}`);
     });
+    
+    console.log('[JLPTPage] 📊 Access map:', map);
     return map;
   }, [user, profile]);
 
