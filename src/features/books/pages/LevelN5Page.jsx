@@ -252,15 +252,15 @@ function LevelN5Page() {
                             </div>
                         ) : (
                             <div
-                                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 h-full transition-opacity duration-150 ${isTransitioning ? 'opacity-50' : 'opacity-100'
+                                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5 md:gap-6 h-full transition-opacity duration-150 ${isTransitioning ? 'opacity-50' : 'opacity-100'
                                     }`}
                             >
                                 {gridItems.map((book, index) => (
-                                    <div key={book?.id || `empty-${index}`} className="flex items-start">
+                                    <div key={book?.id || `empty-${index}`}>
                                         {book ? (
                                             <div
                                                 onClick={() => handleBookClick(book.id)}
-                                                className="cursor-pointer w-full transform transition-all duration-200 hover:scale-105 hover:shadow-xl"
+                                                className="cursor-pointer w-full transform transition-all duration-200 hover:scale-105 hover:shadow-xl inline-block"
                                                 role="button"
                                                 tabIndex={0}
                                                 onKeyPress={(e) => {

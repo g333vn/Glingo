@@ -450,7 +450,6 @@ function BookDetailPage() {
                 {gridItems.map((content, index) => (
                   <div 
                     key={content?.id || `item-${index}`} 
-                    className="h-[240px]"
                   >
                     {content && (
                       <Link 
@@ -458,7 +457,7 @@ function BookDetailPage() {
                           ? `/level/${levelId}/${bookId}/chapter/${chapterId}/lesson/${content.id}`
                           : `/level/${levelId}/${bookId}/chapter/${content.id}`
                         }
-                        className="block h-full"
+                        className="block"
                       >
                         <LessonCard
                           title={content.title}

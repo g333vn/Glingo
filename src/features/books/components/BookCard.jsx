@@ -1,6 +1,4 @@
 // src/features/books/components/BookCard.jsx
-// ✨ NEO BRUTALISM + JAPANESE AESTHETIC - Enhanced with Placeholder
-
 import React, { useState } from 'react';
 
 function BookCard({ imageUrl, title, isComingSoon = false, status = null }) {
@@ -9,12 +7,19 @@ function BookCard({ imageUrl, title, isComingSoon = false, status = null }) {
   
   // Determine if we need to show placeholder
   const showPlaceholder = !imageUrl || imageError || isComingSoon;
+
+  // COLOR PALETTE
+  // Teal (Main Background): #0099c3
+  // Sky Blue (Dots pattern): #6dcae8
+  // Dark Blue (Text/Buttons): #034c7f
+  // Mustard Yellow (Accents/Title): #fdc800
+  // Pink (No Cover Text): #ffbdc5
   
   return (
-    <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 cursor-pointer hover:translate-x-[-2px] hover:translate-y-[-2px] group">
+    <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 cursor-pointer hover:translate-x-[-2px] hover:translate-y-[-2px] group self-start w-full">
       
       {/* Phần hình ảnh - NEO BRUTALISM với Placeholder */}
-      <div className="relative bg-gray-200 border-b-[4px] border-black" style={{ aspectRatio: '3/4' }}>
+      <div className={`relative border-b-[4px] border-black overflow-hidden ${showPlaceholder ? 'bg-[#0099c3]' : 'bg-gray-200'}`} style={{ aspectRatio: '3/4' }}>
         {!showPlaceholder ? (
           <>
             {/* Loading skeleton */}
@@ -33,86 +38,62 @@ function BookCard({ imageUrl, title, isComingSoon = false, status = null }) {
             />
           </>
         ) : (
-          /* Placeholder Design - NEO BRUTALISM STYLE */
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white p-4">
-            {/* Geometric background pattern - Neo Brutalism grid */}
-            <div className="absolute inset-0 opacity-[0.03]" style={{
-              backgroundImage: `
-                linear-gradient(to right, black 1px, transparent 1px),
-                linear-gradient(to bottom, black 1px, transparent 1px)
-              `,
-              backgroundSize: '40px 40px'
-            }}></div>
+          /* ================================================================================== */
+          /* DESIGN MỚI: MANGA POP STYLE - FINAL COLOR FIX                                      */
+          /* ================================================================================== */
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0099c3] p-4 overflow-hidden">
             
-            {/* Book icon container - NEO BRUTALISM */}
-            <div className="relative z-10 mb-6 transform group-hover:scale-105 transition-transform duration-200">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 bg-yellow-400 rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center">
-                <span className="text-5xl sm:text-6xl">📚</span>
-              </div>
+            {/* 1. Background Pattern: Manga Halftone Dots */}
+            <div className="absolute inset-0 opacity-30" 
+                style={{
+                  backgroundImage: 'radial-gradient(circle, #6dcae8 2px, transparent 2.5px)',
+                  backgroundSize: '12px 12px'
+                }}>
             </div>
-            
-            {/* Status badge - NEO BRUTALISM */}
-            {isComingSoon && (
-              <div className="relative z-10 px-5 py-2.5 bg-yellow-300 border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-lg transform -rotate-1 group-hover:rotate-0 transition-transform duration-200">
-                <p 
-                  className="text-xs sm:text-sm font-black text-black uppercase tracking-widest"
-                  style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
-                  lang="en"
-                >
-                  Coming Soon
-                </p>
-              </div>
-            )}
-            
-            {status && !isComingSoon && (
-              <div className="relative z-10 px-4 py-2 bg-blue-500 border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] rounded-lg">
-                <p 
-                  className="text-xs font-black text-white uppercase tracking-wider"
-                  style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
-                  lang="en"
-                >
-                  {status}
-                </p>
-              </div>
-            )}
-            
-            {/* No image indicator - NEO BRUTALISM */}
-            {!isComingSoon && !status && (
-              <div className="relative z-10 mt-4">
-                <div className="px-4 py-2 bg-gray-100 border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rounded-md">
-                  <p 
-                    className="text-xs font-black text-black uppercase tracking-wider"
-                    style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
-                    lang="en"
-                  >
-                    No Cover Image
-                  </p>
+
+            {/* 2. Geometric Shape: Hình tròn lớn ở giữa */}
+            <div className="relative z-10 flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-white border-[4px] border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:scale-110 transition-transform duration-300">
+                {/* Chữ Kanji: BOOK (本 - Hon) */}
+                <span className="text-4xl sm:text-5xl font-black text-[#034c7f] select-none" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>
+                    本
+                </span>
+                
+                {/* Decorative Badge nhỏ ở góc */}
+                <div className="absolute -top-2 -right-2 bg-[#fdc800] border-[3px] border-black px-1.5 py-0.5 transform rotate-12">
+                     <span className="text-[10px] font-black text-[#034c7f] uppercase leading-none">N/A</span>
                 </div>
-              </div>
-            )}
+            </div>
+
+            {/* 3. Text "NO COVER" bên dưới */}
+            {/* Background: #034c7f (Xanh đậm) */}
+            {/* Text Color: #ffbdc5 (Hồng phấn - Updated) */}
+            <div className="relative z-10 mt-4 bg-[#034c7f] border-[3px] border-black px-3 py-1 transform -rotate-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                <p className="text-xs sm:text-sm font-black text-[#ffbdc5] uppercase tracking-widest font-mono">
+                    NO COVER
+                </p>
+            </div>
+
+             {/* Decorative lines (Gạch chéo trang trí ở góc) */}
+             <div className="absolute bottom-0 right-0 w-16 h-16 bg-black transform translate-x-8 translate-y-8 rotate-45 opacity-20"></div>
           </div>
         )}
       </div>
       
-      {/* Phần tên sách - NEO BRUTALISM - ALWAYS ENGLISH */}
+      {/* Phần tên sách */}
       <div 
-        className={`p-3 text-center transition-colors duration-200 ${
-          isComingSoon ? 'bg-yellow-300 group-hover:bg-yellow-400' : 'bg-yellow-400 group-hover:bg-yellow-500'
+        className={`p-2 sm:p-2.5 md:p-3 text-center transition-colors duration-200 border-t-0 ${
+          isComingSoon ? 'bg-[#fdc800]/80 group-hover:bg-[#fdc800]' : 'bg-[#fdc800] group-hover:bg-[#fdc800]/90'
         }`}
-        lang="en"
       >
         <p 
-          className="text-sm font-black text-black uppercase tracking-wide line-clamp-2" 
+          className="text-xs sm:text-sm md:text-base font-black text-[#034c7f] uppercase tracking-wide line-clamp-2" 
           title={title}
           style={{ 
             fontFamily: "'Space Grotesk', 'Inter', sans-serif",
-            minHeight: '2.5rem',
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            fontFeatureSettings: 'normal',
-            fontVariant: 'normal'
+            overflow: 'hidden'
           }}
         > 
           {title}
