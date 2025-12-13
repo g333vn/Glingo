@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';
 import { getSettings, saveSettings, resetSettings, exportSettings, importSettings, loadSettingsFromSupabase } from '../../utils/settingsManager.js';
-import { setGlobalMaintenanceMode, saveSystemSettingsToSupabase } from '../../services/appSettingsService.js';
+import { setGlobalMaintenanceMode, saveSystemSettingsToSupabase, saveUserSettingsToSupabase } from '../../services/appSettingsService.js';
 import { resetToFactoryDefaults } from '../../utils/seedManager.js';
 import { clearDeletedUsers } from '../../data/users.js';
 import { SEED_CONFIG } from '../../data/seedData.js';
@@ -176,35 +176,62 @@ function SettingsPage() {
           contactEmail: finalSettings.system.contactEmail
         };
 
+        // ✅ Save user settings to Supabase for real-time sync
+        const userSettingsToSave = {
+          defaultRole: finalSettings.users.defaultRole,
+          passwordMinLength: finalSettings.users.passwordMinLength,
+          passwordMaxLength: finalSettings.users.passwordMaxLength
+        };
+
+        // Variables to track save results
+        let systemResult = { success: false };
+        let userResult = { success: false };
+        
         try {
-          const { success: supabaseSuccess, error: supabaseError } = await saveSystemSettingsToSupabase(systemSettingsToSave);
+          // Save both system and user settings to Supabase
+          [systemResult, userResult] = await Promise.all([
+            saveSystemSettingsToSupabase(systemSettingsToSave),
+            saveUserSettingsToSupabase(userSettingsToSave)
+          ]);
           
-          if (supabaseSuccess) {
-            console.log('[SettingsPage] ✅ Saved system settings to Supabase');
+          const systemSuccess = systemResult.success;
+          const userSuccess = userResult.success;
+          
+          if (systemSuccess && userSuccess) {
+            console.log('[SettingsPage] ✅ Saved system and user settings to Supabase');
             // Trigger settings update event to notify other components
             window.dispatchEvent(new CustomEvent('settingsUpdated', { 
               detail: finalSettings 
             }));
           } else {
-            console.warn('[SettingsPage] ⚠️ Failed to save to Supabase (using localStorage only):', supabaseError);
-            setSaveMessage({ 
-              type: 'error', 
-              text: `${t('settings.messages.saveSuccess')} (⚠️ Supabase sync failed - saved locally only)` 
-            });
+            const errors = [];
+            if (!systemSuccess) errors.push('system settings');
+            if (!userSuccess) errors.push('user settings');
+            console.warn('[SettingsPage] ⚠️ Failed to save some settings to Supabase:', errors);
             // Continue anyway - localStorage is saved
           }
         } catch (err) {
           console.error('[SettingsPage] ❌ Error saving to Supabase:', err);
-          setSaveMessage({ 
-            type: 'error', 
-            text: `${t('settings.messages.saveSuccess')} (⚠️ Supabase sync failed - saved locally only)` 
-          });
           // Continue anyway - localStorage is saved
         }
 
         setSettings(finalSettings);
         setHasChanges(false);
-        setSaveMessage({ type: 'success', text: t('settings.messages.saveSuccess') });
+        
+        // Set success message only if both saves succeeded, otherwise show warning
+        const systemSuccess = systemResult.success;
+        const userSuccess = userResult.success;
+        if (systemSuccess && userSuccess) {
+          setSaveMessage({ type: 'success', text: t('settings.messages.saveSuccess') });
+        } else {
+          const errors = [];
+          if (!systemSuccess) errors.push('system settings');
+          if (!userSuccess) errors.push('user settings');
+          setSaveMessage({ 
+            type: 'warning', 
+            text: `${t('settings.messages.saveSuccess')} (⚠️ Supabase sync failed for: ${errors.join(', ')} - saved locally only)` 
+          });
+        }
         
         // Auto-hide message after 3s
         setTimeout(() => setSaveMessage(null), 3000);

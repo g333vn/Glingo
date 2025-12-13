@@ -151,6 +151,118 @@ export async function saveSystemSettingsToSupabase(systemSettings) {
 }
 
 /**
+ * Get user settings from Supabase
+ * @returns {Object} { success: boolean, settings: Object, error?: Error }
+ */
+export async function getUserSettingsFromSupabase() {
+  try {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('user_settings')
+      .eq('id', APP_SETTINGS_ID)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[AppSettings] Error fetching user_settings:', error);
+      return { success: false, settings: null, error };
+    }
+
+    const userSettings = data?.user_settings || {};
+    return { success: true, settings: userSettings };
+  } catch (err) {
+    console.error('[AppSettings] Unexpected error fetching user_settings:', err);
+    return { success: false, settings: null, error: err };
+  }
+}
+
+/**
+ * Save user settings to Supabase
+ * @param {Object} userSettings - { defaultRole, passwordMinLength, passwordMaxLength }
+ * @returns {Object} { success: boolean, error?: Error }
+ */
+export async function saveUserSettingsToSupabase(userSettings) {
+  try {
+    console.log('[AppSettings] 💾 Saving user settings to Supabase:', userSettings);
+    
+    // First, try to get current app_settings to check if row exists
+    const { data: currentData, error: fetchError } = await supabase
+      .from('app_settings')
+      .select('user_settings, id')
+      .eq('id', APP_SETTINGS_ID)
+      .maybeSingle();
+
+    // If row doesn't exist (PGRST116), create it
+    if (fetchError && fetchError.code === 'PGRST116') {
+      console.log('[AppSettings] Row not found, creating new app_settings row...');
+      const { data: insertData, error: insertError } = await supabase
+        .from('app_settings')
+        .insert({
+          id: APP_SETTINGS_ID,
+          user_settings: userSettings,
+          maintenance_mode: false,
+          system_settings: {},
+          access_control: {},
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('[AppSettings] Error creating app_settings row:', insertError);
+        return { success: false, error: insertError };
+      }
+
+      console.log('[AppSettings] ✅ Successfully created app_settings row with user settings');
+      return { success: true, data: insertData };
+    }
+
+    // If there's another error fetching
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('[AppSettings] Error fetching current user_settings:', fetchError);
+      return { success: false, error: fetchError };
+    }
+
+    // Merge with existing user_settings (Supabase values take priority)
+    const currentUserSettings = currentData?.user_settings || {};
+    const updatedUserSettings = {
+      ...currentUserSettings,
+      ...userSettings // New values override old ones
+    };
+
+    console.log('[AppSettings] Updating with merged user settings:', updatedUserSettings);
+
+    // Update app_settings
+    const { data: updateData, error: updateError } = await supabase
+      .from('app_settings')
+      .update({
+        user_settings: updatedUserSettings,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', APP_SETTINGS_ID)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('[AppSettings] ❌ Error updating user_settings:', updateError);
+      console.error('[AppSettings] Update error details:', {
+        code: updateError.code,
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint
+      });
+      return { success: false, error: updateError };
+    }
+
+    console.log('[AppSettings] ✅ Successfully saved user settings to Supabase');
+    console.log('[AppSettings] Updated data:', updateData);
+    return { success: true, data: updateData };
+  } catch (err) {
+    console.error('[AppSettings] ❌ Unexpected error saving user settings to Supabase:', err);
+    return { success: false, error: err };
+  }
+}
+
+/**
  * Subscribe to real-time changes in app_settings
  * @param {Function} callback - Callback function that receives the updated settings
  * @returns {Function} Unsubscribe function

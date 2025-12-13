@@ -3,7 +3,7 @@
 // Professional settings management for the platform
 // Priority: Supabase (Cloud) → localStorage (Local Cache)
 
-import { getSystemSettingsFromSupabase } from '../services/appSettingsService.js';
+import { getSystemSettingsFromSupabase, getUserSettingsFromSupabase } from '../services/appSettingsService.js';
 
 /**
  * Default system settings
@@ -106,9 +106,16 @@ export function getSettings() {
  */
 export async function loadSettingsFromSupabase() {
   try {
-    const { success, settings: supabaseSettings } = await getSystemSettingsFromSupabase();
+    // Load both system and user settings from Supabase in parallel
+    const [systemResult, userResult] = await Promise.all([
+      getSystemSettingsFromSupabase(),
+      getUserSettingsFromSupabase()
+    ]);
     
-    if (success && supabaseSettings && Object.keys(supabaseSettings).length > 0) {
+    const systemSuccess = systemResult.success && systemResult.settings && Object.keys(systemResult.settings).length > 0;
+    const userSuccess = userResult.success && userResult.settings && Object.keys(userResult.settings).length > 0;
+    
+    if (systemSuccess || userSuccess) {
       // Get current localStorage settings
       const currentSettings = (() => {
         try {
@@ -120,20 +127,54 @@ export async function loadSettingsFromSupabase() {
       })();
 
       // Merge Supabase system settings into current settings (Supabase takes priority)
-      if (currentSettings.system) {
-        currentSettings.system = {
-          ...currentSettings.system,
-          // Supabase values override localStorage
-          platformName: supabaseSettings.platformName || currentSettings.system.platformName,
-          platformTagline: supabaseSettings.platformTagline || currentSettings.system.platformTagline,
-          platformDescription: supabaseSettings.platformDescription || currentSettings.system.platformDescription,
-          contactEmail: supabaseSettings.contactEmail || currentSettings.system.contactEmail
-        };
-      } else {
-        currentSettings.system = {
-          ...DEFAULT_SETTINGS.system,
-          ...supabaseSettings
-        };
+      if (systemSuccess) {
+        const supabaseSystemSettings = systemResult.settings;
+        if (currentSettings.system) {
+          currentSettings.system = {
+            ...currentSettings.system,
+            // Supabase values override localStorage (use !== undefined to allow empty strings)
+            platformName: supabaseSystemSettings.platformName !== undefined 
+              ? supabaseSystemSettings.platformName 
+              : currentSettings.system.platformName,
+            platformTagline: supabaseSystemSettings.platformTagline !== undefined 
+              ? supabaseSystemSettings.platformTagline 
+              : currentSettings.system.platformTagline,
+            platformDescription: supabaseSystemSettings.platformDescription !== undefined 
+              ? supabaseSystemSettings.platformDescription 
+              : currentSettings.system.platformDescription,
+            contactEmail: supabaseSystemSettings.contactEmail !== undefined 
+              ? supabaseSystemSettings.contactEmail 
+              : currentSettings.system.contactEmail
+          };
+        } else {
+          currentSettings.system = {
+            ...DEFAULT_SETTINGS.system,
+            ...supabaseSystemSettings
+          };
+        }
+      }
+
+      // Merge Supabase user settings into current settings (Supabase takes priority)
+      if (userSuccess) {
+        const supabaseUserSettings = userResult.settings;
+        if (currentSettings.users) {
+          currentSettings.users = {
+            ...currentSettings.users,
+            // Supabase values override localStorage
+            defaultRole: supabaseUserSettings.defaultRole || currentSettings.users.defaultRole,
+            passwordMinLength: supabaseUserSettings.passwordMinLength !== undefined 
+              ? supabaseUserSettings.passwordMinLength 
+              : currentSettings.users.passwordMinLength,
+            passwordMaxLength: supabaseUserSettings.passwordMaxLength !== undefined 
+              ? supabaseUserSettings.passwordMaxLength 
+              : currentSettings.users.passwordMaxLength
+          };
+        } else {
+          currentSettings.users = {
+            ...DEFAULT_SETTINGS.users,
+            ...supabaseUserSettings
+          };
+        }
       }
 
       // Update localStorage cache
@@ -146,7 +187,10 @@ export async function loadSettingsFromSupabase() {
         detail: mergedSettings
       }));
       
-      console.log('[SETTINGS] ✅ Loaded from Supabase');
+      console.log('[SETTINGS] ✅ Loaded from Supabase', { 
+        system: systemSuccess, 
+        user: userSuccess 
+      });
       return mergedSettings;
     }
     

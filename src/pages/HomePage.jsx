@@ -35,18 +35,17 @@ function HomePage() {
     loadInitialSettings();
 
     // ✅ Subscribe to Supabase real-time changes
-    const unsubscribe = subscribeToAppSettings((updatedAppSettings) => {
-      if (updatedAppSettings?.system_settings) {
-        // Update settings with Supabase data
-        const currentSettings = getSettings();
-        if (currentSettings.system) {
-          currentSettings.system = {
-            ...currentSettings.system,
-            platformName: updatedAppSettings.system_settings.platformName || currentSettings.system.platformName,
-            platformTagline: updatedAppSettings.system_settings.platformTagline || currentSettings.system.platformTagline,
-            platformDescription: updatedAppSettings.system_settings.platformDescription || currentSettings.system.platformDescription,
-            contactEmail: updatedAppSettings.system_settings.contactEmail || currentSettings.system.contactEmail
-          };
+    const unsubscribe = subscribeToAppSettings(async (updatedAppSettings) => {
+      // When app_settings is updated (system_settings or user_settings), reload from Supabase
+      if (updatedAppSettings?.system_settings || updatedAppSettings?.user_settings) {
+        console.log('[HomePage] 🔄 Real-time update detected, reloading settings from Supabase...');
+        try {
+          const loadedSettings = await loadSettingsFromSupabase();
+          setSettings(loadedSettings);
+        } catch (error) {
+          console.warn('[HomePage] ⚠️ Error reloading settings from Supabase:', error);
+          // Fallback to current settings
+          const currentSettings = getSettings();
           setSettings(currentSettings);
         }
       }
