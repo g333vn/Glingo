@@ -52,8 +52,8 @@ function NewControlPage() {
 
     // ✅ FIXED: Initialize default configs (only for levels without config)
     // This will NOT overwrite existing configs
-    initializeDefaultConfigs('level');
-    initializeDefaultConfigs('jlpt');
+    await initializeDefaultConfigs('level');
+    await initializeDefaultConfigs('jlpt');
     
     // ✅ NEW: Try to load from Supabase first, then fallback to localStorage
     try {
@@ -178,6 +178,10 @@ function NewControlPage() {
       // ✅ FIXED: Save to Supabase (async)
       const success = await setModuleAccessConfig(module, config);
       if (success) {
+        // Reload from Supabase to ensure sync
+        await loadData();
+      } else {
+        // If save failed, still update from localStorage
         if (module === 'level') {
           setLevelModuleConfig(getModuleAccessConfigSync('level'));
         } else {
@@ -189,6 +193,10 @@ function NewControlPage() {
       // ✅ FIXED: Save to Supabase (async)
       const success = await setAccessConfig(module, levelId, config);
       if (success) {
+        // Reload from Supabase to ensure sync
+        await loadData();
+      } else {
+        // If save failed, still update from localStorage
         if (module === 'level') {
           setLevelConfigs(getAllAccessConfigs('level'));
         } else {
@@ -202,10 +210,11 @@ function NewControlPage() {
     alert(t('accessControl.save') === 'Lưu' ? 'Đã lưu thành công và đồng bộ lên Supabase' : t('dashboardAccess.saveSuccess'));
   };
 
-  const handleResetModule = (module) => {
+  const handleResetModule = async (module) => {
     if (confirm(t('accessControl.resetConfirm', { module: modules.find(m => m.id === module)?.name }))) {
-      resetModuleConfigs(module);
-      loadData();
+      await resetModuleConfigs(module);
+      await loadData();
+      alert(t('accessControl.resetSuccess') || 'Đã reset module thành công');
     }
   };
 

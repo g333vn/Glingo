@@ -102,12 +102,32 @@ export function getAccessConfigSync(module, levelId) {
 
 /**
  * Set access control config for a module and level
+ * ✅ UPDATED: Save to both Supabase (real-time) and localStorage (cache)
  * @param {string} module - 'level' or 'jlpt'
  * @param {string} levelId - 'n1', 'n2', 'n3', 'n4', 'n5'
  * @param {Object} config - Access control config
+ * @returns {Promise<boolean>} Success status
  */
-export function setAccessConfig(module, levelId, config) {
+export async function setAccessConfig(module, levelId, config) {
   try {
+    const finalConfig = {
+      ...DEFAULT_ACCESS_CONFIG,
+      ...config
+    };
+
+    // ✅ NEW: Save to Supabase first (real-time sync)
+    try {
+      const { success, error } = await saveLevelAccessConfigToSupabase(module, levelId, finalConfig);
+      if (success) {
+        console.log(`[ACCESS] ✅ Saved ${module}/${levelId} config to Supabase`);
+      } else {
+        console.warn(`[ACCESS] ⚠️ Failed to save to Supabase, saving to localStorage only:`, error);
+      }
+    } catch (err) {
+      console.warn(`[ACCESS] ⚠️ Error saving to Supabase:`, err);
+    }
+
+    // Also save to localStorage (cache for offline access)
     const storageKey = STORAGE_KEYS[module];
     if (!storageKey) {
       console.warn(`[ACCESS] Unknown module: ${module}`);
@@ -117,12 +137,10 @@ export function setAccessConfig(module, levelId, config) {
     const stored = localStorage.getItem(storageKey);
     const allConfigs = stored ? JSON.parse(stored) : {};
 
-    allConfigs[levelId] = {
-      ...DEFAULT_ACCESS_CONFIG,
-      ...config
-    };
+    allConfigs[levelId] = finalConfig;
 
     localStorage.setItem(storageKey, JSON.stringify(allConfigs));
+    console.log(`[ACCESS] ✅ Saved ${module}/${levelId} config to localStorage`);
     return true;
   } catch (error) {
     console.error(`[ACCESS] Error setting config for ${module}/${levelId}:`, error);
@@ -398,43 +416,55 @@ export function hasAccess(module, levelId, user) {
 
 /**
  * Initialize default configs for all levels
+ * ✅ UPDATED: Async to support Supabase sync
  * @param {string} module - 'level' or 'jlpt'
+ * @returns {Promise<void>}
  */
-export function initializeDefaultConfigs(module) {
+export async function initializeDefaultConfigs(module) {
   const levels = ['n1', 'n2', 'n3', 'n4', 'n5'];
   const allConfigs = getAllAccessConfigs(module);
 
   console.log(`[ACCESS] Initializing default configs for ${module}:`, allConfigs);
 
-  levels.forEach(levelId => {
+  for (const levelId of levels) {
     if (!allConfigs[levelId]) {
       console.log(`[ACCESS] Setting default config for ${module}/${levelId} (not exists)`);
-      setAccessConfig(module, levelId, { ...DEFAULT_ACCESS_CONFIG });
+      await setAccessConfig(module, levelId, { ...DEFAULT_ACCESS_CONFIG });
     } else {
       console.log(`[ACCESS] Keeping existing config for ${module}/${levelId}:`, allConfigs[levelId]);
     }
-  });
+  }
 }
 
 /**
  * Reset all configs for a module to default (including module-level config)
+ * ✅ UPDATED: Reset in both Supabase and localStorage
  * @param {string} module - 'level' or 'jlpt'
+ * @returns {Promise<boolean>} Success status
  */
-export function resetModuleConfigs(module) {
+export async function resetModuleConfigs(module) {
   try {
     const storageKey = STORAGE_KEYS[module];
     const moduleStorageKey = STORAGE_KEYS[`${module}Module`];
     
+    // Reset module-level config in Supabase
+    if (moduleStorageKey) {
+      await setModuleAccessConfig(module, { ...DEFAULT_ACCESS_CONFIG });
+      localStorage.removeItem(moduleStorageKey);
+    }
+    
+    // Reset all level configs
     if (storageKey) {
       localStorage.removeItem(storageKey);
-      initializeDefaultConfigs(module);
+      
+      // Reset each level config in Supabase
+      const levels = ['n1', 'n2', 'n3', 'n4', 'n5'];
+      for (const levelId of levels) {
+        await setAccessConfig(module, levelId, { ...DEFAULT_ACCESS_CONFIG });
+      }
     }
     
-    if (moduleStorageKey) {
-      localStorage.removeItem(moduleStorageKey);
-      setModuleAccessConfig(module, { ...DEFAULT_ACCESS_CONFIG });
-    }
-    
+    console.log(`[ACCESS] ✅ Reset all configs for ${module} module`);
     return true;
   } catch (error) {
     console.error(`[ACCESS] Error resetting configs for ${module}:`, error);
