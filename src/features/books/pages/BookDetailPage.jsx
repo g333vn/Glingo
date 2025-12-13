@@ -154,14 +154,35 @@ function BookDetailPage() {
       const arr = [...lessons];
       return arr.sort((a, b) => {
         const getNum = (item) => {
-          if (item.order !== undefined) return item.order;
+          // ✅ FIXED: Check orderIndex first (from Supabase), then order (legacy)
           if (item.orderIndex !== undefined) return item.orderIndex;
+          if (item.order !== undefined) return item.order;
+          
           const id = (item.id || '').toString();
           const title = (item.title || '').toString();
+          
+          // Priority 1: Extract number from title (e.g., "Từ vựng 25", "Bài 25")
           const titleMatch = title.match(/(\d+)\s*$/);
           if (titleMatch) return parseInt(titleMatch[1], 10);
-          const idMatch = id.match(/(\d+)/);
+          
+          // Also try to match any number in title (fallback)
+          const titleMatches = title.match(/\d+/g);
+          if (titleMatches && titleMatches.length > 0) {
+            const lastMatch = titleMatches[titleMatches.length - 1];
+            return parseInt(lastMatch, 10);
+          }
+          
+          // Priority 2: Extract number from id (e.g., "lesson-25", "tu-vung-25")
+          const idMatch = id.match(/-(\d+)$/);
           if (idMatch) return parseInt(idMatch[1], 10);
+          
+          // Also try to match any number in id (fallback)
+          const idMatches = id.match(/\d+/g);
+          if (idMatches && idMatches.length > 0) {
+            const lastMatch = idMatches[idMatches.length - 1];
+            return parseInt(lastMatch, 10);
+          }
+          
           return Number.MAX_SAFE_INTEGER;
         };
         const numA = getNum(a);

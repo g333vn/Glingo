@@ -275,22 +275,32 @@ export async function saveLessons(bookId, chapterId, level, lessons, userId) {
       .eq('level', level);
 
     // Insert new lessons
-    const lessonsData = lessons.map((lesson, index) => ({
-      id: lesson.id,
-      book_id: bookId,
-      chapter_id: chapterId,
-      level: level,
-      title: lesson.title,
-      description: lesson.description || null,
-      content_type: lesson.contentType || 'pdf',
-      pdf_url: lesson.pdfUrl || null,
-      html_content: lesson.htmlContent || null,
-      theory: lesson.theory || {},
-      srs: lesson.srs || {},
-      order_index: lesson.orderIndex !== undefined ? lesson.orderIndex : index,
-      created_by: userId,
-      updated_at: new Date().toISOString()
-    }));
+    const lessonsData = lessons.map((lesson, index) => {
+      // ✅ FIXED: Priority: orderIndex > order > index
+      // This ensures that when lessons are reordered, the orderIndex is properly saved
+      let orderIndex = lesson.orderIndex;
+      if (orderIndex === undefined || orderIndex === null) {
+        // Fallback to 'order' field (legacy) if orderIndex is not set
+        orderIndex = lesson.order !== undefined && lesson.order !== null ? lesson.order : index;
+      }
+      
+      return {
+        id: lesson.id,
+        book_id: bookId,
+        chapter_id: chapterId,
+        level: level,
+        title: lesson.title,
+        description: lesson.description || null,
+        content_type: lesson.contentType || 'pdf',
+        pdf_url: lesson.pdfUrl || null,
+        html_content: lesson.htmlContent || null,
+        theory: lesson.theory || {},
+        srs: lesson.srs || {},
+        order_index: orderIndex,
+        created_by: userId,
+        updated_at: new Date().toISOString()
+      };
+    });
 
     const { data, error } = await supabase
       .from('lessons')

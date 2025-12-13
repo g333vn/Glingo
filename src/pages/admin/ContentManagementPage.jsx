@@ -296,7 +296,9 @@ function ContentManagementPage() {
                   const { contentService } = await import('../../services/contentService.js');
                   const { success, data } = await contentService.getQuiz(book.id, chapter.id, lesson.id, selectedLevel);
                   
-                  // If quiz exists in local storage but NOT in Supabase, check if it's valid
+                  // ✅ FIXED: If quiz exists in local storage but NOT in Supabase, check if it's valid
+                  // Only delete if it's truly invalid (no valid content) AND not found in Supabase
+                  // Don't delete if it's just a network error or sync issue
                   if (!success || !data) {
                     // Check if quiz has valid content
                     const hasValidContent = quiz.questions && Array.isArray(quiz.questions) && quiz.questions.length > 0 &&
@@ -306,18 +308,24 @@ function ContentManagementPage() {
                         return text.length > 0 && hasOptions;
                       });
                     
-                    if (!hasValidContent) {
+                    // ✅ FIXED: Only delete if quiz has NO valid content AND Supabase confirmed it doesn't exist
+                    // If success=true but data=null, it means Supabase confirmed quiz doesn't exist
+                    // If success=false, it might be a network error, so don't delete
+                    if (!hasValidContent && success && !data) {
                       // Quiz is ghost - exists in storage but not in Supabase and has no valid content
                       console.warn(`⚠️ [Load Quizzes] Found ghost quiz: ${book.id}/${chapter.id}/${lesson.id} - skipping`);
                       isValidQuiz = false;
                       
-                      // Auto-cleanup ghost quiz
+                      // Auto-cleanup ghost quiz (only if Supabase confirmed it doesn't exist)
                       try {
                         await storageManager.deleteQuiz(book.id, chapter.id, lesson.id, selectedLevel);
                         console.log(`✅ [Load Quizzes] Auto-deleted ghost quiz: ${book.id}/${chapter.id}/${lesson.id}`);
                       } catch (err) {
                         console.error(`❌ [Load Quizzes] Error auto-deleting ghost quiz:`, err);
                       }
+                    } else if (!hasValidContent && !success) {
+                      // Network error - don't delete, just warn
+                      console.warn(`⚠️ [Load Quizzes] Quiz not verified in Supabase (network error?), but has content - keeping: ${book.id}/${chapter.id}/${lesson.id}`);
                     }
                   }
                 } catch (err) {
@@ -1003,28 +1011,42 @@ function ContentManagementPage() {
         lessons = [...lessons, finalLessonData];
       }
 
-      // Sort lessons by ID
-      lessons.sort((a, b) => {
-        const getNumber = (id) => {
-          const match = id.match(/(\d+)/);
-          return match ? parseInt(match[1], 10) : 0;
-        };
-        const numA = getNumber(a.id);
-        const numB = getNumber(b.id);
-        if (numA !== numB) {
-          return numA - numB;
-        }
-        return a.id.localeCompare(b.id);
-      });
+      // ✅ FIXED: Preserve existing order (from orderIndex or order) instead of sorting by ID
+      // Only sort if no lessons have orderIndex/order set (new chapter)
+      const hasOrderInfo = lessons.some(l => l.orderIndex !== undefined || l.order !== undefined);
+      
+      if (!hasOrderInfo) {
+        // No order info - sort by ID for new chapters
+        lessons.sort((a, b) => {
+          const getNumber = (id) => {
+            const match = id.match(/(\d+)/);
+            return match ? parseInt(match[1], 10) : 0;
+          };
+          const numA = getNumber(a.id);
+          const numB = getNumber(b.id);
+          if (numA !== numB) {
+            return numA - numB;
+          }
+          return a.id.localeCompare(b.id);
+        });
+      }
+      
+      // ✅ FIXED: Update orderIndex for all lessons to match current array order
+      // This ensures the order is preserved when saving
+      const lessonsWithOrder = lessons.map((lesson, index) => ({
+        ...lesson,
+        orderIndex: lesson.orderIndex !== undefined ? lesson.orderIndex : (lesson.order !== undefined ? lesson.order : index + 1),
+        order: lesson.order !== undefined ? lesson.order : (lesson.orderIndex !== undefined ? lesson.orderIndex : index + 1)
+      }));
 
       const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
-      const success = await storageManager.saveLessons(selectedBook.id, selectedChapter.id, lessons, selectedLevel, userId);
+      const success = await storageManager.saveLessons(selectedBook.id, selectedChapter.id, lessonsWithOrder, selectedLevel, userId);
       
       if (success) {
         const key = `${selectedBook.id}_${selectedChapter.id}`;
         setLessonsData(prev => ({
           ...prev,
-          [key]: lessons
+          [key]: lessonsWithOrder  // ✅ Use lessonsWithOrder to preserve orderIndex
         }));
         
         setShowLessonForm(false);
@@ -1059,15 +1081,24 @@ function ContentManagementPage() {
     let lessons = await storageManager.getLessons(book.id, chapter.id, selectedLevel);
     if (!lessons) lessons = [];
 
+    // Filter out deleted lesson
     lessons = lessons.filter(l => l.id !== lesson.id);
+    
+    // ✅ FIXED: Update orderIndex for remaining lessons to maintain sequential order
+    const lessonsWithUpdatedOrder = lessons.map((l, index) => ({
+      ...l,
+      orderIndex: index + 1,
+      order: index + 1
+    }));
+    
     const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
-    const success = await storageManager.saveLessons(book.id, chapter.id, lessons, selectedLevel, userId);
+    const success = await storageManager.saveLessons(book.id, chapter.id, lessonsWithUpdatedOrder, selectedLevel, userId);
     
     if (success) {
       const key = `${book.id}_${chapter.id}`;
       setLessonsData(prev => ({
         ...prev,
-        [key]: lessons
+        [key]: lessonsWithUpdatedOrder  // ✅ Use lessonsWithUpdatedOrder to preserve orderIndex
       }));
       
       // Also delete quiz for this lesson (từ Supabase và local storage)
@@ -1197,6 +1228,26 @@ function ContentManagementPage() {
     };
 
     const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
+    
+    // ✅ NEW: Validate before save
+    if (!selectedLevel) {
+      alert('⚠️ Vui lòng chọn Level trước khi lưu quiz!');
+      return;
+    }
+    
+    if (!userId) {
+      const confirmSave = confirm(
+        '⚠️ KHÔNG TÌM THẤY USER ID!\n\n' +
+        'Quiz sẽ chỉ được lưu vào thiết bị này (local storage) và KHÔNG được sync lên Supabase.\n\n' +
+        'Bạn có muốn tiếp tục lưu quiz vào local storage không?\n\n' +
+        '- OK: Lưu vào local storage (chỉ thiết bị này)\n' +
+        '- Cancel: Hủy, đăng nhập lại và thử lại'
+      );
+      if (!confirmSave) {
+        return;
+      }
+    }
+    
     const success = await storageManager.saveQuiz(
       selectedBook?.id,
       selectedChapter?.id,
@@ -1207,6 +1258,28 @@ function ContentManagementPage() {
     );
     
     if (success) {
+      // ✅ NEW: Verify quiz was saved to Supabase
+      let savedToSupabase = false;
+      if (selectedLevel && userId) {
+        try {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const { contentService } = await import('../../services/contentService.js');
+          const { success: verifySuccess, data: verifyData } = await contentService.getQuiz(
+            selectedBook?.id,
+            selectedChapter?.id,
+            selectedLesson?.id,
+            selectedLevel
+          );
+          
+          if (verifySuccess && verifyData) {
+            savedToSupabase = true;
+            console.log(`✅ VERIFIED: Quiz is now in Supabase!`);
+          }
+        } catch (err) {
+          console.warn(`⚠️ Error verifying quiz:`, err);
+        }
+      }
+      
       const key = `${selectedBook?.id}_${selectedChapter?.id}_${selectedLesson?.id}`;
       setQuizzesData(prev => ({
         ...prev,
@@ -1216,13 +1289,43 @@ function ContentManagementPage() {
       setShowQuizForm(false);
       setEditingQuiz(null);
       
-      alert(getSaveSuccessMessage(
-        t('contentManagement.success.quizDetails', {
-          action: editingQuiz ? t('contentManagement.messages.quizUpdated') : t('contentManagement.messages.quizAdded'),
-          title: quizForm.title,
-          count: quizForm.questions?.length || 0
-        }) + `\n   - Sách: ${selectedBook?.title}\n   - Chapter: ${selectedChapter?.title}\n   - Lesson: ${selectedLesson?.title || selectedLesson?.id}`
-      ));
+      // ✅ NEW: Show detailed success message
+      if (savedToSupabase) {
+        alert(
+          `✅ Quiz đã được lưu thành công!\n\n` +
+          `📦 Đã lưu vào:\n` +
+          `   - Supabase (cloud) ✅\n` +
+          `   - Local storage (thiết bị này) ✅\n\n` +
+          `📝 Tiêu đề: ${quizForm.title}\n` +
+          `❓ Số câu hỏi: ${quizForm.questions?.length || 0}\n` +
+          `📚 Sách: ${selectedBook?.title}\n` +
+          `📖 Chapter: ${selectedChapter?.title}\n` +
+          `📄 Lesson: ${selectedLesson?.title || selectedLesson?.id}\n\n` +
+          `✅ Quiz sẽ hiển thị trên tất cả thiết bị và KHÔNG BỊ MẤT!`
+        );
+      } else if (selectedLevel && userId) {
+        alert(
+          getSaveSuccessMessage(
+            t('contentManagement.success.quizDetails', {
+              action: editingQuiz ? t('contentManagement.messages.quizUpdated') : t('contentManagement.messages.quizAdded'),
+              title: quizForm.title,
+              count: quizForm.questions?.length || 0
+            }) + `\n   - Sách: ${selectedBook?.title}\n   - Chapter: ${selectedChapter?.title}\n   - Lesson: ${selectedLesson?.title || selectedLesson?.id}\n\n` +
+            `⚠️ Quiz đã lưu vào local storage. Vui lòng kiểm tra Console để xác nhận lưu vào Supabase.`
+          )
+        );
+      } else {
+        alert(
+          `⚠️ Quiz đã được lưu vào local storage!\n\n` +
+          `📦 Đã lưu vào:\n` +
+          `   - Local storage (thiết bị này) ✅\n` +
+          `   - Supabase (cloud) ❌ Chưa lưu\n\n` +
+          `📝 Tiêu đề: ${quizForm.title}\n` +
+          `❓ Số câu hỏi: ${quizForm.questions?.length || 0}\n\n` +
+          `⚠️ LƯU Ý: Quiz chỉ hiển thị trên thiết bị này.\n` +
+          `Để sync lên Supabase, vui lòng đăng nhập và lưu lại.`
+        );
+      }
     } else {
       alert(t('contentManagement.messages.saveError', { item: t('common.quiz') }));
     }
@@ -1729,11 +1832,19 @@ function ContentManagementPage() {
               const [movedLesson] = reorderedLessons.splice(fromIndex, 1);
               reorderedLessons.splice(toIndex, 0, movedLesson);
               
-              // Update order field for all lessons
+              // ✅ FIXED: Update both 'order' (legacy) and 'orderIndex' (Supabase) for all lessons
               const updatedLessons = reorderedLessons.map((lesson, index) => ({
                 ...lesson,
-                order: index + 1
+                order: index + 1,        // Legacy field
+                orderIndex: index + 1    // ✅ Supabase field - ensures order is saved to database
               }));
+              
+              console.log(`[ContentManagement] 🔄 Reordering lessons: ${fromIndex} → ${toIndex}`, {
+                bookId: book.id,
+                chapterId: chapter.id,
+                totalLessons: updatedLessons.length,
+                orderIndexes: updatedLessons.map(l => ({ id: l.id, orderIndex: l.orderIndex }))
+              });
               
               // Save to storage
               const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
@@ -1745,7 +1856,7 @@ function ContentManagementPage() {
                   ...prev,
                   [key]: updatedLessons
                 }));
-                console.log('✅ Lessons reordered successfully');
+                console.log('✅ Lessons reordered and saved successfully');
               } else {
                 alert('❌ Không thể lưu thứ tự mới. Vui lòng thử lại.');
               }

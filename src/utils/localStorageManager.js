@@ -169,15 +169,46 @@ class LocalStorageManager {
           // ✅ Có dữ liệu trên server → dùng server làm nguồn chính
           console.log('[StorageManager.getBooks] ✅ Loaded', supaBooks.length, 'books from Supabase');
 
-          // Cache to IndexedDB for offline support
+          // ✅ FIXED: Filter out ghost books (books in local cache but not in Supabase)
+          // Get current local cache to compare
+          let localBooks = [];
+          try {
+            if (this.useIndexedDB) {
+              localBooks = await indexedDBManager.getBooks(level) || [];
+            } else if (this.storageAvailable) {
+              const key = `adminBooks_${level}`;
+              const data = localStorage.getItem(key);
+              if (data) {
+                localBooks = JSON.parse(data) || [];
+              }
+            }
+          } catch (e) {
+            console.warn('[StorageManager.getBooks] ⚠️ Error reading local cache for comparison:', e);
+          }
+          
+          // Find ghost books (in local but not in Supabase)
+          const supaBookIds = new Set(supaBooks.map(b => b.id));
+          const ghostBooks = localBooks.filter(b => b && !supaBookIds.has(b.id));
+          
+          if (ghostBooks.length > 0) {
+            console.log(`[StorageManager.getBooks] 🗑️ Found ${ghostBooks.length} ghost book(s) in local cache:`, 
+              ghostBooks.map(b => ({ id: b.id, title: b.title })));
+            console.log(`[StorageManager.getBooks] ✅ Will use Supabase data (${supaBooks.length} books) and clear ghost books`);
+          }
+
+          // Cache to IndexedDB for offline support (only Supabase books - this clears ghost books)
           if (this.useIndexedDB) {
             await indexedDBManager.saveBooks(level, supaBooks);
           }
 
-          // Also cache to localStorage
+          // Also cache to localStorage (only Supabase books - this clears ghost books)
           if (this.storageAvailable) {
-            const key = `adminBooks_${level}`;
-            localStorage.setItem(key, JSON.stringify(supaBooks));
+            try {
+              const key = `adminBooks_${level}`;
+              localStorage.setItem(key, JSON.stringify(supaBooks));
+            } catch (e) {
+              console.warn('[StorageManager.getBooks] ⚠️ localStorage full, but books cached to IndexedDB');
+            }
           }
 
           return supaBooks;
@@ -763,9 +794,23 @@ class LocalStorageManager {
             return data;
           }
 
-          // ✅ Supabase trả về success nhưng data = null (quiz không tồn tại)
-          //    → Giống getBooks, không fallback về cache cũ, return null
-          console.log('[StorageManager.getQuiz] ℹ️ Quiz not found in Supabase, will try local caches');
+          // ✅ FIXED: Supabase trả về success nhưng data = null (quiz không tồn tại)
+          //    → Clear local caches để sync với server (giống getLessons)
+          console.log(`[StorageManager.getQuiz] ℹ️ Supabase has no quiz for ${level}/${bookId}/${chapterId}/${finalLessonId} - clearing local caches`);
+          
+          // Clear IndexedDB cache
+          if (this.useIndexedDB) {
+            await indexedDBManager.deleteQuiz(bookId, chapterId, finalLessonId, level);
+          }
+          
+          // Clear localStorage cache
+          if (this.storageAvailable && level) {
+            const key = `adminQuiz_${level}_${bookId}_${chapterId}_${finalLessonId}`;
+            localStorage.removeItem(key);
+          }
+          
+          // Return null - do NOT fallback to old cache
+          return null;
         } else {
           console.log('[StorageManager.getQuiz] ⚠️ Supabase request not successful, will try local caches');
         }
@@ -774,23 +819,23 @@ class LocalStorageManager {
       }
     }
     
-    // 2. Try IndexedDB (local cache) - giống getBooks/getChapters/getLessons
+    // 2. Try IndexedDB (local cache) - chỉ nếu Supabase không available hoặc failed
     if (this.useIndexedDB) {
       const result = await indexedDBManager.getQuiz(bookId, chapterId, finalLessonId, level);
       if (result) {
-        console.log('[StorageManager.getQuiz] ✅ Loaded quiz from IndexedDB');
+        console.log('[StorageManager.getQuiz] ✅ Loaded quiz from IndexedDB (Supabase not available or failed)');
         return result;
       }
     }
 
-    // 3. Fallback to localStorage (scoped by level) - giống getBooks/getChapters/getLessons
+    // 3. Fallback to localStorage - chỉ nếu Supabase không available hoặc failed
     if (this.storageAvailable && level) {
       const key = `adminQuiz_${level}_${bookId}_${chapterId}_${finalLessonId}`;
       const data = localStorage.getItem(key);
       if (data) {
         try {
           const quiz = JSON.parse(data);
-          console.log('[StorageManager.getQuiz] ✅ Loaded quiz from localStorage');
+          console.log('[StorageManager.getQuiz] ✅ Loaded quiz from localStorage (Supabase not available or failed)');
           // Sync to IndexedDB
           if (this.useIndexedDB) {
             await indexedDBManager.saveQuiz(bookId, chapterId, finalLessonId, quiz, level);
@@ -1115,39 +1160,42 @@ class LocalStorageManager {
     // Delete from IndexedDB
     if (this.useIndexedDB) {
       await indexedDBManager.deleteQuiz(bookId, chapterId, finalLessonId, level);
-      // ✅ Cũng thử xóa quiz cũ không có lessonId (backward compatibility)
-      try {
-        const allQuizzes = await indexedDBManager.getAllQuizzes(level);
-        const relatedQuizzes = allQuizzes.filter(q => 
-          q.bookId === bookId && 
-          q.chapterId === chapterId && 
-          (!q.lessonId || q.lessonId === chapterId) // Quiz cũ dùng chapterId làm lessonId
-        );
-        for (const q of relatedQuizzes) {
-          await indexedDBManager.deleteQuiz(bookId, chapterId, q.lessonId || chapterId, level);
+      // ✅ FIXED: Chỉ xóa quiz cũ (backward compatibility) nếu lessonId === chapterId
+      // KHÔNG xóa tất cả quizzes của chapter vì mỗi lesson có thể có quiz riêng
+      if (finalLessonId === chapterId) {
+        try {
+          // Chỉ xóa quiz cũ không có lessonId hoặc có lessonId === chapterId
+          const allQuizzes = await indexedDBManager.getAllQuizzes(level);
+          const oldQuizzes = allQuizzes.filter(q => 
+            q.bookId === bookId && 
+            q.chapterId === chapterId && 
+            (!q.lessonId || q.lessonId === chapterId) // Quiz cũ dùng chapterId làm lessonId
+          );
+          for (const q of oldQuizzes) {
+            await indexedDBManager.deleteQuiz(bookId, chapterId, q.lessonId || chapterId, level);
+          }
+        } catch (e) {
+          console.warn('[StorageManager] Error cleaning up old quizzes from IndexedDB:', e);
         }
-      } catch (e) {
-        console.warn('[StorageManager] Error cleaning up old quizzes from IndexedDB:', e);
       }
     }
 
     // Delete from localStorage (both old and new format)
     if (this.storageAvailable && level) {
-      // Delete new format
+      // Delete new format (specific lessonId)
       const newKey = `adminQuiz_${level}_${bookId}_${chapterId}_${finalLessonId}`;
       localStorage.removeItem(newKey);
       
-      // ✅ FIXED: Xóa tất cả quiz liên quan (có thể có nhiều quiz với các lessonId khác nhau)
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith(`adminQuiz_${level}_${bookId}_${chapterId}_`)) {
-          // Xóa tất cả quiz của chapter này (có thể có quiz cũ với lessonId khác)
-          localStorage.removeItem(key);
-          console.log(`🗑️ Deleted related quiz key: ${key}`);
-        }
+      // ✅ FIXED: Chỉ xóa quiz cũ (backward compatibility) nếu lessonId === chapterId
+      // KHÔNG xóa tất cả quizzes của chapter vì mỗi lesson có thể có quiz riêng
+      if (finalLessonId === chapterId) {
+        // Quiz cũ có thể được lưu với key không có lessonId
+        const oldKey = `adminQuiz_${level}_${bookId}_${chapterId}`;
+        localStorage.removeItem(oldKey);
+        console.log(`🗑️ Deleted old format quiz key: ${oldKey}`);
       }
       
-      console.log(`🗑️ Deleted quiz keys for level ${level}: ${newKey} and related quizzes`);
+      console.log(`🗑️ Deleted quiz key for level ${level}: ${newKey}`);
     }
   }
 

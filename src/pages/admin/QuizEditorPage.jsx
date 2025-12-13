@@ -1118,34 +1118,67 @@ function QuizEditorPage() {
     setLoadedQuizKey(finalImportKey);
     console.log('✅ [Import] Set loadedQuizKey FIRST to prevent reload:', finalImportKey);
     
-    // ✅ Step 4: Set location metadata with delay to ensure flags are applied
-    // Use setTimeout to batch all metadata updates together
+    // ✅ FIXED: Step 4: Set location metadata ONLY if file has metadata
+    // If file doesn't have metadata, keep current selection (don't reset)
     setTimeout(() => {
       console.log('📍 [Import] Now setting metadata (flags are active)...');
+      console.log('📍 [Import] File metadata:', meta);
+      console.log('📍 [Import] Current selection:', {
+        level: selectedLevel,
+        book: selectedBook,
+        chapter: selectedChapter,
+        lesson: selectedLesson
+      });
       
-      if (meta.level) {
-        console.log('📍 [Import] Setting level:', meta.level);
-        setSelectedLevel(meta.level);
-      }
-      if (meta.bookId) {
-        console.log('📍 [Import] Setting bookId:', meta.bookId);
-        setSelectedBook(meta.bookId);
-      }
-      if (meta.chapterId) {
-        console.log('📍 [Import] Setting chapterId:', meta.chapterId);
-        setSelectedChapter(meta.chapterId);
-      }
-      if (meta.lessonId) {
-        console.log('📍 [Import] Setting lessonId:', meta.lessonId);
-        setSelectedLesson(meta.lessonId);
-      }
+      // ✅ FIXED: Only update if file has metadata, otherwise keep current selection
+      const hasMetadata = meta && Object.keys(meta).length > 0;
       
-      // Update loadedQuizKey with actual values after metadata is set
-      if (importKey) {
-        setTimeout(() => {
-          setLoadedQuizKey(importKey);
-          console.log('✅ [Import] Updated loadedQuizKey with actual metadata:', importKey);
-        }, 100);
+      if (hasMetadata) {
+        // File has metadata - use it
+        if (meta.level) {
+          console.log('📍 [Import] Setting level from file:', meta.level);
+          setSelectedLevel(meta.level);
+        }
+        if (meta.bookId) {
+          console.log('📍 [Import] Setting bookId from file:', meta.bookId);
+          setSelectedBook(meta.bookId);
+        }
+        if (meta.chapterId) {
+          console.log('📍 [Import] Setting chapterId from file:', meta.chapterId);
+          setSelectedChapter(meta.chapterId);
+        }
+        if (meta.lessonId) {
+          console.log('📍 [Import] Setting lessonId from file:', meta.lessonId);
+          setSelectedLesson(meta.lessonId);
+        }
+        
+        // Update loadedQuizKey with actual values after metadata is set
+        if (importKey) {
+          setTimeout(() => {
+            setLoadedQuizKey(importKey);
+            console.log('✅ [Import] Updated loadedQuizKey with file metadata:', importKey);
+          }, 100);
+        }
+      } else {
+        // File doesn't have metadata - keep current selection
+        console.log('📍 [Import] File has no metadata - keeping current selection');
+        console.log('📍 [Import] Current selection will be used:', {
+          level: selectedLevel,
+          book: selectedBook,
+          chapter: selectedChapter,
+          lesson: selectedLesson || selectedChapter
+        });
+        
+        // Use current selection for loadedQuizKey
+        const currentKey = (selectedBook && selectedChapter) 
+          ? `${selectedBook}_${selectedChapter}_${selectedLesson || selectedChapter}` 
+          : '';
+        if (currentKey) {
+          setTimeout(() => {
+            setLoadedQuizKey(currentKey);
+            console.log('✅ [Import] Updated loadedQuizKey with current selection:', currentKey);
+          }, 100);
+        }
       }
     }, 50); // Small delay to ensure flags are applied first
     
@@ -1362,11 +1395,81 @@ function QuizEditorPage() {
       // Storage type is determined automatically (IndexedDB if available, localStorage otherwise)
       console.log(`✅ Quiz saved successfully!`);
       
+      // ✅ NEW: Verify quiz was saved to Supabase (if userId and level provided)
+      let savedToSupabase = false;
+      if (selectedLevel && userId) {
+        try {
+          console.log(`🔍 Verifying quiz was saved to Supabase...`);
+          // Wait a bit for Supabase to process
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          const { contentService } = await import('../../services/contentService.js');
+          const { success: verifySuccess, data: verifyData } = await contentService.getQuiz(
+            selectedBook,
+            selectedChapter,
+            finalLessonId,
+            selectedLevel
+          );
+          
+          if (verifySuccess && verifyData) {
+            savedToSupabase = true;
+            console.log(`✅ VERIFIED: Quiz is now in Supabase!`);
+            console.log(`   - Quiz ID: ${verifyData.id}`);
+            console.log(`   - Title: ${verifyData.title}`);
+            console.log(`   - Questions: ${verifyData.questions?.length || 0}`);
+          } else {
+            console.warn(`⚠️ Quiz may not be in Supabase yet (or verification failed)`);
+            console.warn(`   - verifySuccess: ${verifySuccess}`);
+            console.warn(`   - verifyData:`, verifyData);
+          }
+        } catch (err) {
+          console.warn(`⚠️ Error verifying quiz in Supabase:`, err);
+        }
+      }
+      
       // ✅ IMPORTANT: Reset loadedQuizKey to force reload next time
       setLoadedQuizKey('');
       console.log('🔄 Reset loadedQuizKey to allow fresh reload');
       
       const location = `${selectedLevel.toUpperCase()} / ${selectedBook} / ${selectedChapter}${selectedLesson ? ` / ${selectedLesson}` : ''}`;
+      
+      // ✅ NEW: Show success message with Supabase status
+      if (savedToSupabase) {
+        alert(
+          `✅ Quiz đã được lưu thành công!\n\n` +
+          `📦 Đã lưu vào:\n` +
+          `   - Supabase (cloud) ✅\n` +
+          `   - Local storage (thiết bị này) ✅\n\n` +
+          `📍 Vị trí: ${location}\n` +
+          `📝 Tiêu đề: ${quizTitle}\n` +
+          `❓ Số câu hỏi: ${questions.length}\n\n` +
+          `✅ Quiz sẽ hiển thị trên tất cả thiết bị và KHÔNG BỊ MẤT!`
+        );
+      } else if (selectedLevel && userId) {
+        alert(
+          `⚠️ Quiz đã được lưu vào local storage!\n\n` +
+          `📦 Đã lưu vào:\n` +
+          `   - Local storage (thiết bị này) ✅\n` +
+          `   - Supabase (cloud) ⚠️ Chưa xác nhận\n\n` +
+          `📍 Vị trí: ${location}\n` +
+          `📝 Tiêu đề: ${quizTitle}\n` +
+          `❓ Số câu hỏi: ${questions.length}\n\n` +
+          `💡 Vui lòng kiểm tra Console để xem chi tiết.\n` +
+          `Nếu có lỗi, quiz vẫn được lưu trong local storage.`
+        );
+      } else {
+        alert(
+          `⚠️ Quiz đã được lưu vào local storage!\n\n` +
+          `📦 Đã lưu vào:\n` +
+          `   - Local storage (thiết bị này) ✅\n` +
+          `   - Supabase (cloud) ❌ Chưa lưu\n\n` +
+          `📍 Vị trí: ${location}\n` +
+          `📝 Tiêu đề: ${quizTitle}\n` +
+          `❓ Số câu hỏi: ${questions.length}\n\n` +
+          `⚠️ LƯU Ý: Quiz chỉ hiển thị trên thiết bị này.\n` +
+          `Để sync lên Supabase, vui lòng đăng nhập và lưu lại.`
+        );
+      }
       alert(t('quizEditor.saveMessages.savedSuccess', {
         title: quizTitle,
         count: questions.length,
@@ -2860,9 +2963,20 @@ function QuizEditorPage() {
                     {showImportTemplate ? 'Ẩn cấu trúc mẫu JSON' : 'Xem cấu trúc mẫu JSON'}
                   </button>
                   {showImportTemplate && (() => {
+                    // ✅ FIXED: Always use current selection for template
                     const finalLessonId = selectedLesson || selectedChapter || 'chưa-chọn';
+                    const finalLevel = selectedLevel || 'n5';
+                    const finalBookId = selectedBook || 'chưa-chọn';
+                    const finalChapterId = selectedChapter || 'chưa-chọn';
                     const lessonNumber = getLessonNumber(finalLessonId);
                     const titleSuffix = lessonNumber ? `Bài ${lessonNumber}` : (quizTitle || 'Nhập tên quiz');
+                    
+                    // ✅ Show current selection status
+                    const hasLocation = selectedLevel && selectedBook && selectedChapter;
+                    const locationStatus = hasLocation 
+                      ? `✅ Đã chọn: ${finalLevel.toUpperCase()} / ${finalBookId} / ${finalChapterId}${selectedLesson ? ` / ${selectedLesson}` : ''}`
+                      : `⚠️ Chưa chọn đầy đủ đường dẫn - Template sẽ dùng giá trị mặc định`;
+                    
                     const jsonTemplate = `{
   "title": "Trắc nghiệm mẫu - Trắc nghiệm Từ vựng Minna no Nihongo - ${titleSuffix}",
   "questions": [
@@ -2900,9 +3014,9 @@ D: いしゃ (isha) nghĩa là bác sĩ",
     }
   ],
   "metadata": {
-    "level": "${selectedLevel || 'n5'}",
-    "bookId": "${selectedBook || 'chưa-chọn'}",
-    "chapterId": "${selectedChapter || 'chưa-chọn'}",
+    "level": "${finalLevel}",
+    "bookId": "${finalBookId}",
+    "chapterId": "${finalChapterId}",
     "lessonId": "${finalLessonId}"
   }
 }`;
@@ -2910,6 +3024,9 @@ D: いしゃ (isha) nghĩa là bác sĩ",
                       <div className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-[11px] leading-relaxed font-mono text-gray-800 overflow-x-auto">
                         <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800 font-semibold">
                           ✨ Metadata tự động cập nhật theo location bạn chọn ở trên!
+                        </div>
+                        <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-[10px]">
+                          📍 {locationStatus}
                         </div>
                         <pre className="whitespace-pre-wrap break-words text-[10px] leading-relaxed font-mono" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.6' }}>{jsonTemplate}</pre>
                         <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-800 text-[10px]">

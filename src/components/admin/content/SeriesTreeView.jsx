@@ -353,11 +353,15 @@ function SeriesTreeView({
                                             // ✅ Sort lessons by order or extract number from id/title for proper natural ordering
                                             [...lessons].sort((a, b) => {
                                               // First try to sort by order field (if both have it)
-                                              if (a.order !== undefined && b.order !== undefined) {
-                                                return a.order - b.order;
+                                              // ✅ FIXED: Check both 'order' and 'orderIndex' (from Supabase)
+                                              const orderA = a.order !== undefined ? a.order : (a.orderIndex !== undefined ? a.orderIndex : undefined);
+                                              const orderB = b.order !== undefined ? b.order : (b.orderIndex !== undefined ? b.orderIndex : undefined);
+                                              
+                                              if (orderA !== undefined && orderB !== undefined) {
+                                                return orderA - orderB;
                                               }
-                                              if (a.order !== undefined) return -1;
-                                              if (b.order !== undefined) return 1;
+                                              if (orderA !== undefined) return -1;
+                                              if (orderB !== undefined) return 1;
                                               
                                               // Extract number from id or title for natural sort (1, 2, ..., 10, 11, ...)
                                               const extractNumber = (lesson) => {
@@ -435,11 +439,15 @@ function SeriesTreeView({
                                               })();
                                               
                                               const sortedLessons = [...lessons].sort((a, b) => {
-                                                if (a.order !== undefined && b.order !== undefined) {
-                                                  return a.order - b.order;
+                                                // ✅ FIXED: Check both 'order' and 'orderIndex' (from Supabase)
+                                                const orderA = a.order !== undefined ? a.order : (a.orderIndex !== undefined ? a.orderIndex : undefined);
+                                                const orderB = b.order !== undefined ? b.order : (b.orderIndex !== undefined ? b.orderIndex : undefined);
+                                                
+                                                if (orderA !== undefined && orderB !== undefined) {
+                                                  return orderA - orderB;
                                                 }
-                                                if (a.order !== undefined) return -1;
-                                                if (b.order !== undefined) return 1;
+                                                if (orderA !== undefined) return -1;
+                                                if (orderB !== undefined) return 1;
                                                 
                                                 const extractNumber = (l) => {
                                                   const id = (l.id || '').toString();
