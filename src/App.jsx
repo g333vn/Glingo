@@ -21,6 +21,8 @@ import GlobalSearch from './components/GlobalSearch.jsx';
 
 // ✅ NEW: Import Vercel Speed Insights
 import { SpeedInsights } from '@vercel/speed-insights/react';
+// ✅ NEW: Import Vercel Web Analytics
+import { Analytics } from '@vercel/analytics/react';
 
 // Maintenance
 import MaintenancePage from './pages/MaintenancePage.jsx';
@@ -213,6 +215,9 @@ function AppContent() {
 
       {/* Vercel Speed Insights - Performance monitoring */}
       <SpeedInsights />
+      
+      {/* Vercel Web Analytics - Visitor and page view tracking */}
+      <Analytics />
     </div>
   );
 }
