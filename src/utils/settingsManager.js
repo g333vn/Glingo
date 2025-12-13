@@ -100,10 +100,11 @@ export function getSettings() {
 }
 
 /**
- * Sync settings from Supabase (async, non-blocking)
- * Updates localStorage cache when Supabase has newer data
+ * Load settings from Supabase and merge with localStorage
+ * This is the primary function to get latest settings from Supabase
+ * @returns {Promise<Object>} Settings object merged from Supabase and localStorage
  */
-async function syncFromSupabase() {
+export async function loadSettingsFromSupabase() {
   try {
     const { success, settings: supabaseSettings } = await getSystemSettingsFromSupabase();
     
@@ -118,10 +119,11 @@ async function syncFromSupabase() {
         }
       })();
 
-      // Merge Supabase system settings into current settings
+      // Merge Supabase system settings into current settings (Supabase takes priority)
       if (currentSettings.system) {
         currentSettings.system = {
           ...currentSettings.system,
+          // Supabase values override localStorage
           platformName: supabaseSettings.platformName || currentSettings.system.platformName,
           platformTagline: supabaseSettings.platformTagline || currentSettings.system.platformTagline,
           platformDescription: supabaseSettings.platformDescription || currentSettings.system.platformDescription,
@@ -137,13 +139,33 @@ async function syncFromSupabase() {
       // Update localStorage cache
       localStorage.setItem('systemSettings', JSON.stringify(currentSettings));
       
+      const mergedSettings = deepMerge(DEFAULT_SETTINGS, currentSettings);
+      
       // Dispatch event to notify components
       window.dispatchEvent(new CustomEvent('settingsUpdated', { 
-        detail: deepMerge(DEFAULT_SETTINGS, currentSettings)
+        detail: mergedSettings
       }));
       
-      console.log('[SETTINGS] ✅ Synced from Supabase');
+      console.log('[SETTINGS] ✅ Loaded from Supabase');
+      return mergedSettings;
     }
+    
+    // If Supabase has no data, return localStorage settings
+    return getSettings();
+  } catch (error) {
+    console.warn('[SETTINGS] ⚠️ Error loading from Supabase:', error);
+    // Fallback to localStorage
+    return getSettings();
+  }
+}
+
+/**
+ * Sync settings from Supabase (async, non-blocking)
+ * Updates localStorage cache when Supabase has newer data
+ */
+async function syncFromSupabase() {
+  try {
+    await loadSettingsFromSupabase();
   } catch (error) {
     console.warn('[SETTINGS] ⚠️ Error syncing from Supabase:', error);
     // Silent fail - continue with localStorage
@@ -308,6 +330,7 @@ export default {
   resetSettings,
   exportSettings,
   importSettings,
-  getDefaultSettings
+  getDefaultSettings,
+  loadSettingsFromSupabase
 };
 

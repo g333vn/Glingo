@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';
-import { getSettings, saveSettings, resetSettings, exportSettings, importSettings } from '../../utils/settingsManager.js';
+import { getSettings, saveSettings, resetSettings, exportSettings, importSettings, loadSettingsFromSupabase } from '../../utils/settingsManager.js';
 import { setGlobalMaintenanceMode, saveSystemSettingsToSupabase } from '../../services/appSettingsService.js';
 import { resetToFactoryDefaults } from '../../utils/seedManager.js';
 import { clearDeletedUsers } from '../../data/users.js';
@@ -22,19 +22,37 @@ function SettingsPage() {
   const [saveMessage, setSaveMessage] = useState(null);
   const [platformDescriptionInput, setPlatformDescriptionInput] = useState('');
 
-  // Load settings on mount
+  // Load settings on mount - ✅ Load from Supabase first
   useEffect(() => {
-    const loadedSettings = getSettings();
-    setSettings(loadedSettings);
+    const loadSettings = async () => {
+      try {
+        // ✅ Load from Supabase first to get latest data
+        const loadedSettings = await loadSettingsFromSupabase();
+        setSettings(loadedSettings);
+        
+        // Initialize platformDescriptionInput from current settings
+        const desc = loadedSettings.system.platformDescription;
+        if (typeof desc === 'object' && desc !== null) {
+          // Get text from current language or fallback to vi
+          setPlatformDescriptionInput(desc[currentLanguage] || desc.vi || desc.en || desc.ja || '');
+        } else if (typeof desc === 'string') {
+          setPlatformDescriptionInput(desc);
+        }
+      } catch (error) {
+        console.error('[SettingsPage] Error loading settings:', error);
+        // Fallback to localStorage
+        const loadedSettings = getSettings();
+        setSettings(loadedSettings);
+        const desc = loadedSettings.system.platformDescription;
+        if (typeof desc === 'object' && desc !== null) {
+          setPlatformDescriptionInput(desc[currentLanguage] || desc.vi || desc.en || desc.ja || '');
+        } else if (typeof desc === 'string') {
+          setPlatformDescriptionInput(desc);
+        }
+      }
+    };
     
-    // Initialize platformDescriptionInput from current settings
-    const desc = loadedSettings.system.platformDescription;
-    if (typeof desc === 'object' && desc !== null) {
-      // Get text from current language or fallback to vi
-      setPlatformDescriptionInput(desc[currentLanguage] || desc.vi || desc.en || desc.ja || '');
-    } else if (typeof desc === 'string') {
-      setPlatformDescriptionInput(desc);
-    }
+    loadSettings();
   }, [currentLanguage]);
 
   // Update setting helper
@@ -163,12 +181,24 @@ function SettingsPage() {
           
           if (supabaseSuccess) {
             console.log('[SettingsPage] ✅ Saved system settings to Supabase');
+            // Trigger settings update event to notify other components
+            window.dispatchEvent(new CustomEvent('settingsUpdated', { 
+              detail: finalSettings 
+            }));
           } else {
             console.warn('[SettingsPage] ⚠️ Failed to save to Supabase (using localStorage only):', supabaseError);
+            setSaveMessage({ 
+              type: 'error', 
+              text: `${t('settings.messages.saveSuccess')} (⚠️ Supabase sync failed - saved locally only)` 
+            });
             // Continue anyway - localStorage is saved
           }
         } catch (err) {
           console.error('[SettingsPage] ❌ Error saving to Supabase:', err);
+          setSaveMessage({ 
+            type: 'error', 
+            text: `${t('settings.messages.saveSuccess')} (⚠️ Supabase sync failed - saved locally only)` 
+          });
           // Continue anyway - localStorage is saved
         }
 

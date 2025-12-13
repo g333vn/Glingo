@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
 import { hasAccess } from '../utils/accessControlManager.js';
 import { hasDashboardAccess } from '../utils/dashboardAccessManager.js';
-import { getSettings } from '../utils/settingsManager.js';
+import { getSettings, loadSettingsFromSupabase } from '../utils/settingsManager.js';
 import { subscribeToAppSettings } from '../services/appSettingsService.js';
 import StreakCounter from './StreakCounter.jsx';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
@@ -43,9 +43,19 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
 
     window.addEventListener('settingsUpdated', handleSettingsUpdate);
 
-    // Also check on mount in case settings changed while page was not active
-    const currentSettings = getSettings();
-    setSettings(currentSettings);
+    // ✅ Load from Supabase on mount to get latest data
+    const loadInitialSettings = async () => {
+      try {
+        const loadedSettings = await loadSettingsFromSupabase();
+        setSettings(loadedSettings);
+      } catch (error) {
+        console.warn('[Header] Error loading from Supabase, using localStorage:', error);
+        const currentSettings = getSettings();
+        setSettings(currentSettings);
+      }
+    };
+    
+    loadInitialSettings();
 
     // ✅ Subscribe to Supabase real-time changes
     const unsubscribe = subscribeToAppSettings((updatedAppSettings) => {

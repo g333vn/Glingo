@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
-import { getSettings } from '../utils/settingsManager.js';
+import { getSettings, loadSettingsFromSupabase } from '../utils/settingsManager.js';
 import { subscribeToAppSettings } from '../services/appSettingsService.js';
 
 function HomePage() {
@@ -20,9 +20,19 @@ function HomePage() {
     
     window.addEventListener('settingsUpdated', handleSettingsUpdate);
     
-    // Also check on mount in case settings changed while page was not active
-    const currentSettings = getSettings();
-    setSettings(currentSettings);
+    // ✅ Load from Supabase on mount to get latest data
+    const loadInitialSettings = async () => {
+      try {
+        const loadedSettings = await loadSettingsFromSupabase();
+        setSettings(loadedSettings);
+      } catch (error) {
+        console.warn('[HomePage] Error loading from Supabase, using localStorage:', error);
+        const currentSettings = getSettings();
+        setSettings(currentSettings);
+      }
+    };
+    
+    loadInitialSettings();
 
     // ✅ Subscribe to Supabase real-time changes
     const unsubscribe = subscribeToAppSettings((updatedAppSettings) => {

@@ -71,43 +71,81 @@ export async function getSystemSettingsFromSupabase() {
  */
 export async function saveSystemSettingsToSupabase(systemSettings) {
   try {
-    // Get current app_settings
+    console.log('[AppSettings] 💾 Saving system settings to Supabase:', systemSettings);
+    
+    // First, try to get current app_settings to check if row exists
     const { data: currentData, error: fetchError } = await supabase
       .from('app_settings')
-      .select('system_settings')
+      .select('system_settings, id')
       .eq('id', APP_SETTINGS_ID)
       .maybeSingle();
 
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = not found
+    // If row doesn't exist (PGRST116), create it
+    if (fetchError && fetchError.code === 'PGRST116') {
+      console.log('[AppSettings] Row not found, creating new app_settings row...');
+      const { data: insertData, error: insertError } = await supabase
+        .from('app_settings')
+        .insert({
+          id: APP_SETTINGS_ID,
+          system_settings: systemSettings,
+          maintenance_mode: false,
+          access_control: {},
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('[AppSettings] Error creating app_settings row:', insertError);
+        return { success: false, error: insertError };
+      }
+
+      console.log('[AppSettings] ✅ Successfully created app_settings row with system settings');
+      return { success: true, data: insertData };
+    }
+
+    // If there's another error fetching
+    if (fetchError && fetchError.code !== 'PGRST116') {
       console.error('[AppSettings] Error fetching current system_settings:', fetchError);
       return { success: false, error: fetchError };
     }
 
-    // Merge with existing system_settings
+    // Merge with existing system_settings (Supabase values take priority)
     const currentSystemSettings = currentData?.system_settings || {};
     const updatedSystemSettings = {
       ...currentSystemSettings,
-      ...systemSettings
+      ...systemSettings // New values override old ones
     };
 
+    console.log('[AppSettings] Updating with merged settings:', updatedSystemSettings);
+
     // Update app_settings
-    const { error: updateError } = await supabase
+    const { data: updateData, error: updateError } = await supabase
       .from('app_settings')
       .update({
         system_settings: updatedSystemSettings,
         updated_at: new Date().toISOString()
       })
-      .eq('id', APP_SETTINGS_ID);
+      .eq('id', APP_SETTINGS_ID)
+      .select()
+      .single();
 
     if (updateError) {
-      console.error('[AppSettings] Error updating system_settings:', updateError);
+      console.error('[AppSettings] ❌ Error updating system_settings:', updateError);
+      console.error('[AppSettings] Update error details:', {
+        code: updateError.code,
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint
+      });
       return { success: false, error: updateError };
     }
 
     console.log('[AppSettings] ✅ Successfully saved system settings to Supabase');
-    return { success: true };
+    console.log('[AppSettings] Updated data:', updateData);
+    return { success: true, data: updateData };
   } catch (err) {
-    console.error('[AppSettings] Unexpected error:', err);
+    console.error('[AppSettings] ❌ Unexpected error saving to Supabase:', err);
     return { success: false, error: err };
   }
 }
