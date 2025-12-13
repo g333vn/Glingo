@@ -4,6 +4,9 @@ import ReactDOM from 'react-dom/client';
 import '@ant-design/v5-patch-for-react-19';
 import { createBrowserRouter, RouterProvider, useParams } from 'react-router-dom';
 
+// ✅ NEW: Import Vercel Speed Insights
+import { injectSpeedInsights } from '@vercel/speed-insights';
+
 // ✅ CRITICAL: Import all providers to wrap RouterProvider
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { LanguageProvider } from './contexts/LanguageContext.jsx';
@@ -72,6 +75,9 @@ import DebugTranslationTest from './components/examples/DebugTranslationTest.jsx
 
 import './styles/index.css';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
+
+// ✅ Initialize Vercel Speed Insights (client-side only)
+injectSpeedInsights();
 
 // Set --app-vh to fix 100vh issues on mobile browsers
 function setAppVh() {
