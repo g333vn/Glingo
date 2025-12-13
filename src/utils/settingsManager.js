@@ -1,6 +1,9 @@
 // src/utils/settingsManager.js
 // ⚙️ SYSTEM SETTINGS MANAGER
 // Professional settings management for the platform
+// Priority: Supabase (Cloud) → localStorage (Local Cache)
+
+import { getSystemSettingsFromSupabase } from '../services/appSettingsService.js';
 
 /**
  * Default system settings
@@ -51,13 +54,17 @@ const DEFAULT_SETTINGS = {
 
 /**
  * Get all settings (merge with defaults)
+ * Priority: Supabase → localStorage → Defaults
  * @returns {Object} Settings object
  */
 export function getSettings() {
   try {
+    // Try to load from localStorage first (synchronous, fast)
     const saved = localStorage.getItem('systemSettings');
+    let parsed = null;
+    
     if (saved) {
-      const parsed = JSON.parse(saved);
+      parsed = JSON.parse(saved);
       
       // Migration: Convert old string platformDescription to object format
       if (parsed.system && typeof parsed.system.platformDescription === 'string') {
@@ -73,6 +80,13 @@ export function getSettings() {
         // Save migrated settings
         localStorage.setItem('systemSettings', JSON.stringify(parsed));
       }
+    }
+
+    // Try to load from Supabase (async, but we'll sync it in the background)
+    // For now, return localStorage settings immediately, but trigger async sync
+    if (parsed) {
+      // Trigger async sync from Supabase (non-blocking)
+      syncFromSupabase();
       
       // Deep merge with defaults to ensure all keys exist
       return deepMerge(DEFAULT_SETTINGS, parsed);
@@ -80,7 +94,60 @@ export function getSettings() {
   } catch (error) {
     console.error('[SETTINGS] Error loading settings:', error);
   }
+  
+  // Fallback to defaults
   return { ...DEFAULT_SETTINGS };
+}
+
+/**
+ * Sync settings from Supabase (async, non-blocking)
+ * Updates localStorage cache when Supabase has newer data
+ */
+async function syncFromSupabase() {
+  try {
+    const { success, settings: supabaseSettings } = await getSystemSettingsFromSupabase();
+    
+    if (success && supabaseSettings && Object.keys(supabaseSettings).length > 0) {
+      // Get current localStorage settings
+      const currentSettings = (() => {
+        try {
+          const saved = localStorage.getItem('systemSettings');
+          return saved ? JSON.parse(saved) : {};
+        } catch {
+          return {};
+        }
+      })();
+
+      // Merge Supabase system settings into current settings
+      if (currentSettings.system) {
+        currentSettings.system = {
+          ...currentSettings.system,
+          platformName: supabaseSettings.platformName || currentSettings.system.platformName,
+          platformTagline: supabaseSettings.platformTagline || currentSettings.system.platformTagline,
+          platformDescription: supabaseSettings.platformDescription || currentSettings.system.platformDescription,
+          contactEmail: supabaseSettings.contactEmail || currentSettings.system.contactEmail
+        };
+      } else {
+        currentSettings.system = {
+          ...DEFAULT_SETTINGS.system,
+          ...supabaseSettings
+        };
+      }
+
+      // Update localStorage cache
+      localStorage.setItem('systemSettings', JSON.stringify(currentSettings));
+      
+      // Dispatch event to notify components
+      window.dispatchEvent(new CustomEvent('settingsUpdated', { 
+        detail: deepMerge(DEFAULT_SETTINGS, currentSettings)
+      }));
+      
+      console.log('[SETTINGS] ✅ Synced from Supabase');
+    }
+  } catch (error) {
+    console.warn('[SETTINGS] ⚠️ Error syncing from Supabase:', error);
+    // Silent fail - continue with localStorage
+  }
 }
 
 /**

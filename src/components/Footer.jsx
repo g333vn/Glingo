@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Facebook, Instagram, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
 import { getSettings } from '../utils/settingsManager.js';
+import { subscribeToAppSettings } from '../services/appSettingsService.js';
 
 function Footer() {
   const { t, currentLanguage } = useLanguage();
@@ -10,7 +11,7 @@ function Footer() {
   const [settings, setSettings] = useState(getSettings());
 
   useEffect(() => {
-    // Listen for settings updates
+    // Listen for settings updates (localStorage events + Supabase real-time)
     const handleSettingsUpdate = (event) => {
       setSettings(event.detail);
     };
@@ -20,9 +21,28 @@ function Footer() {
     // Also check on mount in case settings changed while page was not active
     const currentSettings = getSettings();
     setSettings(currentSettings);
+
+    // ✅ Subscribe to Supabase real-time changes
+    const unsubscribe = subscribeToAppSettings((updatedAppSettings) => {
+      if (updatedAppSettings?.system_settings) {
+        // Update settings with Supabase data
+        const currentSettings = getSettings();
+        if (currentSettings.system) {
+          currentSettings.system = {
+            ...currentSettings.system,
+            platformName: updatedAppSettings.system_settings.platformName || currentSettings.system.platformName,
+            platformTagline: updatedAppSettings.system_settings.platformTagline || currentSettings.system.platformTagline,
+            platformDescription: updatedAppSettings.system_settings.platformDescription || currentSettings.system.platformDescription,
+            contactEmail: updatedAppSettings.system_settings.contactEmail || currentSettings.system.contactEmail
+          };
+          setSettings(currentSettings);
+        }
+      }
+    });
     
     return () => {
       window.removeEventListener('settingsUpdated', handleSettingsUpdate);
+      unsubscribe();
     };
   }, []);
 

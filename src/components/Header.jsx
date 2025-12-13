@@ -7,6 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext.jsx';
 import { hasAccess } from '../utils/accessControlManager.js';
 import { hasDashboardAccess } from '../utils/dashboardAccessManager.js';
 import { getSettings } from '../utils/settingsManager.js';
+import { subscribeToAppSettings } from '../services/appSettingsService.js';
 import StreakCounter from './StreakCounter.jsx';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
 import NotificationBell from './NotificationBell.jsx';
@@ -34,7 +35,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
   const [isMobileJlptOpen, setIsMobileJlptOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Listen for settings updates
+  // Listen for settings updates (localStorage events + Supabase real-time)
   useEffect(() => {
     const handleSettingsUpdate = (event) => {
       setSettings(event.detail);
@@ -46,8 +47,27 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
     const currentSettings = getSettings();
     setSettings(currentSettings);
 
+    // ✅ Subscribe to Supabase real-time changes
+    const unsubscribe = subscribeToAppSettings((updatedAppSettings) => {
+      if (updatedAppSettings?.system_settings) {
+        // Update settings with Supabase data
+        const currentSettings = getSettings();
+        if (currentSettings.system) {
+          currentSettings.system = {
+            ...currentSettings.system,
+            platformName: updatedAppSettings.system_settings.platformName || currentSettings.system.platformName,
+            platformTagline: updatedAppSettings.system_settings.platformTagline || currentSettings.system.platformTagline,
+            platformDescription: updatedAppSettings.system_settings.platformDescription || currentSettings.system.platformDescription,
+            contactEmail: updatedAppSettings.system_settings.contactEmail || currentSettings.system.contactEmail
+          };
+          setSettings(currentSettings);
+        }
+      }
+    });
+
     return () => {
       window.removeEventListener('settingsUpdated', handleSettingsUpdate);
+      unsubscribe();
     };
   }, []);
 

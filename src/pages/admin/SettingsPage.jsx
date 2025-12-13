@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';
 import { getSettings, saveSettings, resetSettings, exportSettings, importSettings } from '../../utils/settingsManager.js';
-import { setGlobalMaintenanceMode } from '../../services/appSettingsService.js';
+import { setGlobalMaintenanceMode, saveSystemSettingsToSupabase } from '../../services/appSettingsService.js';
 import { resetToFactoryDefaults } from '../../utils/seedManager.js';
 import { clearDeletedUsers } from '../../data/users.js';
 import { SEED_CONFIG } from '../../data/seedData.js';
@@ -146,9 +146,32 @@ function SettingsPage() {
         }
       }
 
+      // Save to localStorage first
       const success = saveSettings(finalSettings);
       
       if (success) {
+        // ✅ Save system settings to Supabase for real-time sync
+        const systemSettingsToSave = {
+          platformName: finalSettings.system.platformName,
+          platformTagline: finalSettings.system.platformTagline,
+          platformDescription: finalSettings.system.platformDescription,
+          contactEmail: finalSettings.system.contactEmail
+        };
+
+        try {
+          const { success: supabaseSuccess, error: supabaseError } = await saveSystemSettingsToSupabase(systemSettingsToSave);
+          
+          if (supabaseSuccess) {
+            console.log('[SettingsPage] ✅ Saved system settings to Supabase');
+          } else {
+            console.warn('[SettingsPage] ⚠️ Failed to save to Supabase (using localStorage only):', supabaseError);
+            // Continue anyway - localStorage is saved
+          }
+        } catch (err) {
+          console.error('[SettingsPage] ❌ Error saving to Supabase:', err);
+          // Continue anyway - localStorage is saved
+        }
+
         setSettings(finalSettings);
         setHasChanges(false);
         setSaveMessage({ type: 'success', text: t('settings.messages.saveSuccess') });
