@@ -19,6 +19,9 @@ import { getGlobalMaintenanceMode } from './services/appSettingsService.js';
 // ✅ NEW: Import GlobalSearch
 import GlobalSearch from './components/GlobalSearch.jsx';
 
+// ✅ NEW: Import Vercel Speed Insights
+import { SpeedInsights } from '@vercel/speed-insights/react';
+
 // Maintenance
 import MaintenancePage from './pages/MaintenancePage.jsx';
 import { getSettings } from './utils/settingsManager.js';
@@ -207,6 +210,9 @@ function AppContent() {
 
       {/* Global Search */}
       <GlobalSearch />
+
+      {/* Vercel Speed Insights - Performance monitoring */}
+      <SpeedInsights />
     </div>
   );
 }
