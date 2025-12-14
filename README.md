@@ -52,20 +52,10 @@ npm run dev
 
 ## 📚 Tài khoản mặc định
 
-### Admin
-- **Username**: `admin`
-- **Password**: `admin123`
-- **Quyền**: Toàn quyền
+⚠️ **Lưu ý bảo mật:** Thông tin đăng nhập mặc định được cấu hình trong file `src/data/users.js`.  
+**Vui lòng thay đổi passwords mặc định trước khi deploy lên production!**
 
-### Editor
-- **Username**: `editor`
-- **Password**: `editor123`
-- **Quyền**: Chỉnh sửa quiz
-
-### User
-- **Username**: `user1`
-- **Password**: `user123`
-- **Quyền**: Chỉ xem
+Để xem thông tin đăng nhập, vui lòng tham khảo file cấu hình hoặc liên hệ quản trị viên.
 
 ## 📖 Hướng dẫn sử dụng
 

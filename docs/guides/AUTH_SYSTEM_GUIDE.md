@@ -11,20 +11,10 @@ Hệ thống đăng nhập cơ bản với các cấp người dùng:
 
 ## 👥 Tài khoản mặc định
 
-### Admin
-- **Username:** `admin`
-- **Password:** `admin123`
-- **Quyền:** Toàn quyền (quiz-editor, manage-users, view-all)
+⚠️ **Lưu ý bảo mật:** Thông tin đăng nhập mặc định được cấu hình trong `src/data/users.js`.  
+**Vui lòng thay đổi passwords mặc định trước khi deploy lên production!**
 
-### Editor
-- **Username:** `editor`
-- **Password:** `editor123`
-- **Quyền:** Chỉnh sửa quiz (quiz-editor, view-all)
-
-### User
-- **Username:** `user1`
-- **Password:** `user123`
-- **Quyền:** Chỉ xem (view-all)
+Để xem thông tin đăng nhập, vui lòng tham khảo file cấu hình hoặc liên hệ quản trị viên.
 
 ---
 

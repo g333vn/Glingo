@@ -6,9 +6,9 @@ Module Quản lý Người dùng cho phép Admin quản lý tất cả tài kho�
 
 ## 🚀 Cách truy cập
 
-1. **Đăng nhập** với tài khoản Admin:
-   - Username: `admin`
-   - Password: `admin123`
+1. **Đăng nhập** với tài khoản Admin (thông tin đăng nhập được cấu hình trong `src/data/users.js`)
+   
+   ⚠️ **Lưu ý:** Vui lòng thay đổi passwords mặc định trước khi deploy lên production!
 
 2. **Truy cập Users Management:**
    - Từ Admin Dashboard: Click vào thẻ **"Tổng số Users"** hoặc **"Quản lý Users"**

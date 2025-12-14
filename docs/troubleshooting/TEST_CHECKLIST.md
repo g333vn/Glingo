@@ -195,9 +195,10 @@ Danh sách test toàn diện cho hệ thống e-learning học tiếng Nhật, b
 - [ ] Trang Login (`/login`) hiển thị đúng
 - [ ] Form login có username và password fields
 - [ ] Validation input (không để trống)
-- [ ] Login với admin/admin123 → thành công
-- [ ] Login với editor/editor123 → thành công
-- [ ] Login với user1/user123 → thành công
+- [ ] Login với tài khoản admin (xem cấu hình trong `src/data/users.js`) → thành công
+- [ ] Login với tài khoản editor → thành công
+- [ ] Login với tài khoản user → thành công
+- ⚠️ **Lưu ý:** Không commit passwords vào repository công khai!
 - [ ] Login với sai thông tin → hiển thị error
 - [ ] Sau khi login thành công → redirect đúng
 - [ ] User info lưu vào localStorage

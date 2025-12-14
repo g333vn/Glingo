@@ -55,7 +55,7 @@ DEMO_USERS = [
 | Key | Purpose | Example |
 |-----|---------|---------|
 | `adminUsers` | User metadata (NO passwords) | `[{id:1, username:'admin', role:'admin',...}]` |
-| `userPasswords` | Passwords (separate for security) | `{"1":"admin123", "admin":"admin123"}` |
+| `userPasswords` | Passwords (separate for security) | `{"1":"<secure-password>", "admin":"<secure-password>"}` |
 | `deletedUsers` | Blacklist of deleted demo user IDs | `[2, 3]` |
 | `authUser` | Current logged-in user | `{id:1, username:'admin',...}` |
 
@@ -87,7 +87,7 @@ DEMO_USERS = [
 │  ┌────────────────── localStorage ─────────────────────────┐        │
 │  │                                                          │        │
 │  │  adminUsers: [{id:1, username:'admin', role:'admin'}]   │        │
-│  │  userPasswords: {"1":"admin123", "admin":"admin123"}    │        │
+│  │  userPasswords: {"1":"<secure-password>", "admin":"<secure-password>"}    │        │
 │  │  deletedUsers: [2]  ← user1 deleted, won't reappear    │        │
 │  │  authUser: {id:1, username:'admin',...}                 │        │
 │  │                                                          │        │
@@ -169,10 +169,10 @@ Admin clicks "Xóa" on user1
 - Multi-key lookup: `ID`, `String(ID)`, `username`
 
 ```javascript
-// Save password
+// Save password (example - replace with actual secure passwords)
 userPasswords = {
-  "1": "admin123",        // By numeric ID
-  "admin": "admin123"     // By username
+  "1": "<secure-password>",        // By numeric ID
+  "admin": "<secure-password>"     // By username
 }
 
 // Lookup priority

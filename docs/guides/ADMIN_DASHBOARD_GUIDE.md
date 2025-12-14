@@ -6,9 +6,9 @@ Admin Dashboard là trang chính của hệ thống quản trị, cung cấp cá
 
 ## 🚀 Cách truy cập
 
-1. **Đăng nhập** với tài khoản Admin:
-   - Username: `admin`
-   - Password: `admin123`
+1. **Đăng nhập** với tài khoản Admin (thông tin đăng nhập được cấu hình trong `src/data/users.js`)
+   
+   ⚠️ **Lưu ý:** Vui lòng thay đổi passwords mặc định trước khi deploy lên production!
 
 2. **Truy cập Dashboard:**
    - Click nút **"Admin Panel"** ở Header (góc phải)

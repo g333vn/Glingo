@@ -12,10 +12,10 @@
 
 1. Click nút **"Đăng nhập"** ở Header (góc phải)
 2. Hoặc truy cập: `/login`
-3. Nhập thông tin:
-   - **Username:** `admin`
-   - **Password:** `admin123`
+3. Nhập thông tin đăng nhập (thông tin mặc định được cấu hình trong `src/data/users.js`)
 4. Click "Đăng nhập"
+
+⚠️ **Lưu ý:** Vui lòng thay đổi passwords mặc định trước khi deploy lên production!
 
 ### Bước 2: Truy cập Admin Dashboard
 
@@ -48,23 +48,15 @@ https://your-domain.com/admin
 
 ## 🔐 Thay đổi mật khẩu
 
-Mật khẩu được lưu trong file `src/data/users.js`:
-
-```javascript
-{
-  id: 1,
-  username: 'admin',
-  password: 'admin123', // Thay đổi password này!
-  role: 'admin',
-  // ...
-}
-```
+Mật khẩu được lưu trong file `src/data/users.js`.
 
 **Cách thay đổi:**
 1. Mở file `src/data/users.js`
-2. Tìm user `admin`
-3. Thay đổi `password: 'admin123'` thành mật khẩu mới
+2. Tìm user cần thay đổi password
+3. Thay đổi giá trị `password` thành mật khẩu mới
 4. Lưu file và rebuild app
+
+⚠️ **Quan trọng:** Không commit passwords vào repository công khai!
 
 ---
 

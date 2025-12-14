@@ -1,10 +1,117 @@
 # 🔒 Security Priority 3 - Hướng Dẫn Xử Lý
 
-## ✅ Đã Hoàn Thành
+## ⚠️ LƯU Ý QUAN TRỌNG
 
-### 1. Cache-Control Headers
+**Vấn đề:** Thêm Cache-Control headers vào `vercel.json` gây lỗi deploy trên Vercel.
 
-Đã thêm Cache-Control headers vào `vercel.json` với cấu hình tối ưu:
+**Giải pháp:** Sử dụng **Vercel Dashboard** để thêm Cache-Control headers thay vì `vercel.json`.
+
+---
+
+## ✅ Giải Pháp: Thêm Cache-Control Headers Qua Vercel Dashboard
+
+### Cách 1: Vercel Dashboard (Khuyến nghị - Không cần thay đổi vercel.json)
+
+**Bước 1: Truy cập Vercel Dashboard**
+1. Vào https://vercel.com
+2. Đăng nhập và chọn project của bạn
+3. Vào **Settings** → **Headers**
+
+**Bước 2: Thêm Cache-Control cho Static Assets (JS, CSS, Fonts)**
+
+1. Click **"Add Header"**
+2. Cấu hình:
+   - **Source Path:** `/assets/:path*` hoặc `/*.(js|css|woff|woff2|ttf|eot)`
+   - **Header Name:** `Cache-Control`
+   - **Header Value:** `public, max-age=31536000, immutable`
+3. Click **Save**
+
+**Bước 3: Thêm Cache-Control cho Images**
+
+1. Click **"Add Header"** (thêm mới)
+2. Cấu hình:
+   - **Source Path:** `/*.(jpg|jpeg|png|gif|svg|webp|ico)`
+   - **Header Name:** `Cache-Control`
+   - **Header Value:** `public, max-age=86400, stale-while-revalidate=604800`
+3. Click **Save**
+
+**Bước 4: Thêm Cache-Control cho HTML**
+
+1. Click **"Add Header"** (thêm mới)
+2. Cấu hình:
+   - **Source Path:** `/` hoặc `/*.html`
+   - **Header Name:** `Cache-Control`
+   - **Header Value:** `public, max-age=0, must-revalidate`
+3. Click **Save**
+
+**Lưu ý:** 
+- Vercel Dashboard có thể có giới hạn về pattern matching
+- Nếu pattern không hoạt động, thử pattern đơn giản hơn: `/assets/:path*`
+
+---
+
+### Cách 2: Edge Middleware (Nếu Dashboard không đủ)
+
+Tạo file `middleware.js` trong root project:
+
+```javascript
+// middleware.js
+export function middleware(request) {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+  
+  // Static assets (JS, CSS, fonts)
+  if (pathname.match(/\.(js|css|woff|woff2|ttf|eot)$/)) {
+    return new Response(null, {
+      headers: {
+        'Cache-Control': 'public, max-age=31536000, immutable'
+      }
+    });
+  }
+  
+  // Images
+  if (pathname.match(/\.(jpg|jpeg|png|gif|svg|webp|ico)$/)) {
+    return new Response(null, {
+      headers: {
+        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800'
+      }
+    });
+  }
+  
+  // HTML
+  if (pathname === '/' || pathname.endsWith('.html')) {
+    return new Response(null, {
+      headers: {
+        'Cache-Control': 'public, max-age=0, must-revalidate'
+      }
+    });
+  }
+}
+```
+
+**Lưu ý:** Edge Middleware có thể ảnh hưởng đến performance, chỉ dùng nếu Dashboard không đủ.
+
+---
+
+### Cách 3: Chấp Nhận Cache Mặc Định của Vercel
+
+**Vercel tự động cache:**
+- Static assets (JS, CSS) từ `dist/` folder → Cache tốt
+- Images → Cache vừa phải
+- HTML → Cache ngắn
+
+**Đánh giá:**
+- ✅ Vercel đã có cache strategy tốt mặc định
+- ⚠️ Cache-Control headers chỉ tối ưu thêm, không phải critical
+- ✅ Các security headers (HSTS, CSP, X-Frame-Options) quan trọng hơn nhiều
+
+**Kết luận:** Nếu không thể thêm Cache-Control headers, có thể chấp nhận cache mặc định của Vercel.
+
+---
+
+## 📋 Cấu Hình Cache-Control Mong Muốn
+
+**Static Assets (JS, CSS, Fonts):**
 
 **Static Assets (JS, CSS, Fonts):**
 - `Cache-Control: public, max-age=31536000, immutable`
