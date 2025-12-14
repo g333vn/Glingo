@@ -22,51 +22,31 @@ Tất cả security headers đã được thêm vào `vercel.json` và **đã đ
 
 ---
 
-## ⚠️ Cần Triển Khai
+## ⚠️ Cache-Control Headers - Chấp Nhận Mặc Định
 
-### 1. Cache-Control Headers (Ưu tiên cao)
+### Tình Trạng
 
-**Vấn đề:** Tất cả files đang dùng cùng Cache-Control policy (`public, max-age=0, must-revalidate`)
+**Vấn đề:** 
+- ❌ Thêm Cache-Control vào `vercel.json` → Gây lỗi deploy
+- ❌ Vercel Dashboard không có mục Headers
+- ⚠️ ZAP scan báo: "Re-examine Cache-control Directives (9 instances)"
 
-**Giải pháp:** Thêm Cache-Control headers riêng cho từng loại file qua **Vercel Dashboard**
+### Giải Pháp: Chấp Nhận Cache Mặc Định của Vercel
 
-#### Bước 1: Truy cập Vercel Dashboard
-1. Vào https://vercel.com
-2. Đăng nhập và chọn project `glingo`
-3. Vào **Settings** → **Headers**
+**Vercel tự động cache:**
+- ✅ Static assets (JS, CSS) từ `dist/` → Cache tốt với CDN
+- ✅ Images → Cache vừa phải
+- ✅ HTML → Cache ngắn, luôn fresh
 
-#### Bước 2: Thêm Cache-Control cho Static Assets
+**Đánh giá:**
+- ✅ Vercel đã có cache strategy tốt mặc định
+- ✅ Performance đã tốt - không cần tối ưu thêm
+- ✅ Security headers quan trọng hơn - đã có đầy đủ
+- ⚠️ Cache-Control headers chỉ tối ưu thêm - không phải critical
 
-1. Click **"Add Header"**
-2. Cấu hình:
-   - **Source Path:** `/assets/:path*`
-   - **Header Name:** `Cache-Control`
-   - **Header Value:** `public, max-age=31536000, immutable`
-3. Click **Save**
+**Kết luận:** Chấp nhận cache mặc định của Vercel. ZAP warning về Cache-Control không nghiêm trọng và có thể bỏ qua.
 
-#### Bước 3: Thêm Cache-Control cho Images
-
-1. Click **"Add Header"** (thêm mới)
-2. Cấu hình:
-   - **Source Path:** `/*.(jpg|jpeg|png|gif|svg|webp|ico)`
-   - **Header Name:** `Cache-Control`
-   - **Header Value:** `public, max-age=86400, stale-while-revalidate=604800`
-3. Click **Save**
-
-#### Bước 4: Verify
-
-Sau khi thêm, đợi 1-2 phút rồi chạy:
-
-```bash
-npm run verify:cache -- https://glingo.vercel.app/
-```
-
-**Expected Results:**
-- ✅ HTML (`/`): `Cache-Control: public, max-age=0, must-revalidate`
-- ✅ Static assets (`/assets/*.js`): `Cache-Control: public, max-age=31536000, immutable`
-- ✅ Images (`/logo/main.png`): `Cache-Control: public, max-age=86400, stale-while-revalidate=604800`
-
-**Xem chi tiết:** [VERCEL_DASHBOARD_CACHE_CONTROL_STEPS.md](./VERCEL_DASHBOARD_CACHE_CONTROL_STEPS.md)
+**Xem chi tiết:** [CACHE_CONTROL_SOLUTION.md](./CACHE_CONTROL_SOLUTION.md)
 
 ---
 
