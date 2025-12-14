@@ -22,7 +22,8 @@
     "i18n:migrate": "node scripts/i18n-migration.js migrate",
     "verify:deploy": "node scripts/verify-deployment.js",
     "verify:headers": "node scripts/verify-headers.js",
-    "verify:cache": "node scripts/verify-cache-control.js"
+    "verify:cache": "node scripts/verify-cache-control.js",
+    "verify:all": "node scripts/verify-all-security.js"
   },
   "dependencies": {
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
