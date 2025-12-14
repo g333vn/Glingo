@@ -6,8 +6,8 @@
  * Example: node scripts/verify-headers.js https://your-project.vercel.app
  */
 
-const https = require('https');
-const http = require('http');
+import https from 'https';
+import http from 'http';
 
 const domain = process.argv[2] || 'https://your-project.vercel.app';
 

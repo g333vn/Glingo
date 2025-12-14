@@ -6,7 +6,7 @@
  * Example: node scripts/verify-cache-control.js https://your-project.vercel.app
  */
 
-const https = require('https');
+import https from 'https';
 
 const domain = process.argv[2] || 'https://your-project.vercel.app';
 const baseUrl = domain.replace(/\/$/, '');
