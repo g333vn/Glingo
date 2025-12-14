@@ -18,6 +18,32 @@ import EnhancedLessonModal from '../../components/admin/lessons/EnhancedLessonMo
 import { migrateLegacyLesson } from '../../types/lessonTypes.js';
 import { cleanupInvalidQuizzes } from '../../utils/quizCleanup.js';
 
+// ✅ NEW: Import placeholder preview images
+import ver1Preview from '../../features/books/components/ver1.png';
+import ver2Preview from '../../features/books/components/ver2.png';
+import ver3Preview from '../../features/books/components/ver3.png';
+import ver4Preview from '../../features/books/components/ver4.png';
+import ver5Preview from '../../features/books/components/ver5.png';
+import ver6Preview from '../../features/books/components/ver6.png';
+import ver7Preview from '../../features/books/components/ver7.png';
+import ver8Preview from '../../features/books/components/ver8.png';
+import ver9Preview from '../../features/books/components/ver9.png';
+import ver10Preview from '../../features/books/components/ver10.png';
+
+// Map version to preview image
+const placeholderPreviews = {
+  1: ver1Preview,
+  2: ver2Preview,
+  3: ver3Preview,
+  4: ver4Preview,
+  5: ver5Preview,
+  6: ver6Preview,
+  7: ver7Preview,
+  8: ver8Preview,
+  9: ver9Preview,
+  10: ver10Preview
+};
+
 function ContentManagementPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -90,7 +116,8 @@ function ContentManagementPage() {
     id: '',
     title: '',
     imageUrl: '',
-    category: ''
+    category: '',
+    placeholderVersion: 1 // ✅ NEW: Placeholder design version (1-10, default 1)
   });
 
   // Chapter form state
@@ -438,7 +465,8 @@ function ContentManagementPage() {
       title: '', 
       imageUrl: '', 
       category: seriesName || '', // ✅ Auto-fill series name
-      seriesId: seriesId // ✅ NEW: Store series ID for filtering
+      seriesId: seriesId, // ✅ NEW: Store series ID for filtering
+      placeholderVersion: 1 // ✅ NEW: Default placeholder version
     });
     setBookFormValidation({ idExists: false, titleExists: false, isValidating: false });
     setShowBookForm(true);
@@ -451,7 +479,8 @@ function ContentManagementPage() {
       title: book.title,
       imageUrl: book.imageUrl,
       category: book.category || '',
-      seriesId: book.seriesId || null // ✅ NEW: Preserve series ID when editing
+      seriesId: book.seriesId || null, // ✅ NEW: Preserve series ID when editing
+      placeholderVersion: book.placeholderVersion || 1 // ✅ NEW: Preserve placeholder version when editing
     });
     setBookFormValidation({ idExists: false, titleExists: false, isValidating: false });
     setShowBookForm(true);
@@ -2220,6 +2249,56 @@ function ContentManagementPage() {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* ✅ NEW: Placeholder Design Selection */}
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-gray-800 mb-2">
+                  🎨 Thiết kế bìa mặc định / Default Cover Design
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((version) => (
+                    <button
+                      key={version}
+                      type="button"
+                      onClick={() => setBookForm({ ...bookForm, placeholderVersion: version })}
+                      className={`relative border-2 rounded-lg overflow-hidden transition-all ${
+                        bookForm.placeholderVersion === version
+                          ? 'border-blue-500 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] scale-105'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      <img
+                        src={placeholderPreviews[version]}
+                        alt={`Design ${version}`}
+                        className="w-full h-20 object-cover"
+                        onError={(e) => {
+                          // Fallback nếu ảnh không load được
+                          e.target.style.display = 'none';
+                          const fallback = e.target.nextElementSibling;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
+                      />
+                      <div 
+                        className="w-full h-20 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-xs font-bold text-gray-600"
+                        style={{ display: 'none' }}
+                      >
+                        Ver{version}
+                      </div>
+                      {bookForm.placeholderVersion === version && (
+                        <div className="absolute top-1 right-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-black border-2 border-white">
+                          ✓
+                        </div>
+                      )}
+                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-[10px] font-bold px-1 py-0.5 text-center">
+                        Ver{version}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500">
+                  💡 Chọn thiết kế bìa mặc định khi không có ảnh. Mặc định: Ver1
+                </p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">

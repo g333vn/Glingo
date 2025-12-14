@@ -24,6 +24,7 @@ export async function saveBook(book, userId) {
         series_id: book.seriesId || null,
         // ❗ Không ghi field `category` lên Supabase vì bảng `books` hiện chưa có cột này.
         //    Category chỉ dùng phía client, dựa trên seriesId/series.name.
+        placeholder_version: book.placeholderVersion || 1, // ✅ NEW: Placeholder design version (1-10)
         order_index: book.orderIndex || 0,
         created_by: userId,
         updated_at: new Date().toISOString()
@@ -74,6 +75,7 @@ export async function getBooks(level) {
       imageUrl: book.image_url,
       seriesId: book.series_id,
       category: book.category || null, // ✅ Include category field from Supabase
+      placeholderVersion: book.placeholder_version || 1, // ✅ NEW: Placeholder design version (1-10, default 1)
       orderIndex: book.order_index
     }));
 

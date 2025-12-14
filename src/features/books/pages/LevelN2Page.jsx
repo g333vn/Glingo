@@ -264,6 +264,7 @@ function LevelN2Page() {
                                                     imageUrl={book.imageUrl}
                                                     isComingSoon={book.isComingSoon}
                                                     status={book.status}
+                                                    placeholderVersion={book.placeholderVersion || 1}
                                                 />
                                             </div>
                                         ) : (

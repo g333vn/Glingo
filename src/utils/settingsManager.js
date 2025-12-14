@@ -203,16 +203,65 @@ export async function loadSettingsFromSupabase() {
   }
 }
 
+// ✅ NEW: Flag to prevent concurrent syncs
+let isSyncing = false;
+let syncTimeout = null;
+let lastSyncTime = 0;
+const SYNC_DEBOUNCE_MS = 2000; // 2 seconds debounce
+const MIN_SYNC_INTERVAL_MS = 5000; // Minimum 5 seconds between syncs
+
 /**
  * Sync settings from Supabase (async, non-blocking)
  * Updates localStorage cache when Supabase has newer data
+ * Includes debounce and prevents concurrent syncs
  */
 async function syncFromSupabase() {
+  // Prevent concurrent syncs
+  if (isSyncing) {
+    return;
+  }
+
+  // Debounce: Clear existing timeout and set new one
+  if (syncTimeout) {
+    clearTimeout(syncTimeout);
+  }
+
+  // Check minimum interval
+  const now = Date.now();
+  if (now - lastSyncTime < MIN_SYNC_INTERVAL_MS) {
+    // Schedule sync after debounce period
+    syncTimeout = setTimeout(() => {
+      syncTimeout = null;
+      performSync();
+    }, SYNC_DEBOUNCE_MS);
+    return;
+  }
+
+  // Perform sync immediately if enough time has passed
+  performSync();
+}
+
+/**
+ * Actually perform the sync operation
+ */
+async function performSync() {
+  if (isSyncing) {
+    return;
+  }
+
+  isSyncing = true;
+  lastSyncTime = Date.now();
+
   try {
     await loadSettingsFromSupabase();
   } catch (error) {
-    console.warn('[SETTINGS] ⚠️ Error syncing from Supabase:', error);
+    // Only log if it's not a network/resource error (to avoid spam)
+    if (!error.message?.includes('Failed to fetch') && !error.message?.includes('ERR_INSUFFICIENT_RESOURCES')) {
+      console.warn('[SETTINGS] ⚠️ Error syncing from Supabase:', error);
+    }
     // Silent fail - continue with localStorage
+  } finally {
+    isSyncing = false;
   }
 }
 

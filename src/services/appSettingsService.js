@@ -43,23 +43,58 @@ export async function setGlobalMaintenanceMode(maintenance) {
  * Get system settings from Supabase
  * @returns {Object} { success: boolean, settings: Object, error?: Error }
  */
+/**
+ * Retry helper with exponential backoff
+ */
+async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 1000) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await Promise.race([
+        fn(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 10000) // 10s timeout
+        )
+      ]);
+    } catch (error) {
+      // Don't retry on certain errors
+      if (error.message?.includes('ERR_INSUFFICIENT_RESOURCES') || 
+          error.code === 'PGRST116' || // Not found
+          attempt === maxRetries - 1) {
+        throw error;
+      }
+      
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = initialDelay * Math.pow(2, attempt);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 export async function getSystemSettingsFromSupabase() {
   try {
-    const { data, error } = await supabase
-      .from('app_settings')
-      .select('system_settings')
-      .eq('id', APP_SETTINGS_ID)
-      .maybeSingle();
+    const result = await retryWithBackoff(async () => {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('system_settings')
+        .eq('id', APP_SETTINGS_ID)
+        .maybeSingle();
 
-    if (error) {
-      console.error('[AppSettings] Error fetching system_settings:', error);
-      return { success: false, settings: null, error };
-    }
+      if (error) {
+        throw error;
+      }
 
-    const systemSettings = data?.system_settings || {};
+      return { data, error: null };
+    });
+
+    const systemSettings = result.data?.system_settings || {};
     return { success: true, settings: systemSettings };
   } catch (err) {
-    console.error('[AppSettings] Unexpected error fetching system_settings:', err);
+    // Only log if it's not a network/resource error (to avoid spam)
+    if (!err.message?.includes('Failed to fetch') && 
+        !err.message?.includes('ERR_INSUFFICIENT_RESOURCES') &&
+        !err.message?.includes('Request timeout')) {
+      console.error('[AppSettings] Error fetching system_settings:', err);
+    }
     return { success: false, settings: null, error: err };
   }
 }
@@ -156,21 +191,29 @@ export async function saveSystemSettingsToSupabase(systemSettings) {
  */
 export async function getUserSettingsFromSupabase() {
   try {
-    const { data, error } = await supabase
-      .from('app_settings')
-      .select('user_settings')
-      .eq('id', APP_SETTINGS_ID)
-      .maybeSingle();
+    const result = await retryWithBackoff(async () => {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('user_settings')
+        .eq('id', APP_SETTINGS_ID)
+        .maybeSingle();
 
-    if (error) {
-      console.error('[AppSettings] Error fetching user_settings:', error);
-      return { success: false, settings: null, error };
-    }
+      if (error) {
+        throw error;
+      }
 
-    const userSettings = data?.user_settings || {};
+      return { data, error: null };
+    });
+
+    const userSettings = result.data?.user_settings || {};
     return { success: true, settings: userSettings };
   } catch (err) {
-    console.error('[AppSettings] Unexpected error fetching user_settings:', err);
+    // Only log if it's not a network/resource error (to avoid spam)
+    if (!err.message?.includes('Failed to fetch') && 
+        !err.message?.includes('ERR_INSUFFICIENT_RESOURCES') &&
+        !err.message?.includes('Request timeout')) {
+      console.error('[AppSettings] Error fetching user_settings:', err);
+    }
     return { success: false, settings: null, error: err };
   }
 }
