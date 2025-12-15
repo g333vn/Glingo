@@ -596,36 +596,14 @@ export async function deleteUser(userId) {
 
     console.log('[AuthService] ✅ Profile deleted:', userId);
     
-    // Step 2: Try to delete from auth.users using Admin API
-    let deletedAuth = false;
-    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    
-    if (serviceRoleKey && supabaseUrl) {
-      try {
-        console.log('[AuthService] Attempting to delete from auth.users using Admin API...');
-        const response = await fetch(`${supabaseUrl}/rest/v1/auth/admin/users/${userId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': supabaseUrl.split('//')[1] ? serviceRoleKey : import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${serviceRoleKey}`
-          }
-        });
-        
-        if (response.ok) {
-          console.log('[AuthService] ✅ User deleted from auth.users:', userId);
-          deletedAuth = true;
-        } else {
-          const errorData = await response.text();
-          console.warn('[AuthService] ⚠️ Failed to delete from auth.users:', response.status, errorData);
-        }
-      } catch (err) {
-        console.warn('[AuthService] ⚠️ Error calling Admin API to delete user:', err.message);
-      }
-    } else {
-      console.warn('[AuthService] ⚠️ Service role key not available. User will not be deleted from auth.users.');
-    }
+    // Step 2: Note about auth.users deletion
+    // ⚠️ SECURITY: Service Role Key should NEVER be used in client-side code
+    // To delete from auth.users, use one of these methods:
+    // 1. Supabase Edge Function (recommended)
+    // 2. Backend API with service role key (server-side only)
+    // 3. Manual deletion via Supabase Dashboard
+    console.warn('[AuthService] ⚠️ User profile deleted, but auth.users entry remains. Use Supabase Edge Function or backend API to delete from auth.users.');
+    const deletedAuth = false;
     
     // Step 3: Verify deletion by checking if profile still exists
     await new Promise(resolve => setTimeout(resolve, 500)); // Wait for deletion to complete
@@ -659,10 +637,16 @@ export async function deleteUser(userId) {
 }
 
 /**
- * Confirm user email (Admin only - requires service role key)
- * This function uses Supabase Admin API to confirm user email
+ * Confirm user email (Admin only)
+ * ⚠️ SECURITY: Service Role Key should NEVER be used in client-side code
+ * This function now returns a message indicating manual confirmation is needed
+ * To auto-confirm users, use one of these methods:
+ * 1. Supabase Edge Function (recommended)
+ * 2. Backend API with service role key (server-side only)
+ * 3. Manual confirmation via Supabase Dashboard
+ * 
  * @param {string} userId - Supabase user ID
- * @returns {Promise<{success: boolean, error?: string}>}
+ * @returns {Promise<{success: boolean, error?: string, needsManualConfirmation?: boolean}>}
  */
 export async function confirmUserEmail(userId) {
   try {
@@ -670,40 +654,14 @@ export async function confirmUserEmail(userId) {
       return { success: false, error: 'User ID is required' };
     }
 
-    // ✅ Check if service role key is available
-    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
-    if (!serviceRoleKey || !supabaseUrl) {
-      console.warn('[AuthService] ⚠️ Service role key not available. User needs manual confirmation.');
-      return { 
-        success: false, 
-        error: 'Service role key không có. User cần được confirm thủ công trong Supabase Dashboard.',
-        needsManualConfirmation: true
-      };
-    }
-
-    // ✅ Use Admin API to confirm user
-    // Note: This requires service role key
-    const { createClient } = await import('@supabase/supabase-js');
-    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
-
-    const { data, error } = await adminClient.auth.admin.updateUserById(userId, {
-      email_confirm: true
-    });
-
-    if (error) {
-      console.error('[AuthService] Error confirming user:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log('[AuthService] ✅ User confirmed successfully:', userId);
-    return { success: true, data };
+    // ⚠️ SECURITY: Service Role Key removed from client-side code
+    // Use Supabase Edge Function or backend API instead
+    console.warn('[AuthService] ⚠️ Email confirmation requires service role key. Use Supabase Edge Function or backend API.');
+    return { 
+      success: false, 
+      error: 'Email confirmation requires service role key. User cần được confirm thủ công trong Supabase Dashboard hoặc sử dụng Supabase Edge Function.',
+      needsManualConfirmation: true
+    };
   } catch (err) {
     console.error('[AuthService] Unexpected error confirming user:', err);
     return { success: false, error: err.message };

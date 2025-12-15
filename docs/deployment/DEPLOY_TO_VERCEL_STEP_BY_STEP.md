@@ -10,9 +10,16 @@
 
 ### **Environment Variables cần chuẩn bị:**
 ```
-VITE_SUPABASE_URL=https://lewocjuvermgzzdjamad.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxld29janV2ZXJtZ3p6ZGphbWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTIxMzgsImV4cCI6MjA3OTcyODEzOH0.VHRjR03dKvrpk5FKf4ewtRpGFKzPgpNZ8baI6oGKpWA
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ```
+
+**Lấy thông tin từ Supabase Dashboard:**
+1. Vào [Supabase Dashboard](https://app.supabase.com)
+2. Chọn project của bạn
+3. Vào **Settings → API**
+4. Copy **Project URL** → `VITE_SUPABASE_URL`
+5. Copy **anon public key** → `VITE_SUPABASE_ANON_KEY`
 
 ---
 
@@ -75,7 +82,8 @@ Vercel sẽ auto-detect Vite, nhưng hãy verify các settings:
 ### **3.2. Add Variable 1: VITE_SUPABASE_URL**
 
 1. **Key:** `VITE_SUPABASE_URL`
-2. **Value:** `https://lewocjuvermgzzdjamad.supabase.co`
+2. **Value:** Lấy từ Supabase Dashboard → Settings → API → Project URL
+   - Ví dụ: `https://your-project-id.supabase.co`
 3. **Environment:** Chọn cả 3:
    - ✅ Production
    - ✅ Preview
@@ -86,7 +94,8 @@ Vercel sẽ auto-detect Vite, nhưng hãy verify các settings:
 
 1. Click **Add** lại để thêm variable thứ 2
 2. **Key:** `VITE_SUPABASE_ANON_KEY`
-3. **Value:** `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxld29janV2ZXJtZ3p6ZGphbWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTIxMzgsImV4cCI6MjA3OTcyODEzOH0.VHRjR03dKvrpk5FKf4ewtRpGFKzPgpNZ8baI6oGKpWA`
+3. **Value:** Lấy từ Supabase Dashboard → Settings → API → anon public key
+   - Key bắt đầu bằng `eyJ...`
 4. **Environment:** Chọn cả 3:
    - ✅ Production
    - ✅ Preview

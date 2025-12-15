@@ -46,12 +46,12 @@ Vercel sẽ auto-detect Vite, chỉ cần verify:
 2. Click **Add New**
 3. Add variable 1:
    - **Key:** `VITE_SUPABASE_URL`
-   - **Value:** `https://lewocjuvermgzzdjamad.supabase.co`
+   - **Value:** Lấy từ Supabase Dashboard → Settings → API → Project URL
    - **Environment:** Chọn cả 3 (Production, Preview, Development)
    - Click **Save**
 4. Add variable 2:
    - **Key:** `VITE_SUPABASE_ANON_KEY`
-   - **Value:** `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxld29janV2ZXJtZ3p6ZGphbWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTIxMzgsImV4cCI6MjA3OTcyODEzOH0.VHRjR03dKvrpk5FKf4ewtRpGFKzPgpNZ8baI6oGKpWA`
+   - **Value:** Lấy từ Supabase Dashboard → Settings → API → anon public key
    - **Environment:** Chọn cả 3
    - Click **Save**
 

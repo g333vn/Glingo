@@ -55,12 +55,19 @@ Project của bạn đã sẵn sàng để deploy lên Vercel!
 
 ## 🔑 ENVIRONMENT VARIABLES
 
-Copy 2 values này để paste vào Vercel:
+Lấy 2 values này từ Supabase Dashboard để paste vào Vercel:
 
+**Cách lấy:**
+1. Vào [Supabase Dashboard](https://app.supabase.com)
+2. Chọn project của bạn
+3. Vào **Settings → API**
+4. Copy **Project URL** → `VITE_SUPABASE_URL`
+5. Copy **anon public key** → `VITE_SUPABASE_ANON_KEY`
+
+**Format:**
 ```
-VITE_SUPABASE_URL=https://lewocjuvermgzzdjamad.supabase.co
-
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxld29janV2ZXJtZ3p6ZGphbWFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxNTIxMzgsImV4cCI6MjA3OTcyODEzOH0.VHRjR03dKvrpk5FKf4ewtRpGFKzPgpNZ8baI6oGKpWA
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
 **⚠️ QUAN TRỌNG:** Chọn cả 3 environments (Production, Preview, Development) cho cả 2 variables!
