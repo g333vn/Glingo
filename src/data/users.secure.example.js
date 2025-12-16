@@ -4,6 +4,7 @@
 // Sử dụng làm reference để migrate sang secure storage
 
 import { secureStorage, hashPassword, verifyPassword } from '@/utils/storageEncryption';
+import { logger } from '../utils/logger.js';
 
 /**
  * 🔒 SECURE VERSION: Save user password với hashing
@@ -31,14 +32,14 @@ export async function saveUserPasswordSecure(userId, username, password) {
     const success = secureStorage.setItem('userPasswords', savedPasswords);
     
     if (success) {
-      console.log('[SAVE_PASSWORD] ✅ Password saved securely:', {
+      logger.info('[SAVE_PASSWORD] ✅ Password saved securely', {
         userId,
         username,
         passwordHashed: true,
-        keysSaved: [userId, String(userId), username]
+        keysSaved: [userId, String(userId), username],
       });
     } else {
-      console.error('[SAVE_PASSWORD] ❌ Failed to save password');
+      logger.error('[SAVE_PASSWORD] ❌ Failed to save password');
     }
     
     return success;
@@ -99,10 +100,10 @@ export async function loginSecure(username, password) {
       };
     }
     
-    console.log('[LOGIN] ✅ User authenticated successfully:', {
+    logger.info('[LOGIN] ✅ User authenticated successfully', {
       id: user.id,
       username: user.username,
-      role: user.role
+      role: user.role,
     });
     
     // Không trả về password
@@ -113,7 +114,7 @@ export async function loginSecure(username, password) {
       role: roles[user.role]
     };
   } catch (error) {
-    console.error('[LOGIN] Error during login:', error);
+    logger.error('[LOGIN] Error during login', { error });
     return {
       success: false,
       error: 'Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.'
@@ -127,17 +128,19 @@ export async function loginSecure(username, password) {
  */
 export async function migratePasswordsToSecure() {
   try {
-    console.log('[MIGRATION] Starting password migration...');
+    logger.info('[MIGRATION] Starting password migration...');
     
     // 1. Đọc passwords cũ (plaintext)
     const oldPasswordsStr = localStorage.getItem('userPasswords');
     if (!oldPasswordsStr) {
-      console.log('[MIGRATION] No old passwords found, skipping migration');
+      logger.info('[MIGRATION] No old passwords found, skipping migration');
       return { success: true, migrated: 0 };
     }
     
     const oldPasswords = JSON.parse(oldPasswordsStr);
-    console.log('[MIGRATION] Found', Object.keys(oldPasswords).length, 'passwords to migrate');
+    logger.info('[MIGRATION] Found passwords to migrate', {
+      count: Object.keys(oldPasswords).length,
+    });
     
     // 2. Hash từng password
     const newPasswords = {};
@@ -146,7 +149,7 @@ export async function migratePasswordsToSecure() {
     for (const [key, plainPassword] of Object.entries(oldPasswords)) {
       // Skip nếu đã là hash (64 chars hex = SHA-256)
       if (typeof plainPassword === 'string' && plainPassword.length === 64 && /^[a-f0-9]+$/i.test(plainPassword)) {
-        console.log('[MIGRATION] Key', key, 'already appears to be hashed, skipping');
+        logger.debug('[MIGRATION] Key already appears to be hashed, skipping', { key });
         newPasswords[key] = plainPassword;
         continue;
       }
@@ -156,9 +159,9 @@ export async function migratePasswordsToSecure() {
       if (hashed) {
         newPasswords[key] = hashed;
         migrated++;
-        console.log('[MIGRATION] Migrated password for key:', key);
+        logger.info('[MIGRATION] Migrated password for key', { key });
       } else {
-        console.error('[MIGRATION] Failed to hash password for key:', key);
+        logger.error('[MIGRATION] Failed to hash password for key', { key });
       }
     }
     
@@ -168,10 +171,10 @@ export async function migratePasswordsToSecure() {
     // 4. Xóa passwords cũ (sau khi đã migrate thành công)
     localStorage.removeItem('userPasswords');
     
-    console.log('[MIGRATION] ✅ Migration completed:', {
+    logger.info('[MIGRATION] ✅ Migration completed', {
       total: Object.keys(oldPasswords).length,
       migrated,
-      skipped: Object.keys(oldPasswords).length - migrated
+      skipped: Object.keys(oldPasswords).length - migrated,
     });
     
     return {
@@ -180,7 +183,7 @@ export async function migratePasswordsToSecure() {
       total: Object.keys(oldPasswords).length
     };
   } catch (error) {
-    console.error('[MIGRATION] ❌ Error during migration:', error);
+    logger.error('[MIGRATION] ❌ Error during migration', { error });
     return {
       success: false,
       error: error.message

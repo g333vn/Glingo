@@ -3,6 +3,7 @@
 // Handles: Sign up, Sign in, Sign out, Session management, Profile management
 
 import { supabase } from './supabaseClient.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * ========================================
@@ -38,11 +39,11 @@ export async function signUp({ email, password, displayName }) {
     });
 
     if (error) {
-      console.error('[AuthService] Sign up error:', error);
+      logger.error('[AuthService] Sign up error', { error });
       return { success: false, error: error.message };
     }
 
-    console.log('[AuthService] Sign up successful:', data.user?.email);
+    logger.info('[AuthService] Sign up successful', { email: data.user?.email });
 
     // ✅ AUTO: Create profile in profiles table (with automatic retry and trigger handling)
     // Note: Profile might be created automatically by database trigger
@@ -59,26 +60,34 @@ export async function signUp({ email, password, displayName }) {
       
       // ✅ AUTO: If profile creation failed, try to fetch it (might have been created by trigger)
       if (!profileResult.success) {
-        console.warn('[AuthService] Profile creation failed, checking if profile exists...');
+        logger.warn('[AuthService] Profile creation failed, checking if profile exists...', {
+          error: profileResult.error,
+        });
         await new Promise(resolve => setTimeout(resolve, 500));
         
         const existingProfile = await getUserProfile(data.user.id);
         if (existingProfile.success && existingProfile.profile) {
-          console.log('[AuthService] ✅ Profile was created by trigger!');
+          logger.info('[AuthService] ✅ Profile was created by trigger!', {
+            userId: data.user.id,
+          });
           // Profile exists, continue successfully
         } else {
-          console.warn('[AuthService] ⚠️ Profile creation result:', profileResult.error);
-          console.warn('[AuthService] ⚠️ Profile not found, but continuing anyway (can be created later)');
+          logger.warn('[AuthService] ⚠️ Profile creation result', {
+            error: profileResult.error,
+          });
+          logger.warn('[AuthService] ⚠️ Profile not found, but continuing anyway (can be created later)');
           // Continue anyway - profile might be created by trigger later or can be created manually
         }
       } else {
-        console.log('[AuthService] ✅ Profile created successfully');
+        logger.info('[AuthService] ✅ Profile created successfully', {
+          userId: data.user.id,
+        });
       }
     }
 
     return { success: true, data };
   } catch (err) {
-    console.error('[AuthService] Unexpected error in signUp:', err);
+    logger.error('[AuthService] Unexpected error in signUp', { error: err });
     return { success: false, error: err.message };
   }
 }
@@ -100,14 +109,14 @@ export async function signIn({ email, password }) {
     });
 
     if (error) {
-      console.error('[AuthService] Sign in error:', error);
+      logger.error('[AuthService] Sign in error', { error });
       return { success: false, error: error.message };
     }
 
-    console.log('[AuthService] Sign in successful:', data.user?.email);
+    logger.info('[AuthService] Sign in successful', { email: data.user?.email });
     return { success: true, data };
   } catch (err) {
-    console.error('[AuthService] Unexpected error in signIn:', err);
+    logger.error('[AuthService] Unexpected error in signIn', { error: err });
     return { success: false, error: err.message };
   }
 }
@@ -123,7 +132,7 @@ export async function signOut() {
     
     if (!session) {
       // No session exists, but we'll still clear local state
-      console.log('[AuthService] No active session, clearing local state');
+      logger.info('[AuthService] No active session, clearing local state');
       return { success: true };
     }
 
@@ -132,22 +141,22 @@ export async function signOut() {
     if (error) {
       // If error is about missing session, still consider it success (session already cleared)
       if (error.message && error.message.includes('session')) {
-        console.log('[AuthService] Session already cleared');
+        logger.info('[AuthService] Session already cleared');
         return { success: true };
       }
-      console.error('[AuthService] Sign out error:', error);
+      logger.error('[AuthService] Sign out error', { error });
       return { success: false, error: error.message };
     }
 
-    console.log('[AuthService] Sign out successful');
+    logger.info('[AuthService] Sign out successful');
     return { success: true };
   } catch (err) {
     // If error is about missing session, still consider it success
     if (err.message && err.message.includes('session')) {
-      console.log('[AuthService] Session already cleared (caught)');
+      logger.info('[AuthService] Session already cleared (caught)');
       return { success: true };
     }
-    console.error('[AuthService] Unexpected error in signOut:', err);
+    logger.error('[AuthService] Unexpected error in signOut', { error: err });
     return { success: false, error: err.message };
   }
 }
@@ -167,7 +176,7 @@ export async function getCurrentUser() {
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error) {
-      console.warn('[AuthService] Error getting current user:', error.message);
+      logger.warn('[AuthService] Error getting current user', { error: error.message });
       return { success: false, error: error.message, user: null };
     }
 
@@ -175,10 +184,10 @@ export async function getCurrentUser() {
       return { success: false, error: 'No user logged in', user: null };
     }
 
-    console.log('[AuthService] Current user:', user.email);
+    logger.info('[AuthService] Current user', { email: user.email });
     return { success: true, user };
   } catch (err) {
-    console.error('[AuthService] Unexpected error getting current user:', err);
+    logger.error('[AuthService] Unexpected error getting current user', { error: err });
     return { success: false, error: err.message, user: null };
   }
 }
@@ -192,13 +201,13 @@ export async function getSession() {
     const { data: { session }, error } = await supabase.auth.getSession();
 
     if (error) {
-      console.warn('[AuthService] Error getting session:', error.message);
+      logger.warn('[AuthService] Error getting session', { error: error.message });
       return { success: false, error: error.message, session: null };
     }
 
     return { success: true, session };
   } catch (err) {
-    console.error('[AuthService] Unexpected error getting session:', err);
+    logger.error('[AuthService] Unexpected error getting session', { error: err });
     return { success: false, error: err.message, session: null };
   }
 }
@@ -228,14 +237,14 @@ export async function getUserProfile(userId) {
 
     // PGRST116 = no rows returned (not an error, just no data)
     if (error && error.code !== 'PGRST116') {
-      console.error('[AuthService] Error getting user profile:', error);
+      logger.error('[AuthService] Error getting user profile', { error });
       // Don't fail completely, just return null profile
       return { success: true, profile: null, error: error.message };
     }
 
     return { success: true, profile: data || null };
   } catch (err) {
-    console.error('[AuthService] Unexpected error getting user profile:', err);
+    logger.error('[AuthService] Unexpected error getting user profile', { error: err });
     // Don't fail completely, just return null profile
     return { success: true, profile: null, error: err.message };
   }
@@ -256,17 +265,19 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
     // ✅ AUTO: Check if profile already exists first (with retry)
     let existing = await getUserProfile(userId);
     if (existing.success && existing.profile) {
-      console.log('[AuthService] ✅ Profile already exists for user:', userId);
+      logger.info('[AuthService] ✅ Profile already exists for user', { userId });
       // ✅ FIXED: Don't auto-update role if profile exists - preserve existing role (especially admin)
       // Only update if explicitly requested via updateUserProfile
       // This prevents accidentally resetting admin role to 'user' when profile load fails
-      console.log('[AuthService] Preserving existing profile role:', existing.profile.role);
+      logger.info('[AuthService] Preserving existing profile role', {
+        role: existing.profile.role,
+      });
       return { success: true, profile: existing.profile };
     }
 
     // ✅ AUTO: Wait a bit if retrying (profile might be created by trigger)
     if (retryCount > 0) {
-      console.log('[AuthService] ⏳ Waiting before retry...');
+      logger.debug('[AuthService] ⏳ Waiting before retry...', { retryCount });
       await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
     }
 
@@ -287,27 +298,31 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
       .maybeSingle(); // Use maybeSingle() instead of single() to handle no rows gracefully
 
     if (error) {
-      console.error('[AuthService] Error creating user profile:', error);
-      console.error('[AuthService] Error details:', {
+      logger.error('[AuthService] Error creating user profile', { error });
+      logger.error('[AuthService] Error details', {
         code: error.code,
         message: error.message,
         details: error.details,
-        hint: error.hint
+        hint: error.hint,
       });
       
       // ✅ AUTO: If error is about duplicate key, profile might already exist - fetch it
       if (error.code === '23505' || error.message.includes('duplicate') || error.message.includes('unique')) {
-        console.log('[AuthService] 🔄 Profile already exists (duplicate key), fetching existing profile...');
+        logger.info('[AuthService] 🔄 Profile already exists (duplicate key), fetching existing profile...', {
+          userId,
+        });
         existing = await getUserProfile(userId);
         if (existing.success && existing.profile) {
-          console.log('[AuthService] ✅ Found existing profile');
+          logger.info('[AuthService] ✅ Found existing profile', { userId });
           return { success: true, profile: existing.profile };
         }
       }
       
       // ✅ AUTO: If RLS error, wait and retry (profile might be created by trigger)
       if (error.code === '42501' || error.message.includes('row-level security') || error.message.includes('RLS')) {
-        console.log('[AuthService] ⚠️ RLS error detected, checking if profile was created by trigger...');
+        logger.warn('[AuthService] ⚠️ RLS error detected, checking if profile was created by trigger...', {
+          code: error.code,
+        });
         
         // Wait a bit for trigger to complete
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -315,13 +330,13 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
         // Try to fetch profile (might have been created by trigger)
         existing = await getUserProfile(userId);
         if (existing.success && existing.profile) {
-          console.log('[AuthService] ✅ Profile was created by trigger!');
+          logger.info('[AuthService] ✅ Profile was created by trigger!', { userId });
           return { success: true, profile: existing.profile };
         }
         
         // If still no profile and retry count < 2, retry
         if (retryCount < 2) {
-          console.log('[AuthService] 🔄 Retrying profile creation (attempt', retryCount + 2, ')...');
+          logger.debug('[AuthService] 🔄 Retrying profile creation', { attempt: retryCount + 2 });
           return await createUserProfile(userId, profileData, retryCount + 1);
         }
         
@@ -335,18 +350,20 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
       }
       
       // ✅ AUTO: For other errors, wait and check if profile exists (might be created by trigger)
-      if (retryCount < 2) {
-        console.log('[AuthService] ⏳ Waiting and checking if profile was created by trigger...');
+        if (retryCount < 2) {
+          logger.debug('[AuthService] ⏳ Waiting and checking if profile was created by trigger...', {
+            retryCount,
+          });
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         existing = await getUserProfile(userId);
         if (existing.success && existing.profile) {
-          console.log('[AuthService] ✅ Profile was created by trigger!');
+          logger.info('[AuthService] ✅ Profile was created by trigger!', { userId });
           return { success: true, profile: existing.profile };
         }
         
         // Retry once more
-        console.log('[AuthService] 🔄 Retrying profile creation (attempt', retryCount + 2, ')...');
+        logger.debug('[AuthService] 🔄 Retrying profile creation', { attempt: retryCount + 2 });
         return await createUserProfile(userId, profileData, retryCount + 1);
       }
       
@@ -364,18 +381,20 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
 
     // ✅ AUTO: If no data returned but no error, profile might have been created by trigger
     if (!data) {
-      console.log('[AuthService] ⏳ No data returned, checking if profile was created by trigger...');
+      logger.debug('[AuthService] ⏳ No data returned, checking if profile was created by trigger...', {
+        userId,
+      });
       await new Promise(resolve => setTimeout(resolve, 500));
       
       existing = await getUserProfile(userId);
       if (existing.success && existing.profile) {
-        console.log('[AuthService] ✅ Profile was created by trigger!');
+        logger.info('[AuthService] ✅ Profile was created by trigger!', { userId });
         return { success: true, profile: existing.profile };
       }
       
       // If still no profile and retry count < 1, retry once
       if (retryCount < 1) {
-        console.log('[AuthService] 🔄 Retrying profile creation (attempt', retryCount + 2, ')...');
+        logger.debug('[AuthService] 🔄 Retrying profile creation', { attempt: retryCount + 2 });
         return await createUserProfile(userId, profileData, retryCount + 1);
       }
       
@@ -383,18 +402,20 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
       return { success: false, error: 'Profile was not created and could not be found', profile: null };
     }
 
-    console.log('[AuthService] ✅ User profile created successfully:', userId);
+    logger.info('[AuthService] ✅ User profile created successfully', { userId });
     return { success: true, profile: data };
   } catch (err) {
-    console.error('[AuthService] Unexpected error creating user profile:', err);
+    logger.error('[AuthService] Unexpected error creating user profile', { error: err });
     
     // ✅ AUTO: Try to fetch profile one more time (might have been created)
     if (retryCount < 1) {
-      console.log('[AuthService] 🔄 Exception occurred, checking if profile exists...');
+      logger.debug('[AuthService] 🔄 Exception occurred, checking if profile exists...', {
+        userId,
+      });
       await new Promise(resolve => setTimeout(resolve, 500));
       const existing = await getUserProfile(userId);
       if (existing.success && existing.profile) {
-        console.log('[AuthService] ✅ Profile found after exception!');
+        logger.info('[AuthService] ✅ Profile found after exception!', { userId });
         return { success: true, profile: existing.profile };
       }
     }
@@ -426,14 +447,14 @@ export async function updateUserProfile(userId, updates) {
       .single();
 
     if (error) {
-      console.error('[AuthService] Error updating user profile:', error);
+      logger.error('[AuthService] Error updating user profile', { error });
       return { success: false, error: error.message, profile: null };
     }
 
-    console.log('[AuthService] User profile updated:', userId);
+    logger.info('[AuthService] User profile updated', { userId });
     return { success: true, profile: data };
   } catch (err) {
-    console.error('[AuthService] Unexpected error updating user profile:', err);
+    logger.error('[AuthService] Unexpected error updating user profile', { error: err });
     return { success: false, error: err.message, profile: null };
   }
 }
@@ -450,13 +471,13 @@ export async function getAllUserProfiles() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('[AuthService] Error fetching all profiles:', error);
+      logger.error('[AuthService] Error fetching all profiles', { error });
       return { success: false, error: error.message, profiles: [] };
     }
 
     return { success: true, profiles: data || [] };
   } catch (err) {
-    console.error('[AuthService] Unexpected error fetching all profiles:', err);
+    logger.error('[AuthService] Unexpected error fetching all profiles', { error: err });
     return { success: false, error: err.message, profiles: [] };
   }
 }
@@ -482,11 +503,11 @@ export async function updateUserRole(userId, newRole) {
       .single();
 
     if (error) {
-      console.error('[AuthService] Error updating user role:', error);
+      logger.error('[AuthService] Error updating user role', { error });
       return { success: false, error: error.message, profile: null };
     }
 
-    console.log('[AuthService] User role updated:', userId, 'to', newRole);
+    logger.info('[AuthService] User role updated', { userId, newRole });
     return { success: true, profile: data };
   } catch (err) {
     console.error('[AuthService] Unexpected error updating user role:', err);
@@ -516,14 +537,14 @@ export async function updatePassword(newPassword) {
     });
 
     if (error) {
-      console.error('[AuthService] Error updating password:', error);
+      logger.error('[AuthService] Error updating password', { error });
       return { success: false, error: error.message };
     }
 
-    console.log('[AuthService] Password updated successfully');
+    logger.info('[AuthService] Password updated successfully');
     return { success: true };
   } catch (err) {
-    console.error('[AuthService] Unexpected error updating password:', err);
+    logger.error('[AuthService] Unexpected error updating password', { error: err });
     return { success: false, error: err.message };
   }
 }
@@ -544,14 +565,14 @@ export async function resetPasswordEmail(email) {
     });
 
     if (error) {
-      console.error('[AuthService] Error sending reset email:', error);
+      logger.error('[AuthService] Error sending reset email', { error });
       return { success: false, error: error.message };
     }
 
-    console.log('[AuthService] Reset email sent to:', email);
+    logger.info('[AuthService] Reset email sent', { email });
     return { success: true };
   } catch (err) {
-    console.error('[AuthService] Unexpected error in resetPasswordEmail:', err);
+    logger.error('[AuthService] Unexpected error in resetPasswordEmail', { error: err });
     return { success: false, error: err.message };
   }
 }
@@ -574,7 +595,7 @@ export async function deleteUser(userId) {
       return { success: false, error: 'User ID is required' };
     }
 
-    console.log('[AuthService] Deleting user:', userId);
+    logger.info('[AuthService] Deleting user', { userId });
     
     // Step 1: Delete profile
     const { error: profileError } = await supabase
@@ -583,7 +604,7 @@ export async function deleteUser(userId) {
       .eq('user_id', userId);
 
     if (profileError) {
-      console.error('[AuthService] Error deleting user profile:', profileError);
+      logger.error('[AuthService] Error deleting user profile', { error: profileError });
       // Check if it's RLS error
       if (profileError.code === '42501' || profileError.message?.includes('policy')) {
         return { 
@@ -594,7 +615,7 @@ export async function deleteUser(userId) {
       return { success: false, error: profileError.message };
     }
 
-    console.log('[AuthService] ✅ Profile deleted:', userId);
+    logger.info('[AuthService] ✅ Profile deleted', { userId });
     
     // Step 2: Note about auth.users deletion
     // ⚠️ SECURITY: Service Role Key should NEVER be used in client-side code
@@ -615,7 +636,7 @@ export async function deleteUser(userId) {
       .maybeSingle();
     
     if (checkProfile) {
-      console.warn('[AuthService] ⚠️ Profile still exists after deletion attempt');
+      logger.warn('[AuthService] ⚠️ Profile still exists after deletion attempt', { userId });
       return { 
         success: false, 
         error: 'Profile vẫn còn sau khi xóa. Có thể do RLS policy hoặc trigger tự động tạo lại.',
@@ -624,14 +645,14 @@ export async function deleteUser(userId) {
       };
     }
     
-    console.log('[AuthService] ✅ Verified: Profile deleted successfully');
+    logger.info('[AuthService] ✅ Verified: Profile deleted successfully', { userId });
     return { 
       success: true, 
       deletedProfile: true,
       deletedAuth: deletedAuth // ✅ Now attempts to delete from auth.users automatically
     };
   } catch (err) {
-    console.error('[AuthService] Unexpected error deleting user:', err);
+    logger.error('[AuthService] Unexpected error deleting user', { error: err });
     return { success: false, error: err.message };
   }
 }
@@ -656,14 +677,14 @@ export async function confirmUserEmail(userId) {
 
     // ⚠️ SECURITY: Service Role Key removed from client-side code
     // Use Supabase Edge Function or backend API instead
-    console.warn('[AuthService] ⚠️ Email confirmation requires service role key. Use Supabase Edge Function or backend API.');
+    logger.warn('[AuthService] ⚠️ Email confirmation requires service role key. Use Supabase Edge Function or backend API.');
     return { 
       success: false, 
       error: 'Email confirmation requires service role key. User cần được confirm thủ công trong Supabase Dashboard hoặc sử dụng Supabase Edge Function.',
       needsManualConfirmation: true
     };
   } catch (err) {
-    console.error('[AuthService] Unexpected error confirming user:', err);
+    logger.error('[AuthService] Unexpected error confirming user', { error: err });
     return { success: false, error: err.message };
   }
 }
@@ -680,7 +701,7 @@ export async function deleteUserByEmail(email) {
     }
 
     const emailLower = email.toLowerCase().trim();
-    console.log('[AuthService] Deleting profile by email:', emailLower);
+    logger.info('[AuthService] Deleting profile by email', { email: emailLower });
 
     // Delete profile by email
     const { error: profileError } = await supabase
@@ -689,14 +710,14 @@ export async function deleteUserByEmail(email) {
       .eq('email', emailLower);
 
     if (profileError) {
-      console.error('[AuthService] Error deleting profile by email:', profileError);
+      logger.error('[AuthService] Error deleting profile by email', { error: profileError });
       return { success: false, error: profileError.message };
     }
 
-    console.log('[AuthService] Profile deleted by email:', emailLower);
+    logger.info('[AuthService] Profile deleted by email', { email: emailLower });
     return { success: true };
   } catch (err) {
-    console.error('[AuthService] Unexpected error deleting profile by email:', err);
+    logger.error('[AuthService] Unexpected error deleting profile by email', { error: err });
     return { success: false, error: err.message };
   }
 }
@@ -714,7 +735,7 @@ export async function checkUserExistsInAuth(email) {
     // If signUp fails with "already registered", user exists
     return { exists: false }; // Unknown, will be determined during signUp
   } catch (err) {
-    console.error('[AuthService] Error checking user in auth:', err);
+    logger.error('[AuthService] Error checking user in auth', { error: err });
     return { exists: false };
   }
 }
@@ -727,17 +748,17 @@ export async function checkUserExistsInAuth(email) {
  */
 export async function cleanupOrphanedProfiles(autoDelete = false) {
   try {
-    console.log('[AuthService] 🔍 Starting orphaned profiles cleanup...');
+    logger.info('[AuthService] 🔍 Starting orphaned profiles cleanup...');
     
     // Get all profiles
     const { success: profilesOk, profiles } = await getAllUserProfiles();
     
     if (!profilesOk || !profiles || profiles.length === 0) {
-      console.log('[AuthService] No profiles found or error fetching profiles');
+      logger.info('[AuthService] No profiles found or error fetching profiles');
       return { success: true, orphanedProfiles: [], deletedCount: 0 };
     }
 
-    console.log('[AuthService] Found', profiles.length, 'profiles to check');
+    logger.info('[AuthService] Found profiles to check', { count: profiles.length });
 
     // We can't directly query auth.users from client
     // So we identify orphaned profiles by checking if signUp would succeed
@@ -751,8 +772,8 @@ export async function cleanupOrphanedProfiles(autoDelete = false) {
     // For now, we'll just log potential orphaned profiles
     // Actual cleanup happens when user tries to create new user with same email
     
-    console.log('[AuthService] ✅ Cleanup check completed');
-    console.log('[AuthService] ⚠️ Note: Full orphaned profile detection requires server-side function');
+    logger.info('[AuthService] ✅ Cleanup check completed');
+    logger.warn('[AuthService] ⚠️ Note: Full orphaned profile detection requires server-side function');
     
     return { 
       success: true, 
@@ -760,7 +781,7 @@ export async function cleanupOrphanedProfiles(autoDelete = false) {
       deletedCount 
     };
   } catch (err) {
-    console.error('[AuthService] Error in cleanupOrphanedProfiles:', err);
+    logger.error('[AuthService] Error in cleanupOrphanedProfiles', { error: err });
     return { success: false, error: err.message };
   }
 }
@@ -779,13 +800,13 @@ export async function autoDeleteOrphanedProfile(email) {
     }
 
     const emailLower = email.toLowerCase().trim();
-    console.log('[AuthService] 🤖 Auto-deleting orphaned profile for email:', emailLower);
+    logger.info('[AuthService] 🤖 Auto-deleting orphaned profile for email', { email: emailLower });
 
     // Try to delete by email first (works for orphaned profiles)
     const deleteResult = await deleteUserByEmail(emailLower);
     
     if (deleteResult.success) {
-      console.log('[AuthService] ✅ Orphaned profile auto-deleted:', emailLower);
+      logger.info('[AuthService] ✅ Orphaned profile auto-deleted', { email: emailLower });
       return { success: true };
     }
 
@@ -794,15 +815,17 @@ export async function autoDeleteOrphanedProfile(email) {
     if (emailCheck.exists && emailCheck.profile) {
       const deleteByUserIdResult = await deleteUser(emailCheck.profile.user_id);
       if (deleteByUserIdResult.success) {
-        console.log('[AuthService] ✅ Orphaned profile auto-deleted by user_id:', emailCheck.profile.user_id);
+        logger.info('[AuthService] ✅ Orphaned profile auto-deleted by user_id', {
+          userId: emailCheck.profile.user_id,
+        });
         return { success: true };
       }
     }
 
-    console.warn('[AuthService] ⚠️ Could not auto-delete profile, may need manual cleanup');
+    logger.warn('[AuthService] ⚠️ Could not auto-delete profile, may need manual cleanup');
     return { success: false, error: 'Could not delete orphaned profile' };
   } catch (err) {
-    console.error('[AuthService] Error in autoDeleteOrphanedProfile:', err);
+    logger.error('[AuthService] Error in autoDeleteOrphanedProfile', { error: err });
     return { success: false, error: err.message };
   }
 }
@@ -830,14 +853,14 @@ export async function setBanStatus(userId, isBanned) {
       .single();
 
     if (error) {
-      console.error('[AuthService] Error updating ban status:', error);
+      logger.error('[AuthService] Error updating ban status', { error });
       return { success: false, error: error.message, profile: null };
     }
 
-    console.log('[AuthService] User ban status updated:', userId, 'banned:', isBanned);
+    logger.info('[AuthService] User ban status updated', { userId, isBanned });
     return { success: true, profile: data };
   } catch (err) {
-    console.error('[AuthService] Unexpected error setting ban status:', err);
+    logger.error('[AuthService] Unexpected error setting ban status', { error: err });
     return { success: false, error: err.message, profile: null };
   }
 }
@@ -860,7 +883,7 @@ export async function checkEmailExists(email) {
     }
 
     const emailLower = email.toLowerCase().trim();
-    console.log('[AuthService] Checking email exists:', emailLower);
+    logger.debug('[AuthService] Checking email exists', { email: emailLower });
 
     // ✅ Force fresh query (no cache) by using select with specific columns
     const { data, error } = await supabase
@@ -872,23 +895,23 @@ export async function checkEmailExists(email) {
     if (error) {
       // PGRST116 = no rows returned (not an error)
       if (error.code === 'PGRST116') {
-        console.log('[AuthService] Email not found in profiles:', emailLower);
+        logger.debug('[AuthService] Email not found in profiles', { email: emailLower });
         return { exists: false };
       }
-      console.warn('[AuthService] Error checking email:', error);
+      logger.warn('[AuthService] Error checking email', { error });
       return { exists: false };
     }
 
     const exists = data !== null && data !== undefined;
     if (exists) {
-      console.log('[AuthService] ⚠️ Email found in profiles:', {
+      logger.info('[AuthService] ⚠️ Email found in profiles', {
         email: data.email,
         user_id: data.user_id,
         display_name: data.display_name,
-        role: data.role
+        role: data.role,
       });
     } else {
-      console.log('[AuthService] ✅ Email not found in profiles:', emailLower);
+      logger.debug('[AuthService] ✅ Email not found in profiles', { email: emailLower });
     }
 
     return { 
@@ -896,7 +919,7 @@ export async function checkEmailExists(email) {
       profile: exists ? data : null 
     };
   } catch (err) {
-    console.error('[AuthService] Unexpected error checking email:', err);
+    logger.error('[AuthService] Unexpected error checking email', { error: err });
     return { exists: false };
   }
 }
@@ -913,14 +936,14 @@ export async function testConnection() {
       .limit(1);
 
     if (error) {
-      console.error('[AuthService] Connection test failed:', error);
+      logger.error('[AuthService] Connection test failed', { error });
       return { success: false, message: error.message };
     }
 
-    console.log('[AuthService] Connection test successful');
+    logger.info('[AuthService] Connection test successful');
     return { success: true, message: 'Connected to Supabase' };
   } catch (err) {
-    console.error('[AuthService] Connection test error:', err);
+    logger.error('[AuthService] Connection test error', { error: err });
     return { success: false, message: err.message };
   }
 }
