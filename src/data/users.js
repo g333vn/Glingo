@@ -3,6 +3,15 @@
 // Professional user data management with seed data pattern
 // ⚠️ In production: Disable seed data and use proper database
 
+// 🔒 SECURITY: Import secure storage utilities
+import { 
+  savePasswordSecure, 
+  verifyUserPassword, 
+  saveAdminUsers, 
+  getAdminUsers 
+} from '../utils/secureUserStorage.js';
+import { logger } from '../utils/logger.js';
+
 /**
  * ========================================
  * ARCHITECTURE OVERVIEW
@@ -17,13 +26,13 @@
  * 
  * 2. USER STORAGE (localStorage)
  *    - adminUsers: User metadata (NO passwords)
- *    - userPasswords: Passwords only (security)
+ *    - 🔒 Passwords: Hashed + obfuscated via secureUserStorage
  *    - deletedUsers: Blacklist of deleted demo users
  * 
  * 3. DATA PRIORITY
  *    - adminUsers = highest priority (user-modified data)
  *    - Demo users = fallback (only if not in adminUsers & not deleted)
- *    - userPasswords = overrides default passwords
+ *    - 🔒 Passwords: Hashed in secure storage
  * 
  * 4. DELETE BEHAVIOR
  *    - User-created users: Deleted from adminUsers
@@ -508,39 +517,20 @@ export function getUsers() {
   return fallbackUsers;
 }
 
-// Helper function để lưu password vào localStorage riêng
+// 🔒 SECURITY: Helper function để lưu password (hashed + obfuscated)
 export function saveUserPassword(userId, username, password) {
-  try {
-    const savedPasswords = localStorage.getItem('userPasswords');
-    let passwordsMap = savedPasswords ? JSON.parse(savedPasswords) : {};
-    
-    // ✅ CRITICAL: Lưu bằng cả id (number và string) và username để dễ tìm
-    // Đảm bảo tương thích với cả number và string ID
-    passwordsMap[userId] = password;
-    passwordsMap[String(userId)] = password; // Lưu cả string ID
-    passwordsMap[username] = password;
-    
-    console.log('[SAVE_PASSWORD] Saving password:', {
-      userId,
-      userIdType: typeof userId,
-      username,
-      passwordLength: password ? password.length : 0,
-      keysSaved: [userId, String(userId), username]
+  // Sử dụng secure storage với hash
+  savePasswordSecure(userId, username, password)
+    .then(success => {
+      if (success) {
+        logger.debug('[SAVE_PASSWORD] Password saved securely', { userId, username });
+      } else {
+        logger.error('[SAVE_PASSWORD] Failed to save password', { userId, username });
+      }
+    })
+    .catch(error => {
+      logger.error('[SAVE_PASSWORD] Error saving password', { error });
     });
-    
-    localStorage.setItem('userPasswords', JSON.stringify(passwordsMap));
-    
-    // ✅ DEBUG: Verify password was saved
-    const verify = JSON.parse(localStorage.getItem('userPasswords'));
-    console.log('[SAVE_PASSWORD] Verification:', {
-      savedById: verify[userId] ? 'YES' : 'NO',
-      savedByIdString: verify[String(userId)] ? 'YES' : 'NO',
-      savedByUsername: verify[username] ? 'YES' : 'NO',
-      allKeys: Object.keys(verify)
-    });
-  } catch (error) {
-    console.error('Error saving user password:', error);
-  }
 }
 
   // Helper function để login
@@ -683,6 +673,57 @@ export function login(username, password) {
     success: false,
     error: 'Tên đăng nhập hoặc mật khẩu không đúng!'
   };
+}
+
+/**
+ * 🔒 SECURE LOGIN: Async version với hashed password verification
+ * Sử dụng hàm này thay cho login() khi passwords đã được migrate sang secure storage
+ */
+export async function loginSecure(username, password) {
+  try {
+    const allUsers = getUsers();
+    
+    // Tìm user theo username (không phải Supabase user)
+    const user = allUsers.find(u => {
+      const isSupabaseUser = u.isSupabaseUser || u.supabaseId || (typeof u.id === 'string' && u.id.startsWith('supabase_'));
+      return !isSupabaseUser && u.username === username;
+    });
+    
+    if (!user) {
+      logger.debug('[LOGIN_SECURE] User not found', { username });
+      return {
+        success: false,
+        error: 'Tên đăng nhập hoặc mật khẩu không đúng!'
+      };
+    }
+    
+    // Verify password với secure storage
+    const isValid = await verifyUserPassword(user.id, username, password);
+    
+    if (!isValid) {
+      logger.debug('[LOGIN_SECURE] Password verification failed', { username });
+      return {
+        success: false,
+        error: 'Tên đăng nhập hoặc mật khẩu không đúng!'
+      };
+    }
+    
+    logger.info('[LOGIN_SECURE] Login successful', { userId: user.id, username, role: user.role });
+    
+    // Không trả về password
+    const { password: _, ...userWithoutPassword } = user;
+    return {
+      success: true,
+      user: userWithoutPassword,
+      role: roles[user.role]
+    };
+  } catch (error) {
+    logger.error('[LOGIN_SECURE] Error during login', { error });
+    return {
+      success: false,
+      error: 'Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.'
+    };
+  }
 }
 
 // Helper function để register user mới

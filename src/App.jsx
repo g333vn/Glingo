@@ -31,6 +31,9 @@ import MaintenancePage from './pages/MaintenancePage.jsx';
 import { getSettings } from './utils/settingsManager.js';
 import { initDebugConsoleFilter } from './utils/debugLogger.js';
 
+// 🔒 SECURITY: Secure storage initialization
+import { initSecureStorage } from './utils/secureUserStorage.js';
+
 const backgroundImageUrl = '/background/main.jpg';
 
 // Inner app content that can use hooks like useAuth
@@ -84,6 +87,9 @@ function AppContent() {
   useEffect(() => {
     // Initialize debug console filter once
     initDebugConsoleFilter();
+    
+    // 🔒 SECURITY: Initialize secure storage (migrate passwords, etc.)
+    initSecureStorage();
 
     const handler = (event) => {
       if (event?.detail) {

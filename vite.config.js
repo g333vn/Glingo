@@ -94,17 +94,29 @@ export default defineConfig({
     historyApiFallback: true
   },
   build: {
-    // ✅ CRITICAL: Giữ lại console.log trong production build
-    // Để [AUTH] logs vẫn hiển thị sau khi deploy
+    // ========================================
+    // 🔒 PRODUCTION SECURITY CONFIG
+    // ========================================
+    
+    // ✅ Minify JS/CSS
     minify: 'esbuild',
-    // ✅ Esbuild options - đảm bảo không remove console.log
+    
+    // ✅ Tắt source map trên production (F12 Sources không xem được code gốc)
+    // Đổi thành 'hidden-source-map' nếu muốn debug production qua error tracking (Sentry)
+    sourcemap: false,
+    
+    // ✅ Esbuild options cho production
     esbuild: {
-      drop: [], // ✅ KHÔNG drop console hoặc debugger
-      // drop: ['console', 'debugger'] // ❌ KHÔNG dùng dòng này
+      // 🔒 SECURITY: Drop console.log và debugger trên production
+      // Vì đã có logger.js thay thế, console.log không cần nữa
+      drop: ['console', 'debugger'],
+      
+      // ✅ Xoá comment khỏi bundle
+      legalComments: 'none',
     },
+    
     rollupOptions: {
       output: {
-        // Đảm bảo không remove console
         manualChunks: undefined
       }
     }

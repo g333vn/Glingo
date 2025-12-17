@@ -4,6 +4,12 @@
 
 import { supabase } from './supabaseClient.js';
 import * as authService from './authService.js';
+import { logger } from '../utils/logger.js';
+import { sanitizeError } from '../utils/sanitizeError.js';
+
+// 🔒 SECURITY: Chỉ select các field cần thiết, không dùng SELECT *
+const PROFILE_FIELDS_PUBLIC = 'user_id, email, display_name, role, avatar_url, is_banned, created_at, updated_at';
+const PROFILE_FIELDS_MINIMAL = 'user_id, display_name, role, avatar_url';
 
 /**
  * ========================================
@@ -29,9 +35,10 @@ export async function getAllUsers(options = {}) {
 
     const offset = (page - 1) * limit;
 
+    // 🔒 SECURITY: Chỉ select field cần thiết
     let query = supabase
       .from('profiles')
-      .select('*', { count: 'exact' });
+      .select(PROFILE_FIELDS_PUBLIC, { count: 'exact' });
 
     // Filter by role
     if (role) {
@@ -54,15 +61,15 @@ export async function getAllUsers(options = {}) {
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('[UserManagement] Error fetching users:', error);
-      return { success: false, users: [], total: 0, error: error.message };
+      logger.error('[UserManagement] Error fetching users', { error });
+      return { success: false, users: [], total: 0, error: sanitizeError(error, '[UserManagement]') };
     }
 
-    console.log('[UserManagement] Fetched users:', data?.length || 0);
+    logger.debug('[UserManagement] Fetched users', { count: data?.length || 0 });
     return { success: true, users: data || [], total: count || 0 };
   } catch (err) {
-    console.error('[UserManagement] Unexpected error fetching users:', err);
-    return { success: false, users: [], total: 0, error: err.message };
+    logger.error('[UserManagement] Unexpected error fetching users', { error: err });
+    return { success: false, users: [], total: 0, error: sanitizeError(err, '[UserManagement]') };
   }
 }
 
@@ -74,25 +81,26 @@ export async function getAllUsers(options = {}) {
 export async function searchUsers(query) {
   try {
     if (!query || query.length < 2) {
-      return { success: false, users: [], error: 'Query must be at least 2 characters' };
+      return { success: false, users: [], error: 'Từ khóa tìm kiếm phải có ít nhất 2 ký tự' };
     }
 
+    // 🔒 SECURITY: Chỉ select field cần thiết
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select(PROFILE_FIELDS_MINIMAL)
       .or(`email.ilike.%${query}%,display_name.ilike.%${query}%`)
       .limit(50);
 
     if (error) {
-      console.error('[UserManagement] Error searching users:', error);
-      return { success: false, users: [], error: error.message };
+      logger.error('[UserManagement] Error searching users', { error });
+      return { success: false, users: [], error: sanitizeError(error, '[UserManagement]') };
     }
 
-    console.log('[UserManagement] Search results:', data?.length || 0);
+    logger.debug('[UserManagement] Search results', { count: data?.length || 0 });
     return { success: true, users: data || [] };
   } catch (err) {
-    console.error('[UserManagement] Unexpected error searching users:', err);
-    return { success: false, users: [], error: err.message };
+    logger.error('[UserManagement] Unexpected error searching users', { error: err });
+    return { success: false, users: [], error: sanitizeError(err, '[UserManagement]') };
   }
 }
 
@@ -104,10 +112,10 @@ export async function searchUsers(query) {
 export async function getUserById(userId) {
   try {
     const { success, profile, error } = await authService.getUserProfile(userId);
-    return { success, user: profile, error };
+    return { success, user: profile, error: error ? sanitizeError(error, '[UserManagement]') : undefined };
   } catch (err) {
-    console.error('[UserManagement] Error getting user:', err);
-    return { success: false, error: err.message };
+    logger.error('[UserManagement] Error getting user', { error: err });
+    return { success: false, error: sanitizeError(err, '[UserManagement]') };
   }
 }
 
@@ -119,24 +127,25 @@ export async function getUserById(userId) {
 export async function getUserByEmail(email) {
   try {
     if (!email) {
-      return { success: false, error: 'Email is required' };
+      return { success: false, error: 'Email là bắt buộc' };
     }
 
+    // 🔒 SECURITY: Chỉ select field cần thiết
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select(PROFILE_FIELDS_PUBLIC)
       .eq('email', email.toLowerCase())
       .single();
 
     if (error && error.code !== 'PGRST116') {
-      console.error('[UserManagement] Error getting user by email:', error);
-      return { success: false, error: error.message };
+      logger.error('[UserManagement] Error getting user by email', { error });
+      return { success: false, error: sanitizeError(error, '[UserManagement]') };
     }
 
     return { success: true, user: data || null };
   } catch (err) {
-    console.error('[UserManagement] Unexpected error getting user by email:', err);
-    return { success: false, error: err.message };
+    logger.error('[UserManagement] Unexpected error getting user by email', { error: err });
+    return { success: false, error: sanitizeError(err, '[UserManagement]') };
   }
 }
 
@@ -190,11 +199,11 @@ export async function getUserStatistics() {
       banned: roleData?.filter(u => u.is_banned)?.length || 0,
     };
 
-    console.log('[UserManagement] Statistics:', stats);
+    logger.debug('[UserManagement] Statistics', { stats });
     return { success: true, stats };
   } catch (err) {
-    console.error('[UserManagement] Error getting statistics:', err);
-    return { success: false, error: err.message };
+    logger.error('[UserManagement] Error getting statistics', { error: err });
+    return { success: false, error: sanitizeError(err, '[UserManagement]') };
   }
 }
 
@@ -213,10 +222,10 @@ export async function getUserStatistics() {
 export async function adminUpdateUser(userId, updates) {
   try {
     const { success, profile, error } = await authService.updateUserProfile(userId, updates);
-    return { success, user: profile, error };
+    return { success, user: profile, error: error ? sanitizeError(error, '[UserManagement]') : undefined };
   } catch (err) {
-    console.error('[UserManagement] Error updating user:', err);
-    return { success: false, error: err.message };
+    logger.error('[UserManagement] Error updating user', { error: err });
+    return { success: false, error: sanitizeError(err, '[UserManagement]') };
   }
 }
 
@@ -229,10 +238,10 @@ export async function adminUpdateUser(userId, updates) {
 export async function changeUserRole(userId, newRole) {
   try {
     const { success, profile, error } = await authService.updateUserRole(userId, newRole);
-    return { success, user: profile, error };
+    return { success, user: profile, error: error ? sanitizeError(error, '[UserManagement]') : undefined };
   } catch (err) {
-    console.error('[UserManagement] Error changing role:', err);
-    return { success: false, error: err.message };
+    logger.error('[UserManagement] Error changing role', { error: err });
+    return { success: false, error: sanitizeError(err, '[UserManagement]') };
   }
 }
 
@@ -244,10 +253,10 @@ export async function changeUserRole(userId, newRole) {
 export async function banUser(userId) {
   try {
     const { success, profile, error } = await authService.setBanStatus(userId, true);
-    return { success, user: profile, error };
+    return { success, user: profile, error: error ? sanitizeError(error, '[UserManagement]') : undefined };
   } catch (err) {
-    console.error('[UserManagement] Error banning user:', err);
-    return { success: false, error: err.message };
+    logger.error('[UserManagement] Error banning user', { error: err });
+    return { success: false, error: sanitizeError(err, '[UserManagement]') };
   }
 }
 
@@ -259,10 +268,10 @@ export async function banUser(userId) {
 export async function unbanUser(userId) {
   try {
     const { success, profile, error } = await authService.setBanStatus(userId, false);
-    return { success, user: profile, error };
+    return { success, user: profile, error: error ? sanitizeError(error, '[UserManagement]') : undefined };
   } catch (err) {
-    console.error('[UserManagement] Error unbanning user:', err);
-    return { success: false, error: err.message };
+    logger.error('[UserManagement] Error unbanning user', { error: err });
+    return { success: false, error: sanitizeError(err, '[UserManagement]') };
   }
 }
 
@@ -274,10 +283,10 @@ export async function unbanUser(userId) {
 export async function deleteUserAccount(userId) {
   try {
     const { success, error } = await authService.deleteUser(userId);
-    return { success, error };
+    return { success, error: error ? sanitizeError(error, '[UserManagement]') : undefined };
   } catch (err) {
-    console.error('[UserManagement] Error deleting user:', err);
-    return { success: false, error: err.message };
+    logger.error('[UserManagement] Error deleting user', { error: err });
+    return { success: false, error: sanitizeError(err, '[UserManagement]') };
   }
 }
 
@@ -311,11 +320,11 @@ export async function bulkChangeRoles(userIds, newRole) {
       }
     }
 
-    console.log('[UserManagement] Bulk role change completed:', results);
+    logger.info('[UserManagement] Bulk role change completed', { updated: results.updated, failed: results.failed });
     return { success: results.failed === 0, ...results };
   } catch (err) {
-    console.error('[UserManagement] Error in bulk role change:', err);
-    return { success: false, updated: 0, failed: userIds.length, errors: { error: err.message } };
+    logger.error('[UserManagement] Error in bulk role change', { error: err });
+    return { success: false, updated: 0, failed: userIds.length, errors: { error: sanitizeError(err, '[UserManagement]') } };
   }
 }
 
@@ -342,11 +351,11 @@ export async function bulkBanUsers(userIds) {
       }
     }
 
-    console.log('[UserManagement] Bulk ban completed:', results);
+    logger.info('[UserManagement] Bulk ban completed', { updated: results.updated, failed: results.failed });
     return { success: results.failed === 0, ...results };
   } catch (err) {
-    console.error('[UserManagement] Error in bulk ban:', err);
-    return { success: false, updated: 0, failed: userIds.length, errors: { error: err.message } };
+    logger.error('[UserManagement] Error in bulk ban', { error: err });
+    return { success: false, updated: 0, failed: userIds.length, errors: { error: sanitizeError(err, '[UserManagement]') } };
   }
 }
 
@@ -373,11 +382,11 @@ export async function bulkDeleteUsers(userIds) {
       }
     }
 
-    console.log('[UserManagement] Bulk delete completed:', results);
+    logger.info('[UserManagement] Bulk delete completed', { deleted: results.deleted, failed: results.failed });
     return { success: results.failed === 0, ...results };
   } catch (err) {
-    console.error('[UserManagement] Error in bulk delete:', err);
-    return { success: false, deleted: 0, failed: userIds.length, errors: { error: err.message } };
+    logger.error('[UserManagement] Error in bulk delete', { error: err });
+    return { success: false, deleted: 0, failed: userIds.length, errors: { error: sanitizeError(err, '[UserManagement]') } };
   }
 }
 
@@ -421,8 +430,8 @@ export async function exportUsersToCSV() {
 
     return csv;
   } catch (err) {
-    console.error('[UserManagement] Error exporting users:', err);
-    throw err;
+    logger.error('[UserManagement] Error exporting users', { error: err });
+    throw new Error('Không thể xuất danh sách người dùng. Vui lòng thử lại.');
   }
 }
 
@@ -439,7 +448,7 @@ export async function exportUsersToCSV() {
  */
 export async function isEmailAvailable(email) {
   try {
-    const { success, user, error } = await getUserByEmail(email);
+    const { success, user } = await getUserByEmail(email);
 
     if (!success) {
       return { available: true }; // If there's an error, assume available
@@ -447,7 +456,7 @@ export async function isEmailAvailable(email) {
 
     return { available: !user };
   } catch (err) {
-    console.error('[UserManagement] Error checking email availability:', err);
+    logger.error('[UserManagement] Error checking email availability', { error: err });
     return { available: true };
   }
 }

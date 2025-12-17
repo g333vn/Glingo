@@ -112,6 +112,40 @@ Không phải F12 hoàn toàn rỗng, mà là:
   - [ ] Nếu cần lưu thông tin user: chỉ id + displayName + role (khi thật sự cần).  
   - [ ] Ưu tiên token trong **cookie httpOnly** (JS không đọc được).
 
+#### 📋 Danh sách key localStorage trong dự án này
+
+| Key | Loại | Trạng thái |
+|-----|------|------------|
+| `theme`, `language`, `locale` | UI | ✅ An toàn |
+| `levelAccessControl`, `jlptAccessControl` | Config | ✅ An toàn (public config) |
+| `systemSettings` | Config | ✅ An toàn |
+| `adminBooks_*` | Cache | ✅ An toàn |
+| `sb-*-auth-token` | Auth | ✅ Supabase SDK quản lý (chấp nhận) |
+| `adminUsers` | User | ✅ **ĐÃ FIX**: Tự động xoá password khi lưu |
+| `userPasswords` | Auth | ✅ **ĐÃ FIX**: Migrate sang hash + obfuscate |
+| `authUser` → `_au_` | Auth | ✅ **ĐÃ FIX**: Chỉ lưu id + displayName + role |
+
+#### 🛠️ Đã triển khai
+
+**1. `src/utils/secureStorage.js`** - Whitelist & auto-redact
+- Whitelist: Chỉ cho phép lưu các key an toàn.
+- Auto-redact: Tự động xoá field nhạy cảm trước khi lưu.
+- `secureStorage.audit()`: Kiểm tra localStorage.
+- `secureStorage.clearSensitive()`: Xoá data nhạy cảm khi logout.
+
+**2. `src/utils/secureUserStorage.js`** - Quản lý user an toàn
+- `savePasswordSecure()`: Hash password (SHA-256) + obfuscate key + value.
+- `verifyUserPassword()`: Verify password với hash đã lưu.
+- `migratePasswords()`: Tự động migrate passwords cũ sang secure storage.
+- `saveAuthUser()` / `getAuthUser()`: Chỉ lưu id + displayName + role.
+- `saveAdminUsers()`: Tự động xoá password trước khi lưu.
+- `initSecureStorage()`: Chạy khi app khởi động, migrate dữ liệu cũ.
+
+**3. Cập nhật các file sử dụng:**
+- `src/App.jsx`: Gọi `initSecureStorage()` khi app khởi động.
+- `src/data/users.js`: Dùng `savePasswordSecure()` thay vì plaintext.
+- `src/pages/admin/UsersManagementPage.jsx`: Dùng `saveAdminUsers()`.
+
 ### 4.5. UI / Thông Báo Lỗi
 
 - [ ] Thay thế:

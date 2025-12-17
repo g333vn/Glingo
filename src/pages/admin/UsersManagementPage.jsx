@@ -9,6 +9,8 @@ import { users as initialUsers, roles, saveUserPassword, getUsers as getUsersFro
 import { isValidEmail, getEmailErrorMessage } from '../../utils/emailValidator.js';
 import { resetToFactoryDefaults } from '../../utils/seedManager.js';
 import * as authService from '../../services/authService.js';
+// 🔒 SECURITY: Import secure storage utilities
+import { saveAdminUsers } from '../../utils/secureUserStorage.js';
 
 // ✅ Helper: Lock/unlock body scroll
 const useBodyScrollLock = (isLocked) => {
@@ -146,80 +148,35 @@ function UsersManagementPage() {
     })();
   }, []);
 
-  // Save users to localStorage (lưu password vào key riêng)
+  // 🔒 SECURITY: Save users to secure storage (passwords hashed + obfuscated)
   const saveUsers = (updatedUsers) => {
     setUsers(updatedUsers);
-    // ✅ FIX: Lưu metadata vào adminUsers, password vào userPasswords riêng
+    
+    // 🔒 Lưu metadata vào adminUsers (tự động xoá password)
     const usersWithoutPassword = updatedUsers.map(({ password, ...user }) => user);
     
-    console.log('[SAVE_USERS] Saving users:', usersWithoutPassword.map(u => ({ 
-      id: u.id, 
-      username: u.username, 
-      role: u.role 
-    })));
+    // Sử dụng saveAdminUsers từ secureUserStorage (tự động redact)
+    saveAdminUsers(usersWithoutPassword);
     
-    localStorage.setItem('adminUsers', JSON.stringify(usersWithoutPassword));
-    
-    // ✅ CRITICAL: Dispatch custom event để AuthContext trong CÙNG TAB nhận được
-    window.dispatchEvent(new CustomEvent('adminUsersUpdated', {
-      detail: { updatedUsers: usersWithoutPassword }
-    }));
-    
-    // ✅ Optional: Check nếu user đang online có bị đổi role
-    const authUser = localStorage.getItem('authUser');
-    if (authUser) {
-      try {
-        const currentAuthUser = JSON.parse(authUser);
-        const updatedAuthUser = usersWithoutPassword.find(u => u.id === currentAuthUser.id);
-        
-        if (updatedAuthUser && updatedAuthUser.role !== currentAuthUser.role) {
-          console.log('[SAVE_USERS] Current logged-in user role changed:', {
-            username: updatedAuthUser.username,
-            oldRole: currentAuthUser.role,
-            newRole: updatedAuthUser.role
-          });
-          // AuthContext sẽ tự động sync, không cần làm gì thêm
-        }
-      } catch (e) {
-        console.error('[SAVE_USERS] Error checking authUser:', e);
-      }
-    }
-    
-    // Verify saved data
-    const saved = JSON.parse(localStorage.getItem('adminUsers'));
-    console.log('[SAVE_USERS] Verified saved users:', saved.map(u => ({ 
-      id: u.id, 
-      username: u.username, 
-      role: u.role 
-    })));
-    
-    // ✅ CRITICAL: Lưu passwords vào key riêng - Đảm bảo tất cả users đều có password được lưu
+    // 🔒 Lưu passwords vào secure storage (hashed + obfuscated)
     updatedUsers.forEach(user => {
       if (user.password) {
-        console.log('[SAVE_USERS] Saving password for user:', {
-          id: user.id,
-          username: user.username,
-          hasPassword: !!user.password,
-          passwordLength: user.password.length
-        });
+        // saveUserPassword sẽ tự động hash và obfuscate
         saveUserPassword(user.id, user.username, user.password);
-      } else {
-        console.warn('[SAVE_USERS] ⚠️ User has no password:', {
-          id: user.id,
-          username: user.username
-        });
       }
     });
     
-    // ✅ DEBUG: Verify passwords were saved
+    // Check nếu user đang online có bị đổi role
     try {
-      const savedPasswords = localStorage.getItem('userPasswords');
-      if (savedPasswords) {
-        const passwordsMap = JSON.parse(savedPasswords);
-        console.log('[SAVE_USERS] Passwords in storage after save:', Object.keys(passwordsMap));
-        console.log('[SAVE_USERS] Total passwords saved:', Object.keys(passwordsMap).length);
-      } else {
-        console.warn('[SAVE_USERS] ⚠️ No passwords found in storage after save!');
+      const authUserKey = '_au_'; // Key obfuscated của authUser
+      const authUserStr = localStorage.getItem(authUserKey);
+      if (authUserStr) {
+        const currentAuthUser = JSON.parse(authUserStr);
+        const updatedAuthUser = usersWithoutPassword.find(u => u.id === currentAuthUser.id);
+        
+        if (updatedAuthUser && updatedAuthUser.role !== currentAuthUser.role) {
+          // AuthContext sẽ tự động sync
+        }
       }
     } catch (e) {
       console.error('[SAVE_USERS] Error verifying passwords:', e);
