@@ -13,6 +13,8 @@ import { DictionaryProvider } from './components/api_translate/index.js';
 import App from './App.jsx';
 import HomePage from './pages/HomePage.jsx';
 import AboutPage from './pages/AboutPage.jsx';
+import TermsPage from './pages/TermsPage.jsx';
+import PrivacyPage from './pages/PrivacyPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
@@ -255,6 +257,14 @@ const router = createBrowserRouter([
       {
         path: 'about',
         element: <AboutPage />
+      },
+      {
+        path: 'terms',
+        element: <TermsPage />
+      },
+      {
+        path: 'privacy',
+        element: <PrivacyPage />
       },
       // ✅ NEW: Login Page
       {

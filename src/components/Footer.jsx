@@ -209,7 +209,24 @@ function Footer() {
 
           {/* Bottom Section - NEO BRUTALISM */}
           <div className="flex flex-col items-center gap-4">
-            {/* Row 1: Copyright */}
+            {/* Row 1: Legal Links */}
+            <div className="flex items-center justify-center gap-4 text-xs">
+              <a 
+                href="/terms" 
+                className="text-gray-400 hover:text-yellow-400 transition-colors font-medium"
+              >
+                {t('footer.terms')}
+              </a>
+              <span className="text-gray-600">|</span>
+              <a 
+                href="/privacy" 
+                className="text-gray-400 hover:text-yellow-400 transition-colors font-medium"
+              >
+                {t('footer.privacy')}
+              </a>
+            </div>
+            
+            {/* Row 2: Copyright */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 w-full">
               <p className="text-gray-400 text-xs sm:text-sm text-center font-bold">
                 © {currentYear} {settings.system.platformName} (Glingo). {t('footer.copyright')}.

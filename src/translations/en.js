@@ -770,7 +770,9 @@ footer: {
     contact: 'Contact',
       mission: 'Non-profit - Community Service',
         scrollToTop: 'Scroll to Top',
-          copyright: 'All Rights Reserved'
+          copyright: 'All Rights Reserved',
+            terms: 'Terms',
+              privacy: 'Privacy'
 },
 
 about: {
@@ -2879,6 +2881,117 @@ dashboardAccess: {
     point1: 'When Dashboard is locked, only Admin and allowed users/roles can access it'
   },
   noAccessMessage: 'You do not have permission to access Dashboard. Please contact Admin to get access.'
+},
+
+// ============================================================================
+// LEGAL - Terms of Service & Privacy Policy
+// ============================================================================
+legal: {
+    backToHome: 'Back to Home',
+    
+    // Terms of Service
+    terms: {
+        title: 'Terms of Service',
+        lastUpdated: 'Last updated',
+        updateDate: 'December 17, 2024',
+        viewPrivacy: 'View Privacy Policy',
+        
+        acceptance: {
+            title: 'Acceptance of Terms',
+            content: 'By accessing and using Learn Your Approach, you agree to comply with these terms of service. If you do not agree with any of these terms, please do not use our service.'
+        },
+        service: {
+            title: 'Service Description',
+            content: 'Learn Your Approach is an online Japanese learning platform that provides lessons, JLPT mock tests, flashcards, and learning materials. The service is provided free of charge to support Japanese language learning.'
+        },
+        account: {
+            title: 'User Account',
+            content: 'You are responsible for maintaining the security of your account information, including your email and password. You are responsible for all activities that occur under your account. Please notify us immediately if you discover any unauthorized use of your account.'
+        },
+        prohibited: {
+            title: 'Prohibited Actions',
+            intro: 'When using the service, you must not:',
+            item1: 'Copy, distribute, or resell content without permission',
+            item2: 'Attempt to gain unauthorized access to the system or other users\' data',
+            item3: 'Use the service for spam, fraud, or illegal purposes',
+            item4: 'Interfere with or disrupt the operation of the system'
+        },
+        ip: {
+            title: 'Intellectual Property',
+            content: 'The interface design and source code of Learn Your Approach are owned by us. Learning content (lessons, exams) is compiled from various public sources and JLPT textbooks. You are free to use the learning content for personal purposes.'
+        },
+        disclaimer: {
+            title: 'Disclaimer',
+            content: 'The service is provided "as is" without any warranties. We are not responsible for any damages arising from the use or inability to use the service, including data loss or service interruption.'
+        },
+        termination: {
+            title: 'Termination',
+            content: 'We reserve the right to suspend or terminate your account at any time if you violate these terms, without prior notice. You may also request to delete your account at any time.'
+        },
+        contact: {
+            title: 'Contact',
+            content: 'If you have questions about these terms, please contact us via email: support@learnyourapproach.com'
+        }
+    },
+    
+    // Privacy Policy
+    privacy: {
+        title: 'Privacy Policy',
+        lastUpdated: 'Last updated',
+        updateDate: 'December 17, 2024',
+        viewTerms: 'View Terms of Service',
+        
+        intro: 'We respect your privacy. This policy explains how we collect, use, and protect your personal information when using Learn Your Approach.',
+        
+        collection: {
+            title: 'Information We Collect',
+            intro: 'We collect the following information:',
+            item1: 'Email - for login and account authentication',
+            item2: 'Display name - to personalize your experience',
+            item3: 'Learning progress - to save and sync your progress',
+            item4: 'Device information - to optimize user experience'
+        },
+        usage: {
+            title: 'How We Use Your Information',
+            intro: 'Your information is used to:',
+            item1: 'Provide and maintain the learning service',
+            item2: 'Store and sync your learning progress',
+            item3: 'Improve and develop new features'
+        },
+        storage: {
+            title: 'Data Storage',
+            content: 'Your data is securely stored on Supabase servers (Singapore/US). We use encryption to protect data during transmission and storage.'
+        },
+        thirdParty: {
+            title: 'Third-Party Sharing',
+            intro: 'We use the following third-party services:',
+            supabase: 'Data storage and user authentication',
+            vercel: 'Hosting and website performance analytics'
+        },
+        cookies: {
+            title: 'Cookies and Local Storage',
+            content: 'We use localStorage and IndexedDB to store your learning progress and settings on your device. This helps the app work offline and load faster.'
+        },
+        rights: {
+            title: 'Your Rights',
+            intro: 'You have the right to:',
+            item1: 'Access and view your personal data',
+            item2: 'Request correction of inaccurate information',
+            item3: 'Request deletion of your account and data'
+        },
+        security: {
+            title: 'Security',
+            content: 'We implement industry-standard security measures to protect your data, including HTTPS encryption, secure authentication, and access control. However, no method of transmission over the Internet is 100% secure.'
+        },
+        changes: {
+            title: 'Policy Changes',
+            content: 'We may update this policy from time to time. Any changes will be posted on this page with a new update date. Continued use of the service after changes means you accept the new policy.'
+        },
+        contact: {
+            title: 'Contact',
+            content: 'If you have questions about this privacy policy, please contact us via email: support@learnyourapproach.com'
+        }
+    }
 }
   };
 

@@ -826,7 +826,9 @@ const vi = {
         contact: 'Contact',
         mission: 'Non-profit - Community Service',
         scrollToTop: 'Scroll to Top',
-        copyright: 'All Rights Reserved'
+        copyright: 'All Rights Reserved',
+        terms: 'Điều khoản',
+        privacy: 'Bảo mật'
     },
 
     // ============================================================================
@@ -2861,6 +2863,117 @@ const vi = {
         adminNote: 'Lưu ý: Admin luôn có quyền truy cập đầy đủ, không bị ảnh hưởng bởi cấu hình này',
         info: {
             point1: 'Khi Dashboard bị khóa, chỉ Admin và các users/roles được phép mới có thể truy cập'
+        }
+    },
+
+    // ============================================================================
+    // LEGAL - Terms of Service & Privacy Policy
+    // ============================================================================
+    legal: {
+        backToHome: 'Quay lại trang chủ',
+        
+        // Terms of Service
+        terms: {
+            title: 'Điều khoản sử dụng',
+            lastUpdated: 'Cập nhật lần cuối',
+            updateDate: '17/12/2024',
+            viewPrivacy: 'Xem Chính sách bảo mật',
+            
+            acceptance: {
+                title: 'Chấp nhận điều khoản',
+                content: 'Bằng việc truy cập và sử dụng Learn Your Approach, bạn đồng ý tuân thủ các điều khoản sử dụng này. Nếu bạn không đồng ý với bất kỳ điều khoản nào, vui lòng không sử dụng dịch vụ của chúng tôi.'
+            },
+            service: {
+                title: 'Mô tả dịch vụ',
+                content: 'Learn Your Approach là nền tảng học tiếng Nhật trực tuyến, cung cấp các bài học, đề thi JLPT mô phỏng, flashcard và các tài liệu học tập. Dịch vụ được cung cấp miễn phí với mục đích hỗ trợ việc học tiếng Nhật.'
+            },
+            account: {
+                title: 'Tài khoản người dùng',
+                content: 'Bạn có trách nhiệm bảo mật thông tin tài khoản của mình, bao gồm email và mật khẩu. Bạn chịu trách nhiệm cho tất cả hoạt động xảy ra dưới tài khoản của mình. Vui lòng thông báo ngay cho chúng tôi nếu phát hiện việc sử dụng trái phép tài khoản.'
+            },
+            prohibited: {
+                title: 'Hành vi bị cấm',
+                intro: 'Khi sử dụng dịch vụ, bạn không được:',
+                item1: 'Sao chép, phân phối hoặc bán lại nội dung mà không có sự cho phép',
+                item2: 'Cố gắng truy cập trái phép vào hệ thống hoặc dữ liệu của người dùng khác',
+                item3: 'Sử dụng dịch vụ cho mục đích spam, lừa đảo hoặc bất hợp pháp',
+                item4: 'Can thiệp hoặc làm gián đoạn hoạt động của hệ thống'
+            },
+            ip: {
+                title: 'Quyền sở hữu trí tuệ',
+                content: 'Thiết kế giao diện và mã nguồn của Learn Your Approach thuộc quyền sở hữu của chúng tôi. Nội dung học tập (bài học, đề thi) được tổng hợp từ nhiều nguồn công khai và sách giáo khoa JLPT. Bạn được tự do sử dụng nội dung học tập cho mục đích cá nhân.'
+            },
+            disclaimer: {
+                title: 'Miễn trừ trách nhiệm',
+                content: 'Dịch vụ được cung cấp "nguyên trạng" mà không có bất kỳ bảo đảm nào. Chúng tôi không chịu trách nhiệm cho bất kỳ thiệt hại nào phát sinh từ việc sử dụng hoặc không thể sử dụng dịch vụ, bao gồm mất dữ liệu hoặc gián đoạn dịch vụ.'
+            },
+            termination: {
+                title: 'Chấm dứt',
+                content: 'Chúng tôi có quyền tạm ngưng hoặc chấm dứt tài khoản của bạn bất cứ lúc nào nếu bạn vi phạm các điều khoản này, mà không cần thông báo trước. Bạn cũng có thể yêu cầu xóa tài khoản bất cứ lúc nào.'
+            },
+            contact: {
+                title: 'Liên hệ',
+                content: 'Nếu bạn có câu hỏi về các điều khoản này, vui lòng liên hệ qua email: support@learnyourapproach.com'
+            }
+        },
+        
+        // Privacy Policy
+        privacy: {
+            title: 'Chính sách bảo mật',
+            lastUpdated: 'Cập nhật lần cuối',
+            updateDate: '17/12/2024',
+            viewTerms: 'Xem Điều khoản sử dụng',
+            
+            intro: 'Chúng tôi tôn trọng quyền riêng tư của bạn. Chính sách này giải thích cách chúng tôi thu thập, sử dụng và bảo vệ thông tin cá nhân của bạn khi sử dụng Learn Your Approach.',
+            
+            collection: {
+                title: 'Thông tin chúng tôi thu thập',
+                intro: 'Chúng tôi thu thập các thông tin sau:',
+                item1: 'Email - để đăng nhập và xác thực tài khoản',
+                item2: 'Tên hiển thị - để cá nhân hóa trải nghiệm',
+                item3: 'Tiến độ học tập - để lưu và đồng bộ tiến độ của bạn',
+                item4: 'Thông tin thiết bị - để tối ưu hóa trải nghiệm người dùng'
+            },
+            usage: {
+                title: 'Cách chúng tôi sử dụng thông tin',
+                intro: 'Thông tin của bạn được sử dụng để:',
+                item1: 'Cung cấp và duy trì dịch vụ học tập',
+                item2: 'Lưu trữ và đồng bộ tiến độ học tập của bạn',
+                item3: 'Cải thiện và phát triển tính năng mới'
+            },
+            storage: {
+                title: 'Lưu trữ dữ liệu',
+                content: 'Dữ liệu của bạn được lưu trữ an toàn trên các máy chủ của Supabase (Singapore/US). Chúng tôi sử dụng mã hóa để bảo vệ dữ liệu trong quá trình truyền tải và lưu trữ.'
+            },
+            thirdParty: {
+                title: 'Chia sẻ với bên thứ ba',
+                intro: 'Chúng tôi sử dụng các dịch vụ bên thứ ba sau:',
+                supabase: 'Lưu trữ dữ liệu và xác thực người dùng',
+                vercel: 'Hosting và phân tích hiệu suất website'
+            },
+            cookies: {
+                title: 'Cookies và lưu trữ cục bộ',
+                content: 'Chúng tôi sử dụng localStorage và IndexedDB để lưu trữ tiến độ học tập và cài đặt của bạn trên thiết bị. Điều này giúp ứng dụng hoạt động offline và tải nhanh hơn.'
+            },
+            rights: {
+                title: 'Quyền của bạn',
+                intro: 'Bạn có quyền:',
+                item1: 'Truy cập và xem dữ liệu cá nhân của mình',
+                item2: 'Yêu cầu chỉnh sửa thông tin không chính xác',
+                item3: 'Yêu cầu xóa tài khoản và dữ liệu của bạn'
+            },
+            security: {
+                title: 'Bảo mật',
+                content: 'Chúng tôi áp dụng các biện pháp bảo mật tiêu chuẩn ngành để bảo vệ dữ liệu của bạn, bao gồm mã hóa HTTPS, xác thực an toàn và kiểm soát truy cập. Tuy nhiên, không có phương thức truyền tải nào qua Internet là an toàn 100%.'
+            },
+            changes: {
+                title: 'Thay đổi chính sách',
+                content: 'Chúng tôi có thể cập nhật chính sách này theo thời gian. Mọi thay đổi sẽ được thông báo trên trang này với ngày cập nhật mới. Việc tiếp tục sử dụng dịch vụ sau khi thay đổi đồng nghĩa với việc bạn chấp nhận chính sách mới.'
+            },
+            contact: {
+                title: 'Liên hệ',
+                content: 'Nếu bạn có câu hỏi về chính sách bảo mật, vui lòng liên hệ qua email: support@learnyourapproach.com'
+            }
         }
     }
     };
