@@ -59,6 +59,8 @@ function BookCard({
             <img 
               src={imageUrl} 
               alt={title} 
+              width={300}
+              height={400}
               className={`object-cover w-full h-full transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
               loading="lazy"
               onLoad={() => setImageLoaded(true)}

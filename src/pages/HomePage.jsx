@@ -78,8 +78,10 @@ function HomePage() {
             <div className="text-center">
               <div className="flex justify-center mb-8">
                 <img
-                  src="/logo/main.png"
+                  src="/logo/main.webp"
                   alt="Learn Your Approach Logo"
+                  width={192}
+                  height={192}
                   className="h-32 md:h-48 w-auto object-contain drop-shadow-2xl animate-float"
                 />
               </div>

@@ -72,8 +72,10 @@ function AboutPage() {
               {/* Logo */}
               <div className="flex justify-center mb-6 sm:mb-8">
                 <img
-                  src="/logo/main.png"
+                  src="/logo/main.webp"
                   alt={`${settings.system.platformName} Logo`}
+                  width={224}
+                  height={224}
                   className="h-28 sm:h-40 md:h-56 w-auto object-contain drop-shadow-2xl animate-float"
                 />
               </div>

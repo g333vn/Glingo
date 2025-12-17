@@ -241,8 +241,10 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
             {/* Logo Icon */}
             <div className="h-10 w-10 sm:h-11 sm:w-11 md:h-12 md:w-12 flex items-center justify-center bg-gradient-to-br from-white to-yellow-50 rounded-full border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-1.5 group-hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:from-yellow-400 group-hover:to-yellow-300 transition-all duration-200 group-hover:scale-105">
               <img
-                src="/logo/main.png"
+                src="/logo/main.webp"
                 alt={settings.system.platformName}
+                width={48}
+                height={48}
                 className="h-full w-full object-contain drop-shadow-lg"
               />
             </div>

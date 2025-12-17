@@ -67,6 +67,8 @@ function LanguageSwitcher() {
               <img 
                 src={currentFlag?.flagSrc} 
                 alt={currentFlag?.country}
+                width={48}
+                height={36}
                 className="w-full h-full object-cover"
               />
               
@@ -122,6 +124,8 @@ function LanguageSwitcher() {
                 <img 
                   src={lang.flagSrc} 
                   alt={lang.country}
+                  width={48}
+                  height={36}
                   className="w-full h-full object-cover"
                 />
               </div>

@@ -34,7 +34,7 @@ import { initDebugConsoleFilter } from './utils/debugLogger.js';
 // 🔒 SECURITY: Secure storage initialization
 import { initSecureStorage } from './utils/secureUserStorage.js';
 
-const backgroundImageUrl = '/background/main.jpg';
+const backgroundImageUrl = '/background/main.webp';
 
 // Inner app content that can use hooks like useAuth
 function AppContent() {

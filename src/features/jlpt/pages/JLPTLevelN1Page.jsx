@@ -50,6 +50,9 @@ const ExamCard = ({ title, date, statusLabel, statusType, memeImage }) => {
           <img
             src={memeImage}
             alt={title}
+            width={300}
+            height={300}
+            loading="lazy"
             className="w-full h-full object-cover"
             onError={(e) => {
               e.target.src = '/book_card/placeholder.jpg';
@@ -153,7 +156,7 @@ function JLPTLevelN1Page() {
     // indexInPage từ 0-9, chuyển thành 1-10 và lặp lại
     const memeNumber = String((indexInPage % 10) + 1).padStart(2, '0');
     // Ảnh được đặt trong public/jlpt/meme → build & deploy vẫn giữ nguyên đường dẫn
-    return `/jlpt/meme/${memeNumber}.png`;
+    return `/jlpt/meme/${memeNumber}.webp`;
   };
 
   const getStatusDisplay = (status) => {

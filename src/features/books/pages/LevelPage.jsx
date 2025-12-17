@@ -265,8 +265,11 @@ function LevelPage() {
               {/* Ảnh Paulo Coelho - Proportional */}
               <div className="w-full md:w-2/5 flex-shrink-0 flex items-center justify-center">
                 <img 
-                  src="/quote/quote_01.jpg" 
+                  src="/quote/quote_01.webp" 
                   alt="Paulo Coelho - Tác giả The Alchemist" 
+                  width={400}
+                  height={300}
+                  loading="lazy"
                   className="w-full h-full max-h-[240px] md:max-h-full object-cover rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]"
                 />
               </div>

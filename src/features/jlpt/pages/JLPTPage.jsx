@@ -265,8 +265,11 @@ function JLPTPage() {
               {/* Ảnh Albert Einstein - Proportional */}
               <div className="w-full md:w-2/5 flex-shrink-0 flex items-center justify-center">
                 <img 
-                  src="/quote/quote_02.jpg" 
-                  alt="Albert Einstein - Nhà vật lý thiên재" 
+                  src="/quote/quote_02.webp" 
+                  alt="Albert Einstein - Nhà vật lý thiên tài" 
+                  width={400}
+                  height={300}
+                  loading="lazy"
                   className="w-full h-full max-h-[240px] md:max-h-full object-cover rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]"
                 />
               </div>

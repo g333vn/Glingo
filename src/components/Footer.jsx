@@ -75,8 +75,11 @@ function Footer() {
               <div className="flex items-center justify-center md:justify-start gap-3 mb-3 group">
                 <div className="h-10 w-10 flex items-center justify-center bg-white rounded-full border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-1 group-hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
                   <img
-                    src="/logo/main.png"
+                    src="/logo/main.webp"
                     alt="Learn Your Approach Logo"
+                    width={40}
+                    height={40}
+                    loading="lazy"
                     className="h-full w-auto object-contain"
                   />
                 </div>
