@@ -107,9 +107,11 @@ export default defineConfig({
     
     // ✅ Esbuild options cho production
     esbuild: {
-      // 🔒 SECURITY: Drop console.log và debugger trên production
-      // Vì đã có logger.js thay thế, console.log không cần nữa
-      drop: ['console', 'debugger'],
+      // 🔒 SECURITY: Drop debugger statements
+      drop: ['debugger'],
+      
+      // 🔒 SECURITY: Drop ALL console methods (log, warn, error, info, debug)
+      pure: ['console.log', 'console.warn', 'console.info', 'console.debug', 'console.trace'],
       
       // ✅ Xoá comment khỏi bundle
       legalComments: 'none',
