@@ -123,8 +123,8 @@ export function removePassword(userId, username) {
 export async function migratePasswords() {
   try {
     // Kiểm tra đã migrate chưa
-    const migrated = localStorage.getItem(MIGRATED_FLAG);
-    if (migrated === 'true') {
+    const alreadyMigrated = localStorage.getItem(MIGRATED_FLAG);
+    if (alreadyMigrated === 'true') {
       return { success: true, alreadyMigrated: true };
     }
 
@@ -135,14 +135,14 @@ export async function migratePasswords() {
     if (!oldPasswordsStr) {
       logger.info('[SecureUserStorage] No old passwords found');
       localStorage.setItem(MIGRATED_FLAG, 'true');
-      return { success: true, migrated: 0 };
+      return { success: true, migratedCount: 0 };
     }
 
     const oldPasswords = JSON.parse(oldPasswordsStr);
     const keys = Object.keys(oldPasswords);
     logger.info('[SecureUserStorage] Found passwords to migrate', { count: keys.length });
 
-    let migrated = 0;
+    let migratedCount = 0;
     const newPasswords = {};
 
     for (const key of keys) {
@@ -159,7 +159,7 @@ export async function migratePasswords() {
       const hashed = await hashPassword(password);
       if (hashed) {
         newPasswords[key] = hashed;
-        migrated++;
+        migratedCount++;
       }
     }
 
@@ -172,9 +172,9 @@ export async function migratePasswords() {
     // Đánh dấu đã migrate
     localStorage.setItem(MIGRATED_FLAG, 'true');
 
-    logger.info('[SecureUserStorage] Migration completed', { migrated, total: keys.length });
+    logger.info('[SecureUserStorage] Migration completed', { migratedCount, total: keys.length });
 
-    return { success: true, migrated, total: keys.length };
+    return { success: true, migratedCount, total: keys.length };
   } catch (error) {
     logger.error('[SecureUserStorage] Migration error', { error });
     return { success: false, error: error.message };
