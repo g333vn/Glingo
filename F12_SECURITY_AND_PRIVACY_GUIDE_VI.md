@@ -148,22 +148,70 @@ Không phải F12 hoàn toàn rỗng, mà là:
 
 ### 4.5. UI / Thông Báo Lỗi
 
-- [ ] Thay thế:
-  - [ ] Thông báo lỗi kỹ thuật (SQL, RLS, stack trace…) → thông báo chung cho người dùng.  
-- [ ] Giữ:
-  - [ ] Log chi tiết ở backend / hệ thống log.  
-  - [ ] Mã lỗi (error code) để bạn tra trong log nội bộ.
+- [x] Thay thế:
+  - [x] Thông báo lỗi kỹ thuật (SQL, RLS, stack trace…) → thông báo chung cho người dùng.  
+- [x] Giữ:
+  - [x] Log chi tiết ở backend / hệ thống log.  
+  - [x] Mã lỗi (error code) để bạn tra trong log nội bộ.
+
+#### 🛠️ Đã triển khai: `src/utils/uiErrorHandler.js`
+
+- `getErrorMessage(error, context)`: Chuyển error kỹ thuật → message user-friendly.
+- `showErrorAlert(error, context)`: Hiển thị alert với message sạch.
+- `createErrorState(error)`: Tạo object `{ type: 'error', text: ... }` cho state.
+- `ERROR_MESSAGES`: Map các loại lỗi phổ biến sang tiếng Việt.
+
+**Đã cập nhật các file:**
+- `ContentManagementPage.jsx` - Upload, Save, Delete errors
+- `ExportImportPage.jsx` - Export, Import errors
+- `SettingsPage.jsx` - Save, Export errors
+- `ExamManagementPage.jsx` - Upload errors
+- `QuizEditorPage.jsx` - Folder selection errors
 
 ### 4.6. Header / Bảo Mật
 
-- [ ] Giữ đầy đủ security headers:
-  - [ ] `Strict-Transport-Security`  
-  - [ ] `Content-Security-Policy`  
-  - [ ] `X-Frame-Options`  
-  - [ ] `X-Content-Type-Options`  
-  - [ ] `Referrer-Policy`  
-  - [ ] `Cache-Control` phù hợp cho HTML / assets / images.  
-- [ ] Hạn chế/ẩn bớt header tiết lộ version server/framework (nếu có thể cấu hình).
+- [x] Giữ đầy đủ security headers:
+  - [x] `Strict-Transport-Security` ✅ `max-age=31536000; includeSubDomains; preload`
+  - [x] `Content-Security-Policy` ✅ Full CSP policy
+  - [x] `X-Frame-Options` ✅ `DENY`
+  - [x] `X-Content-Type-Options` ✅ `nosniff`
+  - [x] `Referrer-Policy` ✅ `strict-origin-when-cross-origin`
+  - [x] `Cache-Control` ⚠️ Cấu hình qua Vercel Dashboard (xem `VERCEL_DASHBOARD_CACHE_CONTROL_STEPS.md`)
+- [x] Hạn chế header tiết lộ version: Vercel tự động ẩn server version.
+
+#### 🛠️ Đã cấu hình: `vercel.json`
+
+```json
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains; preload" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Content-Security-Policy", "value": "..." },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}
+```
+
+#### 🔍 Kiểm tra headers
+
+```bash
+# Chạy script verify
+npm run verify:headers -- https://your-site.vercel.app/
+
+# Hoặc dùng curl
+curl -I https://your-site.vercel.app/ | grep -i "strict\|content-security\|x-frame\|x-content\|referrer"
+```
+
+#### 🌐 Kiểm tra online
+
+- [securityheaders.com](https://securityheaders.com) → Nhập URL → Scan → Mục tiêu: **A** hoặc **A+**
+- [observatory.mozilla.org](https://observatory.mozilla.org) → Scan
 
 ---
 

@@ -7,6 +7,8 @@ import storageManager from '../../utils/localStorageManager.js';
 import { jlptExams } from '../../data/jlpt/jlptData.js';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';
 import DatePicker from '../../components/admin/DatePicker.jsx';
+// 🔒 SECURITY: Import error handler
+import { getErrorMessage } from '../../utils/uiErrorHandler.js';
 
 function ExportImportPage() {
   const { t } = useLanguage();
@@ -292,7 +294,7 @@ function ExportImportPage() {
       setShowExportModal(false);
     } catch (error) {
       console.error('Export error:', error);
-      alert(`Lỗi khi export: ${error.message}`);
+      alert(`Lỗi khi export: ${getErrorMessage(error, 'Export')}`);
     } finally {
       setIsExporting(false);
     }
@@ -477,7 +479,7 @@ function ExportImportPage() {
           }
         } catch (error) {
           console.error('Import error:', error);
-          setImportError(t('admin.backupRestore.messages.importError', { error: error.message }));
+          setImportError(t('admin.backupRestore.messages.importError', { error: getErrorMessage(error, 'Import') }));
         } finally {
           setIsImporting(false);
         }
@@ -485,7 +487,7 @@ function ExportImportPage() {
       reader.readAsText(importFile);
     } catch (error) {
       console.error('File read error:', error);
-      setImportError(t('admin.backupRestore.messages.readFileError', { error: error.message }));
+      setImportError(t('admin.backupRestore.messages.readFileError', { error: getErrorMessage(error, 'Read File') }));
       setIsImporting(false);
     }
   };
@@ -862,7 +864,7 @@ function ExportImportPage() {
                 }
               } catch (error) {
                 console.error('Preview error:', error);
-                alert(t('admin.backupRestore.messages.dateRangePreviewError', { error: error.message }));
+                alert(t('admin.backupRestore.messages.dateRangePreviewError', { error: getErrorMessage(error, 'Preview') }));
               } finally {
                 setIsExporting(false);
               }

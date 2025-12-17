@@ -14,6 +14,8 @@ import {
   getExam as getExamFromSupabase,
   getExamsByLevel as getExamsFromSupabase,
 } from '../../services/examService.js';
+// 🔒 SECURITY: Import error handler
+import { getErrorMessage } from '../../utils/uiErrorHandler.js';
 
 const TEST_TYPE_ORDER = ['knowledge', 'reading', 'listening'];
 
@@ -1341,7 +1343,7 @@ function ExamManagementPage() {
         }
       } catch (error) {
         console.error('❌ Error uploading audio to Supabase:', error);
-        alert(`⚠️ ${t('examManagement.questions.questionForm.audioUploadError') || 'Lỗi khi upload audio file. Vui lòng thử lại.'}\n\n${error.message}`);
+        alert(`⚠️ ${t('examManagement.questions.questionForm.audioUploadError') || 'Lỗi khi upload audio file. Vui lòng thử lại.'}\n\n${getErrorMessage(error, 'Audio Upload')}`);
         setIsUploadingAudio(false);
         return { success: false }; // Stop saving if upload fails
       } finally {

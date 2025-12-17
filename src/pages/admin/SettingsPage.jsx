@@ -12,6 +12,8 @@ import { clearDeletedUsers } from '../../data/users.js';
 import { SEED_CONFIG } from '../../data/seedData.js';
 import ToggleSwitch from '../../components/settings/ToggleSwitch.jsx';
 import SettingsSection from '../../components/settings/SettingsSection.jsx';
+// 🔒 SECURITY: Import error handler
+import { getErrorMessage } from '../../utils/uiErrorHandler.js';
 
 function SettingsPage() {
   const { user } = useAuth();
@@ -240,7 +242,7 @@ function SettingsPage() {
       }
     } catch (error) {
       console.error('[SETTINGS] Save error:', error);
-      setSaveMessage({ type: 'error', text: t('settings.messages.saveErrorDetail', { error: error.message }) });
+      setSaveMessage({ type: 'error', text: t('settings.messages.saveErrorDetail', { error: getErrorMessage(error, 'Save Settings') }) });
     } finally {
       setIsSaving(false);
     }
@@ -269,7 +271,7 @@ function SettingsPage() {
       URL.revokeObjectURL(url);
       setSaveMessage({ type: 'success', text: t('settings.messages.exportSuccess') });
     } catch (error) {
-      setSaveMessage({ type: 'error', text: t('settings.messages.exportError', { error: error.message }) });
+      setSaveMessage({ type: 'error', text: t('settings.messages.exportError', { error: getErrorMessage(error, 'Export Settings') }) });
     }
   };
 

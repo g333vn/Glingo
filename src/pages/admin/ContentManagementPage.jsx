@@ -17,6 +17,8 @@ import HierarchyView from '../../components/admin/content/HierarchyView.jsx';
 import EnhancedLessonModal from '../../components/admin/lessons/EnhancedLessonModal.jsx';
 import { migrateLegacyLesson } from '../../types/lessonTypes.js';
 import { cleanupInvalidQuizzes } from '../../utils/quizCleanup.js';
+// 🔒 SECURITY: Import error handler
+import { getErrorMessage } from '../../utils/uiErrorHandler.js';
 
 // ✅ NEW: Import placeholder preview images
 import ver1Preview from '../../features/books/components/ver1.png';
@@ -573,7 +575,7 @@ function ContentManagementPage() {
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert(t('contentManagement.upload.audioUploadError') + ': ' + error.message);
+      alert(t('contentManagement.upload.audioUploadError') + ': ' + getErrorMessage(error, 'Audio Upload'));
       setIsUploadingAudio(false);
       setUploadingAudioIndex(-1);
     }
@@ -641,7 +643,7 @@ function ContentManagementPage() {
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert(t('contentManagement.upload.imageUploadError') + ': ' + error.message);
+      alert(t('contentManagement.upload.imageUploadError') + ': ' + getErrorMessage(error, 'Image Upload'));
       setIsUploadingImage(false);
       setUploadProgress(0);
     }
@@ -1098,7 +1100,7 @@ function ContentManagementPage() {
       }
     } catch (error) {
       console.error('Error saving lesson:', error);
-      alert(t('contentManagement.errors.general', { message: error.message }));
+      alert(t('contentManagement.errors.general', { message: getErrorMessage(error, 'Save Lesson') }));
     }
   };
 
@@ -1416,7 +1418,7 @@ function ContentManagementPage() {
       }
     } catch (error) {
       console.error('❌ [Delete Quiz] Error:', error);
-      alert(`❌ Lỗi khi xóa quiz: ${error.message}`);
+      alert(`❌ Lỗi khi xóa quiz: ${getErrorMessage(error, 'Delete Quiz')}`);
     }
   };
 
@@ -1485,7 +1487,7 @@ function ContentManagementPage() {
       setOverviewRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Error cleaning up quizzes:', error);
-      alert(`❌ Lỗi khi dọn dẹp quiz: ${error.message}`);
+      alert(`❌ Lỗi khi dọn dẹp quiz: ${getErrorMessage(error, 'Cleanup Quiz')}`);
     }
   };
 
@@ -1810,7 +1812,7 @@ function ContentManagementPage() {
                   }
                 } catch (err) {
                   console.error('[ContentManagement] ❌ Unexpected error when deleting series from Supabase:', err);
-                  alert(t('contentManagement.messages.deleteSeriesError') || `Lỗi khi xóa series: ${err.message}`);
+                  alert(t('contentManagement.messages.deleteSeriesError') || `Lỗi khi xóa series: ${getErrorMessage(err, 'Delete Series')}`);
                 }
 
                 // 2. Xóa tất cả books thuộc series này khỏi local state

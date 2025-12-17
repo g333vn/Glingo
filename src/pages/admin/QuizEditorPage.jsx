@@ -12,6 +12,8 @@ import { n1Books } from '../../data/level/n1/books.js';
 // TODO: Import các level khác khi có data
 // import { n2BooksMetadata } from '../../data/level/n2/books-metadata.js';
 // import { n2Books } from '../../data/level/n2/books.js';
+// 🔒 SECURITY: Import error handler
+import { getErrorMessage } from '../../utils/uiErrorHandler.js';
 
 function QuizEditorPage() {
   const { user } = useAuth();
@@ -1941,7 +1943,7 @@ function QuizEditorPage() {
         alert(message);
       } catch (err) {
         if (err.name !== 'AbortError') {
-          alert('❌ Lỗi khi chọn thư mục: ' + err.message);
+          alert('❌ Lỗi khi chọn thư mục: ' + getErrorMessage(err, 'Select Folder'));
         }
       }
     } else {
