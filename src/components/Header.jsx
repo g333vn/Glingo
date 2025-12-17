@@ -232,7 +232,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
           border-b-[3px] border-black
         `}
       >
-        <nav className="container mx-auto px-2 sm:px-4 lg:px-6 py-3 sm:py-3.5 flex justify-between items-center gap-2 sm:gap-4">
+        <nav className="container mx-auto px-2 sm:px-4 lg:px-6 py-3 sm:py-3.5 flex justify-between items-center gap-2 sm:gap-4 min-h-[56px] sm:min-h-[64px]">
           {/* Logo - Clean & Compact */}
           <button
             onClick={() => handleNavigate('/')}

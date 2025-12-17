@@ -248,8 +248,6 @@ function Footer() {
         </div>
       </div>
       
-      {/* Import Japanese fonts */}
-      <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;500;700&family=Yuji+Syuku&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet" />
     </footer>
   );
 }

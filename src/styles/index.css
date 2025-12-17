@@ -4,6 +4,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ✅ FIX CLS: Ensure fonts don't cause layout shift */
+@font-face {
+  font-family: 'Kaisei Decol';
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Yuji Syuku';
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Serif JP';
+  font-display: swap;
+}
+
 /* ✅ FIX: Prevent horizontal overflow + Optimize performance */
 @layer base {
 

@@ -76,7 +76,7 @@ function HomePage() {
         <section className={`relative overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="container mx-auto px-8 py-12 md:px-12 md:py-24">
             <div className="text-center">
-              <div className="flex justify-center mb-8">
+              <div className="flex justify-center mb-8 min-h-[128px] md:min-h-[192px]">
                 <img
                   src="/logo/main.webp"
                   alt="Learn Your Approach Logo"

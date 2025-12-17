@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 // ✅ Import antd patch for React 19 compatibility
 import '@ant-design/v5-patch-for-react-19';
@@ -11,69 +11,85 @@ import { ToastProvider } from './components/ToastNotification.jsx';
 import { DictionaryProvider } from './components/api_translate/index.js';
 
 import App from './App.jsx';
-import HomePage from './pages/HomePage.jsx';
-import AboutPage from './pages/AboutPage.jsx';
-import TermsPage from './pages/TermsPage.jsx';
-import PrivacyPage from './pages/PrivacyPage.jsx';
-import LoginPage from './pages/LoginPage.jsx';
-import RegisterPage from './pages/RegisterPage.jsx';
-import ProtectedRoute from './components/ProtectedRoute.jsx';
-import AccessGuard from './components/AccessGuard.jsx';
-import DashboardAccessGuard from './components/DashboardAccessGuard.jsx';
-import ModuleAccessGuard from './components/ModuleAccessGuard.jsx';
-import AdminLayout from './components/admin/AdminLayout.jsx';
-import EditorLayout from './components/editor/EditorLayout.jsx';
-import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
-import QuizEditorPage from './pages/admin/QuizEditorPage.jsx';
-import UsersManagementPage from './pages/admin/UsersManagementPage.jsx';
-import ContentManagementPage from './pages/admin/ContentManagementPage.jsx';
-import ExamManagementPage from './pages/admin/ExamManagementPage.jsx';
-import ExportImportPage from './pages/admin/ExportImportPage.jsx';
-import SettingsPage from './pages/admin/SettingsPage.jsx';
-import NewControlPage from './pages/admin/NewControlPage.jsx';
-import DashboardAccessPage from './pages/admin/DashboardAccessPage.jsx';
-import NotificationManagementPage from './pages/admin/NotificationManagementPage.jsx';
-import EditorDashboardPage from './pages/editor/EditorDashboardPage.jsx';
-import ProfilePage from './pages/ProfilePage.jsx';
-import LevelPage from './features/books/pages/LevelPage.jsx';
-import LevelN1Page from './features/books/pages/LevelN1Page.jsx';
-import LevelN2Page from './features/books/pages/LevelN2Page.jsx';
-import LevelN3Page from './features/books/pages/LevelN3Page.jsx';
-import LevelN4Page from './features/books/pages/LevelN4Page.jsx';
-import LevelN5Page from './features/books/pages/LevelN5Page.jsx';
-
-import BookDetailPage from './features/books/pages/BookDetailPage.jsx';
-import LessonPage from './features/books/pages/LessonPage.jsx';
-import QuizPage from './features/books/pages/QuizPage.jsx';
-
-// JLPT imports
-import JLPTPage from './features/jlpt/pages/JLPTPage.jsx';
-import JLPTLevelN1Page from './features/jlpt/pages/JLPTLevelN1Page.jsx';
-import JLPTLevelN2Page from './features/jlpt/pages/JLPTLevelN2Page.jsx';
-import JLPTLevelN3Page from './features/jlpt/pages/JLPTLevelN3Page.jsx';
-import JLPTLevelN4Page from './features/jlpt/pages/JLPTLevelN4Page.jsx';
-import JLPTLevelN5Page from './features/jlpt/pages/JLPTLevelN5Page.jsx';
-
-import JLPTExamDetailPage from './features/jlpt/pages/JLPTExamDetailPage.jsx';
-import ExamKnowledgePage from './features/jlpt/pages/ExamKnowledgePage.jsx';
-import ExamListeningPage from './features/jlpt/pages/ExamListeningPage.jsx';
-import JLPTExamResultPage from './features/jlpt/pages/JLPTExamResultPage.jsx';
-// ✅ NEW: Import ExamAnswersPage
-import ExamAnswersPage from './features/jlpt/pages/ExamAnswersPage.jsx';
-
-// ✅ PHASE 3: SRS Review & Statistics Pages
-import FlashcardReviewPage from './pages/FlashcardReviewPage.jsx';
-import StatisticsDashboard from './pages/StatisticsDashboard.jsx';
-import UserDashboard from './pages/UserDashboard.jsx';
-
-// Example/Test components
-import TranslationExample from './components/examples/TranslationExample.jsx';
-import LanguageTestComponent from './components/examples/LanguageTestComponent.jsx';
-import SimpleTranslationTest from './components/examples/SimpleTranslationTest.jsx';
-import DebugTranslationTest from './components/examples/DebugTranslationTest.jsx';
-
 import './styles/index.css';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
+
+// ✅ CODE SPLITTING: Lazy load pages
+// Critical pages (load immediately)
+import HomePage from './pages/HomePage.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+import AccessGuard from './components/AccessGuard.jsx';
+
+// Lazy load non-critical pages
+const AboutPage = lazy(() => import('./pages/AboutPage.jsx'));
+const TermsPage = lazy(() => import('./pages/TermsPage.jsx'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage.jsx'));
+const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
+
+// Lazy load Level pages
+const LevelPage = lazy(() => import('./features/books/pages/LevelPage.jsx'));
+const LevelN1Page = lazy(() => import('./features/books/pages/LevelN1Page.jsx'));
+const LevelN2Page = lazy(() => import('./features/books/pages/LevelN2Page.jsx'));
+const LevelN3Page = lazy(() => import('./features/books/pages/LevelN3Page.jsx'));
+const LevelN4Page = lazy(() => import('./features/books/pages/LevelN4Page.jsx'));
+const LevelN5Page = lazy(() => import('./features/books/pages/LevelN5Page.jsx'));
+const BookDetailPage = lazy(() => import('./features/books/pages/BookDetailPage.jsx'));
+const LessonPage = lazy(() => import('./features/books/pages/LessonPage.jsx'));
+const QuizPage = lazy(() => import('./features/books/pages/QuizPage.jsx'));
+
+// Lazy load JLPT pages
+const JLPTPage = lazy(() => import('./features/jlpt/pages/JLPTPage.jsx'));
+const JLPTLevelN1Page = lazy(() => import('./features/jlpt/pages/JLPTLevelN1Page.jsx'));
+const JLPTLevelN2Page = lazy(() => import('./features/jlpt/pages/JLPTLevelN2Page.jsx'));
+const JLPTLevelN3Page = lazy(() => import('./features/jlpt/pages/JLPTLevelN3Page.jsx'));
+const JLPTLevelN4Page = lazy(() => import('./features/jlpt/pages/JLPTLevelN4Page.jsx'));
+const JLPTLevelN5Page = lazy(() => import('./features/jlpt/pages/JLPTLevelN5Page.jsx'));
+const JLPTExamDetailPage = lazy(() => import('./features/jlpt/pages/JLPTExamDetailPage.jsx'));
+const ExamKnowledgePage = lazy(() => import('./features/jlpt/pages/ExamKnowledgePage.jsx'));
+const ExamListeningPage = lazy(() => import('./features/jlpt/pages/ExamListeningPage.jsx'));
+const JLPTExamResultPage = lazy(() => import('./features/jlpt/pages/JLPTExamResultPage.jsx'));
+const ExamAnswersPage = lazy(() => import('./features/jlpt/pages/ExamAnswersPage.jsx'));
+
+// Lazy load Dashboard pages
+const DashboardAccessGuard = lazy(() => import('./components/DashboardAccessGuard.jsx'));
+const FlashcardReviewPage = lazy(() => import('./pages/FlashcardReviewPage.jsx'));
+const StatisticsDashboard = lazy(() => import('./pages/StatisticsDashboard.jsx'));
+const UserDashboard = lazy(() => import('./pages/UserDashboard.jsx'));
+
+// Lazy load Admin pages (heavy)
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout.jsx'));
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage.jsx'));
+const QuizEditorPage = lazy(() => import('./pages/admin/QuizEditorPage.jsx'));
+const UsersManagementPage = lazy(() => import('./pages/admin/UsersManagementPage.jsx'));
+const ContentManagementPage = lazy(() => import('./pages/admin/ContentManagementPage.jsx'));
+const ExamManagementPage = lazy(() => import('./pages/admin/ExamManagementPage.jsx'));
+const ExportImportPage = lazy(() => import('./pages/admin/ExportImportPage.jsx'));
+const SettingsPage = lazy(() => import('./pages/admin/SettingsPage.jsx'));
+const NewControlPage = lazy(() => import('./pages/admin/NewControlPage.jsx'));
+const NotificationManagementPage = lazy(() => import('./pages/admin/NotificationManagementPage.jsx'));
+
+// Lazy load Editor pages
+const EditorLayout = lazy(() => import('./components/editor/EditorLayout.jsx'));
+const EditorDashboardPage = lazy(() => import('./pages/editor/EditorDashboardPage.jsx'));
+
+// ✅ Loading Spinner Component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+      <p className="text-gray-600 font-medium">Đang tải...</p>
+    </div>
+  </div>
+);
+
+// ✅ Suspense wrapper for lazy components
+const LazyPage = ({ children }) => (
+  <Suspense fallback={<PageLoader />}>
+    {children}
+  </Suspense>
+);
 
 // Set --app-vh to fix 100vh issues on mobile browsers
 function setAppVh() {
@@ -124,7 +140,9 @@ function DynamicLevelPage() {
   
   return (
     <AccessGuard module="level" levelId={normalizedLevelId}>
-      <PageComponent />
+      <LazyPage>
+        <PageComponent />
+      </LazyPage>
     </AccessGuard>
   );
 }
@@ -149,7 +167,9 @@ function DynamicJLPTLevelPage() {
   
   return (
     <AccessGuard module="jlpt" levelId={normalizedLevelId}>
-      <PageComponent />
+      <LazyPage>
+        <PageComponent />
+      </LazyPage>
     </AccessGuard>
   );
 }
@@ -167,7 +187,7 @@ const router = createBrowserRouter([
       // ========== LEVEL ROUTES ==========
       {
         path: 'level',
-        element: <LevelPage />
+        element: <LazyPage><LevelPage /></LazyPage>
       },
       {
         path: 'level/:levelId',
@@ -175,78 +195,80 @@ const router = createBrowserRouter([
       },
       {
         path: 'level/:levelId/:bookId',
-        element: <BookDetailPage />
+        element: <LazyPage><BookDetailPage /></LazyPage>
       },
       {
         path: 'level/:levelId/:bookId/chapter/:chapterId',
-        element: <BookDetailPage />
+        element: <LazyPage><BookDetailPage /></LazyPage>
       },
       {
         path: 'level/:levelId/:bookId/chapter/:chapterId/lesson/:lessonId',
-        element: <LessonPage />
+        element: <LazyPage><LessonPage /></LazyPage>
       },
       // Route cho quiz standalone (khi click "Bắt đầu làm quiz" trong LessonPage)
       {
         path: 'level/:levelId/:bookId/chapter/:chapterId/lesson/:lessonId/quiz',
-        element: <QuizPage />
+        element: <LazyPage><QuizPage /></LazyPage>
       },
       // Backward compatibility: old route without chapterId
       {
         path: 'level/:levelId/:bookId/lesson/:lessonId',
-        element: <LessonPage />
+        element: <LazyPage><LessonPage /></LazyPage>
       },
       // Backward compatibility: old quiz route
       {
         path: 'level/:levelId/:bookId/lesson/:lessonId/quiz',
-        element: <QuizPage />
+        element: <LazyPage><QuizPage /></LazyPage>
       },
       // ========== PHASE 3: SRS ROUTES ==========
       {
         path: 'dashboard',
         element: (
-          <DashboardAccessGuard>
-            <UserDashboard />
-          </DashboardAccessGuard>
+          <LazyPage>
+            <DashboardAccessGuard>
+              <UserDashboard />
+            </DashboardAccessGuard>
+          </LazyPage>
         )
       },
       {
         path: 'review/:deckId',
-        element: <FlashcardReviewPage />
+        element: <LazyPage><FlashcardReviewPage /></LazyPage>
       },
       {
         path: 'statistics/:deckId',
-        element: <StatisticsDashboard />
+        element: <LazyPage><StatisticsDashboard /></LazyPage>
       },
       // ========== JLPT ROUTES ==========
       // ✅ Route cụ thể hơn phải được đặt TRƯỚC route tổng quát hơn
       {
         path: 'jlpt',
-        element: <JLPTPage />
+        element: <LazyPage><JLPTPage /></LazyPage>
       },
       // Route cho bài thi kiến thức (cụ thể nhất)
       {
         path: 'jlpt/:levelId/:examId/knowledge',
-        element: <ExamKnowledgePage />
+        element: <LazyPage><ExamKnowledgePage /></LazyPage>
       },
       // Route cho bài thi nghe (cụ thể nhất)
       {
         path: 'jlpt/:levelId/:examId/listening',
-        element: <ExamListeningPage />
+        element: <LazyPage><ExamListeningPage /></LazyPage>
       },
       // Route cho kết quả bài thi (cụ thể nhất)
       {
         path: 'jlpt/:levelId/:examId/result',
-        element: <JLPTExamResultPage />
+        element: <LazyPage><JLPTExamResultPage /></LazyPage>
       },
       // ✅ NEW: Route cho trang xem đáp án và giải thích (cụ thể nhất)
       {
         path: 'jlpt/:levelId/:examId/answers',
-        element: <ExamAnswersPage />
+        element: <LazyPage><ExamAnswersPage /></LazyPage>
       },
       // Route cho exam detail (cụ thể hơn levelId)
       {
         path: 'jlpt/:levelId/:examId',
-        element: <JLPTExamDetailPage />
+        element: <LazyPage><JLPTExamDetailPage /></LazyPage>
       },
       // Route cho level (tổng quát hơn)
       {
@@ -256,32 +278,32 @@ const router = createBrowserRouter([
       // ========== OTHER ROUTES ==========
       {
         path: 'about',
-        element: <AboutPage />
+        element: <LazyPage><AboutPage /></LazyPage>
       },
       {
         path: 'terms',
-        element: <TermsPage />
+        element: <LazyPage><TermsPage /></LazyPage>
       },
       {
         path: 'privacy',
-        element: <PrivacyPage />
+        element: <LazyPage><PrivacyPage /></LazyPage>
       },
       // ✅ NEW: Login Page
       {
         path: 'login',
-        element: <LoginPage />
+        element: <LazyPage><LoginPage /></LazyPage>
       },
       // ✅ NEW: Register Page
       {
         path: 'register',
-        element: <RegisterPage />
+        element: <LazyPage><RegisterPage /></LazyPage>
       },
       // ✅ NEW: Profile Page (Protected - Requires login)
       {
         path: 'profile',
         element: (
           <ProtectedRoute>
-            <ProfilePage />
+            <LazyPage><ProfilePage /></LazyPage>
           </ProtectedRoute>
         )
       },
@@ -290,45 +312,45 @@ const router = createBrowserRouter([
         path: 'admin',
         element: (
           <ProtectedRoute adminOnly={true}>
-            <AdminLayout />
+            <LazyPage><AdminLayout /></LazyPage>
           </ProtectedRoute>
         ),
         children: [
           {
             index: true,
-            element: <AdminDashboardPage />
+            element: <LazyPage><AdminDashboardPage /></LazyPage>
           },
           {
             path: 'quiz-editor',
-            element: <QuizEditorPage />
+            element: <LazyPage><QuizEditorPage /></LazyPage>
           },
           {
             path: 'users',
-            element: <UsersManagementPage />
+            element: <LazyPage><UsersManagementPage /></LazyPage>
           },
           {
             path: 'content',
-            element: <ContentManagementPage />
+            element: <LazyPage><ContentManagementPage /></LazyPage>
           },
           {
             path: 'exams',
-            element: <ExamManagementPage />
+            element: <LazyPage><ExamManagementPage /></LazyPage>
           },
           {
             path: 'export-import',
-            element: <ExportImportPage />
+            element: <LazyPage><ExportImportPage /></LazyPage>
           },
           {
             path: 'settings',
-            element: <SettingsPage />
+            element: <LazyPage><SettingsPage /></LazyPage>
           },
           {
             path: 'new-control',
-            element: <NewControlPage />
+            element: <LazyPage><NewControlPage /></LazyPage>
           },
           {
             path: 'notifications',
-            element: <NotificationManagementPage />
+            element: <LazyPage><NotificationManagementPage /></LazyPage>
           }
         ]
       },
@@ -337,21 +359,21 @@ const router = createBrowserRouter([
         path: 'editor',
         element: (
           <ProtectedRoute editorOnly={true}>
-            <EditorLayout />
+            <LazyPage><EditorLayout /></LazyPage>
           </ProtectedRoute>
         ),
         children: [
           {
             index: true,
-            element: <EditorDashboardPage />
+            element: <LazyPage><EditorDashboardPage /></LazyPage>
           },
           {
             path: 'quiz-editor',
-            element: <QuizEditorPage />
+            element: <LazyPage><QuizEditorPage /></LazyPage>
           },
           {
             path: 'exams',
-            element: <ExamManagementPage />
+            element: <LazyPage><ExamManagementPage /></LazyPage>
           }
         ]
       },
@@ -360,19 +382,19 @@ const router = createBrowserRouter([
         ? [
             {
               path: 'examples/translation',
-              element: <TranslationExample />
+              element: <LazyPage>{React.createElement(lazy(() => import('./components/examples/TranslationExample.jsx')))}</LazyPage>
             },
             {
               path: 'test-i18n',
-              element: <LanguageTestComponent />
+              element: <LazyPage>{React.createElement(lazy(() => import('./components/examples/LanguageTestComponent.jsx')))}</LazyPage>
             },
             {
               path: 'test-i18n-simple',
-              element: <SimpleTranslationTest />
+              element: <LazyPage>{React.createElement(lazy(() => import('./components/examples/SimpleTranslationTest.jsx')))}</LazyPage>
             },
             {
               path: 'debug-i18n',
-              element: <DebugTranslationTest />
+              element: <LazyPage>{React.createElement(lazy(() => import('./components/examples/DebugTranslationTest.jsx')))}</LazyPage>
             }
           ]
         : []),

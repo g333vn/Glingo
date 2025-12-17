@@ -119,8 +119,18 @@ export default defineConfig({
     
     rollupOptions: {
       output: {
-        manualChunks: undefined
+        // ✅ CODE SPLITTING: Tách vendor libraries thành chunks riêng
+        manualChunks: {
+          // React core
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // Supabase
+          'vendor-supabase': ['@supabase/supabase-js'],
+          // UI libraries
+          'vendor-ui': ['antd', '@ant-design/icons'],
+        }
       }
-    }
+    },
+    // Tăng warning limit vì đã split chunks
+    chunkSizeWarningLimit: 600
   }
 })
