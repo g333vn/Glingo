@@ -29,6 +29,7 @@ npm install
 
 # Dev
 npm run dev
+npm run dev -- --host
 
 # Build
 npm run build
