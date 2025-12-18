@@ -14,6 +14,10 @@ import {
   getExam as getExamFromSupabase,
   getExamsByLevel as getExamsFromSupabase,
 } from '../../services/examService.js';
+import {
+  saveExamLevelConfigToSupabase,
+  getExamLevelConfigFromSupabase,
+} from '../../services/appSettingsService.js';
 // 🔒 SECURITY: Import error handler
 import { getErrorMessage } from '../../utils/uiErrorHandler.js';
 
@@ -277,6 +281,25 @@ function ExamManagementPage() {
   };
 
   const loadLevelConfig = async () => {
+    // ✅ NEW: Try Supabase first (source of truth)
+    if (user && (isAdmin || isEditor)) {
+      try {
+        const { success, config, error } = await getExamLevelConfigFromSupabase(selectedLevel);
+        if (success && config) {
+          console.log('[ExamManagement] ✅ Loaded level config from Supabase');
+          setLevelConfig(config);
+          // Cache to local storage for offline access
+          await storageManager.saveLevelConfig(selectedLevel, config);
+          return;
+        } else if (error) {
+          console.warn('[ExamManagement] ⚠️ Failed to load from Supabase, using local storage:', error);
+        }
+      } catch (err) {
+        console.warn('[ExamManagement] ⚠️ Error loading from Supabase, using local storage:', err);
+      }
+    }
+
+    // Fallback to local storage
     const config = await storageManager.getLevelConfig(selectedLevel);
     if (config) {
       setLevelConfig(config);
@@ -284,6 +307,21 @@ function ExamManagementPage() {
   };
 
   const saveLevelConfig = async () => {
+    // ✅ NEW: Save to Supabase first (if admin/editor)
+    if (user && (isAdmin || isEditor)) {
+      try {
+        const { success, error } = await saveExamLevelConfigToSupabase(selectedLevel, levelConfig);
+        if (success) {
+          console.log('[ExamManagement] ✅ Saved level config to Supabase');
+        } else {
+          console.warn('[ExamManagement] ⚠️ Failed to save to Supabase, saving to local only:', error);
+        }
+      } catch (err) {
+        console.warn('[ExamManagement] ⚠️ Error saving to Supabase, saving to local only:', err);
+      }
+    }
+
+    // Also save to local storage (cache for offline access)
     const success = await storageManager.saveLevelConfig(selectedLevel, levelConfig);
     if (success) {
       // ✅ FIX: Tính tổng thời gian từ knowledge và listening

@@ -306,6 +306,150 @@ export async function saveUserSettingsToSupabase(userSettings) {
 }
 
 /**
+ * Get exam level configs from Supabase
+ * @returns {Object} { success: boolean, configs: Object, error?: Error }
+ */
+export async function getExamConfigsFromSupabase() {
+  try {
+    const result = await retryWithBackoff(async () => {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('exam_config')
+        .eq('id', APP_SETTINGS_ID)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return { data, error: null };
+    });
+
+    const examConfigs = result.data?.exam_config || {};
+    return { success: true, configs: examConfigs };
+  } catch (err) {
+    // Only log if it's not a network/resource error (to avoid spam)
+    if (!err.message?.includes('Failed to fetch') && 
+        !err.message?.includes('ERR_INSUFFICIENT_RESOURCES') &&
+        !err.message?.includes('Request timeout')) {
+      console.error('[AppSettings] Error fetching exam_config:', err);
+    }
+    return { success: false, configs: null, error: err };
+  }
+}
+
+/**
+ * Get exam level config for a specific level from Supabase
+ * @param {string} level - Level (n1, n2, n3, n4, n5)
+ * @returns {Object} { success: boolean, config: Object, error?: Error }
+ */
+export async function getExamLevelConfigFromSupabase(level) {
+  try {
+    const { success, configs, error } = await getExamConfigsFromSupabase();
+    if (!success) {
+      return { success: false, config: null, error };
+    }
+
+    const levelConfig = configs[level] || null;
+    return { success: true, config: levelConfig };
+  } catch (err) {
+    console.error('[AppSettings] Error getting exam level config:', err);
+    return { success: false, config: null, error: err };
+  }
+}
+
+/**
+ * Save exam level config to Supabase
+ * @param {string} level - Level (n1, n2, n3, n4, n5)
+ * @param {Object} levelConfig - Level configuration object
+ * @returns {Object} { success: boolean, error?: Error }
+ */
+export async function saveExamLevelConfigToSupabase(level, levelConfig) {
+  try {
+    console.log('[AppSettings] 💾 Saving exam level config to Supabase:', { level, levelConfig });
+    
+    // First, try to get current app_settings to check if row exists
+    const { data: currentData, error: fetchError } = await supabase
+      .from('app_settings')
+      .select('exam_config, id')
+      .eq('id', APP_SETTINGS_ID)
+      .maybeSingle();
+
+    // If row doesn't exist (PGRST116), create it
+    if (fetchError && fetchError.code === 'PGRST116') {
+      console.log('[AppSettings] Row not found, creating new app_settings row...');
+      const examConfigs = {};
+      examConfigs[level] = levelConfig;
+      
+      const { data: insertData, error: insertError } = await supabase
+        .from('app_settings')
+        .insert({
+          id: APP_SETTINGS_ID,
+          exam_config: examConfigs,
+          maintenance_mode: false,
+          system_settings: {},
+          access_control: {},
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('[AppSettings] Error creating app_settings row:', insertError);
+        return { success: false, error: insertError };
+      }
+
+      console.log('[AppSettings] ✅ Successfully created app_settings row with exam config');
+      return { success: true, data: insertData };
+    }
+
+    // If there's another error fetching
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('[AppSettings] Error fetching current exam_config:', fetchError);
+      return { success: false, error: fetchError };
+    }
+
+    // Merge with existing exam_config (keep other levels, update this level)
+    const currentExamConfigs = currentData?.exam_config || {};
+    const updatedExamConfigs = {
+      ...currentExamConfigs,
+      [level]: levelConfig // Update specific level
+    };
+
+    console.log('[AppSettings] Updating with merged exam configs:', updatedExamConfigs);
+
+    // Update app_settings
+    const { data: updateData, error: updateError } = await supabase
+      .from('app_settings')
+      .update({
+        exam_config: updatedExamConfigs,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', APP_SETTINGS_ID)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('[AppSettings] ❌ Error updating exam_config:', updateError);
+      console.error('[AppSettings] Update error details:', {
+        code: updateError.code,
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint
+      });
+      return { success: false, error: updateError };
+    }
+
+    console.log('[AppSettings] ✅ Successfully saved exam level config to Supabase');
+    console.log('[AppSettings] Updated data:', updateData);
+    return { success: true, data: updateData };
+  } catch (err) {
+    console.error('[AppSettings] ❌ Unexpected error saving exam config to Supabase:', err);
+    return { success: false, error: err };
+  }
+}
+
+/**
  * Subscribe to real-time changes in app_settings
  * @param {Function} callback - Callback function that receives the updated settings
  * @returns {Function} Unsubscribe function
