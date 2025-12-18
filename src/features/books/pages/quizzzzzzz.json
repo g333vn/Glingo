@@ -1,271 +1,63 @@
 {
-    "title": "Trắc nghiệm Từ vựng Minna no Nihongo - Bài 2",
-    "questions": [
-      {
-        "id": 1,
-        "text": "Từ nào sau đây có nghĩa là \"Quyển vở\"?",
-        "options": [
-          { "label": "A", "text": "ほん" },
-          { "label": "B", "text": "ノート" },
-          { "label": "C", "text": "じしょ" },
-          { "label": "D", "text": "ざっし" }
-        ],
-        "correct": "B",
-        "explanation": "B: ノート có nghĩa là Vở.\nA: ほん có nghĩa là Sách.\nC: じしょ có nghĩa là Từ điển.\nD: ざっし có nghĩa là Tạp chí.",
-        "audioUrl": ""
-      },
-      {
-        "id": 2,
-        "text": "Từ \"これ\" dùng để chỉ vật ở vị trí nào?",
-        "options": [
-          { "label": "A", "text": "Vật ở xa cả người nói và người nghe" },
-          { "label": "B", "text": "Vật ở gần người nghe" },
-          { "label": "C", "text": "Vật ở gần người nói" },
-          { "label": "D", "text": "Vật không xác định" }
-        ],
-        "correct": "C",
-        "explanation": "C: これ có nghĩa là Cái này, đây (vật ở gần người nói).\nA: あれ là vật ở xa cả hai người.\nB: それ là vật ở gần người nghe.\nD: どれ là từ để hỏi cái nào.",
-        "audioUrl": ""
-      },
-      {
-        "id": 3,
-        "text": "Từ \"かばん\" có nghĩa là gì?",
-        "options": [
-          { "label": "A", "text": "Cái ô" },
-          { "label": "B", "text": "Đồng hồ" },
-          { "label": "C", "text": "Cặp sách, túi sách" },
-          { "label": "D", "text": "Chìa khóa" }
-        ],
-        "correct": "C",
-        "explanation": "C: かばん có nghĩa là Cặp sách, túi sách.\nA: かさ có nghĩa là Cái ô, dù.\nB: とけい có nghĩa là Đồng hồ.\nD: かぎ có nghĩa là Chìa khóa.",
-        "audioUrl": ""
-      },
-      {
-        "id": 4,
-        "text": "Từ nào sau đây có nghĩa là \"Báo\" (Tân văn)?",
-        "options": [
-          { "label": "A", "text": "てちょう" },
-          { "label": "B", "text": "しんぶん" },
-          { "label": "C", "text": "めいし" },
-          { "label": "D", "text": "カード" }
-        ],
-        "correct": "B",
-        "explanation": "B: しんぶん có nghĩa là Báo.\nA: てちょう có nghĩa là Sổ tay.\nC: めいし có nghĩa là Danh thiếp.\nD: カード có nghĩa là Thẻ, cạc.",
-        "audioUrl": ""
-      },
-      {
-        "id": 5,
-        "text": "Từ \"じどうしゃ\" có nghĩa là gì?",
-        "options": [
-          { "label": "A", "text": "Xe đạp" },
-          { "label": "B", "text": "Xe máy" },
-          { "label": "C", "text": "Ô tô, xe hơi" },
-          { "label": "D", "text": "Tàu điện" }
-        ],
-        "correct": "C",
-        "explanation": "C: じどうしゃ có nghĩa là Ô tô, xe hơi.\nA: じてんしゃ là xe đạp.\nB: バイク là xe máy.\nD: でんしゃ là tàu điện.",
-        "audioUrl": ""
-      },
-      {
-        "id": 6,
-        "text": "Từ nào sau đây có nghĩa là \"Bút chì kim\"?",
-        "options": [
-          { "label": "A", "text": "えんぴつ" },
-          { "label": "B", "text": "ボールペン" },
-          { "label": "C", "text": "シャープペンシル" },
-          { "label": "D", "text": "まんねんひつ" }
-        ],
-        "correct": "C",
-        "explanation": "C: シャープペンシル có nghĩa là Bút chì kim, bút chì bấm.\nA: えんぴつ có nghĩa là Bút chì gỗ.\nB: ボールペン có nghĩa là Bút bi.\nD: まんねんひつ (không có trong ảnh này nhưng thường đi cùng nhóm) là bút máy.",
-        "audioUrl": ""
-      },
-      {
-        "id": 7,
-        "text": "Từ \"つくえ\" có nghĩa là gì?",
-        "options": [
-          { "label": "A", "text": "Cái ghế" },
-          { "label": "B", "text": "Cái bàn" },
-          { "label": "C", "text": "Máy tính" },
-          { "label": "D", "text": "Đài radio" }
-        ],
-        "correct": "B",
-        "explanation": "B: つくえ có nghĩa là Cái bàn.\nA: いす có nghĩa là Cái ghế.\nC: コンピューター có nghĩa là Máy vi tính.\nD: ラジオ có nghĩa là Đài Radio.",
-        "audioUrl": ""
-      },
-      {
-        "id": 8,
-        "text": "Cụm từ \"ほんのきもち\" thường dùng trong trường hợp nào?",
-        "options": [
-          { "label": "A", "text": "Khi chào hỏi" },
-          { "label": "B", "text": "Khi tặng quà (Chỉ là chút lòng thành)" },
-          { "label": "C", "text": "Khi xin lỗi" },
-          { "label": "D", "text": "Khi cảm ơn" }
-        ],
-        "correct": "B",
-        "explanation": "B: ほんのきもち có nghĩa là Chỉ là chút lòng thành thôi (dùng khi tặng quà).\nA: こんにちは dùng khi chào hỏi.\nC: すみません dùng khi xin lỗi.\nD: ありがとうございます dùng khi cảm ơn.",
-        "audioUrl": ""
-      },
-      {
-        "id": 9,
-        "text": "Từ \"えいご\" chỉ ngôn ngữ nào?",
-        "options": [
-          { "label": "A", "text": "Tiếng Nhật" },
-          { "label": "B", "text": "Tiếng Việt" },
-          { "label": "C", "text": "Tiếng Anh" },
-          { "label": "D", "text": "Tiếng Pháp" }
-        ],
-        "correct": "C",
-        "explanation": "C: えいご có nghĩa là Tiếng Anh.\nA: にほんご có nghĩa là Tiếng Nhật.\nB: ベトナムご là Tiếng Việt.\nD: フランスご là Tiếng Pháp.",
-        "audioUrl": ""
-      },
-      {
-        "id": 10,
-        "text": "Từ nào sau đây có nghĩa là \"Sô-cô-la\"?",
-        "options": [
-          { "label": "A", "text": "コーヒー" },
-          { "label": "B", "text": "チョコレート" },
-          { "label": "C", "text": "ラジオ" },
-          { "label": "D", "text": "テレビ" }
-        ],
-        "correct": "B",
-        "explanation": "B: チョコレート có nghĩa là Sô-cô-la.\nA: コーヒー có nghĩa là Cà phê.\nC: ラジオ có nghĩa là Đài Radio.\nD: テレビ có nghĩa là Tivi.",
-        "audioUrl": ""
-      },
-      {
-        "id": 11,
-        "text": "Từ \"その～\" có cách sử dụng như thế nào?",
-        "options": [
-          { "label": "A", "text": "Đứng một mình làm chủ ngữ" },
-          { "label": "B", "text": "Đi kèm với danh từ (Cái ~ đó)" },
-          { "label": "C", "text": "Dùng để hỏi người" },
-          { "label": "D", "text": "Dùng để cảm ơn" }
-        ],
-        "correct": "B",
-        "explanation": "B: その～ (Cái ~ đó) luôn đi kèm danh từ đằng sau (Ví dụ: そのほん).\nA: それ mới đứng một mình làm chủ ngữ.\nC: だれ dùng để hỏi người.\nD: どうも dùng để cảm ơn.",
-        "audioUrl": ""
-      },
-      {
-        "id": 12,
-        "text": "Từ \"かぎ\" có nghĩa là gì?",
-        "options": [
-          { "label": "A", "text": "Cái ô" },
-          { "label": "B", "text": "Chìa khóa" },
-          { "label": "C", "text": "Đồng hồ" },
-          { "label": "D", "text": "Cặp sách" }
-        ],
-        "correct": "B",
-        "explanation": "B: かぎ có nghĩa là Chìa khóa.\nA: かさ có nghĩa là Cái ô.\nC: とけい có nghĩa là Đồng hồ.\nD: かばん có nghĩa là Cặp sách.",
-        "audioUrl": ""
-      },
-      {
-        "id": 13,
-        "text": "Từ \"てちょう\" có nghĩa là gì?",
-        "options": [
-          { "label": "A", "text": "Tạp chí" },
-          { "label": "B", "text": "Sổ tay" },
-          { "label": "C", "text": "Danh thiếp" },
-          { "label": "D", "text": "Thư từ" }
-        ],
-        "correct": "B",
-        "explanation": "B: てちょう có nghĩa là Sổ tay.\nA: ざっし có nghĩa là Tạp chí.\nC: めいし có nghĩa là Danh thiếp.\nD: てがみ là thư từ.",
-        "audioUrl": ""
-      },
-      {
-        "id": 14,
-        "text": "Khi muốn nói \"Thế à / Vậy à\" để biểu lộ sự đồng tình/quan tâm, ta dùng câu nào?",
-        "options": [
-          { "label": "A", "text": "そうですか" },
-          { "label": "B", "text": "ちがいます" },
-          { "label": "C", "text": "あのう" },
-          { "label": "D", "text": "どうぞ" }
-        ],
-        "correct": "A",
-        "explanation": "A: そうですか có nghĩa là Thế à, vậy à.\nB: ちがいます có nghĩa là Sai rồi, không phải.\nC: あのう có nghĩa là À, ờ (ngập ngừng khi bắt đầu nói chuyện).\nD: どうぞ có nghĩa là Xin mời.",
-        "audioUrl": ""
-      },
-      {
-        "id": 15,
-        "text": "Từ \"じしょ\" có nghĩa là gì?",
-        "options": [
-          { "label": "A", "text": "Từ điển" },
-          { "label": "B", "text": "Tạp chí" },
-          { "label": "C", "text": "Báo" },
-          { "label": "D", "text": "Sách giáo khoa" }
-        ],
-        "correct": "A",
-        "explanation": "A: じしょ có nghĩa là Từ điển.\nB: ざっし có nghĩa là Tạp chí.\nC: しんぶん có nghĩa là Báo.\nD: きょうかしょ là sách giáo khoa.",
-        "audioUrl": ""
-      },
-      {
-        "id": 16,
-        "text": "Cụm từ \"これからおせわになります\" có nghĩa là gì?",
-        "options": [
-          { "label": "A", "text": "Tôi xin lỗi vì đã làm phiền" },
-          { "label": "B", "text": "Từ nay tôi rất mong sự giúp đỡ của anh/chị" },
-          { "label": "C", "text": "Chính tôi mới phải xin ông giúp đỡ cho" },
-          { "label": "D", "text": "Rất hân hạnh được gặp" }
-        ],
-        "correct": "B",
-        "explanation": "B: これからおせわになります có nghĩa là Từ nay tôi rất mong sự giúp đỡ của anh/chị.\nA: しつれいします là xin phép/xin lỗi.\nC: こちらこそ よろしく là Chính tôi mới phải xin ông giúp đỡ.\nD: はじめまして là Rất hân hạnh được gặp.",
-        "audioUrl": ""
-      },
-      {
-        "id": 17,
-        "text": "Từ \"テープ\" (trong [カセット]テープ) có nghĩa là gì?",
-        "options": [
-          { "label": "A", "text": "Máy ghi âm" },
-          { "label": "B", "text": "Băng [cát-xét]" },
-          { "label": "C", "text": "Máy ảnh" },
-          { "label": "D", "text": "Cái bàn" }
-        ],
-        "correct": "B",
-        "explanation": "B: [カセット]テープ có nghĩa là Băng [cát-xét].\nA: テープレコーダー có nghĩa là Máy ghi âm.\nC: カメラ có nghĩa là Máy ảnh.\nD: つくえ có nghĩa là Cái bàn.",
-        "audioUrl": ""
-      },
-      {
-        "id": 18,
-        "text": "Từ \"どうぞ\" dùng khi nào?",
-        "options": [
-          { "label": "A", "text": "Khi từ chối" },
-          { "label": "B", "text": "Khi mời ai đó dùng/làm gì (Xin mời)" },
-          { "label": "C", "text": "Khi chào tạm biệt" },
-          { "label": "D", "text": "Khi hỏi thăm sức khỏe" }
-        ],
-        "correct": "B",
-        "explanation": "B: どうぞ có nghĩa là Xin mời (dùng khi mời ai đó vào nhà, mời ngồi, mời uống...).\nA: いいえ là Không (từ chối/phủ định).\nC: さようなら là Tạm biệt.\nD: おげんきですか là Bạn có khỏe không?",
-        "audioUrl": ""
-      },
-      {
-        "id": 19,
-        "text": "Từ \"カード\" có nghĩa là gì?",
-        "options": [
-          { "label": "A", "text": "Thẻ, các (card)" },
-          { "label": "B", "text": "Xe ô tô" },
-          { "label": "C", "text": "Rèm cửa" },
-          { "label": "D", "text": "Lịch" }
-        ],
-        "correct": "A",
-        "explanation": "A: カード có nghĩa là Thẻ, các, các-vi-dít (gốc tiếng Anh: Card).\nB: カー (car) hoặc じどうしゃ là ô tô.\nC: カーテン là rèm cửa.\nD: カレンダー là lịch.",
-        "audioUrl": ""
-      },
-      {
-        "id": 20,
-        "text": "Từ nào sau đây có nghĩa là \"Máy ảnh\"?",
-        "options": [
-          { "label": "A", "text": "カラオケ" },
-          { "label": "B", "text": "カメラ" },
-          { "label": "C", "text": "ラジオ" },
-          { "label": "D", "text": "テレビ" }
-        ],
-        "correct": "B",
-        "explanation": "B: カメラ có nghĩa là Máy ảnh.\nA: カラオケ là Karaoke.\nC: ラジオ là Đài Radio.\nD: テレビ là Tivi.",
-        "audioUrl": ""
-      }
-    ],
-    "metadata": {
-      "level": "n5",
-      "bookId": "book-001",
-      "chapterId": "chapter-1",
-      "lessonId": "lesson-1-2"
+  "title": "Trắc nghiệm Đọc hiểu N2 - Bài 3",
+  "questions": [
+    {
+      "id": 1,
+      "text": "例題 6 問いに対する答えとして最もよいものを一つ選びなさい。\n　スポーツをやる目的やかかわり方は種々多様である。オリンピックで金メダルを争うような熾烈なスポーツもあれば、勝敗はともかくみんなで楽しく遊べばよいというスポーツもある。健康のために、あるいはレクリエーションのためにというスポーツのある一方で、スポーツが仕事というプロスポーツも存在している。しかしやり方や目的は違え、どれもスポーツであることには変わりはない。（中略）\n　レベルは違ってもスポーツはスポーツなのであり、そのレベルから少しでもうまくなり、強くなろうとするやり方は基本的には違いのないものである。頂点に通じる長い山道のどこを歩いているかの違いであり、けわしさや空気の薄さは上にいくほどつらくはなるが、歩いて進むことや歩き方には変わりはない。そしてどこで立ち止まっても山の空気は新鮮で、景色は美しい。その人その人によって、どの高さで楽しんでもいいものだし、そうして誰にでももう少し高く登ってみたいと思わせるのがスポーツというものなのである。\n\n[問い] この文章で筆者が最も言いたいことは何か。",
+      "options": [
+        { "label": "1", "text": "登山は、どんな人でも楽しむことができ、誰もがより高いところを目指そうとする。" },
+        { "label": "2", "text": "登山というスポーツは、上にいくほど苦しくなるが、どこにも楽しさはある。" },
+        { "label": "3", "text": "スポーツとは、どのレベルでも楽しさがあり、少しでも上達したいと思うものである。" },
+        { "label": "4", "text": "スポーツにはさまざまなレベルがあるが、楽しくないものはスポーツではない。" }
+      ],
+      "correct": "3",
+      "explanation": "1：登山は比喩で、この文章のテーマではない。\n2：登山は比喩で、この文章のテーマではない。\n3：正解\n4：楽しくないものはスポーツではないとは書かれていない。",
+      "audioUrl": ""
+    },
+    {
+      "id": 2,
+      "text": "練習 10 問いに対する答えとして最もよいものを一つ選びなさい。\n　雨が降れば傘をさす。傘がなければ風呂敷でもかぶる。それもなければぬれるしか仕方がない。\n　雨の日に傘がないのは、天気のときに油断して、その用意をしなかったからだ。雨にぬれて、はじめて傘の必要を知る。そして次の雨にはぬれないように考える。雨があがれば、何をおいても傘の用意をしようと決意する。これもやはり、人生の一つの教えである。\n　わかりきったことながら、世の中にはそして人生には、晴れの日もあれば雨の日もある。好調の時もあれば、不調の時もある。にもかかわらず、晴れの日が少しつづくと、つい雨の日を忘れがちになる。好調の波がつづくと、ついゆきすぎる。油断する。これも、人間の一つの姿であろうか。\n\n[問い] この文章の内容として最も適切なものはどれか。",
+      "options": [
+        { "label": "1", "text": "雨の日に傘を持っていないのは、つい油断してしまうからである。" },
+        { "label": "2", "text": "人生がうまく行っている時は、悪い時に備える心を忘れがちだ。" },
+        { "label": "3", "text": "人は、雨があがると、いつもつい傘をどこかに忘れて来てしまう。" },
+        { "label": "4", "text": "人生が好調な時は晴れの日が続くので、傘を準備しておく必要はない。" }
+      ],
+      "correct": "2",
+      "explanation": "練習 10\n人生の好調、不調について書かれた文章である。\n比喩に注目する。\n晴れの日＝好調の時、雨の日＝不調の時、傘＝不調の時のための用意\n好調の時が続くと、不調の時のことを忘れがちである。\n1：傘の話は比喩であり、この文章のテーマではない。\n2：正解\n3：傘の話は比喩であり、この文章のテーマではない。\n4：好調なときも油断せず、用意をする必要がある。",
+      "audioUrl": ""
+    },
+    {
+      "id": 3,
+      "text": "練習 11 問いに対する答えとして最もよいものを一つ選びなさい。\n　足が速い人は、生まれつき速い。遅い人は、生まれながらにして遅い。特に短距離走はポテンシャルの勝負――。\n　そう思っている方が多いでしょうし、私もつい数年前まではそう思っていました。そして、ある面ではやはりその通りなのです。生まれ持った骨格や腱、筋肉などの質によって、足の速さはかなりの部分まで決まってしまいます。\n　車と同じで、エンジンの性能を超えた走りはできません。\n　ただし、多くの人は、性能を限界まで引き出していないのです。また、エンジンの性能がアップしなくても、タイヤを履き替えたり、運転テクニックを上達させたりと、スピードをアップさせる方法はほかにいくらでもあるのです。\n\n[問い] この文章で筆者が最も言いたいことは何か。",
+      "options": [
+        { "label": "1", "text": "車の速さは、エンジンの性能によって決まる。" },
+        { "label": "2", "text": "足が速いか遅いかは、生まれながらにして決まっている。" },
+        { "label": "3", "text": "車のスピードをアップさせる方法は、いろいろある。" },
+        { "label": "4", "text": "足が遅いと思っている人も、工夫すればもっと速くなれる。" }
+      ],
+      "correct": "4",
+      "explanation": "練習 11\n走るスピードを上げることについて書かれた文章である。\n比喩に注目する。\n車＝走る人、エンジン＝生まれ持った質（体質）\nタイヤを履き替えたり、運転テクニックを上達させたりすること＝さまざまな工夫\n工夫をすることで、走るスピードを上げることができる。\n1：車の性能は比喩で、この文章のテーマではない。\n2：足の速さは生まれながらにしてかなりの部分まで決まっているが、スピードアップさせる方法があることを主張している。\n3：車のスピードは比喩で、この文章のテーマではない。\n4：正解",
+      "audioUrl": ""
+    },
+    {
+      "id": 4,
+      "text": "練習 12 問いに対する答えとして最もよいものを一つ選びなさい。\n　なんかの本で読んだ話。ある山の麓で、おじいさんと孫が、山鳩の雛を育てていた。\nその山の反対側に、別のおじいさんと孫がいて、こっちは鷹の雛を育てていた。それぞれの雛が成長して、飛べるようになったんで、ある日、空に放してやった。そしたら、鷹が山鳩を食べてしまった。山のこっち側では、山鳩が喰われたって泣いた。向こう側では、鷹がはじめて餌を獲ったって喜んだ。ひとつの現象なのに、山のこっちと向こうでは、まるっきり正反対のことが起きたってことになる。\n　妙な話だけど、人生の喜びや悲しみは、根本的にそういうものだ。この世で起きることには、本来、何の色も着いていない。\n　そこに、喜びだの悲しみだのの色を着けるのは人間だ。\n\n(注1) 麓：山の下の部分\n(注2) 山鳩：山に住む鳥\n(注3) 雛：鳥の子供\n(注4) 鷹：肉食の鳥で、山鳩より大きい\n\n[問い] この文章の内容として最も適切なものはどれか。",
+      "options": [
+        { "label": "1", "text": "住んでいるところが変われば、同じ現象でも違って見えるものだ。" },
+        { "label": "2", "text": "人生にうれしいことも悲しいこともあるのは、しかたがないことだ。" },
+        { "label": "3", "text": "いくら人が喜んだり悲しんだりしても、起きたことはどうすることもできない。" },
+        { "label": "4", "text": "世の中で起きる物事は、立場によって見え方や意味が変わってくる。" }
+      ],
+      "correct": "4",
+      "explanation": "練習 12\n人生の喜びや悲しみについて書かれた文章である。\n比喩に注目する。\n鷹が山鳩を食べたという一つのことに対して、ある人は喜び、ある人は泣く＝ある一つの事実について、立場により見方が違う。\n1：「住んでいるところ」は比喩で、この文章のテーマではない。\n2：しかたがないとは書かれていない。この世で起きることをどう見るかが人により違うと書かれている。\n3：起きたことをどうするかではなく、どう見るかについて書かれている。\n4：正解",
+      "audioUrl": ""
     }
+  ],
+  "metadata": {
+    "level": "n2",
+    "bookId": "book-001",
+    "chapterId": "chapter-1",
+    "lessonId": "lesson-1-3"
   }
+}

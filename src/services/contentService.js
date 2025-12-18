@@ -2,6 +2,7 @@
 // Service để lưu và đọc content (books, chapters, lessons, quizzes) từ Supabase
 
 import { supabase } from './supabaseClient.js';
+import { safeSaveCollection } from '../utils/safeSaveHelper.js';
 
 /**
  * Save book to Supabase
@@ -148,6 +149,7 @@ export async function deleteBookCascade(bookId, level) {
 
 /**
  * Save chapters to Supabase
+ * ✅ FIXED: Sử dụng safe save với merge thông minh để tránh mất dữ liệu
  * @param {string} bookId - Book ID
  * @param {string} level - Level
  * @param {Array} chapters - Array of chapters
@@ -156,39 +158,69 @@ export async function deleteBookCascade(bookId, level) {
  */
 export async function saveChapters(bookId, level, chapters, userId) {
   try {
-    // Delete existing chapters for this book
-    await supabase
-      .from('chapters')
-      .delete()
-      .eq('book_id', bookId)
-      .eq('level', level);
+    console.log('[ContentService.saveChapters] 💾 Saving chapters with safe merge:', {
+      bookId,
+      level,
+      chaptersCount: chapters?.length || 0
+    });
 
-    // Insert new chapters
-    const chaptersData = chapters.map((chapter, index) => ({
-      id: chapter.id,
-      book_id: bookId,
-      level: level,
-      title: chapter.title,
-      description: chapter.description || null,
-      order_index: chapter.orderIndex !== undefined ? chapter.orderIndex : index,
-      created_by: userId,
-      updated_at: new Date().toISOString()
-    }));
+    // ✅ FIXED: Load từ Supabase trước (source of truth)
+    const getExisting = async () => {
+      return await getChapters(bookId, level);
+    };
 
-    const { data, error } = await supabase
-      .from('chapters')
-      .insert(chaptersData)
-      .select();
+    // ✅ FIXED: Dùng safeSaveCollection để merge thông minh
+    // Tạo map index để preserve order
+    const indexMap = new Map(chapters.map((ch, idx) => [ch.id, idx]));
+    
+    const result = await safeSaveCollection({
+      tableName: 'chapters',
+      getExistingFn: getExisting,
+      newItems: chapters,
+      compareKey: 'id',
+      transformFn: (chapter, context) => {
+        const index = indexMap.get(chapter.id) || 0;
+        return {
+          id: chapter.id,
+          book_id: context.bookId,
+          level: context.level,
+          title: chapter.title,
+          description: chapter.description || null,
+          order_index: chapter.orderIndex !== undefined ? chapter.orderIndex : index,
+          created_by: context.userId,
+          updated_at: new Date().toISOString()
+        };
+      },
+      userId,
+      context: { bookId, level, userId },
+      onConflict: null, // ✅ FIXED: Không dùng onConflict cho composite key - Supabase tự detect
+      deleteWhere: { book_id: bookId, level: level } // Chỉ xóa chapters của book này
+    });
 
-    if (error) {
-      console.error('[ContentService] Error saving chapters:', error);
-      return { success: false, error };
+    if (!result.success) {
+      console.error('[ContentService.saveChapters] ❌ Error saving chapters:', result.error);
+      return { success: false, error: result.error };
     }
 
-    console.log('[ContentService] ✅ Saved chapters to Supabase:', data.length);
-    return { success: true, data };
+    // Load lại để return data đầy đủ (backward compatible)
+    const { success: loadSuccess, data: savedChapters } = await getChapters(bookId, level);
+    
+    if (!loadSuccess) {
+      console.warn('[ContentService.saveChapters] ⚠️ Saved but failed to reload chapters');
+      return { success: true, data: [] };
+    }
+
+    console.log('[ContentService.saveChapters] ✅ Saved chapters safely:', {
+      total: savedChapters.length,
+      inserted: result.data.inserted,
+      updated: result.data.updated,
+      deleted: result.data.deleted,
+      unchanged: result.data.unchanged
+    });
+
+    return { success: true, data: savedChapters };
   } catch (err) {
-    console.error('[ContentService] Unexpected error:', err);
+    console.error('[ContentService.saveChapters] ❌ Unexpected error:', err);
     return { success: false, error: err };
   }
 }
@@ -232,6 +264,7 @@ export async function getChapters(bookId, level) {
 
 /**
  * Save lessons to Supabase
+ * ✅ FIXED: Sử dụng safe save với merge thông minh để tránh mất dữ liệu
  * @param {string} bookId - Book ID
  * @param {string} chapterId - Chapter ID
  * @param {string} level - Level
@@ -241,83 +274,82 @@ export async function getChapters(bookId, level) {
  */
 export async function saveLessons(bookId, chapterId, level, lessons, userId) {
   try {
-    // ✅ LOG: Kiểm tra số lượng lessons trước khi xóa
-    const { data: existingLessons } = await supabase
-      .from('lessons')
-      .select('id')
-      .eq('book_id', bookId)
-      .eq('chapter_id', chapterId)
-      .eq('level', level);
-    
-    const existingCount = existingLessons?.length || 0;
-    const newCount = lessons?.length || 0;
-    
-    console.log(`[ContentService.saveLessons] 📊 Saving lessons:`, {
-      location: `${level}/${bookId}/${chapterId}`,
-      existingCount,
-      newCount,
-      difference: newCount - existingCount
-    });
-    
-    // ⚠️ CẢNH BÁO nếu số lượng giảm đáng kể
-    if (existingCount > 0 && newCount < existingCount * 0.5) {
-      console.warn(`[ContentService.saveLessons] ⚠️ WARNING: Lesson count decreased significantly!`, {
-        existingCount,
-        newCount,
-        lost: existingCount - newCount
-      });
-    }
-
-    // Delete existing lessons for this chapter
-    await supabase
-      .from('lessons')
-      .delete()
-      .eq('book_id', bookId)
-      .eq('chapter_id', chapterId)
-      .eq('level', level);
-
-    // Insert new lessons
-    const lessonsData = lessons.map((lesson, index) => {
-      // ✅ FIXED: Priority: orderIndex > order > index
-      // This ensures that when lessons are reordered, the orderIndex is properly saved
-      let orderIndex = lesson.orderIndex;
-      if (orderIndex === undefined || orderIndex === null) {
-        // Fallback to 'order' field (legacy) if orderIndex is not set
-        orderIndex = lesson.order !== undefined && lesson.order !== null ? lesson.order : index;
-      }
-      
-      return {
-        id: lesson.id,
-        book_id: bookId,
-        chapter_id: chapterId,
-        level: level,
-        title: lesson.title,
-        description: lesson.description || null,
-        content_type: lesson.contentType || 'pdf',
-        pdf_url: lesson.pdfUrl || null,
-        html_content: lesson.htmlContent || null,
-        theory: lesson.theory || {},
-        srs: lesson.srs || {},
-        order_index: orderIndex,
-        created_by: userId,
-        updated_at: new Date().toISOString()
-      };
+    console.log('[ContentService.saveLessons] 💾 Saving lessons with safe merge:', {
+      bookId,
+      chapterId,
+      level,
+      lessonsCount: lessons?.length || 0
     });
 
-    const { data, error } = await supabase
-      .from('lessons')
-      .insert(lessonsData)
-      .select();
+    // ✅ FIXED: Load từ Supabase trước (source of truth)
+    const getExisting = async () => {
+      return await getLessons(bookId, chapterId, level);
+    };
 
-    if (error) {
-      console.error('[ContentService] Error saving lessons:', error);
-      return { success: false, error };
+    // ✅ FIXED: Dùng safeSaveCollection để merge thông minh
+    // Tạo map index để preserve order
+    const indexMap = new Map(lessons.map((lesson, idx) => [lesson.id, idx]));
+    
+    const result = await safeSaveCollection({
+      tableName: 'lessons',
+      getExistingFn: getExisting,
+      newItems: lessons,
+      compareKey: 'id',
+      transformFn: (lesson, context) => {
+        const index = indexMap.get(lesson.id) || 0;
+        // ✅ FIXED: Priority: orderIndex > order > index
+        let orderIndex = lesson.orderIndex;
+        if (orderIndex === undefined || orderIndex === null) {
+          orderIndex = lesson.order !== undefined && lesson.order !== null ? lesson.order : index;
+        }
+        
+        return {
+          id: lesson.id,
+          book_id: context.bookId,
+          chapter_id: context.chapterId,
+          level: context.level,
+          title: lesson.title,
+          description: lesson.description || null,
+          content_type: lesson.contentType || 'pdf',
+          pdf_url: lesson.pdfUrl || null,
+          html_content: lesson.htmlContent || null,
+          theory: lesson.theory || {},
+          srs: lesson.srs || {},
+          order_index: orderIndex,
+          created_by: context.userId,
+          updated_at: new Date().toISOString()
+        };
+      },
+      userId,
+      context: { bookId, chapterId, level, userId },
+      onConflict: null, // ✅ FIXED: Không dùng onConflict cho composite key - Supabase tự detect
+      deleteWhere: { book_id: bookId, chapter_id: chapterId, level: level } // Chỉ xóa lessons của chapter này
+    });
+
+    if (!result.success) {
+      console.error('[ContentService.saveLessons] ❌ Error saving lessons:', result.error);
+      return { success: false, error: result.error };
     }
 
-    console.log('[ContentService] ✅ Saved lessons to Supabase:', data.length);
-    return { success: true, data };
+    // Load lại để return data đầy đủ (backward compatible)
+    const { success: loadSuccess, data: savedLessons } = await getLessons(bookId, chapterId, level);
+    
+    if (!loadSuccess) {
+      console.warn('[ContentService.saveLessons] ⚠️ Saved but failed to reload lessons');
+      return { success: true, data: [] };
+    }
+
+    console.log('[ContentService.saveLessons] ✅ Saved lessons safely:', {
+      total: savedLessons.length,
+      inserted: result.data.inserted,
+      updated: result.data.updated,
+      deleted: result.data.deleted,
+      unchanged: result.data.unchanged
+    });
+
+    return { success: true, data: savedLessons };
   } catch (err) {
-    console.error('[ContentService] Unexpected error:', err);
+    console.error('[ContentService.saveLessons] ❌ Unexpected error:', err);
     return { success: false, error: err };
   }
 }
@@ -655,6 +687,7 @@ export async function getAllQuizzesByLevel(level) {
 
 /**
  * Save series to Supabase
+ * ✅ FIXED: Sử dụng safe save với merge thông minh để tránh mất dữ liệu
  * @param {string} level - Level
  * @param {Array} series - Array of series
  * @param {string} userId - UUID of admin user
@@ -662,38 +695,68 @@ export async function getAllQuizzesByLevel(level) {
  */
 export async function saveSeries(level, series, userId) {
   try {
-    // Delete existing series for this level
-    await supabase
-      .from('series')
-      .delete()
-      .eq('level', level);
+    console.log('[ContentService.saveSeries] 💾 Saving series with safe merge:', {
+      level,
+      seriesCount: series?.length || 0
+    });
 
-    // Insert new series
-    const seriesData = series.map((s, index) => ({
-      id: s.id,
-      level: level,
-      name: s.name,
-      description: s.description || null,
-      image_url: s.imageUrl || null,
-      order_index: s.orderIndex !== undefined ? s.orderIndex : index,
-      created_by: userId,
-      updated_at: new Date().toISOString()
-    }));
+    // ✅ FIXED: Load từ Supabase trước (source of truth)
+    const getExisting = async () => {
+      return await getSeries(level);
+    };
 
-    const { data, error } = await supabase
-      .from('series')
-      .insert(seriesData)
-      .select();
+    // ✅ FIXED: Dùng safeSaveCollection để merge thông minh
+    // Tạo map index để preserve order
+    const indexMap = new Map(series.map((s, idx) => [s.id, idx]));
+    
+    const result = await safeSaveCollection({
+      tableName: 'series',
+      getExistingFn: getExisting,
+      newItems: series,
+      compareKey: 'id',
+      transformFn: (s, context) => {
+        const index = indexMap.get(s.id) || 0;
+        return {
+          id: s.id,
+          level: context.level,
+          name: s.name,
+          description: s.description || null,
+          image_url: s.imageUrl || null,
+          order_index: s.orderIndex !== undefined ? s.orderIndex : index,
+          created_by: context.userId,
+          updated_at: new Date().toISOString()
+        };
+      },
+      userId,
+      context: { level, userId },
+      onConflict: null, // ✅ FIXED: Không dùng onConflict cho composite key - Supabase tự detect
+      deleteWhere: { level: level } // Chỉ xóa series của level này
+    });
 
-    if (error) {
-      console.error('[ContentService] Error saving series:', error);
-      return { success: false, error };
+    if (!result.success) {
+      console.error('[ContentService.saveSeries] ❌ Error saving series:', result.error);
+      return { success: false, error: result.error };
     }
 
-    console.log('[ContentService] ✅ Saved series to Supabase:', data.length);
-    return { success: true, data };
+    // Load lại để return data đầy đủ (backward compatible)
+    const { success: loadSuccess, data: savedSeries } = await getSeries(level);
+    
+    if (!loadSuccess) {
+      console.warn('[ContentService.saveSeries] ⚠️ Saved but failed to reload series');
+      return { success: true, data: [] };
+    }
+
+    console.log('[ContentService.saveSeries] ✅ Saved series safely:', {
+      total: savedSeries.length,
+      inserted: result.data.inserted,
+      updated: result.data.updated,
+      deleted: result.data.deleted,
+      unchanged: result.data.unchanged
+    });
+
+    return { success: true, data: savedSeries };
   } catch (err) {
-    console.error('[ContentService] Unexpected error:', err);
+    console.error('[ContentService.saveSeries] ❌ Unexpected error:', err);
     return { success: false, error: err };
   }
 }
