@@ -366,7 +366,61 @@ function ExamAnswersPage() {
             // ✅ Kết hợp knowledge và reading sections (theo format JLPT: 言語知識・読解)
             const knowledgeSections = savedExam.knowledge.sections || [];
             const readingSections = savedExam.reading?.sections || [];
-            const combinedSections = [...knowledgeSections, ...readingSections];
+            
+            // ✅ FIX: Ensure sections have proper title and instruction format + Clean HTML artifacts
+            const cleanHTML = (html) => {
+              if (!html || typeof html !== 'string') return html || '';
+              // Remove HTML comment tags (StartFragment, EndFragment, etc.)
+              return html
+                .replace(/<!--\s*StartFragment\s*-->/gi, '')
+                .replace(/<!--\s*EndFragment\s*-->/gi, '')
+                .replace(/<!--[^>]*-->/g, '') // Remove all HTML comments
+                .trim();
+            };
+            
+            const normalizeSection = (section) => {
+              // Clean HTML artifacts from title and instruction
+              let cleanTitle = cleanHTML(section.title || '');
+              let cleanInstruction = cleanHTML(section.instruction || '');
+              
+              // If instruction contains both title and instruction (combined format)
+              // Try to detect and split if needed
+              if (cleanInstruction && !cleanTitle && cleanInstruction.includes('\n\n')) {
+                const lines = cleanInstruction.split('\n');
+                const firstLine = lines[0]?.trim() || '';
+                const rest = lines.slice(1).join('\n').trim();
+                if (firstLine && rest) {
+                  return {
+                    ...section,
+                    title: firstLine,
+                    instruction: rest
+                  };
+                }
+              }
+              // If title contains instruction (backward compatibility)
+              if (cleanTitle && !cleanInstruction && cleanTitle.includes('\n\n')) {
+                const lines = cleanTitle.split('\n');
+                const firstLine = lines[0]?.trim() || '';
+                const rest = lines.slice(1).join('\n').trim();
+                if (firstLine && rest) {
+                  return {
+                    ...section,
+                    title: firstLine,
+                    instruction: rest
+                  };
+                }
+              }
+              // Return with cleaned values
+              return {
+                ...section,
+                title: cleanTitle || section.title,
+                instruction: cleanInstruction || section.instruction
+              };
+            };
+            
+            const normalizedKnowledgeSections = knowledgeSections.map(normalizeSection);
+            const normalizedReadingSections = readingSections.map(normalizeSection);
+            const combinedSections = [...normalizedKnowledgeSections, ...normalizedReadingSections];
             
             console.log('📊 ExamAnswersPage: Loading sections:', {
               knowledgeSectionsCount: knowledgeSections.length,
@@ -385,22 +439,75 @@ function ExamAnswersPage() {
           
           // Transform listening data
           if (savedExam.listening && savedExam.listening.sections) {
+            // ✅ FIX: Normalize section title and instruction + Clean HTML artifacts
+            const cleanHTML = (html) => {
+              if (!html || typeof html !== 'string') return html || '';
+              // Remove HTML comment tags (StartFragment, EndFragment, etc.)
+              return html
+                .replace(/<!--\s*StartFragment\s*-->/gi, '')
+                .replace(/<!--\s*EndFragment\s*-->/gi, '')
+                .replace(/<!--[^>]*-->/g, '') // Remove all HTML comments
+                .trim();
+            };
+            
+            const normalizeSection = (section) => {
+              // Clean HTML artifacts from title and instruction
+              let cleanTitle = cleanHTML(section.title || '');
+              let cleanInstruction = cleanHTML(section.instruction || '');
+              
+              // If instruction contains both title and instruction (combined format)
+              if (cleanInstruction && !cleanTitle && cleanInstruction.includes('\n\n')) {
+                const lines = cleanInstruction.split('\n');
+                const firstLine = lines[0]?.trim() || '';
+                const rest = lines.slice(1).join('\n').trim();
+                if (firstLine && rest) {
+                  return {
+                    ...section,
+                    title: firstLine,
+                    instruction: rest
+                  };
+                }
+              }
+              // If title contains instruction (backward compatibility)
+              if (cleanTitle && !cleanInstruction && cleanTitle.includes('\n\n')) {
+                const lines = cleanTitle.split('\n');
+                const firstLine = lines[0]?.trim() || '';
+                const rest = lines.slice(1).join('\n').trim();
+                if (firstLine && rest) {
+                  return {
+                    ...section,
+                    title: firstLine,
+                    instruction: rest
+                  };
+                }
+              }
+              // Return with cleaned values
+              return {
+                ...section,
+                title: cleanTitle || section.title,
+                instruction: cleanInstruction || section.instruction
+              };
+            };
+            
             setListeningData({
-              sections: savedExam.listening.sections.map(section => ({
-                id: section.id,
-                title: section.title,
-                instruction: section.instruction || '',
-                timeLimit: section.timeLimit || 0,
-                questions: (section.questions || []).map(q => ({
-                  number: q.number || String(q.id).padStart(2, '0'),
-                  subNumber: q.subNumber || q.id,
-                  category: q.category || 'listening',
-                  audioUrl: q.audioUrl || '',
-                  options: q.options || [],
-                  correctAnswer: q.correctAnswer,
-                  explanation: q.explanation || ''
-                }))
-              }))
+              sections: savedExam.listening.sections.map(section => {
+                const normalized = normalizeSection(section);
+                return {
+                  id: normalized.id,
+                  title: normalized.title,
+                  instruction: normalized.instruction || '',
+                  timeLimit: normalized.timeLimit || 0,
+                  questions: (normalized.questions || []).map(q => ({
+                    number: q.number || String(q.id).padStart(2, '0'),
+                    subNumber: q.subNumber || q.id,
+                    category: q.category || 'listening',
+                    audioUrl: q.audioUrl || '',
+                    options: q.options || [],
+                    correctAnswer: q.correctAnswer,
+                    explanation: q.explanation || ''
+                  }))
+                };
+              })
             });
           }
         } else {
@@ -481,9 +588,14 @@ function ExamAnswersPage() {
     );
   }
 
-  const knowledgeQuestions = knowledgeData.knowledge.sections.flatMap(s => s.questions || []);
-  const listeningQuestions = listeningData.sections.flatMap(s => 
-    (s.questions || []).map(q => ({ ...q, sectionId: s.id }))
+  // ✅ UPDATED: Keep sections structure instead of flattening
+  const knowledgeSections = knowledgeData.knowledge.sections || [];
+  const listeningSections = listeningData.sections || [];
+  
+  // For backward compatibility, still create flat arrays for quick access
+  const knowledgeQuestions = knowledgeSections.flatMap(s => s.questions || []);
+  const listeningQuestions = listeningSections.flatMap(s => 
+    (s.questions || []).map(q => ({ ...q, sectionId: s.id, sectionTitle: s.title, instruction: s.instruction }))
   );
   const allQuestions = [...knowledgeQuestions, ...listeningQuestions];
   
@@ -578,15 +690,53 @@ function ExamAnswersPage() {
                     </span>
                     <span className="text-sm sm:text-base md:text-lg lg:text-xl">{t('jlpt.answersPage.part1Title')}</span>
                   </h2>
-                  {knowledgeQuestions.map((q, idx) => (
-                    <AnswerCard
-                      key={q.id}
-                      question={q}
-                      userAnswer={knowledgeAnswers[q.id]}
-                      index={idx + 1}
-                      section="knowledge"
-                    />
-                  ))}
+                  
+                  {/* ✅ NEW: Group questions by section - Display section header once, then all questions */}
+                  {knowledgeSections.map((section, sectionIdx) => {
+                    const sectionQuestions = section.questions || [];
+                    let questionIndexOffset = 0;
+                    
+                    // Calculate offset: sum of questions in previous sections
+                    for (let i = 0; i < sectionIdx; i++) {
+                      questionIndexOffset += (knowledgeSections[i].questions?.length || 0);
+                    }
+                    
+                    return (
+                      <div key={section.id || sectionIdx} className="mb-6 sm:mb-8">
+                        {/* Section Header - Display once */}
+                        {(section.title || section.instruction) && (
+                          <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4 mb-4">
+                            {section.title && (
+                              <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2">
+                                {section.title}
+                              </h3>
+                            )}
+                            {section.instruction && (
+                              <p 
+                                className={`text-sm sm:text-base text-gray-700 ${section.title ? 'mt-2' : ''}`}
+                                dangerouslySetInnerHTML={{ __html: section.instruction }}
+                                style={{
+                                  wordWrap: 'break-word',
+                                  overflowWrap: 'break-word'
+                                }}
+                              />
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Questions in this section */}
+                        {sectionQuestions.map((q, qIdx) => (
+                          <AnswerCard
+                            key={q.id}
+                            question={q}
+                            userAnswer={knowledgeAnswers[q.id]}
+                            index={questionIndexOffset + qIdx + 1}
+                            section="knowledge"
+                          />
+                        ))}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="mb-4 sm:mb-6 md:mb-8 flex-shrink-0">
@@ -596,16 +746,54 @@ function ExamAnswersPage() {
                     </span>
                     <span className="text-sm sm:text-base md:text-lg lg:text-xl">{t('jlpt.answersPage.part2Title')}</span>
                   </h2>
-                  {listeningQuestions.map((q, idx) => {
-                    const questionKey = `${q.sectionId}-${q.number}`;
+                  
+                  {/* ✅ NEW: Group questions by section - Display section header once, then all questions */}
+                  {listeningSections.map((section, sectionIdx) => {
+                    const sectionQuestions = section.questions || [];
+                    let questionIndexOffset = knowledgeQuestions.length;
+                    
+                    // Calculate offset: sum of questions in previous listening sections
+                    for (let i = 0; i < sectionIdx; i++) {
+                      questionIndexOffset += (listeningSections[i].questions?.length || 0);
+                    }
+                    
                     return (
-                      <AnswerCard
-                        key={questionKey}
-                        question={q}
-                        userAnswer={listeningAnswers[questionKey]}
-                        index={knowledgeQuestions.length + idx + 1}
-                        section="listening"
-                      />
+                      <div key={section.id || sectionIdx} className="mb-6 sm:mb-8">
+                        {/* Section Header - Display once */}
+                        {(section.title || section.instruction) && (
+                          <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4 mb-4">
+                            {section.title && (
+                              <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-2">
+                                {section.title}
+                              </h3>
+                            )}
+                            {section.instruction && (
+                              <p 
+                                className={`text-sm sm:text-base text-gray-700 ${section.title ? 'mt-2' : ''}`}
+                                dangerouslySetInnerHTML={{ __html: section.instruction }}
+                                style={{
+                                  wordWrap: 'break-word',
+                                  overflowWrap: 'break-word'
+                                }}
+                              />
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Questions in this section */}
+                        {sectionQuestions.map((q, qIdx) => {
+                          const questionKey = `${section.id}-${q.number}`;
+                          return (
+                            <AnswerCard
+                              key={questionKey}
+                              question={q}
+                              userAnswer={listeningAnswers[questionKey]}
+                              index={questionIndexOffset + qIdx + 1}
+                              section="listening"
+                            />
+                          );
+                        })}
+                      </div>
                     );
                   })}
                 </div>

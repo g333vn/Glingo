@@ -152,7 +152,19 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect,
       
       {sections.map((section) => (
         <div key={section.id} className="mb-6">
-          <h4 className="font-semibold text-sm mb-2 text-gray-700">{section.title}</h4>
+          {section.title && (
+            <h4 className="font-semibold text-sm mb-2 text-gray-700">{section.title}</h4>
+          )}
+          {section.instruction && (
+            <div 
+              className="text-xs text-gray-600 mb-2"
+              dangerouslySetInnerHTML={{ __html: section.instruction }}
+              style={{
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word'
+              }}
+            />
+          )}
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
             {section.questions.map((q) => {
               const questionKey = String(q.id);
@@ -211,11 +223,73 @@ function ExamKnowledgePage() {
   useEffect(() => {
     let isMounted = true;
 
+    // ✅ FIX: Clean HTML artifacts from section title and instruction
+    const cleanHTML = (html) => {
+      if (!html || typeof html !== 'string') return html || '';
+      // Remove HTML comment tags (StartFragment, EndFragment, etc.)
+      return html
+        .replace(/<!--\s*StartFragment\s*-->/gi, '')
+        .replace(/<!--\s*EndFragment\s*-->/gi, '')
+        .replace(/<!--[^>]*-->/g, '') // Remove all HTML comments
+        .trim();
+    };
+    
+    // ✅ FIX: Normalize section title and instruction
+    const normalizeSection = (section) => {
+      // Clean HTML artifacts from title and instruction
+      let cleanTitle = cleanHTML(section.title || '');
+      let cleanInstruction = cleanHTML(section.instruction || '');
+      
+      // If instruction contains both title and instruction (combined format)
+      if (cleanInstruction && !cleanTitle && cleanInstruction.includes('\n\n')) {
+        const lines = cleanInstruction.split('\n');
+        const firstLine = lines[0]?.trim() || '';
+        const rest = lines.slice(1).join('\n').trim();
+        if (firstLine && rest) {
+          return {
+            ...section,
+            title: firstLine,
+            instruction: rest
+          };
+        }
+      }
+      // If title contains instruction (backward compatibility)
+      if (cleanTitle && !cleanInstruction && cleanTitle.includes('\n\n')) {
+        const lines = cleanTitle.split('\n');
+        const firstLine = lines[0]?.trim() || '';
+        const rest = lines.slice(1).join('\n').trim();
+        if (firstLine && rest) {
+          return {
+            ...section,
+            title: firstLine,
+            instruction: rest
+          };
+        }
+      }
+      // Return with cleaned values
+      return {
+        ...section,
+        title: cleanTitle || section.title,
+        instruction: cleanInstruction || section.instruction
+      };
+    };
+    
     const normalizeExamData = (data) => {
       if (!data) return null;
+      
+      // Normalize sections
+      const normalizeSections = (sections) => {
+        if (!Array.isArray(sections)) return [];
+        return sections.map(normalizeSection);
+      };
+      
       return {
-        knowledge: data.knowledge || { sections: [] },
-        reading: data.reading || { sections: [] }
+        knowledge: {
+          sections: normalizeSections(data.knowledge?.sections || [])
+        },
+        reading: {
+          sections: normalizeSections(data.reading?.sections || [])
+        }
       };
     };
 
