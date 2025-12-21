@@ -215,6 +215,7 @@ function ExamKnowledgePage() {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false); // ✅ Modal cảnh báo thiếu câu
   const [unansweredCount, setUnansweredCount] = useState(0);
+  const [levelConfig, setLevelConfig] = useState(null); // ✅ NEW: Store levelConfig for time limit
   
   // ✅ REMOVED: Don't lock body scroll - allow scrolling in modal and outside modal
   // useBodyScrollLock(showSubmitModal || showIncompleteWarning);
@@ -296,6 +297,12 @@ function ExamKnowledgePage() {
     const loadExamData = async () => {
       setIsLoading(true);
       try {
+        // ✅ NEW: Load levelConfig để lấy timeLimit
+        const config = await storageManager.getLevelConfig(levelId);
+        if (config) {
+          setLevelConfig(config);
+        }
+        
         // 1️⃣ Ưu tiên load đề thi từ Supabase
         const { success, data: supabaseExam } = await getExamFromSupabase(levelId, examId);
         let sourceExam = supabaseExam;
@@ -438,12 +445,17 @@ function ExamKnowledgePage() {
 
   const knowledgeSections = examData.knowledge?.sections || [];
   const readingSections = examData.reading?.sections || [];
+  // ✅ Tổng thời gian bài Ngôn ngữ (Chữ + Từ vựng + Ngữ pháp + Đọc hiểu)
+  // chỉ dựa trên phần "knowledge" theo levelConfig (reading không có thời gian riêng)
   const sections = [...knowledgeSections, ...readingSections];
   const allQuestions = sections.flatMap(s => s.questions || []);
   const normalizedCurrentId = String(currentQuestionId);
   const currentQuestion = allQuestions.find(q => String(q.id) === normalizedCurrentId);
   const currentIndex = allQuestions.findIndex(q => String(q.id) === normalizedCurrentId);
-  const totalTime = sections.reduce((acc, s) => acc + (s.timeLimit || 0), 0);
+  // ✅ FIX: Lấy tổng thời gian từ levelConfig (không cộng dồn từ sections)
+  // Knowledge + Reading = 110 phút (từ levelConfig.knowledge.timeLimit)
+  // Không cộng dồn timeLimit từ sections vì sẽ bị nhân đôi (110 + 110 = 220)
+  const totalTime = levelConfig?.knowledge?.timeLimit || 110; // Default 110 phút nếu không có config
 
   if (sections.length === 0 || allQuestions.length === 0) {
     return (

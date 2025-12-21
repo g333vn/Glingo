@@ -109,31 +109,32 @@ const CountdownTimer = ({ initialTime, onTimeUp }) => {
 };
 
 // Component Audio Player
-const AudioPlayer = ({ audioUrl, currentQuestion }) => {
+// ✅ UPDATED: Exam mode - chỉ play một lần, không pause/seek (giống thi thật)
+const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioStarted, t }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  // ✅ NEW: Track xem đã bấm play chưa (chỉ được bấm một lần)
+  const [hasStarted, setHasStarted] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
 
-  useEffect(() => {
-    // Reset khi chuyển câu
-    setIsPlaying(false);
-    setCurrentTime(0);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-  }, [currentQuestion]);
+  // ✅ NEW: Logic thi thật - chỉ play một lần, không pause/seek
+  const handlePlay = () => {
+    if (!audioRef.current || hasStarted) return;
 
-  const handlePlayPause = () => {
-    if (!audioRef.current) return;
-
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
+    // Bấm play lần đầu
+    audioRef.current.play().then(() => {
+      setHasStarted(true);
+      setIsPlaying(true);
+      // ✅ NEW: Notify parent component that audio has started
+      if (onAudioStarted) {
+        onAudioStarted();
+      }
+      console.log('🎵 Audio started - Exam mode: no pause/seek allowed');
+    }).catch((error) => {
+      console.error('❌ Error playing audio:', error);
+    });
   };
 
   const handleTimeUpdate = () => {
@@ -148,13 +149,13 @@ const AudioPlayer = ({ audioUrl, currentQuestion }) => {
     }
   };
 
-  const handleSeek = (e) => {
-    const seekTime = (e.target.value / 100) * duration;
-    if (audioRef.current) {
-      audioRef.current.currentTime = seekTime;
-      setCurrentTime(seekTime);
-    }
+  const handleEnded = () => {
+    setIsPlaying(false);
+    setIsFinished(true);
+    console.log('✅ Audio finished');
   };
+
+  // ❌ REMOVED: handleSeek - không cho phép tua trong thi thật
 
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
@@ -162,19 +163,24 @@ const AudioPlayer = ({ audioUrl, currentQuestion }) => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // ✅ FIX: Validate audioUrl - không render nếu không hợp lệ
-  if (!audioUrl || audioUrl.trim() === '' || audioUrl === '/audio/sample.mp3') {
+  // ✅ UPDATED: Validate sectionAudioUrl - không render nếu không hợp lệ
+  // ✅ DEBUG: Log để kiểm tra
+  console.log('🔍 AudioPlayer - sectionAudioUrl:', sectionAudioUrl);
+  
+  if (!sectionAudioUrl || sectionAudioUrl.trim() === '' || sectionAudioUrl === '/audio/sample.mp3') {
+    console.warn('⚠️ AudioPlayer - Invalid audioUrl:', sectionAudioUrl);
     return (
       <div className="bg-yellow-50 rounded-lg shadow-md p-4 mb-6 border border-yellow-200">
-        <p className="text-sm text-yellow-700">⚠️ Audio file không có sẵn cho câu hỏi này.</p>
+        <p className="text-sm text-yellow-700">⚠️ Audio file không có sẵn cho listening part này.</p>
+        <p className="text-xs text-yellow-600 mt-1">Audio URL: {sectionAudioUrl || '(empty)'}</p>
       </div>
     );
   }
   
   // ✅ FIX: Kiểm tra nếu là blob URL không hợp lệ (blob URL chỉ tồn tại trong session)
   // Nhưng cho phép data URL (base64) và URL thực tế
-  if (audioUrl.startsWith('blob:') && !audioUrl.includes('http')) {
-    console.warn('⚠️ Invalid blob URL (expired):', audioUrl);
+  if (sectionAudioUrl.startsWith('blob:') && !sectionAudioUrl.includes('http')) {
+    console.warn('⚠️ Invalid blob URL (expired):', sectionAudioUrl);
     return (
       <div className="bg-yellow-50 rounded-lg shadow-md p-4 mb-6 border border-yellow-200">
         <p className="text-sm text-yellow-700">⚠️ Audio file không hợp lệ (blob URL đã hết hạn).</p>
@@ -183,55 +189,173 @@ const AudioPlayer = ({ audioUrl, currentQuestion }) => {
   }
   
   // ✅ FIX: Log audio URL type for debugging
-  if (audioUrl.startsWith('data:')) {
+  if (sectionAudioUrl.startsWith('data:')) {
     console.log('✅ Using base64 audio data (data URL)');
-  } else if (audioUrl.startsWith('blob:')) {
+  } else if (sectionAudioUrl.startsWith('blob:')) {
     console.log('⚠️ Using blob URL (may expire)');
   } else {
-    console.log('✅ Using regular audio URL:', audioUrl);
+    console.log('✅ Using regular audio URL:', sectionAudioUrl);
   }
+  
+  // ❌ REMOVED: Question markers - audio chạy liên tục, không cần markers
+
+  const progressPercentage = duration ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+    <div className="mb-6">
       <audio
         ref={audioRef}
-        src={audioUrl}
+        src={sectionAudioUrl}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
-        onEnded={() => setIsPlaying(false)}
+        onEnded={handleEnded}
         onError={(e) => {
           console.error('❌ Audio load error:', e);
           setIsPlaying(false);
         }}
       />
       
-      <div className="flex items-center gap-4">
-        <button
-          onClick={handlePlayPause}
-          className="w-12 h-12 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition"
-        >
-          {isPlaying ? '⏸' : '▶'}
-        </button>
+      {/* ✅ NEW: Warning message - Compact design */}
+      {!hasStarted && (
+        <div className="mb-4 p-3 bg-amber-100/80 backdrop-blur-sm border border-amber-300 rounded-lg">
+          <p className="text-xs text-amber-900 font-medium text-center">
+            {t('jlpt.listeningPage.audioWarning')}
+          </p>
+        </div>
+      )}
 
-        <div className="flex-1">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={duration ? (currentTime / duration) * 100 : 0}
-            onChange={handleSeek}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-sm text-gray-600 mt-1">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+      {/* ✅ NEW: Finished message - Compact design */}
+      {isFinished && (
+        <div className="mb-4 p-3 bg-green-100/80 backdrop-blur-sm border border-green-300 rounded-lg">
+          <p className="text-xs text-green-900 font-medium text-center">
+            {t('jlpt.listeningPage.audioFinished')}
+          </p>
+        </div>
+      )}
+      
+      {/* ✅ NEW: Audio Player - Minimalist Card Design */}
+      <div className="bg-white border-2 border-gray-300 rounded-2xl p-5 shadow-lg relative overflow-visible">
+        {/* Header Section */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`
+              w-12 h-12 rounded-xl flex items-center justify-center transition-all relative
+              ${hasStarted 
+                ? 'bg-gray-200' 
+                : 'bg-red-500 shadow-md hover:shadow-lg'
+              }
+            `}>
+              {!hasStarted ? (
+                <button
+                  onClick={handlePlay}
+                  className="w-full h-full flex items-center justify-center text-white hover:scale-110 transition-transform"
+                  title={t('jlpt.listeningPage.audioPlayerPlayButtonTitle')}
+                >
+                  <svg className="w-6 h-6 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </button>
+              ) : (
+                <div 
+                  className="text-gray-600 cursor-not-allowed"
+                  onClick={() => {
+                    // ✅ NEW: Show alert when clicking pause button
+                    alert(t('jlpt.listeningPage.audioPlayerCannotPause'));
+                  }}
+                  title={t('jlpt.listeningPage.audioPlayerCannotPauseTooltip')}
+                >
+                  {isPlaying ? (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  )}
+                </div>
+              )}
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-800">{t('jlpt.listeningPage.audioPlayerTitle')}</h3>
+              <p className="text-xs text-gray-500">
+                {!hasStarted 
+                  ? t('jlpt.listeningPage.audioPlayerStatusReady')
+                  : isPlaying 
+                  ? t('jlpt.listeningPage.audioPlayerStatusPlaying')
+                  : isFinished 
+                  ? t('jlpt.listeningPage.audioPlayerStatusFinished')
+                  : t('jlpt.listeningPage.audioPlayerStatusStopped')
+                }
+              </p>
+            </div>
+          </div>
+          
+          {/* Time Display - Compact */}
+          <div className="text-right">
+            <div className="text-lg font-mono font-bold text-gray-800">
+              {formatTime(currentTime)}
+            </div>
+            <div className="text-xs text-gray-500">
+              / {formatTime(duration)}
+            </div>
           </div>
         </div>
 
-        <button className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center">
-          ⚙️
-        </button>
+        {/* Progress Bar - Sleek Design */}
+        <div className="relative">
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              className={`
+                h-full rounded-full transition-all duration-300 ease-out
+                ${hasStarted && isPlaying 
+                  ? 'bg-gradient-to-r from-red-500 to-red-600' 
+                  : hasStarted
+                  ? 'bg-gray-400'
+                  : 'bg-gray-300'
+                }
+              `}
+              style={{ width: `${progressPercentage}%` }}
+            >
+              {hasStarted && isPlaying && (
+                <div className="h-full w-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+              )}
+            </div>
+          </div>
+          
+          {/* Progress percentage text */}
+          {hasStarted && (
+            <div className="mt-2 text-center">
+              <span className="text-xs font-semibold text-gray-600">
+                {Math.round(progressPercentage)}%
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Status Indicator */}
+        {hasStarted && isPlaying && (
+          <div className="mt-3 flex items-center justify-center gap-2">
+            <div className="flex gap-1">
+              <div className="w-1.5 h-4 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-1.5 h-6 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-1.5 h-4 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></div>
+            </div>
+            <span className="text-xs text-gray-600 font-medium">{t('jlpt.listeningPage.audioPlayerStatusPlayingText')}</span>
+          </div>
+        )}
       </div>
+
+      {/* Custom CSS for shimmer animation */}
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .animate-shimmer {
+          animation: shimmer 2s infinite;
+        }
+      `}</style>
     </div>
   );
 };
@@ -406,6 +530,11 @@ function ExamListeningPage() {
             listeningType: typeof sourceExam.listening,
             sectionsType: typeof sourceExam.listening?.sections,
             sectionsIsArray: Array.isArray(sourceExam.listening?.sections),
+            // ✅ NEW: Log audio fields
+            hasAudioUrl: !!sourceExam.listening?.audioUrl,
+            audioUrl: sourceExam.listening?.audioUrl || '(empty)',
+            audioPath: sourceExam.listening?.audioPath || '(empty)',
+            audioName: sourceExam.listening?.audioName || '(empty)'
           });
 
           // ✅ Đảm bảo exam data có structure đúng (knowledge, reading, listening)
@@ -413,7 +542,14 @@ function ExamListeningPage() {
             ...sourceExam,
             knowledge: sourceExam.knowledge || { sections: [] },
             reading: sourceExam.reading || { sections: [] },
-            listening: sourceExam.listening || { sections: [] },
+            listening: {
+              ...(sourceExam.listening || {}),
+              sections: sourceExam.listening?.sections || [],
+              // ✅ NEW: Preserve audio fields from listening part level
+              audioUrl: sourceExam.listening?.audioUrl || '',
+              audioPath: sourceExam.listening?.audioPath || '',
+              audioName: sourceExam.listening?.audioName || ''
+            },
           };
           
           // ✅ Đảm bảo listening.sections là array
@@ -440,26 +576,44 @@ function ExamListeningPage() {
           
           setCurrentExam(examMetadata);
           
-          // Transform listening data to match expected format
+          // ✅ UPDATED: Transform listening data - audio is now at listening part level
           if (normalizedExamData.listening.sections && normalizedExamData.listening.sections.length > 0) {
+            // ✅ DEBUG: Log raw data để kiểm tra audioUrl
+            console.log('🔍 ExamListeningPage - Raw listening data:', {
+              hasAudioUrl: !!normalizedExamData.listening.audioUrl,
+              audioUrl: normalizedExamData.listening.audioUrl,
+              audioPath: normalizedExamData.listening.audioPath,
+              audioName: normalizedExamData.listening.audioName,
+              sectionsCount: normalizedExamData.listening.sections.length
+            });
+            
             const transformedData = {
+              // ✅ NEW: Audio is at listening part level (not section level)
+              audioUrl: normalizedExamData.listening.audioUrl || '',
+              audioPath: normalizedExamData.listening.audioPath || '',
+              audioName: normalizedExamData.listening.audioName || '',
               sections: normalizedExamData.listening.sections.map(section => ({
                 id: section.id,
                 title: section.title,
                 instruction: section.instruction || '',
                 timeLimit: section.timeLimit || 0,
+                // ❌ REMOVED: Audio fields - audio is now at listening part level
                 questions: (section.questions || []).map(q => ({
                   number: q.number || String(q.id).padStart(2, '0'),
                   subNumber: q.subNumber || q.id,
                   category: q.category || 'listening',
-                  // ✅ FIX: Use audioData (base64) if available, otherwise use audioUrl
-                  audioUrl: q.audioData || q.audioUrl || '',
+                  // ❌ REMOVED: Timing fields - audio chạy liên tục, thí sinh tự nghe và trả lời theo thứ tự
                   options: q.options || [],
                   correctAnswer: q.correctAnswer,
                   explanation: q.explanation || ''
                 }))
               }))
             };
+            console.log('🔍 ExamListeningPage - Transformed data:', {
+              hasAudioUrl: !!transformedData.audioUrl,
+              audioUrl: transformedData.audioUrl,
+              sectionsCount: transformedData.sections.length
+            });
             setExamData(transformedData);
           } else {
             // Exam tồn tại nhưng chưa có listening sections
@@ -524,6 +678,9 @@ function ExamListeningPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [examData, currentQuestionKey]);
 
+  // ✅ NEW: State để track xem audio đã bắt đầu chưa (để prevent navigation khi đang thi)
+  const [audioHasStarted, setAudioHasStarted] = useState(false);
+
   // Block browser back (popstate) while taking exam
   useEffect(() => {
     const unblock = () => {
@@ -543,6 +700,23 @@ function ExamListeningPage() {
       window.removeEventListener('popstate', onPopState);
     };
   }, [clearExamData]);
+
+  // ✅ NEW: Prevent navigation away (close tab/refresh) khi đang thi
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      // Chỉ prevent khi đang thi (có exam data)
+      if (examData && (audioHasStarted || Object.keys(answers).length > 0)) {
+        e.preventDefault();
+        e.returnValue = 'Bạn đang làm bài thi. Rời trang sẽ mất tiến độ. Bạn có chắc muốn thoát?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [examData, audioHasStarted, answers]);
 
   // ✅ Early returns - PHẢI đặt SAU tất cả hooks
   if (isLoading) {
@@ -576,11 +750,15 @@ function ExamListeningPage() {
     s.questions?.map(q => ({ ...q, sectionId: s.id, sectionTitle: s.title, instruction: s.instruction })) || []
   );
   
+  // ✅ DEBUG: Log audioUrl khi render
   console.log('🔍 ExamListeningPage - Current state:', {
     hasExamData: !!examData,
     hasSections: !!examData?.sections,
     sectionsCount: sections.length,
     totalQuestions: allQuestions.length,
+    // ✅ NEW: Log audioUrl
+    hasAudioUrl: !!examData?.audioUrl,
+    audioUrl: examData?.audioUrl || '(empty)',
     sections: sections.map(s => ({
       id: s.id,
       title: s.title,
@@ -614,6 +792,8 @@ function ExamListeningPage() {
 
   const currentQuestion = allQuestions.find(q => `${q.sectionId}-${q.number}` === currentQuestionKey);
   const currentIndex = allQuestions.findIndex(q => `${q.sectionId}-${q.number}` === currentQuestionKey);
+  // ✅ NEW: Get current section to access audio URL
+  const currentSection = currentQuestion ? sections.find(s => s.id === currentQuestion.sectionId) : null;
   const totalTime = sections.reduce((acc, s) => acc + (s.timeLimit || 0), 0);
 
   const breadcrumbPaths = [
@@ -741,9 +921,17 @@ function ExamListeningPage() {
 
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               <div className="max-w-4xl mx-auto">
+                {/* ✅ DEBUG: Log audioUrl trước khi render AudioPlayer */}
+                {(() => {
+                  console.log('🔍 ExamListeningPage - Rendering AudioPlayer with audioUrl:', examData?.audioUrl || '(empty)');
+                  return null;
+                })()}
                 <AudioPlayer 
-                  audioUrl={currentQuestion?.audioUrl || '/audio/sample.mp3'} 
-                  currentQuestion={currentQuestionKey}
+                  sectionAudioUrl={examData?.audioUrl || ''}
+                  currentQuestion={currentQuestion}
+                  allQuestions={allQuestions}
+                  onAudioStarted={() => setAudioHasStarted(true)}
+                  t={t}
                 />
 
                 {currentQuestion ? (

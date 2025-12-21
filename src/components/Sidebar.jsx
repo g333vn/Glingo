@@ -381,7 +381,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
 
         {/* 📜 Menu Items - Scrollable Area */}
         {!isLevelPage && !isJlptPage && (
-          <div className="px-2 flex-1 overflow-y-auto">
+          <div className="px-2 pt-2 flex-1 overflow-y-auto">
             <ul className="space-y-0">
               {currentItems.map((item, index) => {
                 const isActive = isJlptRoute && params.levelId

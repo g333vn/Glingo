@@ -223,12 +223,16 @@ export const normalizeImportedQuestion = (q, idx = 0) => {
     explanation = explanation.replace(/\\n/g, '<br/>');
   }
 
+  // ❌ REMOVED: Timing fields - audio chạy liên tục, thí sinh tự nghe và trả lời theo thứ tự
+
   return {
     id: q?.id || String(idx + 1),
     question: q?.text || q?.question || '',
     options: options.map(opt => opt.text || ''),
     correctAnswer: correctAnswer, // ✅ Now properly normalized to index (0-3)
     explanation: explanation,
+    // ❌ REMOVED: Timing fields - audio chạy liên tục, thí sinh tự nghe và trả lời theo thứ tự
+    // ✅ Keep audio fields for backward compatibility (will be migrated to section in ExamManagementPage)
     audioUrl: q?.audioUrl || '',
     audioPath: q?.audioPath || '',
     audioName: q?.audioName || ''
