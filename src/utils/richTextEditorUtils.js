@@ -194,17 +194,42 @@ export const normalizeImportedQuestion = (q, idx = 0) => {
   // ✅ FIX: Handle correctAnswer in multiple formats - FIXED ORDER
   let correctAnswer = defaultCorrect;
   
-  // Case 1: Already a number (0, 1, 2, 3) - CHECK FIRST
-  if (typeof q?.correctAnswer === 'number' && q.correctAnswer >= 0 && q.correctAnswer < 4) {
-    correctAnswer = q.correctAnswer;
+  // Case 1: Already a number - CHECK FIRST
+  // Support both 0-based (0, 1, 2, 3) and 1-based (1, 2, 3, 4)
+  // ✅ FIX: Check 1-based FIRST (most common in JSON), then 0-based
+  if (typeof q?.correctAnswer === 'number') {
+    if (q.correctAnswer >= 1 && q.correctAnswer <= 4) {
+      // 1-based index (1, 2, 3, 4) - convert to 0-based (0, 1, 2, 3)
+      correctAnswer = q.correctAnswer - 1;
+    } else if (q.correctAnswer >= 0 && q.correctAnswer < 4) {
+      // 0-based index (0, 1, 2, 3) - use as is
+      correctAnswer = q.correctAnswer;
+    }
   }
-  // Case 2: Number as string ("0", "1", "2", "3") - CHECK BEFORE LETTER STRINGS
-  else if (typeof q?.correctAnswer === 'string' && /^[0-3]$/.test(q.correctAnswer)) {
-    correctAnswer = parseInt(q.correctAnswer, 10);
+  // Case 2: Number as string - Support both 0-based and 1-based
+  // ✅ FIX: Check 1-based FIRST (most common in JSON), then 0-based
+  else if (typeof q?.correctAnswer === 'string') {
+    const numValue = parseInt(q.correctAnswer, 10);
+    if (!isNaN(numValue)) {
+      if (numValue >= 1 && numValue <= 4) {
+        // 1-based index (1, 2, 3, 4) - convert to 0-based (0, 1, 2, 3)
+        correctAnswer = numValue - 1;
+      } else if (numValue >= 0 && numValue < 4) {
+        // 0-based index (0, 1, 2, 3) - use as is
+        correctAnswer = numValue;
+      }
+    } else {
+      // Not a number, try as letter (A, B, C, D)
+      const correctStr = q.correctAnswer.toUpperCase();
+      const letterIndex = ['A', 'B', 'C', 'D'].indexOf(correctStr);
+      if (letterIndex >= 0) {
+        correctAnswer = letterIndex;
+      }
+    }
   }
   // Case 3: String letter (A, B, C, D) - CHECK OTHER STRING FIELDS
-  else if (typeof q?.correct === 'string' || typeof q?.correctAnswer === 'string' || typeof q?.answer === 'string') {
-    const correctStr = (q?.correct || q?.correctAnswer || q?.answer || 'A').toUpperCase();
+  else if (typeof q?.correct === 'string' || typeof q?.answer === 'string') {
+    const correctStr = (q?.correct || q?.answer || 'A').toUpperCase();
     const letterIndex = ['A', 'B', 'C', 'D'].indexOf(correctStr);
     if (letterIndex >= 0) {
       correctAnswer = letterIndex;

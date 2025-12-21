@@ -165,6 +165,7 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect,
               }}
             />
           )}
+          {/* ❌ REMOVED: Passage image from sidebar - only show in main content */}
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
             {section.questions.map((q) => {
               const questionKey = String(q.id);
@@ -250,7 +251,8 @@ function ExamKnowledgePage() {
           return {
             ...section,
             title: firstLine,
-            instruction: rest
+            instruction: rest,
+            passageImage: section.passageImage // ✅ Preserve passageImage
           };
         }
       }
@@ -263,7 +265,8 @@ function ExamKnowledgePage() {
           return {
             ...section,
             title: firstLine,
-            instruction: rest
+            instruction: rest,
+            passageImage: section.passageImage // ✅ Preserve passageImage
           };
         }
       }
@@ -271,7 +274,8 @@ function ExamKnowledgePage() {
       return {
         ...section,
         title: cleanTitle || section.title,
-        instruction: cleanInstruction || section.instruction
+        instruction: cleanInstruction || section.instruction,
+        passageImage: section.passageImage // ✅ Preserve passageImage
       };
     };
     
@@ -603,7 +607,29 @@ function ExamKnowledgePage() {
 
             <div className="flex-1 md:overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6">
               <div className="max-w-4xl mx-auto w-full">
-              <QuestionDisplay
+                {/* ✅ NEW: Display passage image if section has one */}
+                {(() => {
+                  // Find the section that contains the current question
+                  const currentSection = sections.find(section => 
+                    section.questions?.some(q => String(q.id) === normalizedCurrentId)
+                  );
+                  
+                  if (currentSection?.passageImage?.url) {
+                    return (
+                      <div className="mb-6 bg-white rounded-lg shadow-lg p-4">
+                        <img
+                          src={currentSection.passageImage.url}
+                          alt="Reading passage"
+                          className="w-full max-w-full h-auto object-contain rounded-lg"
+                          style={{ maxHeight: '600px' }}
+                        />
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+                
+                <QuestionDisplay
                   question={currentQuestion}
                   selectedAnswer={answers[normalizedCurrentId]}
                   onSelectAnswer={handleSelectAnswer}

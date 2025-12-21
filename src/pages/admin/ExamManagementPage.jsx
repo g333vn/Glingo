@@ -221,7 +221,13 @@ function ExamManagementPage() {
     id: '',
     title: '',
     instruction: '',
-    timeLimit: null
+    timeLimit: null,
+    passageImage: {
+      url: '',
+      path: '',
+      name: '',
+      file: null
+    }
     // ❌ REMOVED: Audio fields - audio is now at listening part level, not section level
   });
   const jsonUploadInputRef = useRef(null);
@@ -720,7 +726,13 @@ function ExamManagementPage() {
     setSectionForm({
       id: nextId, // ✅ Auto-generate ID
       instruction: combinedDefault, // ✅ Combined field with defaults
-      timeLimit: null
+      timeLimit: null,
+      passageImage: {
+        url: '',
+        path: '',
+        name: '',
+        file: null
+      }
       // ❌ REMOVED: Audio fields - audio is now at listening part level
     });
     setShowSectionForm(true);
@@ -736,7 +748,13 @@ function ExamManagementPage() {
     setSectionForm({
       id: section.id,
       instruction: combinedText, // ✅ Combined field
-      timeLimit: section.timeLimit || null
+      timeLimit: section.timeLimit || null,
+      passageImage: {
+        url: section.passageImage?.url || '',
+        path: section.passageImage?.path || '',
+        name: section.passageImage?.name || '',
+        file: null
+      }
       // ❌ REMOVED: Audio fields - audio is now at listening part level
     });
     setShowSectionForm(true);
@@ -795,7 +813,12 @@ function ExamManagementPage() {
           title: finalTitle, // ✅ Use split title
           instruction: instruction, // ✅ Use split instruction
           timeLimit: existingTimeLimit,
-          questions: editingSection.questions || []
+          questions: editingSection.questions || [],
+          passageImage: sectionForm.passageImage?.url ? {
+            url: sectionForm.passageImage.url,
+            path: sectionForm.passageImage.path,
+            name: sectionForm.passageImage.name
+          } : undefined
           // ❌ REMOVED: Audio fields - audio is now at listening part level
         };
       }
@@ -825,7 +848,12 @@ function ExamManagementPage() {
         title: finalTitle, // ✅ Use split title
         instruction: instruction, // ✅ Use split instruction
         timeLimit: newSectionTimeLimit,
-        questions: []
+        questions: [],
+        passageImage: sectionForm.passageImage?.url ? {
+          url: sectionForm.passageImage.url,
+          path: sectionForm.passageImage.path,
+          name: sectionForm.passageImage.name
+        } : undefined
         // ❌ REMOVED: Audio fields - audio is now at listening part level
       });
     }
@@ -857,12 +885,87 @@ function ExamManagementPage() {
     }
     
     setShowSectionForm(false);
+    
+    // ✅ FIX: Get correct test type label
+    let testTypeLabel = '';
+    if (selectedTestType === 'knowledge') {
+      testTypeLabel = t('examManagement.questions.testTypes.knowledge');
+    } else if (selectedTestType === 'reading') {
+      testTypeLabel = t('examManagement.questions.testTypes.reading');
+    } else if (selectedTestType === 'listening') {
+      testTypeLabel = t('examManagement.questions.testTypes.listening');
+    } else {
+      testTypeLabel = selectedTestType || 'Unknown';
+    }
+    
     alert(`✅ ${t('examManagement.config.saveSuccess')}\n\n` +
           `📝 ${editingSection ? t('examManagement.questions.questionForm.sectionSaved') : t('examManagement.questions.questionForm.sectionAdded')} ${t('examManagement.questions.questionForm.sectionSavedText')}:\n` +
-          `   - ${t('examManagement.questions.testTypes.knowledge')}: ${sectionForm.type === 'knowledge' ? t('examManagement.questions.testTypes.knowledge') : t('examManagement.questions.testTypes.listening')}\n` +
+          `   - Loại: ${testTypeLabel}\n` +
           `   - ${t('examManagement.exams.table.title')}: ${selectedExam?.title || selectedExam?.id}\n` +
           `   - ${t('examManagement.selectLevel')}: ${selectedLevel.toUpperCase()}\n\n` +
           `💾 ${t('examManagement.questions.questionForm.savedToSystem')}`);
+  };
+
+  // ✅ NEW: Upload passage image for section
+  const handleUploadSectionPassageImage = async () => {
+    if (!sectionForm.passageImage.file || !sectionForm.passageImage.url?.startsWith('blob:')) {
+      alert('⚠️ Vui lòng chọn file ảnh trước khi upload.');
+      return;
+    }
+
+    if (!selectedExam || !selectedLevel || !selectedTestType || !sectionForm.id) {
+      alert('⚠️ Vui lòng chọn exam, level, test type và section ID trước.');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setUploadingImageField('passageImage');
+    try {
+      const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
+      
+      // 📁 Đường dẫn: level / exam / testType / section / passage.jpg
+      const safeLevel = selectedLevel || 'unknown-level';
+      const safeExamId = selectedExam?.id || 'unknown-exam';
+      const safeTestType = selectedTestType || 'unknown-type';
+      const safeSectionId = sectionForm.id || 'unknown-section';
+      const prefix = `level-${safeLevel}/exam-${safeExamId}/${safeTestType}/section-${safeSectionId}`;
+      const path = generateFilePath(prefix, sectionForm.passageImage.file.name);
+      
+      const result = await uploadImage(sectionForm.passageImage.file, path);
+      
+      if (result.success) {
+        const uploadedImageUrl = result.url;
+        const uploadedImagePath = path;
+        const uploadedImageName = sectionForm.passageImage.file.name;
+        
+        // Update sectionForm với ảnh đã upload
+        setSectionForm({
+          ...sectionForm,
+          passageImage: {
+            url: uploadedImageUrl,
+            path: uploadedImagePath,
+            name: uploadedImageName,
+            file: null
+          }
+        });
+        
+        // Revoke blob URL
+        if (sectionForm.passageImage.url?.startsWith('blob:')) {
+          URL.revokeObjectURL(sectionForm.passageImage.url);
+        }
+        
+        alert('✅ Upload ảnh passage thành công!');
+      } else {
+        console.error('[ExamManagement] ❌ Error uploading passage image:', result.error);
+        alert('❌ Lỗi upload ảnh!');
+      }
+    } catch (err) {
+      console.error('[ExamManagement] ❌ Unexpected error uploading passage image:', err);
+      alert('❌ Lỗi upload ảnh!');
+    } finally {
+      setIsUploadingImage(false);
+      setUploadingImageField(null);
+    }
   };
 
   // ✅ NEW: Upload audio for listening part (entire listening part, not per section)
@@ -1523,6 +1626,9 @@ function ExamManagementPage() {
     setEditingQuestion(question);
     setAutoGeneratedId(null);
     
+    // ✅ FIX: Exit import mode when editing from question list
+    setIsImportMode(false);
+    
     // ✅ FIX: Normalize correctAnswer to number (0-3)
     let normalizedCorrectAnswer = 0;
     if (typeof question.correctAnswer === 'number' && question.correctAnswer >= 0 && question.correctAnswer < 4) {
@@ -1553,28 +1659,201 @@ function ExamManagementPage() {
   // ✅ NEW: Handle save question (save and close form)
   const handleSaveQuestion = async (e) => {
     e.preventDefault();
-    const result = await saveQuestionData();
-    if (result?.success) {
+    
+    // ✅ NEW: Check if editing question from imported questions
+    const isEditingFromImported = editingQuestion && importedQuestions.length > 0 && 
+      importedQuestions.some(q => String(q.id) === String(editingQuestion.id));
+    
+    if (isEditingFromImported) {
+      // ✅ FIX: Validate form before saving
+      if (!questionForm.question || !selectedSection) {
+        alert(`⚠️ ${t('examManagement.questions.questionForm.fillAllInfoGeneral')}`);
+        return;
+      }
+      
+      const validOptions = questionForm.options.filter(opt => opt.trim() !== '');
+      if (validOptions.length < 2) {
+        alert('⚠️ Cần ít nhất 2 lựa chọn!');
+        return;
+      }
+      
+      // ✅ FIX: Update the edited question in importedQuestions array
+      const updatedImportedQuestions = importedQuestions.map(q => {
+        if (String(q.id) === String(editingQuestion.id)) {
+          // Update with form data
+          return {
+            ...q,
+            id: questionForm.id,
+            category: questionForm.category || selectedTestType,
+            question: questionForm.question,
+            options: validOptions,
+            correctAnswer: questionForm.correctAnswer,
+            explanation: questionForm.explanation
+          };
+        }
+        return q;
+      });
+      
+      // ✅ FIX: Save ALL imported questions (including the edited one) to section
+      const updatedSections = sections.map((section) => {
+        if (section.id === selectedSection.id) {
+          const existingQuestions = [...(section.questions || [])];
+          
+          // Add/update all imported questions
+          updatedImportedQuestions.forEach((normalizedQ) => {
+            const existingIndex = existingQuestions.findIndex(
+              q => String(q.id) === String(normalizedQ.id)
+            );
+            
+            if (existingIndex !== -1) {
+              existingQuestions[existingIndex] = {
+                ...normalizedQ,
+                options: normalizedQ.options.filter(opt => opt.trim() !== '')
+              };
+            } else {
+              existingQuestions.push({
+                ...normalizedQ,
+                options: normalizedQ.options.filter(opt => opt.trim() !== '')
+              });
+            }
+          });
+          
+          // Sort questions by ID
+          existingQuestions.sort((a, b) => {
+            const idA = typeof a.id === 'number' ? a.id : parseInt(a.id) || 0;
+            const idB = typeof b.id === 'number' ? b.id : parseInt(b.id) || 0;
+            return idA - idB;
+          });
+          
+          return { ...section, questions: existingQuestions };
+        }
+        return section;
+      });
+      
+      await saveSections(updatedSections);
+      setSections(updatedSections);
+      
+      // Clear import mode
+      setImportedQuestions([]);
+      setIsImportMode(false);
+      
       setShowQuestionForm(false);
       setAutoGeneratedId(null);
       setEditingQuestion(null);
-      alert(`✅ ${t('examManagement.config.saveSuccess')}\n\n` +
-            `❓ ${editingQuestion ? t('examManagement.questions.questionForm.questionSaved') : t('examManagement.questions.questionForm.questionAdded')} ${t('examManagement.questions.questionForm.questionSavedText')}:\n` +
-            `   - ID: ${result.questionId || 'N/A'}\n` +
-            `   - ${t('examManagement.questions.testTypes.knowledge')}: ${getTestTypeLabel(selectedTestType) || selectedTestType}\n` +
-            `   - ${t('examManagement.exams.table.title')}: ${selectedExam?.title || selectedExam?.id}\n\n` +
-            `💾 ${t('examManagement.questions.questionForm.savedToSystem')}`);
+      
+      alert(`✅ Đã lưu thành công ${updatedImportedQuestions.length} câu hỏi (bao gồm câu đã sửa) vào section!\n\n` +
+            `📝 Câu hỏi ID: ${questionForm.id} đã được cập nhật.\n` +
+            `💾 Tất cả ${updatedImportedQuestions.length} câu hỏi đã được lưu vào hệ thống.`);
+    } else {
+      // Normal save (not from imported questions)
+      const result = await saveQuestionData();
+      if (result?.success) {
+        setShowQuestionForm(false);
+        setAutoGeneratedId(null);
+        setEditingQuestion(null);
+        alert(`✅ ${t('examManagement.config.saveSuccess')}\n\n` +
+              `❓ ${editingQuestion ? t('examManagement.questions.questionForm.questionSaved') : t('examManagement.questions.questionForm.questionAdded')} ${t('examManagement.questions.questionForm.questionSavedText')}:\n` +
+              `   - ID: ${result.questionId || 'N/A'}\n` +
+              `   - ${t('examManagement.questions.testTypes.knowledge')}: ${getTestTypeLabel(selectedTestType) || selectedTestType}\n` +
+              `   - ${t('examManagement.exams.table.title')}: ${selectedExam?.title || selectedExam?.id}\n\n` +
+              `💾 ${t('examManagement.questions.questionForm.savedToSystem')}`);
+      }
     }
   };
 
   // ✅ NEW: Handle save and add new question (save, reset form, keep form open)
   const handleSaveAndAddNew = async (e) => {
     e.preventDefault();
-    const result = await saveQuestionData();
-    if (result?.success) {
-      // Reset form for new question
-      const nextId = nextQuestionIdSuggestion;
+    
+    // ✅ NEW: Check if editing question from imported questions
+    const isEditingFromImported = editingQuestion && importedQuestions.length > 0 && 
+      importedQuestions.some(q => String(q.id) === String(editingQuestion.id));
+    
+    if (isEditingFromImported) {
+      // ✅ FIX: Validate form before saving
+      if (!questionForm.question || !selectedSection) {
+        alert(`⚠️ ${t('examManagement.questions.questionForm.fillAllInfoGeneral')}`);
+        return;
+      }
       
+      const validOptions = questionForm.options.filter(opt => opt.trim() !== '');
+      if (validOptions.length < 2) {
+        alert('⚠️ Cần ít nhất 2 lựa chọn!');
+        return;
+      }
+      
+      // ✅ FIX: Update the edited question in importedQuestions array
+      const updatedImportedQuestions = importedQuestions.map(q => {
+        if (String(q.id) === String(editingQuestion.id)) {
+          // Update with form data
+          return {
+            ...q,
+            id: questionForm.id,
+            category: questionForm.category || selectedTestType,
+            question: questionForm.question,
+            options: validOptions,
+            correctAnswer: questionForm.correctAnswer,
+            explanation: questionForm.explanation
+          };
+        }
+        return q;
+      });
+      
+      // ✅ FIX: Save ALL imported questions (including the edited one) to section
+      const updatedSections = sections.map((section) => {
+        if (section.id === selectedSection.id) {
+          const existingQuestions = [...(section.questions || [])];
+          
+          // Add/update all imported questions
+          updatedImportedQuestions.forEach((normalizedQ) => {
+            const existingIndex = existingQuestions.findIndex(
+              q => String(q.id) === String(normalizedQ.id)
+            );
+            
+            if (existingIndex !== -1) {
+              existingQuestions[existingIndex] = {
+                ...normalizedQ,
+                options: normalizedQ.options.filter(opt => opt.trim() !== '')
+              };
+            } else {
+              existingQuestions.push({
+                ...normalizedQ,
+                options: normalizedQ.options.filter(opt => opt.trim() !== '')
+              });
+            }
+          });
+          
+          // Sort questions by ID
+          existingQuestions.sort((a, b) => {
+            const idA = typeof a.id === 'number' ? a.id : parseInt(a.id) || 0;
+            const idB = typeof b.id === 'number' ? b.id : parseInt(b.id) || 0;
+            return idA - idB;
+          });
+          
+          return { ...section, questions: existingQuestions };
+        }
+        return section;
+      });
+      
+      await saveSections(updatedSections);
+      setSections(updatedSections);
+      
+      // ✅ FIX: Calculate nextId from updatedSections (not from nextQuestionIdSuggestion which may be stale)
+      // Get all questions from updated sections for the current test type
+      const allQuestionsFromUpdatedSections = updatedSections.flatMap(s => s.questions || []);
+      const maxId = allQuestionsFromUpdatedSections.length > 0
+        ? Math.max(...allQuestionsFromUpdatedSections.map(q => {
+            const numericId = typeof q.id === 'number' ? q.id : parseInt(q.id) || 0;
+            return Number.isFinite(numericId) ? numericId : 0;
+          }))
+        : 0;
+      const nextId = maxId + 1;
+      
+      // Clear import mode
+      setImportedQuestions([]);
+      setIsImportMode(false);
+      
+      // Reset form for new question
       setQuestionForm({
         id: String(nextId),
         category: selectedTestType,
@@ -1582,7 +1861,6 @@ function ExamManagementPage() {
         options: ['', '', '', ''],
         correctAnswer: 0,
         explanation: ''
-        // ❌ REMOVED: Timing fields - audio chạy liên tục, thí sinh tự nghe và trả lời theo thứ tự
       });
       setAutoGeneratedId(nextId);
       setEditingQuestion(null);
@@ -1597,10 +1875,44 @@ function ExamManagementPage() {
         handleTextareaResize('explanation');
       }
       
-      alert(`✅ ${t('examManagement.config.saveSuccess')}\n\n` +
-            `❓ ${t('examManagement.questions.questionForm.questionAdded')} ${t('examManagement.questions.questionForm.questionSavedText')}:\n` +
-            `   - ID: ${result.questionId || 'N/A'}\n\n` +
-            `➕ ${t('examManagement.questions.questionForm.readyForNewQuestion') || 'Sẵn sàng thêm câu hỏi mới!'}`);
+      alert(`✅ Đã lưu thành công ${updatedImportedQuestions.length} câu hỏi (bao gồm câu đã sửa) vào section!\n\n` +
+            `📝 Câu hỏi ID: ${questionForm.id} đã được cập nhật.\n` +
+            `💾 Tất cả ${updatedImportedQuestions.length} câu hỏi đã được lưu vào hệ thống.\n\n` +
+            `➕ Sẵn sàng thêm câu hỏi mới!`);
+    } else {
+      // Normal save (not from imported questions)
+      const result = await saveQuestionData();
+      if (result?.success) {
+        // Reset form for new question
+        const nextId = nextQuestionIdSuggestion;
+        
+        setQuestionForm({
+          id: String(nextId),
+          category: selectedTestType,
+          question: '',
+          options: ['', '', '', ''],
+          correctAnswer: 0,
+          explanation: ''
+          // ❌ REMOVED: Timing fields - audio chạy liên tục, thí sinh tự nghe và trả lời theo thứ tự
+        });
+        setAutoGeneratedId(nextId);
+        setEditingQuestion(null);
+        
+        // Reset textarea refs
+        if (questionTextareaRef.current) {
+          questionTextareaRef.current.value = '';
+          handleTextareaResize('question');
+        }
+        if (explanationTextareaRef.current) {
+          explanationTextareaRef.current.value = '';
+          handleTextareaResize('explanation');
+        }
+        
+        alert(`✅ ${t('examManagement.config.saveSuccess')}\n\n` +
+              `❓ ${t('examManagement.questions.questionForm.questionAdded')} ${t('examManagement.questions.questionForm.questionSavedText')}:\n` +
+              `   - ID: ${result.questionId || 'N/A'}\n\n` +
+              `➕ ${t('examManagement.questions.questionForm.readyForNewQuestion') || 'Sẵn sàng thêm câu hỏi mới!'}`);
+      }
     }
   };
 
@@ -2053,17 +2365,31 @@ function ExamManagementPage() {
           // ✅ UPDATED: Instead of saving immediately, load all questions into form (like Quiz Editor)
           // Convert normalized questions to form format
           const questionsForForm = normalizedQuestions.map(q => {
-            // ✅ FIX: Ensure correctAnswer is properly normalized (should already be from normalizeImportedQuestion)
+            // ✅ FIX: correctAnswer đã được normalize từ normalizeImportedQuestion rồi (0-based, 0-3)
+            // Chỉ cần đảm bảo nó là số hợp lệ (0-3), không cần normalize lại
             let finalCorrectAnswer = 0;
-            if (typeof q.correctAnswer === 'number' && q.correctAnswer >= 0 && q.correctAnswer < 4) {
-              finalCorrectAnswer = q.correctAnswer;
+            if (typeof q.correctAnswer === 'number') {
+              // normalizeImportedQuestion đã convert về 0-based rồi, chỉ cần validate
+              if (q.correctAnswer >= 0 && q.correctAnswer < 4) {
+                finalCorrectAnswer = q.correctAnswer;
+              }
             } else if (typeof q.correctAnswer === 'string') {
-              // Handle string format
-              const letterIndex = ['A', 'B', 'C', 'D'].indexOf(q.correctAnswer.toUpperCase());
-              if (letterIndex >= 0) {
-                finalCorrectAnswer = letterIndex;
-              } else if (/^[0-3]$/.test(q.correctAnswer)) {
-                finalCorrectAnswer = parseInt(q.correctAnswer, 10);
+              // Nếu vẫn là string (chưa được normalize), normalize lại
+              const numValue = parseInt(q.correctAnswer, 10);
+              if (!isNaN(numValue)) {
+                if (numValue >= 1 && numValue <= 4) {
+                  // 1-based index (1, 2, 3, 4) - convert to 0-based (0, 1, 2, 3)
+                  finalCorrectAnswer = numValue - 1;
+                } else if (numValue >= 0 && numValue < 4) {
+                  // 0-based index (0, 1, 2, 3) - use as is
+                  finalCorrectAnswer = numValue;
+                }
+              } else {
+                // Not a number, try as letter (A, B, C, D)
+                const letterIndex = ['A', 'B', 'C', 'D'].indexOf(q.correctAnswer.toUpperCase());
+                if (letterIndex >= 0) {
+                  finalCorrectAnswer = letterIndex;
+                }
               }
             }
             
@@ -3029,19 +3355,37 @@ function ExamManagementPage() {
                           type="button"
                           onClick={() => {
                             // ✅ FIX: Normalize correctAnswer when loading question into form
+                            // ✅ Support both 1-based (1-4) and 0-based (0-3) for safety
                             let normalizedCorrectAnswer = 0;
-                            if (typeof question.correctAnswer === 'number' && question.correctAnswer >= 0 && question.correctAnswer < 4) {
-                              normalizedCorrectAnswer = question.correctAnswer;
+                            if (typeof question.correctAnswer === 'number') {
+                              if (question.correctAnswer >= 1 && question.correctAnswer <= 4) {
+                                // 1-based index (1, 2, 3, 4) - convert to 0-based (0, 1, 2, 3)
+                                normalizedCorrectAnswer = question.correctAnswer - 1;
+                              } else if (question.correctAnswer >= 0 && question.correctAnswer < 4) {
+                                // 0-based index (0, 1, 2, 3) - use as is
+                                normalizedCorrectAnswer = question.correctAnswer;
+                              }
                             } else if (typeof question.correctAnswer === 'string') {
-                              const letterIndex = ['A', 'B', 'C', 'D'].indexOf(question.correctAnswer.toUpperCase());
-                              if (letterIndex >= 0) {
-                                normalizedCorrectAnswer = letterIndex;
-                              } else if (/^[0-3]$/.test(question.correctAnswer)) {
-                                normalizedCorrectAnswer = parseInt(question.correctAnswer, 10);
+                              const numValue = parseInt(question.correctAnswer, 10);
+                              if (!isNaN(numValue)) {
+                                if (numValue >= 1 && numValue <= 4) {
+                                  // 1-based index (1, 2, 3, 4) - convert to 0-based (0, 1, 2, 3)
+                                  normalizedCorrectAnswer = numValue - 1;
+                                } else if (numValue >= 0 && numValue < 4) {
+                                  // 0-based index (0, 1, 2, 3) - use as is
+                                  normalizedCorrectAnswer = numValue;
+                                }
+                              } else {
+                                // Not a number, try as letter (A, B, C, D)
+                                const letterIndex = ['A', 'B', 'C', 'D'].indexOf(question.correctAnswer.toUpperCase());
+                                if (letterIndex >= 0) {
+                                  normalizedCorrectAnswer = letterIndex;
+                                }
                               }
                             }
                             
-                            // Load this question into main form for editing
+                            // ✅ FIX: Switch to edit mode and load question into form
+                            setIsImportMode(false); // Exit import mode to show edit form
                             setQuestionForm({
                               ...question,
                               category: selectedTestType,
@@ -3050,6 +3394,7 @@ function ExamManagementPage() {
                             });
                             setAutoGeneratedId(question.id);
                             setEditingQuestion(question); // ✅ Set editing question
+                            setShowQuestionForm(true); // ✅ Ensure form is visible
                             // Scroll to top of form
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                           }}
@@ -3234,6 +3579,17 @@ function ExamManagementPage() {
                           await saveSections(updatedSections);
                           setSections(updatedSections);
                           
+                          // ✅ FIX: Calculate nextId from updatedSections (not from nextQuestionIdSuggestion which may be stale)
+                          // Get all questions from updated sections for the current test type
+                          const allQuestionsFromUpdatedSections = updatedSections.flatMap(s => s.questions || []);
+                          const maxId = allQuestionsFromUpdatedSections.length > 0
+                            ? Math.max(...allQuestionsFromUpdatedSections.map(q => {
+                                const numericId = typeof q.id === 'number' ? q.id : parseInt(q.id) || 0;
+                                return Number.isFinite(numericId) ? numericId : 0;
+                              }))
+                            : 0;
+                          const nextId = maxId + 1;
+                          
                           alert(`✅ Đã lưu thành công ${questionsCount} câu hỏi vào section "${sectionTitle}"!`);
                           
                           // Clear import mode but keep form open for manual creation
@@ -3241,9 +3597,8 @@ function ExamManagementPage() {
                           setIsImportMode(false);
                           
                           // Reset form for new question
-                          const nextId = nextQuestionIdSuggestion;
                           setQuestionForm({
-                            id: nextId,
+                            id: String(nextId),
                             category: selectedTestType,
                             question: '',
                             options: ['', '', '', ''],
@@ -3254,7 +3609,7 @@ function ExamManagementPage() {
                             audioName: '',
                             audioFile: null
                           });
-                          setAutoGeneratedId(null);
+                          setAutoGeneratedId(nextId);
                           setEditingQuestion(null);
                           
                           // Scroll to top of form
@@ -3651,51 +4006,6 @@ function ExamManagementPage() {
 
                 {/* ✅ ENHANCED: Save Buttons - Save Question & Save and Add New */}
                 <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    {/* Button 1: Save Question */}
-                    <button
-                      type="button"
-                      onClick={handleSaveQuestion}
-                      disabled={isDuplicateQuestionId}
-                      className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 rounded-lg transition-all font-semibold text-base sm:text-lg flex items-center justify-center gap-2 ${
-                        isDuplicateQuestionId
-                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
-                      }`}
-                    >
-                      <span className="text-xl sm:text-2xl">💾</span>
-                      {editingQuestion ? t('examManagement.questions.questionForm.saveChanges') : t('examManagement.questions.questionForm.saveQuestion') || 'Lưu câu hỏi'}
-                    </button>
-                    
-                    {/* Button 2: Save and Add New */}
-                    <button
-                      type="button"
-                      onClick={handleSaveAndAddNew}
-                      disabled={isDuplicateQuestionId}
-                      className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 rounded-lg transition-all font-semibold text-base sm:text-lg flex items-center justify-center gap-2 ${
-                        isDuplicateQuestionId
-                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:from-blue-600 hover:to-cyan-700'
-                      }`}
-                    >
-                      <span className="text-xl sm:text-2xl">➕</span>
-                      {t('examManagement.questions.questionForm.saveAndAddNew') || 'Lưu và thêm câu mới'}
-                    </button>
-                  </div>
-                  <p className="text-center text-gray-500 text-xs sm:text-sm mt-3">
-                    {editingQuestion 
-                      ? t('examManagement.questions.questionForm.saveChangesHint') 
-                      : t('examManagement.questions.questionForm.saveButtonsHint') || 'Click "Lưu câu hỏi" để lưu và đóng form. Click "Lưu và thêm câu mới" để lưu và tiếp tục thêm câu hỏi.'}
-                  </p>
-                </div>
-              </form>
-              )}
-              
-              {/* Single Question Form (when not in import mode) */}
-              {!isImportMode && (
-              <form onSubmit={(e) => { e.preventDefault(); }} className="space-y-4 sm:space-y-6">
-                {/* Question ID */}
-                <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 space-y-4">
                   <div className="flex flex-col sm:flex-row gap-3">
                     {/* Button 1: Save Question */}
                     <button
@@ -4226,6 +4536,108 @@ function ExamManagementPage() {
                     overflowWrap: 'break-word'
                   }}
                 />
+              </div>
+            )}
+          </div>
+          
+          {/* ✅ NEW: Passage Image Upload Section */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              📷 Ảnh Passage (Đoạn văn) - Tùy chọn
+            </label>
+            <p className="text-xs text-gray-500 mb-2">
+              💡 Upload ảnh passage nếu section này có đoạn văn dài cần hiển thị. Ảnh sẽ hiển thị ở main content, không hiển thị trong sidebar.
+            </p>
+            
+            {/* File Input */}
+            <input
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+                  if (!validTypes.includes(file.type)) {
+                    alert('❌ Chỉ hỗ trợ ảnh: JPEG, PNG, WEBP, GIF');
+                    return;
+                  }
+                  
+                  const maxSize = 10 * 1024 * 1024; // 10MB
+                  if (file.size > maxSize) {
+                    alert(`❌ Ảnh quá lớn!\n\nKích thước: ${(file.size / 1024 / 1024).toFixed(2)}MB\nGiới hạn: 10MB`);
+                    return;
+                  }
+                  
+                  // Create blob URL for preview
+                  const blobUrl = URL.createObjectURL(file);
+                  setSectionForm({
+                    ...sectionForm,
+                    passageImage: {
+                      url: blobUrl,
+                      path: '',
+                      name: file.name,
+                      file: file
+                    }
+                  });
+                }
+              }}
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            
+            {/* Preview & Upload Button */}
+            {sectionForm.passageImage.url && (
+              <div className="mt-3 space-y-2">
+                <div className="relative">
+                  <img
+                    src={sectionForm.passageImage.url}
+                    alt="Passage preview"
+                    className="w-full max-h-64 object-contain border-2 border-gray-300 rounded-lg"
+                  />
+                  {sectionForm.passageImage.url.startsWith('blob:') && (
+                    <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded">
+                      ⚠️ Chưa upload
+                    </div>
+                  )}
+                </div>
+                {sectionForm.passageImage.file && (
+                  <button
+                    type="button"
+                    onClick={handleUploadSectionPassageImage}
+                    disabled={isUploadingImage && uploadingImageField === 'passageImage'}
+                    className={`w-full px-4 py-2 rounded-lg font-semibold transition-colors ${
+                      isUploadingImage && uploadingImageField === 'passageImage'
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    {isUploadingImage && uploadingImageField === 'passageImage' ? '⏳ Đang upload...' : '📤 Upload ảnh'}
+                  </button>
+                )}
+                {sectionForm.passageImage.url && !sectionForm.passageImage.url.startsWith('blob:') && (
+                  <div className="p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
+                    ✅ Đã upload: {sectionForm.passageImage.name}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (sectionForm.passageImage.url?.startsWith('blob:')) {
+                      URL.revokeObjectURL(sectionForm.passageImage.url);
+                    }
+                    setSectionForm({
+                      ...sectionForm,
+                      passageImage: {
+                        url: '',
+                        path: '',
+                        name: '',
+                        file: null
+                      }
+                    });
+                  }}
+                  className="w-full px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors"
+                >
+                  🗑️ Xóa ảnh
+                </button>
               </div>
             )}
           </div>
