@@ -45,10 +45,16 @@ const normalizeExamDataStructure = (data) => {
     return { data: data, nextId: 0 };
   }
 
-  let nextId = 1;
   const normalized = { ...data };
+  let totalQuestions = 0;
+  let nextId = 1; // ✅ FIX: Knowledge và Reading đếm liên tục, Listening reset về 1
 
   TEST_TYPE_ORDER.forEach((type) => {
+    // ✅ FIX: Listening là phần thi riêng → reset nextId về 1
+    if (type === 'listening') {
+      nextId = 1;
+    }
+    
     const typeData = normalized[type] || { sections: [] };
     const normalizedSections = (typeData.sections || []).map((section) => {
       const normalizedSection = { ...section };
@@ -64,6 +70,7 @@ const normalizeExamDataStructure = (data) => {
           normalizedQuestion.subNumber = String(nextId);
         }
         nextId += 1;
+        totalQuestions += 1; // Đếm tổng số câu hỏi
         return normalizedQuestion;
       });
 
@@ -73,8 +80,8 @@ const normalizeExamDataStructure = (data) => {
     normalized[type] = { ...typeData, sections: normalizedSections };
   });
 
-  normalized.totalQuestions = nextId - 1;
-  return { data: normalized, nextId: nextId - 1 };
+  normalized.totalQuestions = totalQuestions;
+  return { data: normalized, nextId: totalQuestions };
 };
 
 // ✅ UPDATED: Question templates - question field contains ONLY actual question content (NOT section instruction)
@@ -93,17 +100,16 @@ const QUESTION_TEMPLATES = {
     category: 'reading',
     question: '（文章の内容がここに入ります）',
     options: ['選択肢1', '選択肢2', '選択肢3', '選択肢4'],
-    correctAnswer: 0,
+    correctAnswer: 1,
     explanation: '本文のどの部分が根拠になるかを説明します。'
   },
   listening: {
     id: '30',
     category: 'listening',
     question: '',
-    options: ['1 きょうじゅう', '2 きゆうちゅう', '3 きょうちゅう', '4 きゆうじゅう'],
-    correctAnswer: 2,
-    explanation: '胸中 (きょうちゅう) : Tâm trạng, cảm xúc bên trong.'
-    // ❌ REMOVED: Timing fields - audio chạy liên tục, thí sinh tự nghe và trả lời theo thứ tự
+    options: ['1 選択肢1', '2 選択肢2', '3 選択肢3', '4 選択肢4'],
+    correctAnswer: 1,
+    explanation: '[Giải thích đáp án đúng]'
   }
 };
 
@@ -222,12 +228,7 @@ function ExamManagementPage() {
     title: '',
     instruction: '',
     timeLimit: null,
-    passageImage: {
-      url: '',
-      path: '',
-      name: '',
-      file: null
-    }
+    passageImages: [] // ✅ NEW: Array of images with order
     // ❌ REMOVED: Audio fields - audio is now at listening part level, not section level
   });
   const jsonUploadInputRef = useRef(null);
@@ -600,10 +601,34 @@ function ExamManagementPage() {
     }
 
     if (data) {
+      // ✅ NEW: Migrate passageImage (single) → passageImages (array) for backward compatibility
+      const updatedData = { ...data };
+      ['knowledge', 'reading'].forEach(testType => {
+        if (updatedData[testType]?.sections) {
+          updatedData[testType].sections = updatedData[testType].sections.map(section => {
+            // Migrate passageImage → passageImages if needed
+            if (section.passageImage?.url && (!section.passageImages || !Array.isArray(section.passageImages) || section.passageImages.length === 0)) {
+              console.log(`🔄 Migrating passageImage → passageImages for section ${section.id} (${testType})`);
+              return {
+                ...section,
+                passageImages: [{
+                  url: section.passageImage.url,
+                  path: section.passageImage.path || '',
+                  name: section.passageImage.name || '',
+                  order: 0
+                }],
+                // Keep passageImage for backward compatibility during transition
+                passageImage: section.passageImage
+              };
+            }
+            return section;
+          });
+        }
+      });
+      
       // ✅ FIX: Tự động set timeLimit cho sections không có timeLimit
       // 🔹 Knowledge: mỗi section có thể có timeLimit, nhưng tổng thời gian vẫn lấy từ levelConfig
       // 🔹 Listening: KHÔNG tự động set timeLimit cho tất cả sections để tránh cộng dồn thời gian
-      const updatedData = { ...data };
       ['knowledge'].forEach(testType => {
         if (updatedData[testType]?.sections) {
           updatedData[testType].sections = updatedData[testType].sections.map(section => {
@@ -621,10 +646,10 @@ function ExamManagementPage() {
         }
       });
       
-      // Nếu có sections được update, lưu lại
+      // Nếu có sections được update (migration hoặc timeLimit), lưu lại
       const hasUpdates = JSON.stringify(data) !== JSON.stringify(updatedData);
       if (hasUpdates) {
-        console.log('✅ Đã tự động cập nhật timeLimit cho sections, đang lưu...');
+        console.log('✅ Đã tự động cập nhật sections (migration passageImage → passageImages hoặc timeLimit), đang lưu...');
         await storageManager.saveExam(selectedLevel, selectedExam.id, updatedData);
       }
       
@@ -656,9 +681,46 @@ function ExamManagementPage() {
         }
       }
       
-      setExamData(updatedData);
-      setSections(updatedData[selectedTestType]?.sections || []);
-      setSelectedSection(updatedData[selectedTestType]?.sections?.[0] || null);
+      // ✅ FIX: Normalize lại dữ liệu để đảm bảo ID được đánh số đúng
+      // Knowledge và Reading đếm liên tục, Listening reset về 1
+      const { data: normalizedData } = normalizeExamDataStructure(updatedData);
+      
+      // ✅ FIX: Kiểm tra xem có thay đổi về ID không bằng cách so sánh ID của questions
+      let hasIdChanges = false;
+      TEST_TYPE_ORDER.forEach((type) => {
+        const originalSections = updatedData[type]?.sections || [];
+        const normalizedSections = normalizedData[type]?.sections || [];
+        
+        originalSections.forEach((section, sIdx) => {
+          const normalizedSection = normalizedSections[sIdx];
+          if (!normalizedSection) return;
+          
+          const originalQuestions = section.questions || [];
+          const normalizedQuestions = normalizedSection.questions || [];
+          
+          originalQuestions.forEach((q, qIdx) => {
+            const normalizedQ = normalizedQuestions[qIdx];
+            if (normalizedQ && String(q.id) !== String(normalizedQ.id)) {
+              hasIdChanges = true;
+              console.log(`🔄 ID thay đổi: ${type} - Section ${section.id} - Question ${q.id} → ${normalizedQ.id}`);
+            }
+          });
+        });
+      });
+      
+      if (hasIdChanges) {
+        console.log('🔄 Phát hiện thay đổi về ID sau khi normalize, đang lưu lại...');
+        try {
+          await storageManager.saveExam(selectedLevel, selectedExam.id, normalizedData);
+          console.log('✅ Đã lưu lại dữ liệu với ID đã được normalize');
+        } catch (saveErr) {
+          console.warn('⚠️ Không thể lưu dữ liệu đã normalize:', saveErr);
+        }
+      }
+      
+      setExamData(normalizedData);
+      setSections(normalizedData[selectedTestType]?.sections || []);
+      setSelectedSection(normalizedData[selectedTestType]?.sections?.[0] || null);
       
       // ✅ NEW: Load listening part audio (if listening part exists)
       if (updatedData.listening) {
@@ -698,8 +760,20 @@ function ExamManagementPage() {
   };
 
   // ✅ NEW: Generate next section ID automatically
+  // ✅ FIX: Knowledge và Reading cùng một phần thi → kiểm tra section ID trong cả 2
   const getNextSectionId = useCallback(() => {
-    if (sections.length === 0) return 'section1';
+    // Lấy tất cả sections từ knowledge và reading (cùng một phần thi)
+    const allSections = [
+      ...(examData?.knowledge?.sections || []),
+      ...(examData?.reading?.sections || [])
+    ];
+    
+    // Nếu là listening, chỉ lấy sections từ listening
+    const sectionsToCheck = (selectedTestType === 'knowledge' || selectedTestType === 'reading')
+      ? allSections
+      : (examData?.listening?.sections || []);
+    
+    if (sectionsToCheck.length === 0) return 'section1';
     
     // Extract numbers from existing section IDs (e.g., "section1" -> 1, "section2" -> 2)
     const getNumber = (id) => {
@@ -707,10 +781,10 @@ function ExamManagementPage() {
       return match ? parseInt(match[1], 10) : 0;
     };
     
-    const numbers = sections.map(s => getNumber(s.id)).filter(n => n > 0);
+    const numbers = sectionsToCheck.map(s => getNumber(s.id)).filter(n => n > 0);
     const maxNum = numbers.length > 0 ? Math.max(...numbers) : 0;
     return `section${maxNum + 1}`;
-  }, [sections]);
+  }, [sections, examData, selectedTestType]);
 
   // Section CRUD
   const handleAddSection = () => {
@@ -727,12 +801,7 @@ function ExamManagementPage() {
       id: nextId, // ✅ Auto-generate ID
       instruction: combinedDefault, // ✅ Combined field with defaults
       timeLimit: null,
-      passageImage: {
-        url: '',
-        path: '',
-        name: '',
-        file: null
-      }
+      passageImages: [] // ✅ NEW: Empty array for new section
       // ❌ REMOVED: Audio fields - audio is now at listening part level
     });
     setShowSectionForm(true);
@@ -745,16 +814,30 @@ function ExamManagementPage() {
       ? `${section.title}\n\n${section.instruction}`
       : section.title || section.instruction || '';
     
+    // ✅ NEW: Migrate passageImage (single) → passageImages (array) for backward compatibility
+    let passageImages = [];
+    if (section.passageImages && Array.isArray(section.passageImages)) {
+      // New format: already an array
+      passageImages = section.passageImages.map(img => ({
+        ...img,
+        file: null // Don't load file from saved data
+      }));
+    } else if (section.passageImage?.url) {
+      // Old format: single image, convert to array
+      passageImages = [{
+        url: section.passageImage.url,
+        path: section.passageImage.path || '',
+        name: section.passageImage.name || '',
+        order: 0,
+        file: null
+      }];
+    }
+    
     setSectionForm({
       id: section.id,
       instruction: combinedText, // ✅ Combined field
       timeLimit: section.timeLimit || null,
-      passageImage: {
-        url: section.passageImage?.url || '',
-        path: section.passageImage?.path || '',
-        name: section.passageImage?.name || '',
-        file: null
-      }
+      passageImages: passageImages // ✅ NEW: Array of images
       // ❌ REMOVED: Audio fields - audio is now at listening part level
     });
     setShowSectionForm(true);
@@ -790,6 +873,37 @@ function ExamManagementPage() {
       return;
     }
     
+    // ✅ FIX: Kiểm tra duplicate section ID trong cả knowledge và reading (cùng một phần thi)
+    // Kiểm tra cả khi tạo mới và khi edit (nếu ID thay đổi)
+    const allSections = [
+      ...(examData?.knowledge?.sections || []),
+      ...(examData?.reading?.sections || [])
+    ];
+    
+    const sectionsToCheck = (selectedTestType === 'knowledge' || selectedTestType === 'reading')
+      ? allSections
+      : (examData?.listening?.sections || []);
+    
+    // Tìm section có ID trùng (loại trừ section đang edit nếu ID không thay đổi)
+    const existingSection = sectionsToCheck.find(s => {
+      // Nếu đang edit và section này là section đang edit, bỏ qua
+      if (editingSection && s.id === editingSection.id) {
+        return false;
+      }
+      // Kiểm tra xem ID có trùng không
+      return s.id === sectionForm.id;
+    });
+    
+    if (existingSection) {
+      const existingTestType = examData?.knowledge?.sections?.some(s => s.id === sectionForm.id)
+        ? 'Kiến thức'
+        : examData?.reading?.sections?.some(s => s.id === sectionForm.id)
+          ? 'Đọc hiểu'
+          : 'Nghe hiểu';
+      alert(`⚠️ Section ID "${sectionForm.id}" đã tồn tại trong phần "${existingTestType}".\n\nVui lòng dùng ID khác hoặc click nút "🔄 Gợi ý ID" để tự động tạo ID tiếp theo.`);
+      return;
+    }
+    
     // ❌ REMOVED: Audio validation and upload - audio is now at listening part level, not section level
     
     // ✅ NEW: Split title and instruction from combined field
@@ -807,6 +921,17 @@ function ExamManagementPage() {
             ? (editingSection.timeLimit || null)
             : (editingSection.timeLimit || getDefaultTimeLimit(selectedTestType) || null);
 
+        // ✅ NEW: Save passageImages array (only uploaded images, no blob URLs)
+        const savedPassageImages = (sectionForm.passageImages || [])
+          .filter(img => img.url && !img.url.startsWith('blob:'))
+          .map(img => ({
+            url: img.url,
+            path: img.path || '',
+            name: img.name || '',
+            order: img.order !== undefined ? img.order : 0
+          }))
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
+
         updatedSections[index] = {
           ...editingSection,
           id: sectionForm.id,
@@ -814,15 +939,12 @@ function ExamManagementPage() {
           instruction: instruction, // ✅ Use split instruction
           timeLimit: existingTimeLimit,
           questions: editingSection.questions || [],
-          passageImage: sectionForm.passageImage?.url ? {
-            url: sectionForm.passageImage.url,
-            path: sectionForm.passageImage.path,
-            name: sectionForm.passageImage.name
-          } : undefined
+          passageImages: savedPassageImages.length > 0 ? savedPassageImages : undefined
           // ❌ REMOVED: Audio fields - audio is now at listening part level
         };
       }
     } else {
+      // ✅ FIX: Kiểm tra duplicate trong cả knowledge và reading (đã kiểm tra ở trên, nhưng double-check)
       if (updatedSections.find(s => s.id === sectionForm.id)) {
         alert(`⚠️ ${t('examManagement.questions.sections.idExists')}`);
         return;
@@ -843,17 +965,24 @@ function ExamManagementPage() {
           : (getDefaultTimeLimit(selectedTestType) || null);
       }
 
+      // ✅ NEW: Save passageImages array (only uploaded images, no blob URLs)
+      const savedPassageImages = (sectionForm.passageImages || [])
+        .filter(img => img.url && !img.url.startsWith('blob:'))
+        .map(img => ({
+          url: img.url,
+          path: img.path || '',
+          name: img.name || '',
+          order: img.order !== undefined ? img.order : 0
+        }))
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+
       updatedSections.push({
         id: sectionForm.id,
         title: finalTitle, // ✅ Use split title
         instruction: instruction, // ✅ Use split instruction
         timeLimit: newSectionTimeLimit,
         questions: [],
-        passageImage: sectionForm.passageImage?.url ? {
-          url: sectionForm.passageImage.url,
-          path: sectionForm.passageImage.path,
-          name: sectionForm.passageImage.name
-        } : undefined
+        passageImages: savedPassageImages.length > 0 ? savedPassageImages : undefined
         // ❌ REMOVED: Audio fields - audio is now at listening part level
       });
     }
@@ -906,9 +1035,10 @@ function ExamManagementPage() {
           `💾 ${t('examManagement.questions.questionForm.savedToSystem')}`);
   };
 
-  // ✅ NEW: Upload passage image for section
-  const handleUploadSectionPassageImage = async () => {
-    if (!sectionForm.passageImage.file || !sectionForm.passageImage.url?.startsWith('blob:')) {
+  // ✅ NEW: Upload single passage image (called for each image in the array)
+  const handleUploadSectionPassageImage = async (imageIndex) => {
+    const image = sectionForm.passageImages[imageIndex];
+    if (!image?.file || !image?.url?.startsWith('blob:')) {
       alert('⚠️ Vui lòng chọn file ảnh trước khi upload.');
       return;
     }
@@ -919,42 +1049,46 @@ function ExamManagementPage() {
     }
 
     setIsUploadingImage(true);
-    setUploadingImageField('passageImage');
+    setUploadingImageField(`passageImage-${imageIndex}`);
     try {
       const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
       
-      // 📁 Đường dẫn: level / exam / testType / section / passage.jpg
+      // 📁 Đường dẫn: level / exam / testType / section / passage-{index}.jpg
       const safeLevel = selectedLevel || 'unknown-level';
       const safeExamId = selectedExam?.id || 'unknown-exam';
       const safeTestType = selectedTestType || 'unknown-type';
       const safeSectionId = sectionForm.id || 'unknown-section';
       const prefix = `level-${safeLevel}/exam-${safeExamId}/${safeTestType}/section-${safeSectionId}`;
-      const path = generateFilePath(prefix, sectionForm.passageImage.file.name);
+      const path = generateFilePath(prefix, image.file.name);
       
-      const result = await uploadImage(sectionForm.passageImage.file, path);
+      const result = await uploadImage(image.file, path);
       
       if (result.success) {
         const uploadedImageUrl = result.url;
         const uploadedImagePath = path;
-        const uploadedImageName = sectionForm.passageImage.file.name;
+        const uploadedImageName = image.file.name;
         
         // Update sectionForm với ảnh đã upload
+        const updatedImages = [...sectionForm.passageImages];
+        updatedImages[imageIndex] = {
+          url: uploadedImageUrl,
+          path: uploadedImagePath,
+          name: uploadedImageName,
+          order: image.order !== undefined ? image.order : imageIndex,
+          file: null
+        };
+        
         setSectionForm({
           ...sectionForm,
-          passageImage: {
-            url: uploadedImageUrl,
-            path: uploadedImagePath,
-            name: uploadedImageName,
-            file: null
-          }
+          passageImages: updatedImages
         });
         
         // Revoke blob URL
-        if (sectionForm.passageImage.url?.startsWith('blob:')) {
-          URL.revokeObjectURL(sectionForm.passageImage.url);
+        if (image.url?.startsWith('blob:')) {
+          URL.revokeObjectURL(image.url);
         }
         
-        alert('✅ Upload ảnh passage thành công!');
+        alert(`✅ Upload ảnh "${uploadedImageName}" thành công!`);
       } else {
         console.error('[ExamManagement] ❌ Error uploading passage image:', result.error);
         alert('❌ Lỗi upload ảnh!');
@@ -966,6 +1100,115 @@ function ExamManagementPage() {
       setIsUploadingImage(false);
       setUploadingImageField(null);
     }
+  };
+
+  // ✅ NEW: Upload multiple passage images
+  const handleUploadMultiplePassageImages = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    if (!selectedExam || !selectedLevel || !selectedTestType || !sectionForm.id) {
+      alert('⚠️ Vui lòng chọn exam, level, test type và section ID trước.');
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    
+    const newImages = [];
+    for (const file of files) {
+      if (!validTypes.includes(file.type)) {
+        alert(`❌ File "${file.name}" không phải ảnh hợp lệ (JPEG, PNG, WEBP, GIF)`);
+        continue;
+      }
+      
+      if (file.size > maxSize) {
+        alert(`❌ File "${file.name}" quá lớn (${(file.size / 1024 / 1024).toFixed(2)}MB, giới hạn: 10MB)`);
+        continue;
+      }
+      
+      const blobUrl = URL.createObjectURL(file);
+      const currentMaxOrder = sectionForm.passageImages.length > 0
+        ? Math.max(...sectionForm.passageImages.map(img => img.order || 0))
+        : -1;
+      
+      newImages.push({
+        url: blobUrl,
+        path: '',
+        name: file.name,
+        order: currentMaxOrder + 1,
+        file: file
+      });
+    }
+    
+    if (newImages.length > 0) {
+      setSectionForm({
+        ...sectionForm,
+        passageImages: [...sectionForm.passageImages, ...newImages]
+      });
+    }
+  };
+
+  // ✅ NEW: Move image up in order
+  const handleMoveImageUp = (index) => {
+    if (index <= 0) return;
+    
+    const updatedImages = [...sectionForm.passageImages];
+    const temp = updatedImages[index];
+    updatedImages[index] = updatedImages[index - 1];
+    updatedImages[index - 1] = temp;
+    
+    // Update order values
+    updatedImages.forEach((img, idx) => {
+      img.order = idx;
+    });
+    
+    setSectionForm({
+      ...sectionForm,
+      passageImages: updatedImages
+    });
+  };
+
+  // ✅ NEW: Move image down in order
+  const handleMoveImageDown = (index) => {
+    if (index >= sectionForm.passageImages.length - 1) return;
+    
+    const updatedImages = [...sectionForm.passageImages];
+    const temp = updatedImages[index];
+    updatedImages[index] = updatedImages[index + 1];
+    updatedImages[index + 1] = temp;
+    
+    // Update order values
+    updatedImages.forEach((img, idx) => {
+      img.order = idx;
+    });
+    
+    setSectionForm({
+      ...sectionForm,
+      passageImages: updatedImages
+    });
+  };
+
+  // ✅ NEW: Delete image from array
+  const handleDeletePassageImage = (index) => {
+    if (!confirm('⚠️ Bạn có chắc muốn xóa ảnh này?')) return;
+    
+    const image = sectionForm.passageImages[index];
+    
+    // Revoke blob URL if exists
+    if (image?.url?.startsWith('blob:')) {
+      URL.revokeObjectURL(image.url);
+    }
+    
+    const updatedImages = sectionForm.passageImages.filter((_, idx) => idx !== index);
+    // Reorder remaining images
+    updatedImages.forEach((img, idx) => {
+      img.order = idx;
+    });
+    
+    setSectionForm({
+      ...sectionForm,
+      passageImages: updatedImages
+    });
   };
 
   // ✅ NEW: Upload audio for listening part (entire listening part, not per section)
@@ -1195,13 +1438,17 @@ function ExamManagementPage() {
 
   // ✅ Quiz Editor style functions - Generate JSON, Export, Copy, Download
   const generateQuestionJSON = () => {
-    if (!selectedSection || !questionForm.question) {
+    // ✅ UPDATED: For listening, question can be empty (only read in audio)
+    if (!selectedSection) {
+      return null;
+    }
+    if (selectedTestType !== 'listening' && !questionForm.question) {
       return null;
     }
     
     const questionData = {
       id: questionForm.id,
-      question: questionForm.question,
+      question: questionForm.question || '', // Allow empty for listening
       options: questionForm.options
         .filter(opt => opt.trim() !== '')
         .map((opt, idx) => ({
@@ -1262,7 +1509,8 @@ function ExamManagementPage() {
 
   // ✅ UPDATED: Enhanced validation with duplicate content detection
   const isQuestionValid = () => {
-    if (!questionForm.question.trim()) return false;
+    // ✅ UPDATED: For listening, question can be empty (only read in audio)
+    if (selectedTestType !== 'listening' && !questionForm.question.trim()) return false;
     if (!questionForm.id) return false;
     if (isDuplicateQuestionId && !editingQuestion) return false;
     const validOptions = questionForm.options.filter(opt => opt.trim() !== '');
@@ -1557,8 +1805,10 @@ function ExamManagementPage() {
 
     // ✅ MỚI: Nếu chưa có section → Tự động tạo section mặc định
     if (!section && sections.length === 0) {
+      // ✅ FIX: Dùng getNextSectionId() để đảm bảo section ID tiếp tục từ knowledge/reading
+      const nextSectionId = getNextSectionId();
       const defaultSection = {
-        id: 'section1',
+        id: nextSectionId,
         title: getDefaultSectionTitle(selectedTestType),
         instruction: getDefaultInstruction(selectedTestType),
         timeLimit: getDefaultTimeLimit(selectedTestType),
@@ -1588,7 +1838,44 @@ function ExamManagementPage() {
     // Tiếp tục logic cũ
     setSelectedSection(section);
     setEditingQuestion(null);
-    const defaultIdValue = String(nextQuestionIdSuggestion);
+    
+    // ✅ FIX: Đảm bảo tính nextId từ data đã được normalize
+    // Nếu examData chưa được normalize, normalize lại trước khi tính
+    let normalizedExamData = examData;
+    if (examData) {
+      const { data: normalized } = normalizeExamDataStructure(examData);
+      normalizedExamData = normalized;
+    }
+    
+    // Tính nextId từ normalized data
+    let calculatedNextId = 1;
+    if (normalizedExamData) {
+      if (selectedTestType === 'knowledge' || selectedTestType === 'reading') {
+        const knowledgeQuestions = (normalizedExamData.knowledge?.sections || [])
+          .flatMap(s => s.questions || [])
+          .map(q => getNumericIdFromQuestion(q));
+        const readingQuestions = (normalizedExamData.reading?.sections || [])
+          .flatMap(s => s.questions || [])
+          .map(q => getNumericIdFromQuestion(q));
+        const allIds = [...knowledgeQuestions, ...readingQuestions];
+        if (allIds.length > 0) {
+          const maxId = Math.max(...allIds);
+          calculatedNextId = Number.isFinite(maxId) ? maxId + 1 : 1;
+        }
+      } else if (selectedTestType === 'listening') {
+        const listeningQuestions = (normalizedExamData.listening?.sections || [])
+          .flatMap(s => s.questions || [])
+          .map(q => getNumericIdFromQuestion(q));
+        if (listeningQuestions.length > 0) {
+          const maxId = Math.max(...listeningQuestions);
+          calculatedNextId = Number.isFinite(maxId) ? maxId + 1 : 1;
+        }
+      }
+    } else {
+      calculatedNextId = nextQuestionIdSuggestion;
+    }
+    
+    const defaultIdValue = String(calculatedNextId);
     setAutoGeneratedId(defaultIdValue);
     // ✅ NEW: Calculate default timing for listening questions (from entire listening part, not just current section)
     let defaultStartTime = undefined;
@@ -1666,7 +1953,12 @@ function ExamManagementPage() {
     
     if (isEditingFromImported) {
       // ✅ FIX: Validate form before saving
-      if (!questionForm.question || !selectedSection) {
+      // ✅ UPDATED: For listening, question can be empty (only read in audio)
+      if (selectedTestType !== 'listening' && !questionForm.question) {
+        alert(`⚠️ ${t('examManagement.questions.questionForm.fillAllInfoGeneral')}`);
+        return;
+      }
+      if (!selectedSection) {
         alert(`⚠️ ${t('examManagement.questions.questionForm.fillAllInfoGeneral')}`);
         return;
       }
@@ -1771,7 +2063,12 @@ function ExamManagementPage() {
     
     if (isEditingFromImported) {
       // ✅ FIX: Validate form before saving
-      if (!questionForm.question || !selectedSection) {
+      // ✅ UPDATED: For listening, question can be empty (only read in audio)
+      if (selectedTestType !== 'listening' && !questionForm.question) {
+        alert(`⚠️ ${t('examManagement.questions.questionForm.fillAllInfoGeneral')}`);
+        return;
+      }
+      if (!selectedSection) {
         alert(`⚠️ ${t('examManagement.questions.questionForm.fillAllInfoGeneral')}`);
         return;
       }
@@ -1883,8 +2180,58 @@ function ExamManagementPage() {
       // Normal save (not from imported questions)
       const result = await saveQuestionData();
       if (result?.success) {
-        // Reset form for new question
-        const nextId = nextQuestionIdSuggestion;
+        // ✅ FIX: Tính nextId từ updatedSections vừa save (kết hợp với sections chưa update từ examData)
+        // Knowledge và Reading cùng một phần thi → tính từ cả 2
+        let nextId = 1;
+        if (result.updatedSections && examData) {
+          if (selectedTestType === 'knowledge' || selectedTestType === 'reading') {
+            // Kết hợp updatedSections với sections chưa update từ examData
+            const allKnowledgeSections = [
+              ...result.updatedSections.filter(s => 
+                examData?.knowledge?.sections?.some(ks => ks.id === s.id)
+              ),
+              ...(examData?.knowledge?.sections || []).filter(s => 
+                !result.updatedSections.some(us => us.id === s.id)
+              )
+            ];
+            const allReadingSections = [
+              ...result.updatedSections.filter(s => 
+                examData?.reading?.sections?.some(rs => rs.id === s.id)
+              ),
+              ...(examData?.reading?.sections || []).filter(s => 
+                !result.updatedSections.some(us => us.id === s.id)
+              )
+            ];
+            
+            const allQuestions = [
+              ...allKnowledgeSections.flatMap(s => s.questions || []),
+              ...allReadingSections.flatMap(s => s.questions || [])
+            ];
+            
+            if (allQuestions.length > 0) {
+              const maxId = Math.max(...allQuestions.map(q => getNumericIdFromQuestion(q)));
+              nextId = Number.isFinite(maxId) ? maxId + 1 : 1;
+            }
+          } else if (selectedTestType === 'listening') {
+            const allListeningSections = [
+              ...result.updatedSections.filter(s => 
+                examData?.listening?.sections?.some(ls => ls.id === s.id)
+              ),
+              ...(examData?.listening?.sections || []).filter(s => 
+                !result.updatedSections.some(us => us.id === s.id)
+              )
+            ];
+            const allQuestions = allListeningSections.flatMap(s => s.questions || []);
+            
+            if (allQuestions.length > 0) {
+              const maxId = Math.max(...allQuestions.map(q => getNumericIdFromQuestion(q)));
+              nextId = Number.isFinite(maxId) ? maxId + 1 : 1;
+            }
+          }
+        } else {
+          // Fallback: dùng nextQuestionIdSuggestion nếu không có updatedSections
+          nextId = nextQuestionIdSuggestion;
+        }
         
         setQuestionForm({
           id: String(nextId),
@@ -1918,7 +2265,12 @@ function ExamManagementPage() {
 
   // ✅ NEW: Extract save logic to reusable function
   const saveQuestionData = async () => {
-    if (!questionForm.question || !selectedSection) {
+    // ✅ UPDATED: For listening, question can be empty (only read in audio)
+    if (selectedTestType !== 'listening' && !questionForm.question) {
+      alert(`⚠️ ${t('examManagement.questions.questionForm.fillAllInfoGeneral')}`);
+      return { success: false };
+    }
+    if (!selectedSection) {
       alert(`⚠️ ${t('examManagement.questions.questionForm.fillAllInfoGeneral')}`);
       return { success: false };
     }
@@ -2020,7 +2372,8 @@ function ExamManagementPage() {
 
     await saveSections(updatedSections);
     
-    return { success: true, questionId: questionForm.id };
+    // ✅ FIX: Return updatedSections để tính nextId chính xác
+    return { success: true, questionId: questionForm.id, updatedSections };
   };
 
 
@@ -2065,15 +2418,57 @@ function ExamManagementPage() {
     });
   }, [examData]);
 
+  // ✅ FIX: Knowledge và Reading đếm liên tục, Listening đếm riêng từ 1
+  // ✅ FIX: Tính từ examData đã được normalize (không phải từ questionOverview có thể chưa normalize)
   const nextQuestionIdSuggestion = useMemo(() => {
-    if (questionOverview.length === 0) return 1;
-    const maxId = Math.max(...questionOverview.map((item) => item.numericId));
-    return Number.isFinite(maxId) ? maxId + 1 : 1;
-  }, [questionOverview]);
+    if (!examData) return 1;
+    
+    // ✅ FIX: Normalize lại data để đảm bảo tính chính xác
+    const { data: normalizedData } = normalizeExamDataStructure(examData);
+    
+    // Knowledge và Reading cùng một phần thi → tính từ cả 2
+    if (selectedTestType === 'knowledge' || selectedTestType === 'reading') {
+      const knowledgeQuestions = (normalizedData.knowledge?.sections || [])
+        .flatMap(s => s.questions || [])
+        .map(q => getNumericIdFromQuestion(q));
+      const readingQuestions = (normalizedData.reading?.sections || [])
+        .flatMap(s => s.questions || [])
+        .map(q => getNumericIdFromQuestion(q));
+      const allIds = [...knowledgeQuestions, ...readingQuestions];
+      if (allIds.length === 0) return 1;
+      const maxId = Math.max(...allIds);
+      return Number.isFinite(maxId) ? maxId + 1 : 1;
+    }
+    // Listening là phần thi riêng → chỉ tính từ listening
+    else if (selectedTestType === 'listening') {
+      const listeningQuestions = (normalizedData.listening?.sections || [])
+        .flatMap(s => s.questions || [])
+        .map(q => getNumericIdFromQuestion(q));
+      if (listeningQuestions.length === 0) return 1;
+      const maxId = Math.max(...listeningQuestions);
+      return Number.isFinite(maxId) ? maxId + 1 : 1;
+    }
+    return 1;
+  }, [examData, selectedTestType]);
 
+  // ✅ FIX: Knowledge và Reading kiểm tra duplicate chung, Listening riêng
   const existingQuestionIdsSet = useMemo(() => {
-    return new Set(questionOverview.map((item) => String(item.id || item.numericId)));
-  }, [questionOverview]);
+    // Knowledge và Reading cùng một phần thi → kiểm tra duplicate chung
+    if (selectedTestType === 'knowledge' || selectedTestType === 'reading') {
+      const combinedQuestions = questionOverview.filter(
+        (item) => item.testType === 'knowledge' || item.testType === 'reading'
+      );
+      return new Set(combinedQuestions.map((item) => String(item.id || item.numericId)));
+    }
+    // Listening là phần thi riêng → chỉ kiểm tra trong listening
+    else if (selectedTestType === 'listening') {
+      const listeningQuestions = questionOverview.filter(
+        (item) => item.testType === 'listening'
+      );
+      return new Set(listeningQuestions.map((item) => String(item.id || item.numericId)));
+    }
+    return new Set();
+  }, [questionOverview, selectedTestType]);
 
   const isDuplicateQuestionId = useMemo(() => {
     if (editingQuestion) return false;
@@ -2116,12 +2511,8 @@ function ExamManagementPage() {
       if (selectedTestType === 'listening') {
         // ✅ UPDATED: For listening, note about audio at listening part level
         const hasAudio = listeningPartAudio.audioUrl || examData?.listening?.audioUrl;
-        const audioName = listeningPartAudio.audioName || examData?.listening?.audioName || 'N/A';
-        if (hasAudio) {
-          note = `[Lưu ý cho Listening:\n- Audio file được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: ${audioName}\n- Mỗi câu hỏi chỉ cần startTime và endTime (tính bằng giây từ đầu audio chung)\n- Instruction của section: "${selectedSection.instruction || 'Chưa có'}" - Được đặt trong Section Form]\n\n`;
-        } else {
-          note = `[Lưu ý cho Listening:\n- Audio file cần được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: ${listeningPartAudio.audioName || examData?.listening?.audioName || 'Chưa có'}\n- Audio chạy liên tục từ đầu đến cuối, thí sinh tự nghe và trả lời theo thứ tự câu hỏi\n- Instruction của section: "${selectedSection.instruction || 'Chưa có'}" - Được đặt trong Section Form]\n\n`;
-        }
+        const audioName = listeningPartAudio.audioName || examData?.listening?.audioName || '[Tên file audio]';
+        note = `[Lưu ý cho Listening:\n- Audio file được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: ${audioName}\n- Instruction của section: "${selectedSection.instruction || '[Instruction text]'}" - Được đặt trong Section Form]\n\n`;
       } else {
         // For knowledge/reading
         if (selectedSection.instruction) {
@@ -2134,7 +2525,7 @@ function ExamManagementPage() {
     } else {
       // Chưa chọn section
       const note = selectedTestType === 'listening'
-        ? `[Lưu ý cho Listening: Audio file được upload ở Listening Part level (không phải Section Form). Audio chạy liên tục từ đầu đến cuối, thí sinh tự nghe và trả lời theo thứ tự câu hỏi]\n\n`
+        ? `[Lưu ý cho Listening:\n- Audio file được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: [Tên file audio]\n- Instruction của section: "[Instruction text]" - Được đặt trong Section Form]\n\n`
         : `[Lưu ý: Instruction của section sẽ được đặt trong Section Form, không phải trong mỗi câu hỏi]\n\n`;
       questionTemplate.explanation = note + questionTemplate.explanation;
     }
@@ -2260,8 +2651,14 @@ function ExamManagementPage() {
             };
           });
 
-          // Validate all questions
-          const invalidQuestions = normalizedQuestions.filter(q => !q.question);
+          // ✅ UPDATED: Validate all questions - for listening, question can be empty
+          const invalidQuestions = normalizedQuestions.filter(q => {
+            // Listening questions can have empty question (only read in audio)
+            if (selectedTestType === 'listening') {
+              return false; // Allow empty question for listening
+            }
+            return !q.question || !q.question.trim();
+          });
           if (invalidQuestions.length > 0) {
             alert(`⚠️ Có ${invalidQuestions.length} câu hỏi không hợp lệ (thiếu nội dung).`);
             resetInput();
@@ -4382,27 +4779,25 @@ function ExamManagementPage() {
               <label className="block text-sm font-medium text-gray-700">
                 {t('examManagement.questions.sections.idLabel')}
               </label>
-              {!editingSection && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const nextId = getNextSectionId();
-                    setSectionForm({ ...sectionForm, id: nextId });
-                  }}
-                  className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                  title="Tự động tạo ID tiếp theo"
-                >
-                  🔄 Gợi ý ID
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  const nextId = getNextSectionId();
+                  setSectionForm({ ...sectionForm, id: nextId });
+                }}
+                className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                title="Tự động tạo ID tiếp theo"
+              >
+                🔄 Gợi ý ID
+              </button>
             </div>
             <input
               type="text"
               value={sectionForm.id}
               onChange={(e) => setSectionForm({ ...sectionForm, id: e.target.value })}
               required
-              disabled={!!editingSection}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 font-mono"
+              // ✅ FIX: Cho phép edit section ID để có thể fix duplicate IDs
+              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-mono"
               placeholder={t('examManagement.questions.sections.idPlaceholder')}
             />
             <p className="text-xs text-gray-500 mt-1">{t('examManagement.questions.sections.idHint')}</p>
@@ -4546,98 +4941,129 @@ function ExamManagementPage() {
               📷 Ảnh Passage (Đoạn văn) - Tùy chọn
             </label>
             <p className="text-xs text-gray-500 mb-2">
-              💡 Upload ảnh passage nếu section này có đoạn văn dài cần hiển thị. Ảnh sẽ hiển thị ở main content, không hiển thị trong sidebar.
+              💡 Upload nhiều ảnh passage nếu section này có đoạn văn dài cần hiển thị. Ảnh sẽ hiển thị ở main content theo thứ tự, không hiển thị trong sidebar.
             </p>
             
-            {/* File Input */}
+            {/* File Input - Multiple files */}
             <input
               type="file"
               accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+              multiple
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-                  if (!validTypes.includes(file.type)) {
-                    alert('❌ Chỉ hỗ trợ ảnh: JPEG, PNG, WEBP, GIF');
-                    return;
-                  }
-                  
-                  const maxSize = 10 * 1024 * 1024; // 10MB
-                  if (file.size > maxSize) {
-                    alert(`❌ Ảnh quá lớn!\n\nKích thước: ${(file.size / 1024 / 1024).toFixed(2)}MB\nGiới hạn: 10MB`);
-                    return;
-                  }
-                  
-                  // Create blob URL for preview
-                  const blobUrl = URL.createObjectURL(file);
-                  setSectionForm({
-                    ...sectionForm,
-                    passageImage: {
-                      url: blobUrl,
-                      path: '',
-                      name: file.name,
-                      file: file
-                    }
-                  });
+                const files = Array.from(e.target.files || []);
+                if (files.length > 0) {
+                  handleUploadMultiplePassageImages(files);
                 }
               }}
               className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             
-            {/* Preview & Upload Button */}
-            {sectionForm.passageImage.url && (
-              <div className="mt-3 space-y-2">
-                <div className="relative">
-                  <img
-                    src={sectionForm.passageImage.url}
-                    alt="Passage preview"
-                    className="w-full max-h-64 object-contain border-2 border-gray-300 rounded-lg"
-                  />
-                  {sectionForm.passageImage.url.startsWith('blob:') && (
-                    <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded">
-                      ⚠️ Chưa upload
-                    </div>
-                  )}
-                </div>
-                {sectionForm.passageImage.file && (
-                  <button
-                    type="button"
-                    onClick={handleUploadSectionPassageImage}
-                    disabled={isUploadingImage && uploadingImageField === 'passageImage'}
-                    className={`w-full px-4 py-2 rounded-lg font-semibold transition-colors ${
-                      isUploadingImage && uploadingImageField === 'passageImage'
-                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                        : 'bg-blue-500 text-white hover:bg-blue-600'
-                    }`}
-                  >
-                    {isUploadingImage && uploadingImageField === 'passageImage' ? '⏳ Đang upload...' : '📤 Upload ảnh'}
-                  </button>
-                )}
-                {sectionForm.passageImage.url && !sectionForm.passageImage.url.startsWith('blob:') && (
-                  <div className="p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
-                    ✅ Đã upload: {sectionForm.passageImage.name}
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (sectionForm.passageImage.url?.startsWith('blob:')) {
-                      URL.revokeObjectURL(sectionForm.passageImage.url);
-                    }
-                    setSectionForm({
-                      ...sectionForm,
-                      passageImage: {
-                        url: '',
-                        path: '',
-                        name: '',
-                        file: null
-                      }
-                    });
-                  }}
-                  className="w-full px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors"
-                >
-                  🗑️ Xóa ảnh
-                </button>
+            {/* Images List */}
+            {sectionForm.passageImages && sectionForm.passageImages.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <p className="text-sm font-semibold text-gray-700">
+                  📸 Danh sách ảnh ({sectionForm.passageImages.length}):
+                </p>
+                {sectionForm.passageImages
+                  .sort((a, b) => (a.order || 0) - (b.order || 0))
+                  .map((image, index) => {
+                    const sortedIndex = sectionForm.passageImages
+                      .map((img, idx) => ({ img, idx }))
+                      .sort((a, b) => (a.img.order || 0) - (b.img.order || 0))
+                      .findIndex(item => item.idx === index);
+                    const actualIndex = sectionForm.passageImages.findIndex(img => img === image);
+                    
+                    return (
+                      <div key={actualIndex} className="border-2 border-gray-300 rounded-lg p-3 bg-white">
+                        <div className="flex items-start gap-3">
+                          {/* Thumbnail */}
+                          <div className="relative flex-shrink-0">
+                            <img
+                              src={image.url}
+                              alt={`Passage ${sortedIndex + 1}`}
+                              className="w-24 h-24 object-contain border border-gray-300 rounded"
+                            />
+                            {image.url.startsWith('blob:') && (
+                              <div className="absolute top-0 right-0 bg-yellow-500 text-white text-xs px-1 py-0.5 rounded">
+                                ⚠️
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Info & Controls */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-800 truncate">
+                                  {sortedIndex + 1}. {image.name}
+                                </p>
+                                {image.url && !image.url.startsWith('blob:') && (
+                                  <p className="text-xs text-green-600 mt-1">✅ Đã upload</p>
+                                )}
+                              </div>
+                              
+                              {/* Reorder Buttons */}
+                              <div className="flex flex-col gap-1 ml-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleMoveImageUp(actualIndex)}
+                                  disabled={actualIndex === 0}
+                                  className={`px-2 py-1 rounded text-xs font-semibold transition-colors ${
+                                    actualIndex === 0
+                                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                                  }`}
+                                  title="Di chuyển lên"
+                                >
+                                  ↑
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleMoveImageDown(actualIndex)}
+                                  disabled={actualIndex >= sectionForm.passageImages.length - 1}
+                                  className={`px-2 py-1 rounded text-xs font-semibold transition-colors ${
+                                    actualIndex >= sectionForm.passageImages.length - 1
+                                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                                  }`}
+                                  title="Di chuyển xuống"
+                                >
+                                  ↓
+                                </button>
+                              </div>
+                            </div>
+                            
+                            {/* Actions */}
+                            <div className="flex gap-2">
+                              {image.file && image.url.startsWith('blob:') && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUploadSectionPassageImage(actualIndex)}
+                                  disabled={isUploadingImage && uploadingImageField === `passageImage-${actualIndex}`}
+                                  className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors ${
+                                    isUploadingImage && uploadingImageField === `passageImage-${actualIndex}`
+                                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                                  }`}
+                                >
+                                  {isUploadingImage && uploadingImageField === `passageImage-${actualIndex}` 
+                                    ? '⏳ Đang upload...' 
+                                    : '📤 Upload'}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePassageImage(actualIndex)}
+                                className="px-3 py-1.5 bg-red-500 text-white rounded text-xs font-semibold hover:bg-red-600 transition-colors"
+                              >
+                                🗑️ Xóa
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             )}
           </div>

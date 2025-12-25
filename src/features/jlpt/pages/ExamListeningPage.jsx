@@ -405,47 +405,54 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer }) => {
 // Component navigation panel
 const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect }) => {
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4">
-      <h3 className="font-bold text-lg mb-4 text-center">聴解</h3>
-      <div className="text-sm text-gray-600 mb-2 text-center">
-        ⏱ {sections.reduce((acc, s) => acc + (s.timeLimit || 0), 0)}分
+    <div className="bg-white rounded-lg shadow-lg flex flex-col h-full">
+      {/* Header - Fixed */}
+      <div className="p-4 border-b border-gray-200 flex-shrink-0">
+        <h3 className="font-bold text-lg mb-2 text-center">聴解</h3>
+        <div className="text-sm text-gray-600 text-center">
+          ⏱ {sections.reduce((acc, s) => acc + (s.timeLimit || 0), 0)}分
+        </div>
       </div>
 
-      {sections.map((section) => (
-        <div key={section.id} className="mb-6">
-          <h4 className="font-semibold text-sm mb-2 text-gray-700">{section.title}</h4>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {section.questions.map((q) => {
-              const questionKey = `${section.id}-${q.number}`;
-              const isAnswered = answers[questionKey] !== undefined;
-              const isCurrent = currentQuestion === questionKey;
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {sections.map((section) => (
+          <div key={section.id} className="mb-6">
+            <h4 className="font-semibold text-sm mb-2 text-gray-700">{section.title}</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {section.questions.map((q) => {
+                const questionKey = `${section.id}-${q.number}`;
+                const isAnswered = answers[questionKey] !== undefined;
+                const isCurrent = currentQuestion === questionKey;
 
-              return (
-                <button
-                  key={questionKey}
-                  onClick={() => onQuestionSelect(questionKey)}
-                  className={`h-8 sm:h-9 md:h-10 rounded border-2 font-semibold text-xs sm:text-sm transition-all ${
-                    isCurrent
-                      ? 'border-blue-500 bg-blue-500 text-white'
-                      : isAnswered
-                      ? 'border-green-500 bg-green-100 text-green-700'
-                      : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
-                  }`}
-                >
-                  {q.number}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={questionKey}
+                    onClick={() => onQuestionSelect(questionKey)}
+                    className={`h-8 sm:h-9 md:h-10 rounded border-2 font-semibold text-xs sm:text-sm transition-all ${
+                      isCurrent
+                        ? 'border-blue-500 bg-blue-500 text-white'
+                        : isAnswered
+                        ? 'border-green-500 bg-green-100 text-green-700'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
+                    }`}
+                  >
+                    {q.number}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
 
-      <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
-        <div className="flex justify-between mb-1">
-          <span>Đã trả lời:</span>
-          <span className="font-bold">
-            {Object.keys(answers).length}/{sections.reduce((acc, s) => acc + s.questions.length, 0)}
-          </span>
+        {/* Footer - Fixed */}
+        <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
+          <div className="flex justify-between mb-1">
+            <span>Đã trả lời:</span>
+            <span className="font-bold">
+              {Object.keys(answers).length}/{sections.reduce((acc, s) => acc + s.questions.length, 0)}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -904,8 +911,9 @@ function ExamListeningPage() {
     <>
       <div className="w-full pr-0 md:pr-4">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-          <div className="flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col w-full">
-            <div className="p-4 sm:p-6 border-b border-gray-300">
+          {/* ✅ FIX: Container câu hỏi - Fixed height giống sidebar (giống admin panel) */}
+          <div className="w-full md:flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)]">
+            <div className="p-4 sm:p-6 border-b border-gray-300 flex-shrink-0">
               <Breadcrumbs paths={breadcrumbPaths} />
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mt-4">
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{currentExam.title} - 聴解</h1>
@@ -919,7 +927,8 @@ function ExamListeningPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            {/* ✅ FIX: Scrollable content với fixed height */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
               <div className="max-w-4xl mx-auto">
                 {/* ✅ DEBUG: Log audioUrl trước khi render AudioPlayer */}
                 {(() => {
@@ -975,13 +984,16 @@ function ExamListeningPage() {
             </div>
           </div>
 
-          <div className="w-full md:w-80 md:sticky md:top-4 mt-4 md:mt-0">
-            <NavigationPanel
-              sections={sections}
-              currentQuestion={currentQuestionKey}
-              answers={answers}
-              onQuestionSelect={setCurrentQuestionKey}
-            />
+          {/* ✅ FIX: Sidebar - Fixed height giống container câu hỏi (giống admin panel) */}
+          <div className="w-full md:w-72 md:sticky md:top-4 mt-4 md:mt-0 flex-shrink-0">
+            <div className="h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)] flex flex-col">
+              <NavigationPanel
+                sections={sections}
+                currentQuestion={currentQuestionKey}
+                answers={answers}
+                onQuestionSelect={setCurrentQuestionKey}
+              />
+            </div>
           </div>
         </div>
 

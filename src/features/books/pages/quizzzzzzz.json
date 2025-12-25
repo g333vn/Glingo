@@ -1,28 +1,67 @@
 [
   {
-    "id": "55",
-    "category": "reading",
-    "question": "[55] 初めからガラス床の上に出て行きませんとあるが、なぜか。",
+    "id": "1",
+    "category": "listening",
+    "question": "",
     "options": [
-      "1 ガラスは危険なものだと本能で察知できるから。",
-      "2 致命的な危険を避ける本能が備わっているから。",
-      "3 未経験のことに対する恐怖心が強いから。",
-      "4 高いところに興味を持たないから。"
+      "1 合宿の申請書",
+      "2 活動計画書",
+      "3 駐車許可の申請書",
+      "4 参加者の名簿"
     ],
-    "correctAnswer": 2,
-    "explanation": "[Lưu ý: Section \"問題9 (4) 次の文章を読んで、後の問いに対する答えとして、最もよいものを1・2・3・4から一つ選びなさい。\" chưa có instruction. Vui lòng thêm instruction trong Section Form]\n\n致命的な危険を避ける本能が備わっているから。"
+    "correctAnswer": 1,
+    "explanation": "[Lưu ý cho Listening:\n- Audio file được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: N1-07.2025-Choukai-New.mp3\n- Instruction của section: \"問題用紙には何も印刷されていません。まず文を聞いてください。それから、質問と選択肢を聞いて、1から4の中から、最もよいものを一つ選んでください。\" - Được đặt trong Section Form]\n\n【Kịch bản】: 大学の事務室で男の学生が係の女の人と話しています。男の学生はこの後、事務室に何を再提出しますか。\n\n【Giải thích】: Nữ nhân viên thông báo đơn xin đi tập huấn bị thiếu chữ ký: \"顧問の先生の欄、先生の署名が漏れていますよ\". Do đó sinh viên phải nộp lại văn bản này. Đáp án đúng là 1."
   },
   {
-    "id": "56",
-    "category": "reading",
-    "question": "[56] ヒトの能力について、筆者はどのように述べているか。",
+    "id": "2",
+    "category": "listening",
+    "question": "",
     "options": [
-      "1 痛さや恐怖を感じた経験をしなければ、柔軟な判断能力は身につかない。",
-      "2 幼少期に多くの経験を積むことで、柔軟に判断できるようになる。",
-      "3 生まれたときの判断能力が低いからこそ、柔軟に経験から学ぶことができる。",
-      "4 生まれたときの判断能力が低ければ低いほど、判断能力が大きく伸びる。"
+      "1 応募フォームに記入する",
+      "2 引き渡しの条件を確認する",
+      "3 育てる環境が分かる資料を出す",
+      "4 講習を受ける"
+    ],
+    "correctAnswer": 2,
+    "explanation": "[Lưu ý cho Listening...]\n\n【Kịch bản】: 電話で猫を飼いたい男の人と猫の保護団体の人が話しています。男の人はこの後、まず何をしなければなりませんか。\n\n【Giải thích】: Người phụ nữ yêu cầu xem kỹ điều kiện trước khi ứng tuyển: \"サイトの紹介ページで猫の譲渡の条件をよくご覧になってから、応募お願いします\". Đáp án đúng là 2."
+  },
+  {
+    "id": "3",
+    "category": "listening",
+    "question": "",
+    "options": [
+      "1 説明会の日時を決める",
+      "2 説明会の内容の案を出す",
+      "3 ちらし用の集合写真を撮る",
+      "4 ユニホームに着替える"
+    ],
+    "correctAnswer": 4,
+    "explanation": "[Lưu ý cho Listening...]\n\n【Kịch bản】: 大学のサッカーサークルの部長が話しています。部員はこの後まず、何をしなければなりませんか。\n\n【Giải thích】: Trưởng nhóm yêu cầu thay đồ để chụp ảnh trước khi thảo luận: \"話し合いの前に全員で写真を撮ります...ユニホームに着替えて撮ろう\". Đáp án đúng là 4."
+  },
+  {
+    "id": "4",
+    "category": "listening",
+    "question": "",
+    "options": [
+      "1 現状の分析に数値を入れる",
+      "2 問題点の指摘に実例を出す",
+      "3 価格を見直す",
+      "4 リスクの分析をより詳しく書く"
+    ],
+    "correctAnswer": 2,
+    "explanation": "[Lưu ý cho Listening...]\n\n【Kịch bản】: 会社で女の人と課長が話しています。女の人は企画書をどう修正しますか。\n\n【Giải thích】: Trưởng phòng yêu cầu thêm ví dụ thực tế vào phần chỉ ra vấn đề: \"問題点の指摘の項目ですが...実例を出してもらえますか？\". Đáp án đúng là 2."
+  },
+  {
+    "id": "5",
+    "category": "listening",
+    "question": "",
+    "options": [
+      "1 見学の担当者を増やす",
+      "2 クイズのシートを作る",
+      "3 スタンプを押す場所を設置する",
+      "4 見学通路の窓を大きくする"
     ],
     "correctAnswer": 3,
-    "explanation": "[Lưu ý: Section \"問題9 (4) 次の文章を読んで、後の問いに対する答えとして、最もよいものを1・2・3・4から一つ選びなさい。\" chưa có instruction. Vui lòng thêm instruction trong Section Form]\n\n生まれたときの判断能力が低いからこそ、柔軟に経験から学ぶことができる。"
+    "explanation": "[Lưu ý cho Listening...]\n\n【Kịch bản】: 工場で男の人と部長が工場見学について話しています. 男の人はこの後、まず何をしますか。\n\n【Giải thích】: Trưởng phòng gợi ý đặt thêm bàn để khách đóng dấu (stamp): \"裏にスタンプを押せるようにするとか？...机とか置いて\". Đáp án đúng là 3."
   }
 ]

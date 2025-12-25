@@ -1,5 +1,5 @@
 // src/features/jlpt/pages/ExamKnowledgePage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useExamGuard } from '../../../hooks/useExamGuard.jsx';
 import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
@@ -142,60 +142,250 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer, t }) => {
 };
 
 // Component navigation panel
-const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect, t, totalTime }) => {
+const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect, t, totalTime, knowledgeSections, readingSections, allQuestions }) => {
+  // ✅ FIX: Dùng composite key (sectionId + testType) để phân biệt sections trùng ID
+  const getSectionKey = (section, testType) => `${testType}:${section.id}`;
+  
+  const [expandedSections, setExpandedSections] = useState(() => {
+    // Auto-expand section chứa câu hỏi hiện tại khi mount lần đầu
+    // ✅ FIX: Tìm section dựa trên vị trí của câu hỏi trong allQuestions
+    // để xác định nó thuộc knowledge hay reading (tránh duplicate IDs)
+    const questionIndex = allQuestions?.findIndex(q => String(q.id) === String(currentQuestion)) ?? -1;
+    const knowledgeQuestionsCount = knowledgeSections?.reduce((sum, s) => sum + (s.questions?.length || 0), 0) || 0;
+    
+    let currentSection = null;
+    let sectionTestType = null;
+    if (questionIndex >= 0 && questionIndex < knowledgeQuestionsCount) {
+      // Câu hỏi thuộc phần knowledge
+      currentSection = knowledgeSections?.find(s => 
+        s.questions?.some(q => String(q.id) === String(currentQuestion))
+      );
+      sectionTestType = 'knowledge';
+    } else {
+      // Câu hỏi thuộc phần reading
+      currentSection = readingSections?.find(s => 
+        s.questions?.some(q => String(q.id) === String(currentQuestion))
+      );
+      sectionTestType = 'reading';
+    }
+    
+    return currentSection && sectionTestType ? new Set([getSectionKey(currentSection, sectionTestType)]) : new Set();
+  });
+
+  const prevQuestionRef = useRef(currentQuestion);
+  const isUserTogglingRef = useRef(false);
+  const sectionsRef = useRef(sections);
+  const knowledgeSectionsRef = useRef(knowledgeSections);
+  const readingSectionsRef = useRef(readingSections);
+  const allQuestionsRef = useRef(allQuestions);
+
+  // Cập nhật refs khi data thay đổi (nhưng không trigger useEffect)
+  useEffect(() => {
+    sectionsRef.current = sections;
+    knowledgeSectionsRef.current = knowledgeSections;
+    readingSectionsRef.current = readingSections;
+    allQuestionsRef.current = allQuestions;
+  }, [sections, knowledgeSections, readingSections, allQuestions]);
+
+  // Auto-expand section chứa câu hỏi hiện tại CHỈ KHI câu hỏi thực sự thay đổi
+  // VÀ không phải khi user đang toggle section
+  useEffect(() => {
+    // Bỏ qua auto-expand nếu user đang toggle section
+    if (isUserTogglingRef.current) {
+      isUserTogglingRef.current = false;
+      prevQuestionRef.current = currentQuestion;
+      return;
+    }
+
+    // Chỉ auto-expand nếu câu hỏi thực sự thay đổi (không phải cùng một câu)
+    if (prevQuestionRef.current !== currentQuestion) {
+      // ✅ FIX: Tìm section dựa trên vị trí của câu hỏi trong allQuestions
+      // để xác định nó thuộc knowledge hay reading (tránh duplicate IDs)
+      const questionIndex = allQuestionsRef.current?.findIndex(q => String(q.id) === String(currentQuestion)) ?? -1;
+      const knowledgeQuestionsCount = knowledgeSectionsRef.current?.reduce((sum, s) => sum + (s.questions?.length || 0), 0) || 0;
+      
+      let currentSection = null;
+      let sectionTestType = null;
+      if (questionIndex >= 0 && questionIndex < knowledgeQuestionsCount) {
+        // Câu hỏi thuộc phần knowledge - tìm trong knowledge sections
+        currentSection = knowledgeSectionsRef.current?.find(s => 
+          s.questions?.some(q => String(q.id) === String(currentQuestion))
+        );
+        sectionTestType = 'knowledge';
+      } else if (questionIndex >= knowledgeQuestionsCount) {
+        // Câu hỏi thuộc phần reading - tìm trong reading sections
+        currentSection = readingSectionsRef.current?.find(s => 
+          s.questions?.some(q => String(q.id) === String(currentQuestion))
+        );
+        sectionTestType = 'reading';
+      }
+      
+      if (currentSection && currentSection.id && sectionTestType) {
+        const sectionKey = getSectionKey(currentSection, sectionTestType);
+        setExpandedSections(prev => {
+          // Chỉ thêm section này, không thêm các sections khác có cùng section ID
+          if (!prev.has(sectionKey)) {
+            return new Set([...prev, sectionKey]);
+          }
+          return prev;
+        });
+      }
+      prevQuestionRef.current = currentQuestion;
+    }
+  }, [currentQuestion]); // ✅ FIX: Chỉ depend on currentQuestion, không depend on sections
+
+  const toggleSection = (sectionKey, event) => {
+    // ✅ FIX: Ngăn chặn mọi side effect khi toggle section
+    event?.stopPropagation();
+    event?.preventDefault();
+    
+    // Đánh dấu rằng user đang toggle section (không phải chọn câu hỏi mới)
+    isUserTogglingRef.current = true;
+    
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionKey)) {
+        newSet.delete(sectionKey);
+      } else {
+        newSet.add(sectionKey);
+      }
+      return newSet;
+    });
+    
+    // ✅ FIX: Reset flag sau một khoảng thời gian ngắn để đảm bảo useEffect không chạy
+    setTimeout(() => {
+      isUserTogglingRef.current = false;
+    }, 100);
+  };
+
+  const isExpanded = (section, testType) => {
+    const sectionKey = getSectionKey(section, testType);
+    return expandedSections.has(sectionKey);
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4">
-      <h3 className="font-bold text-lg mb-4 text-center">{t('jlpt.knowledgePage.navigationTitle')}</h3>
-      <div className="text-sm text-gray-600 mb-2 text-center">
-        {t('jlpt.knowledgePage.totalTime', { minutes: totalTime })}
+    <div className="bg-white rounded-lg shadow-lg flex flex-col h-full">
+      {/* Header - Fixed */}
+      <div className="p-4 border-b border-gray-200 flex-shrink-0">
+        <h3 className="font-bold text-lg mb-2 text-center">{t('jlpt.knowledgePage.navigationTitle')}</h3>
+        <div className="text-sm text-gray-600 text-center">
+          {t('jlpt.knowledgePage.totalTime', { minutes: totalTime })}
+        </div>
       </div>
       
-      {sections.map((section) => (
-        <div key={section.id} className="mb-6">
-          {section.title && (
-            <h4 className="font-semibold text-sm mb-2 text-gray-700">{section.title}</h4>
-          )}
-          {section.instruction && (
-            <div 
-              className="text-xs text-gray-600 mb-2"
-              dangerouslySetInnerHTML={{ __html: section.instruction }}
-              style={{
-                wordWrap: 'break-word',
-                overflowWrap: 'break-word'
-              }}
-            />
-          )}
-          {/* ❌ REMOVED: Passage image from sidebar - only show in main content */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-            {section.questions.map((q) => {
-              const questionKey = String(q.id);
-              const isAnswered = answers[questionKey] !== undefined;
-              const isCurrent = currentQuestion === questionKey;
-              
-              return (
-                <button
-                  key={questionKey}
-                  onClick={() => onQuestionSelect(questionKey)}
-                  className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded border-2 font-semibold text-xs sm:text-sm transition-all ${
-                    isCurrent
-                      ? 'border-blue-500 bg-blue-500 text-white'
-                      : isAnswered
-                      ? 'border-green-500 bg-green-100 text-green-700'
-                      : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {(() => {
+          // ✅ FIX: Loại bỏ duplicate sections - ưu tiên knowledge nếu trùng ID
+          const seenSectionIds = new Set();
+          const uniqueSections = [];
+          
+          // Thêm knowledge sections trước
+          knowledgeSections?.forEach(section => {
+            if (!seenSectionIds.has(section.id)) {
+              seenSectionIds.add(section.id);
+              uniqueSections.push({ ...section, _testType: 'knowledge' });
+            }
+          });
+          
+          // Thêm reading sections sau (bỏ qua nếu đã có trong knowledge)
+          readingSections?.forEach(section => {
+            if (!seenSectionIds.has(section.id)) {
+              seenSectionIds.add(section.id);
+              uniqueSections.push({ ...section, _testType: 'reading' });
+            }
+          });
+          
+          return uniqueSections;
+        })().map((section) => {
+          const sectionId = section.id;
+          // ✅ FIX: Dùng _testType đã được gán khi filter
+          const sectionTestType = section._testType || (knowledgeSections?.some(s => s.id === sectionId) 
+            ? 'knowledge' 
+            : readingSections?.some(s => s.id === sectionId) 
+              ? 'reading' 
+              : 'unknown');
+          const expanded = isExpanded(section, sectionTestType);
+          const sectionKey = getSectionKey(section, sectionTestType);
+          
+          return (
+            <div key={sectionKey} className="mb-4">
+              {/* Section header - clickable để expand/collapse */}
+              <button
+                onClick={(e) => toggleSection(sectionKey, e)}
+                className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors mb-2"
+              >
+                {section.title && (
+                  <h4 className="font-semibold text-sm text-gray-700 text-left flex-1">
+                    {section.title}
+                  </h4>
+                )}
+                <svg
+                  className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ml-2 ${
+                    expanded ? 'rotate-180' : ''
                   }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  {q.id}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {/* Section content - collapsible */}
+              {expanded && (
+                <div className="ml-2">
+                  {/* Instruction - chỉ hiển thị khi expand, có thể ẩn nếu quá dài */}
+                  {section.instruction && (
+                    <div 
+                      className="text-xs text-gray-600 mb-2 line-clamp-2"
+                      dangerouslySetInnerHTML={{ __html: section.instruction }}
+                      style={{
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word'
+                      }}
+                      title={section.instruction.replace(/<[^>]*>/g, '')}
+                    />
+                  )}
+                  
+                  {/* Question buttons grid */}
+                  <div className="grid grid-cols-4 md:grid-cols-5 gap-1.5">
+                    {section.questions.map((q) => {
+                      const questionKey = String(q.id);
+                      const isAnswered = answers[questionKey] !== undefined;
+                      const isCurrent = currentQuestion === questionKey;
+                      
+                      return (
+                        <button
+                          key={questionKey}
+                          onClick={() => onQuestionSelect(questionKey)}
+                          className={`w-9 h-9 md:w-10 md:h-10 rounded border-2 font-semibold text-xs sm:text-sm transition-all ${
+                            isCurrent
+                              ? 'border-blue-500 bg-blue-500 text-white shadow-md scale-105'
+                              : isAnswered
+                              ? 'border-green-500 bg-green-100 text-green-700'
+                              : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+                          }`}
+                        >
+                          {q.id}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
       
-      <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
-        <div className="flex justify-between mb-1">
+      {/* Footer - Fixed */}
+      <div className="p-4 border-t border-gray-200 flex-shrink-0 bg-gray-50">
+        <div className="flex justify-between items-center text-sm text-gray-600">
           <span>{t('jlpt.knowledgePage.answeredLabel')}</span>
-          <span className="font-bold">{Object.keys(answers).length}/{sections.flatMap(s => s.questions).length}</span>
+          <span className="font-bold text-base">
+            {Object.keys(answers).length}/{sections.flatMap(s => s.questions).length}
+          </span>
         </div>
       </div>
     </div>
@@ -252,7 +442,8 @@ function ExamKnowledgePage() {
             ...section,
             title: firstLine,
             instruction: rest,
-            passageImage: section.passageImage // ✅ Preserve passageImage
+            passageImages: section.passageImages, // ✅ NEW: Preserve passageImages array
+            passageImage: section.passageImage // ✅ Backward compatibility: preserve old format
           };
         }
       }
@@ -266,7 +457,8 @@ function ExamKnowledgePage() {
             ...section,
             title: firstLine,
             instruction: rest,
-            passageImage: section.passageImage // ✅ Preserve passageImage
+            passageImages: section.passageImages, // ✅ NEW: Preserve passageImages array
+            passageImage: section.passageImage // ✅ Backward compatibility: preserve old format
           };
         }
       }
@@ -275,7 +467,8 @@ function ExamKnowledgePage() {
         ...section,
         title: cleanTitle || section.title,
         instruction: cleanInstruction || section.instruction,
-        passageImage: section.passageImage // ✅ Preserve passageImage
+        passageImages: section.passageImages, // ✅ NEW: Preserve passageImages array
+        passageImage: section.passageImage // ✅ Backward compatibility: preserve old format
       };
     };
     
@@ -596,7 +789,8 @@ function ExamKnowledgePage() {
     <>
       <div className="w-full pr-0 md:pr-4 overflow-x-hidden">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-          <div className="flex-1 min-w-0 w-full bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col">
+          {/* ✅ FIX: Container câu hỏi - Fixed height giống sidebar (giống admin panel) */}
+          <div className="w-full md:flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)]">
             <div className="p-3 sm:p-4 md:p-6 border-b border-gray-300 flex-shrink-0">
               <Breadcrumbs paths={breadcrumbPaths} />
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mt-3 md:mt-4">
@@ -605,28 +799,48 @@ function ExamKnowledgePage() {
               </div>
             </div>
 
-            <div className="flex-1 md:overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6">
+            {/* ✅ FIX: Scrollable content với fixed height */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6">
               <div className="max-w-4xl mx-auto w-full">
-                {/* ✅ NEW: Display passage image if section has one */}
+                {/* ✅ NEW: Display passage images if section has any */}
                 {(() => {
                   // Find the section that contains the current question
                   const currentSection = sections.find(section => 
                     section.questions?.some(q => String(q.id) === normalizedCurrentId)
                   );
                   
-                  if (currentSection?.passageImage?.url) {
-                    return (
-                      <div className="mb-6 bg-white rounded-lg shadow-lg p-4">
-                        <img
-                          src={currentSection.passageImage.url}
-                          alt="Reading passage"
-                          className="w-full max-w-full h-auto object-contain rounded-lg"
-                          style={{ maxHeight: '600px' }}
-                        />
-                      </div>
-                    );
+                  if (!currentSection) return null;
+                  
+                  // ✅ NEW: Support both passageImages (array) and passageImage (single) for backward compatibility
+                  let imagesToDisplay = [];
+                  
+                  if (currentSection.passageImages && Array.isArray(currentSection.passageImages) && currentSection.passageImages.length > 0) {
+                    // New format: array of images
+                    imagesToDisplay = currentSection.passageImages
+                      .filter(img => img.url)
+                      .sort((a, b) => (a.order || 0) - (b.order || 0));
+                  } else if (currentSection.passageImage?.url) {
+                    // Old format: single image, convert to array for display
+                    imagesToDisplay = [currentSection.passageImage];
                   }
-                  return null;
+                  
+                  if (imagesToDisplay.length === 0) return null;
+                  
+                  return (
+                    <div className="mb-6 space-y-4">
+                      {imagesToDisplay.map((image, idx) => (
+                        <div key={idx} className="bg-white rounded-lg shadow-lg p-4">
+                          <img
+                            src={image.url}
+                            alt={`Reading passage ${idx + 1}`}
+                            className="w-full max-w-full h-auto object-contain rounded-lg mx-auto"
+                            style={{ maxHeight: '600px' }}
+                            loading={idx === 0 ? 'eager' : 'lazy'} // Preload first image
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  );
                 })()}
                 
                 <QuestionDisplay
@@ -665,15 +879,20 @@ function ExamKnowledgePage() {
             </div>
           </div>
 
-          <div className="w-full md:w-80 md:sticky md:top-4 mt-4 md:mt-0 flex-shrink-0">
-            <NavigationPanel
-              sections={sections}
-              currentQuestion={normalizedCurrentId}
-              answers={answers}
-              onQuestionSelect={setCurrentQuestionId}
-              t={t}
-              totalTime={totalTime}
-            />
+          <div className="w-full md:w-72 md:sticky md:top-4 mt-4 md:mt-0 flex-shrink-0">
+            <div className="h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)] flex flex-col">
+              <NavigationPanel
+                sections={sections}
+                currentQuestion={normalizedCurrentId}
+                answers={answers}
+                onQuestionSelect={setCurrentQuestionId}
+                t={t}
+                totalTime={totalTime}
+                knowledgeSections={knowledgeSections}
+                readingSections={readingSections}
+                allQuestions={allQuestions}
+              />
+            </div>
           </div>
         </div>
 
