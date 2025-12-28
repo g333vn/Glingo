@@ -56,6 +56,12 @@ header: {
     roleAdmin: 'Admin Role',
     roleEditor: 'Editor Role',
     clickToView: 'Click to view menu'
+  },
+  logoutModal: {
+    title: 'Confirm Logout',
+    message: 'Are you sure you want to logout?',
+    stayButton: 'Stay',
+    confirmButton: 'Logout'
   }
 },
 
@@ -2493,6 +2499,9 @@ examManagement: {
                                                                                                                                   hideTemplate: 'Hide Template Structure',
                                                                                                                                     showTemplate: 'Show Template Structure',
                                                                                                                                       templateTitle: 'JSON Template for {type}',
+                                                                                                                                      hideGeminiPrompt: 'Hide Gemini Prompt',
+                                                                                                                                      showGeminiPrompt: 'Show Gemini Prompt',
+                                                                                                                                      geminiPromptTitle: 'Prompt Template for Google Gemini',
                                                                                                                                         copy: 'Copy',
                                                                                                                                           copyJSON: 'Copy JSON',
                                                                                                                                             downloadFile: 'Download File',

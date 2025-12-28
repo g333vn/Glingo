@@ -56,6 +56,12 @@ header: {
     roleAdmin: '管理者ロール',
     roleEditor: '編集者ロール',
     clickToView: 'クリックしてメニューを表示'
+  },
+  logoutModal: {
+    title: 'ログアウトの確認',
+    message: 'ログアウトしてもよろしいですか？',
+    stayButton: 'キャンセル',
+    confirmButton: 'ログアウト'
   }
 },
 
@@ -2480,6 +2486,9 @@ examManagement: {
                                                                                                                                   hideTemplate: 'テンプレート構造を非表示',
                                                                                                                                     showTemplate: 'テンプレート構造を表示',
                                                                                                                                       templateTitle: '{type}のJSONテンプレート',
+                                                                                                                                      hideGeminiPrompt: 'Geminiプロンプトを非表示',
+                                                                                                                                      showGeminiPrompt: 'Geminiプロンプトを表示',
+                                                                                                                                      geminiPromptTitle: 'Google Gemini用プロンプトテンプレート',
                                                                                                                                         copy: 'コピー',
                                                                                                                                           copyJSON: 'JSONをコピー',
                                                                                                                                             downloadFile: 'ファイルをダウンロード',

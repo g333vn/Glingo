@@ -915,6 +915,7 @@ function ExamKnowledgePage() {
               alignItems: 'center',
               justifyContent: 'center',
               padding: '1rem',
+              overflowY: 'auto',
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
@@ -932,19 +933,21 @@ function ExamKnowledgePage() {
                 width: '100%',
                 maxHeight: 'calc(100vh - 4rem)',
                 overflowY: 'auto',
-                overscrollBehavior: 'contain', // ✅ Prevent scroll chaining to body
+                overscrollBehavior: 'contain',
               }}
               onWheel={(e) => {
-                // ✅ Prevent body scroll when scrolling inside modal
+                // ✅ Allow scroll inside modal content
+                // Only prevent body scroll when at boundaries
                 const element = e.currentTarget;
                 const { scrollTop, scrollHeight, clientHeight } = element;
-                const isAtTop = scrollTop === 0;
+                const isAtTop = scrollTop <= 1;
                 const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
                 
-                // If can scroll more in modal, prevent body scroll
-                if ((!isAtTop && e.deltaY < 0) || (!isAtBottom && e.deltaY > 0)) {
+                // If at top and scrolling up, or at bottom and scrolling down, prevent body scroll
+                if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
                   e.stopPropagation();
                 }
+                // Otherwise, allow normal scroll in modal
               }}
             >
               <h2 className="text-xl font-bold mb-4 text-yellow-600">{t('jlpt.knowledgePage.incompleteModal.title')}</h2>
@@ -993,6 +996,7 @@ function ExamKnowledgePage() {
               alignItems: 'center',
               justifyContent: 'center',
               padding: '1rem',
+              overflowY: 'auto',
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
@@ -1010,19 +1014,21 @@ function ExamKnowledgePage() {
                 width: '100%',
                 maxHeight: 'calc(100vh - 4rem)',
                 overflowY: 'auto',
-                overscrollBehavior: 'contain', // ✅ Prevent scroll chaining to body
+                overscrollBehavior: 'contain',
               }}
               onWheel={(e) => {
-                // ✅ Prevent body scroll when scrolling inside modal
+                // ✅ Allow scroll inside modal content
+                // Only prevent body scroll when at boundaries
                 const element = e.currentTarget;
                 const { scrollTop, scrollHeight, clientHeight } = element;
-                const isAtTop = scrollTop === 0;
+                const isAtTop = scrollTop <= 1;
                 const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
                 
-                // If can scroll more in modal, prevent body scroll
-                if ((!isAtTop && e.deltaY < 0) || (!isAtBottom && e.deltaY > 0)) {
+                // If at top and scrolling up, or at bottom and scrolling down, prevent body scroll
+                if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
                   e.stopPropagation();
                 }
+                // Otherwise, allow normal scroll in modal
               }}
             >
               <h2 className="text-xl font-bold mb-4">{t('jlpt.knowledgePage.submitModal.title')}</h2>

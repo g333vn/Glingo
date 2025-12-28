@@ -105,7 +105,7 @@ function AdminLayout() {
 
       {/* Layout Container - để pages tự quản lý width và padding */}
       <div className="w-full">
-        <div className="w-full flex flex-col md:flex-row items-start gap-0 md:gap-6 mt-0 relative">
+        <div className="w-full flex flex-col md:flex-row items-start gap-0 md:gap-3 mt-0 relative">
           
           {/* 📌 SIDEBAR - STICKY ON DESKTOP, FIXED OVERLAY ON MOBILE - ✨ NEO BRUTALISM */}
           <div className={`

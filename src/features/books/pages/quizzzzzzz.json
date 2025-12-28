@@ -1,80 +1,81 @@
 [
   {
-    "id": "1",
-    "category": "listening",
-    "question": "1番",
+    "id": "20",
+    "category": "knowledge",
+    "question": "保留",
     "options": [
-      "1  せまい台所に置けるかどうか",
-      "2  さまざまな食器が入れやすいかどうか",
-      "3  使用する水が少ないかどうか",
-      "4  すすぎの温度が高いかどうか"
+      "デパートで子どもが迷子になったが、店員さんが保留してくれて無事だった。",
+      "上司の意見を聞く必要があるため、先方への返答 को保留した。",
+      "顧客のデータは随時このパソコンに保留しています。",
+      "帰ろうとしたら、「もう少しゆっくりしていってください」と、保留された。"
+    ],
+    "correctAnswer": 3,
+    "explanation": "20. ③ 上司の意見を聞く必要があるため、先方への返答を保留した。"
+  },
+  {
+    "id": "21",
+    "category": "knowledge",
+    "question": "緩和",
+    "options": [
+      "工事についてあらかじめ住民に知らせたほうが、苦情の緩和につながるだろう。",
+      "社員の働きやすさを実現するため、職場環境の緩和が行われた。",
+      "無駄なコピーをしないようにすることで、経費の緩和が可能になる。",
+      "電車の車両を増やすことで通勤時における混雑の緩和が期待される。"
     ],
     "correctAnswer": 4,
-    "explanation": "[Lưu ý cho Listening:\n- Audio file được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: N1-07.2025-Choukai-New.mp3\n- Instruction của section: \"[Instruction text]\" - Được đặt trong Section Form]\n\n[Giải thích đáp án đúng]"
+    "explanation": "21. ④ 電車の車両を増やすことで通勤時における混雑の緩和が期待される。"
   },
   {
-    "id": "2",
-    "category": "listening",
-    "question": "2番",
+    "id": "22",
+    "category": "knowledge",
+    "question": "程遠い",
     "options": [
-      "1  みんなが元気でいられるところ",
-      "2  みんなでコートを走り回るところ",
-      "3  みんなで助け合うところ",
-      "4  みんなが満足いくプレーができるところ"
-    ],
-    "correctAnswer": 3,
-    "explanation": "[Lưu ý cho Listening:\n- Audio file được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: N1-07.2025-Choukai-New.mp3\n- Instruction của section: \"[Instruction text]\" - Được đặt trong Section Form]\n\n[Giải thích đáp án đúng]"
-  },
-  {
-    "id": "3",
-    "category": "listening",
-    "question": "3番",
-    "options": [
-      "1  受信機の反応を良くする",
-      "2  車の本体を軽くする",
-      "3  タイヤを大きくする",
-      "4  パワーの強いバッテリーに替える"
-    ],
-    "correctAnswer": 3,
-    "explanation": "[Lưu ý cho Listening:\n- Audio file được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: N1-07.2025-Choukai-New.mp3\n- Instruction của section: \"[Instruction text]\" - Được đặt trong Section Form]\n\n[Giải thích đáp án đúng]"
-  },
-  {
-    "id": "4",
-    "category": "listening",
-    "question": "4番",
-    "options": [
-      "1  舞台にいろいろな装置があること",
-      "2  観客がかけ声をかけること",
-      "3  着物がごうかできれいなこと",
-      "4  男性の俳優が女性役をすること"
-    ],
-    "correctAnswer": 2,
-    "explanation": "[Lưu ý cho Listening:\n- Audio file được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: N1-07.2025-Choukai-New.mp3\n- Instruction của section: \"[Instruction text]\" - Được đặt trong Section Form]\n\n[Giải thích đáp án đúng]"
-  },
-  {
-    "id": "5",
-    "category": "listening",
-    "question": "5番",
-    "options": [
-      "1  底の部分の硬さ",
-      "2  生地の色の組み合わせ",
-      "3  生地の防水性",
-      "4  ひもを通す穴の位置"
+      "店の売り上げはかなり増えたが、まだ目標には程遠い。",
+      "卒業後、学生時代の友人とのつながりが徐々に程遠くなっている。",
+      "子どものころのことは、記憶が程遠くなっていてあまり覚えていない。",
+      "職場の同僚たちは、それぞれ年齢や趣味は程遠いが仲がいい。"
     ],
     "correctAnswer": 1,
-    "explanation": "[Lưu ý cho Listening:\n- Audio file được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: N1-07.2025-Choukai-New.mp3\n- Instruction của section: \"[Instruction text]\" - Được đặt trong Section Form]\n\n[Giải thích đáp án đúng]"
+    "explanation": "22. ① 店の売上はかなり増えたが、まだ目標には程遠い。"
   },
   {
-    "id": "6",
-    "category": "listening",
-    "question": "6番",
+    "id": "23",
+    "category": "knowledge",
+    "question": "まろやか",
     "options": [
-      "1  介護士の活動紹介",
-      "2  地域のお祭りへの参加",
-      "3  小学生との交流会",
-      "4  高校の介護体験の受け入れ"
+      "迷子になって泣いている子どもを安心させようと、まろやかに話しかけた。",
+      "妹は怒りっぽい私とは反対で、まろやかな性格だ。",
+      "少しクリームと砂糖を入れたら、まろやかな味になった。",
+      "この毛布はとてもまろやかで、触ると気持ちがいい。"
+    ],
+    "correctAnswer": 3,
+    "explanation": "23. ③ 少しクリームと砂糖を入れたら、まろやかな味になった。"
+  },
+  {
+    "id": "24",
+    "category": "knowledge",
+    "question": "脱却",
+    "options": [
+      "組織の発展のためには、現在の古い体制から脱却することが必要だ。",
+      "仕事が忙しくなったので、趣味で続けていたテニスのサークルを脱却した。",
+      "マラソン大会で、ユーキ選手は皆の予想を脱却する素晴らしいタイムで優勝した。",
+      "少し疲れたので、パーティーの途中で会場から脱却して外で休憩した。"
+    ],
+    "correctAnswer": 1,
+    "explanation": "24. ① 組織の発展のためには、現在の古い体制から脱却することが必要だ。"
+  },
+  {
+    "id": "25",
+    "category": "knowledge",
+    "question": "使いこなす",
+    "options": [
+      "今年度の予算は使いこなしてしまったので、新しい備品が購入できない。",
+      "あの人は相手によって態度を使いこなすので、あまり信用できない。",
+      "革のかばんは、長く使いこなすと、つやが出て美しくなる。",
+      "兄はマニュアルを少し読んだだけで、その機材を使いこなしていた。"
     ],
     "correctAnswer": 4,
-    "explanation": "[Lưu ý cho Listening:\n- Audio file được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: N1-07.2025-Choukai-New.mp3\n- Instruction của section: \"[Instruction text]\" - Được đặt trong Section Form]\n\n[Giải thích đáp án đúng]"
+    "explanation": "25. ④ 兄はマニュアルを少し読んだだけで、その機材を使いこなしていた。"
   }
 ]
+

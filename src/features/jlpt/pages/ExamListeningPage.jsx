@@ -110,6 +110,7 @@ const CountdownTimer = ({ initialTime, onTimeUp }) => {
 
 // Component Audio Player
 // ✅ UPDATED: Exam mode - chỉ play một lần, không pause/seek (giống thi thật)
+// ✅ FIX: Mobile audio playback support
 const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioStarted, t }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -118,23 +119,138 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
   // ✅ NEW: Track xem đã bấm play chưa (chỉ được bấm một lần)
   const [hasStarted, setHasStarted] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  // ✅ NEW: Error state for mobile debugging
+  const [playError, setPlayError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // ✅ NEW: Logic thi thật - chỉ play một lần, không pause/seek
-  const handlePlay = () => {
+  // ✅ NEW: Preload audio when component mounts or URL changes
+  useEffect(() => {
+    if (!audioRef.current || !sectionAudioUrl) return;
+
+    setIsLoading(true);
+    setPlayError(null);
+
+    // Load audio metadata
+    const audio = audioRef.current;
+    
+    const handleCanPlay = () => {
+      setIsLoading(false);
+      console.log('✅ Audio can play - readyState:', audio.readyState);
+    };
+
+    const handleLoadStart = () => {
+      console.log('🔄 Audio load started');
+      setIsLoading(true);
+    };
+
+    const handleError = (e) => {
+      console.error('❌ Audio load error:', e);
+      setIsLoading(false);
+      setPlayError('Không thể tải audio. Vui lòng kiểm tra kết nối mạng.');
+    };
+
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('loadstart', handleLoadStart);
+    audio.addEventListener('error', handleError);
+
+    // Force load metadata
+    audio.load();
+
+    return () => {
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('loadstart', handleLoadStart);
+      audio.removeEventListener('error', handleError);
+    };
+  }, [sectionAudioUrl]);
+
+  // ✅ UPDATED: Logic thi thật - chỉ play một lần, không pause/seek
+  // ✅ FIX: Mobile-friendly play handler - CRITICAL: Must call play() immediately in user gesture
+  const handlePlay = (e) => {
+    // ✅ CRITICAL: Prevent default to ensure user gesture is preserved
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (!audioRef.current || hasStarted) return;
 
-    // Bấm play lần đầu
-    audioRef.current.play().then(() => {
+    const audio = audioRef.current;
+    setPlayError(null);
+
+    // ✅ CRITICAL for mobile: Check readyState but don't wait - call play() immediately
+    // Mobile browsers require play() to be called directly in user gesture handler
+    if (audio.readyState < 2) {
+      console.warn('⚠️ Audio not fully ready (readyState:', audio.readyState, '), but attempting play anyway...');
+      // Still try to play - browser may handle it
+    }
+
+    // ✅ CRITICAL: Call play() immediately - don't await anything before this
+    // This must happen synchronously in the user gesture handler
+    const playPromise = audio.play();
+
+    // ✅ Handle promise if returned (modern browsers)
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          // ✅ Success - update state
+          setHasStarted(true);
+          setIsPlaying(true);
+          setIsLoading(false);
+          
+          // ✅ NEW: Notify parent component that audio has started
+          if (onAudioStarted) {
+            onAudioStarted();
+          }
+          
+          console.log('🎵 Audio started - Exam mode: no pause/seek allowed');
+          console.log('📱 Mobile check - User agent:', navigator.userAgent);
+        })
+        .catch((error) => {
+          console.error('❌ Error playing audio:', error);
+          setIsLoading(false);
+          
+          // ✅ Detailed error messages for debugging
+          let errorMessage = 'Không thể phát audio. ';
+          
+          if (error.name === 'NotAllowedError') {
+            errorMessage += 'Trình duyệt đã chặn phát audio. Vui lòng bấm lại nút phát.';
+          } else if (error.name === 'NotSupportedError') {
+            errorMessage += 'Định dạng audio không được hỗ trợ.';
+          } else if (error.name === 'AbortError') {
+            errorMessage += 'Phát audio bị hủy.';
+          } else if (error.message && error.message.includes('play() request was interrupted')) {
+            errorMessage += 'Yêu cầu phát bị gián đoạn. Vui lòng thử lại.';
+          } else {
+            errorMessage += `Lỗi: ${error.message || error.name || 'Unknown error'}`;
+          }
+          
+          setPlayError(errorMessage);
+          
+          // ✅ For mobile: Try to provide helpful instructions
+          if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            console.warn('📱 Mobile device detected - Audio play failed');
+            console.warn('💡 Tip: Make sure audio is triggered by direct user interaction');
+            console.warn('💡 Error details:', {
+              name: error.name,
+              message: error.message,
+              readyState: audio.readyState,
+              networkState: audio.networkState
+            });
+          }
+        });
+    } else {
+      // ✅ Legacy browser - play() doesn't return promise
+      // Assume success and update state
       setHasStarted(true);
       setIsPlaying(true);
-      // ✅ NEW: Notify parent component that audio has started
+      setIsLoading(false);
+      
       if (onAudioStarted) {
         onAudioStarted();
       }
-      console.log('🎵 Audio started - Exam mode: no pause/seek allowed');
-    }).catch((error) => {
-      console.error('❌ Error playing audio:', error);
-    });
+      
+      console.log('🎵 Audio started (legacy browser)');
+    }
   };
 
   const handleTimeUpdate = () => {
@@ -146,6 +262,15 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       setDuration(audioRef.current.duration);
+      setIsLoading(false);
+      console.log('✅ Audio metadata loaded - Duration:', audioRef.current.duration);
+    }
+  };
+
+  const handleCanPlay = () => {
+    setIsLoading(false);
+    if (audioRef.current) {
+      console.log('✅ Audio can play - readyState:', audioRef.current.readyState);
     }
   };
 
@@ -153,6 +278,17 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
     setIsPlaying(false);
     setIsFinished(true);
     console.log('✅ Audio finished');
+  };
+
+  const handlePlayStart = () => {
+    setIsPlaying(true);
+    setPlayError(null);
+    console.log('▶️ Audio playback started');
+  };
+
+  const handlePlayPause = () => {
+    setIsPlaying(false);
+    console.log('⏸️ Audio paused');
   };
 
   // ❌ REMOVED: handleSeek - không cho phép tua trong thi thật
@@ -206,17 +342,68 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
       <audio
         ref={audioRef}
         src={sectionAudioUrl}
+        preload="metadata"
+        playsInline
+        webkit-playsinline="true"
+        x-webkit-airplay="allow"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onCanPlay={handleCanPlay}
+        onPlay={handlePlayStart}
+        onPause={handlePlayPause}
         onEnded={handleEnded}
         onError={(e) => {
           console.error('❌ Audio load error:', e);
+          const audio = e.target;
+          const error = audio.error;
+          if (error) {
+            let errorMsg = 'Lỗi tải audio: ';
+            switch (error.code) {
+              case error.MEDIA_ERR_ABORTED:
+                errorMsg += 'Tải bị hủy';
+                break;
+              case error.MEDIA_ERR_NETWORK:
+                errorMsg += 'Lỗi mạng';
+                break;
+              case error.MEDIA_ERR_DECODE:
+                errorMsg += 'Lỗi giải mã';
+                break;
+              case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                errorMsg += 'Định dạng không được hỗ trợ';
+                break;
+              default:
+                errorMsg += `Lỗi ${error.code}`;
+            }
+            setPlayError(errorMsg);
+          }
           setIsPlaying(false);
+          setIsLoading(false);
         }}
       />
       
+      {/* ✅ NEW: Error message - Show if play failed */}
+      {playError && (
+        <div className="mb-4 p-3 bg-red-100/80 backdrop-blur-sm border border-red-300 rounded-lg">
+          <p className="text-xs text-red-900 font-medium text-center">
+            ⚠️ {playError}
+          </p>
+          <p className="text-xs text-red-700 text-center mt-1">
+            Vui lòng thử bấm nút phát lại hoặc làm mới trang.
+          </p>
+        </div>
+      )}
+
+      {/* ✅ NEW: Loading message */}
+      {isLoading && !hasStarted && (
+        <div className="mb-4 p-3 bg-blue-100/80 backdrop-blur-sm border border-blue-300 rounded-lg">
+          <p className="text-xs text-blue-900 font-medium text-center">
+            ⏳ Đang tải audio...
+          </p>
+        </div>
+      )}
+
       {/* ✅ NEW: Warning message - Compact design */}
-      {!hasStarted && (
+      {!hasStarted && !playError && !isLoading && (
         <div className="mb-4 p-3 bg-amber-100/80 backdrop-blur-sm border border-amber-300 rounded-lg">
           <p className="text-xs text-amber-900 font-medium text-center">
             {t('jlpt.listeningPage.audioWarning')}
@@ -248,12 +435,21 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
               {!hasStarted ? (
                 <button
                   onClick={handlePlay}
-                  className="w-full h-full flex items-center justify-center text-white hover:scale-110 transition-transform"
-                  title={t('jlpt.listeningPage.audioPlayerPlayButtonTitle')}
+                  disabled={isLoading}
+                  className="w-full h-full flex items-center justify-center text-white hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                  title={isLoading ? 'Đang tải audio...' : t('jlpt.listeningPage.audioPlayerPlayButtonTitle')}
+                  type="button"
                 >
-                  <svg className="w-6 h-6 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
+                  {isLoading ? (
+                    <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  )}
                 </button>
               ) : (
                 <div 
@@ -1013,6 +1209,7 @@ function ExamListeningPage() {
               alignItems: 'center',
               justifyContent: 'center',
               padding: '1rem',
+              overflowY: 'auto',
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
@@ -1030,19 +1227,21 @@ function ExamListeningPage() {
                 width: '100%',
                 maxHeight: 'calc(100vh - 4rem)',
                 overflowY: 'auto',
-                overscrollBehavior: 'contain', // ✅ Prevent scroll chaining to body
+                overscrollBehavior: 'contain',
               }}
               onWheel={(e) => {
-                // ✅ Prevent body scroll when scrolling inside modal
+                // ✅ Allow scroll inside modal content
+                // Only prevent body scroll when at boundaries
                 const element = e.currentTarget;
                 const { scrollTop, scrollHeight, clientHeight } = element;
-                const isAtTop = scrollTop === 0;
+                const isAtTop = scrollTop <= 1;
                 const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
                 
-                // If can scroll more in modal, prevent body scroll
-                if ((!isAtTop && e.deltaY < 0) || (!isAtBottom && e.deltaY > 0)) {
+                // If at top and scrolling up, or at bottom and scrolling down, prevent body scroll
+                if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
                   e.stopPropagation();
                 }
+                // Otherwise, allow normal scroll in modal
               }}
             >
               <h2 className="text-xl font-bold mb-4 text-yellow-600">⚠️ CẢNH BÁO: CÒN CÂU CHƯA TRẢ LỜI</h2>
@@ -1093,6 +1292,7 @@ function ExamListeningPage() {
               alignItems: 'center',
               justifyContent: 'center',
               padding: '1rem',
+              overflowY: 'auto',
             }}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
@@ -1110,19 +1310,21 @@ function ExamListeningPage() {
                 width: '100%',
                 maxHeight: 'calc(100vh - 4rem)',
                 overflowY: 'auto',
-                overscrollBehavior: 'contain', // ✅ Prevent scroll chaining to body
+                overscrollBehavior: 'contain',
               }}
               onWheel={(e) => {
-                // ✅ Prevent body scroll when scrolling inside modal
+                // ✅ Allow scroll inside modal content
+                // Only prevent body scroll when at boundaries
                 const element = e.currentTarget;
                 const { scrollTop, scrollHeight, clientHeight } = element;
-                const isAtTop = scrollTop === 0;
+                const isAtTop = scrollTop <= 1;
                 const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
                 
-                // If can scroll more in modal, prevent body scroll
-                if ((!isAtTop && e.deltaY < 0) || (!isAtBottom && e.deltaY > 0)) {
+                // If at top and scrolling up, or at bottom and scrolling down, prevent body scroll
+                if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
                   e.stopPropagation();
                 }
+                // Otherwise, allow normal scroll in modal
               }}
             >
               <h2 className="text-xl font-bold mb-4">{t('jlpt.listeningPage.submitModal.title')}</h2>

@@ -56,6 +56,12 @@ const vi = {
             roleAdmin: 'Vai trò Admin',
             roleEditor: 'Vai trò Editor',
             clickToView: 'Nhấp để xem menu'
+        },
+        logoutModal: {
+            title: 'Xác nhận đăng xuất',
+            message: 'Bạn có chắc chắn muốn đăng xuất không?',
+            stayButton: 'Ở lại',
+            confirmButton: 'Đăng xuất'
         }
     },
 
@@ -2476,6 +2482,9 @@ const vi = {
                 hideTemplate: 'Ẩn cấu trúc mẫu',
                 showTemplate: 'Hiện cấu trúc mẫu',
                 templateTitle: 'Mẫu JSON cho phần {type}',
+                hideGeminiPrompt: 'Ẩn Gemini Prompt',
+                showGeminiPrompt: 'Hiện Gemini Prompt',
+                geminiPromptTitle: 'Prompt Template cho Google Gemini',
                 copy: 'Copy',
                 copyJSON: 'Copy JSON',
                 downloadFile: 'Download File',

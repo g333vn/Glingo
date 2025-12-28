@@ -234,6 +234,15 @@ function ExamManagementPage() {
     // ❌ REMOVED: Audio fields - audio is now at listening part level, not section level
   });
   const jsonUploadInputRef = useRef(null);
+  
+  // ✅ NEW: Ref và state cho container contents để tính toán vị trí và kích thước modal
+  const containerContentsRef = useRef(null);
+  const [containerBounds, setContainerBounds] = useState({ width: 1100, top: 0, left: 0, height: 0 });
+  
+  // ✅ NEW: Preview modal enhancements
+  const [previewSortBy, setPreviewSortBy] = useState('id'); // 'id', 'status'
+  const [previewFilter, setPreviewFilter] = useState('all'); // 'all', 'complete', 'incomplete'
+  const previewContentRef = useRef(null); // For keyboard navigation
 
   // ✅ NEW: Check for duplicate question text
   useEffect(() => {
@@ -250,6 +259,108 @@ function ExamManagementPage() {
     );
     setIsDuplicateQuestionText(isDuplicate);
   }, [questionForm.question, selectedSection, editingQuestion]);
+
+  // ✅ NEW: Handle ESC key to close preview modal
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && showPreview) {
+        setShowPreview(false);
+      }
+    };
+    
+    if (showPreview) {
+      document.addEventListener('keydown', handleEscape);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+    
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showPreview]);
+
+  // ✅ NEW: Tính toán vị trí và kích thước container contents khi mở preview
+  useEffect(() => {
+    if (showPreview && containerContentsRef.current) {
+      const updateBounds = () => {
+        if (containerContentsRef.current) {
+          const rect = containerContentsRef.current.getBoundingClientRect();
+          setContainerBounds({
+            width: rect.width,
+            height: rect.height,
+            top: rect.top,
+            left: rect.left,
+            right: rect.right,
+            bottom: rect.bottom
+          });
+        }
+      };
+
+      // Tính toán ngay lập tức
+      updateBounds();
+
+      // ✅ ResizeObserver để theo dõi container thay đổi kích thước
+      const resizeObserver = new ResizeObserver(() => {
+        updateBounds();
+      });
+      resizeObserver.observe(containerContentsRef.current);
+
+      // Tính toán lại khi window resize hoặc scroll
+      window.addEventListener('resize', updateBounds);
+      window.addEventListener('scroll', updateBounds, true);
+
+      // ✅ Throttle để tránh update quá nhiều
+      let rafId = null;
+      const throttledUpdate = () => {
+        if (rafId) return;
+        rafId = requestAnimationFrame(() => {
+          updateBounds();
+          rafId = null;
+        });
+      };
+
+      // ✅ MutationObserver để theo dõi thay đổi DOM của container
+      const mutationObserver = new MutationObserver(throttledUpdate);
+      if (containerContentsRef.current) {
+        mutationObserver.observe(containerContentsRef.current, {
+          attributes: true,
+          attributeFilter: ['style', 'class'],
+          childList: false,
+          subtree: false
+        });
+      }
+
+      // ✅ Interval check để đảm bảo luôn cập nhật (fallback)
+      let lastWidth = 0;
+      let lastHeight = 0;
+      const intervalId = setInterval(() => {
+        if (containerContentsRef.current) {
+          const rect = containerContentsRef.current.getBoundingClientRect();
+          const currentWidth = rect.width;
+          const currentHeight = rect.height;
+          // Chỉ update nếu kích thước thay đổi đáng kể (> 1px)
+          if (Math.abs(currentWidth - lastWidth) > 1 || 
+              Math.abs(currentHeight - lastHeight) > 1) {
+            lastWidth = currentWidth;
+            lastHeight = currentHeight;
+            updateBounds();
+          }
+        }
+      }, 100); // Check mỗi 100ms
+
+      return () => {
+        resizeObserver.disconnect();
+        mutationObserver.disconnect();
+        clearInterval(intervalId);
+        window.removeEventListener('resize', updateBounds);
+        window.removeEventListener('scroll', updateBounds, true);
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+        }
+      };
+    }
+  }, [showPreview]);
 
   useEffect(() => {
     if (sections.length === 0) {
@@ -2569,37 +2680,91 @@ function ExamManagementPage() {
     return TEST_TYPE_ORDER.every((type) => (examStats[type]?.count || 0) > 0);
   }, [examStats]);
 
-  // ✅ UPDATED: Generate template JSON - dynamically adjust based on selected section
-  const templateJSON = useMemo(() => {
-    const questionTemplate = { ...QUESTION_TEMPLATES[selectedTestType] || QUESTION_TEMPLATES.knowledge };
+  // ✅ UPDATED: Generate Gemini Prompt Template - dynamically adjust based on selected section
+  const geminiPromptTemplate = useMemo(() => {
+    const testTypeLabel = getTestTypeLabel(selectedTestType) || selectedTestType;
+    const sectionInfo = selectedSection 
+      ? `\n- Section hiện tại: "${selectedSection.title}"\n- Instruction: "${selectedSection.instruction || '[Chưa có instruction]'}"`
+      : '\n- Chưa chọn section (sẽ áp dụng cho tất cả sections)';
     
-    // ✅ NEW: If section is selected, add a note about section instruction and audio
-    // But don't include section instruction in question field
-    if (selectedSection) {
-      let note = '';
-      if (selectedTestType === 'listening') {
-        // ✅ UPDATED: For listening, note about audio at listening part level
-        const hasAudio = listeningPartAudio.audioUrl || examData?.listening?.audioUrl;
-        const audioName = listeningPartAudio.audioName || examData?.listening?.audioName || '[Tên file audio]';
-        note = `[Lưu ý cho Listening:\n- Audio file được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: ${audioName}\n- Instruction của section: "${selectedSection.instruction || '[Instruction text]'}" - Được đặt trong Section Form]\n\n`;
-      } else {
-        // For knowledge/reading
-        if (selectedSection.instruction) {
-          note = `[Lưu ý: Instruction của section "${selectedSection.title}" là: "${selectedSection.instruction}" - Được đặt trong Section Form, không phải trong mỗi câu hỏi]\n\n`;
-        } else {
-          note = `[Lưu ý: Section "${selectedSection.title}" chưa có instruction. Vui lòng thêm instruction trong Section Form]\n\n`;
-        }
-      }
-      questionTemplate.explanation = note + questionTemplate.explanation;
+    let formatExample = '';
+    if (selectedTestType === 'reading') {
+      formatExample = `{
+  "id": "11",
+  "category": "reading",
+  "question": "本文の内容と合っているものはどれか。",
+  "passage": "長い文章の内容がここに入ります。",
+  "options": [
+    "選択肢1",
+    "選択肢2",
+    "選択肢3",
+    "選択肢4"
+  ],
+  "correctAnswer": 3,
+  "explanation": "本文の第2段落に...。"
+}`;
+    } else if (selectedTestType === 'listening') {
+      formatExample = `{
+  "id": "30",
+  "category": "listening",
+  "question": "音声を聞いて、最も正しい答えを選びなさい。",
+  "options": [
+    "選択肢1",
+    "選択肢2",
+    "選択肢3",
+    "選択肢4"
+  ],
+  "correctAnswer": 2,
+  "explanation": "音声中のキーフレーズ...。"
+}`;
     } else {
-      // Chưa chọn section
-      const note = selectedTestType === 'listening'
-        ? `[Lưu ý cho Listening:\n- Audio file được upload ở Listening Part level (không phải Section Form)\n- Audio hiện tại: [Tên file audio]\n- Instruction của section: "[Instruction text]" - Được đặt trong Section Form]\n\n`
-        : `[Lưu ý: Instruction của section sẽ được đặt trong Section Form, không phải trong mỗi câu hỏi]\n\n`;
-      questionTemplate.explanation = note + questionTemplate.explanation;
+      // knowledge
+      formatExample = `{
+  "id": "1",
+  "category": "knowledge",
+  "question": "余暇の楽しみ方は色々ある。",
+  "options": [
+    "ようか",
+    "よか",
+    "よが",
+    "ようが"
+  ],
+  "correctAnswer": 2,
+  "explanation": "余暇 (よか) : Thời gian rảnh rỗi, lúc rảnh rỗi."
+}`;
     }
     
-    return JSON.stringify(questionTemplate, null, 2);
+    return `Bạn là chuyên gia xử lý đề thi JLPT. Nhiệm vụ của bạn là phân tích ảnh câu hỏi và trả về JSON theo format sau:
+
+${formatExample}
+
+QUAN TRỌNG - ĐỌC KỸ:
+1. correctAnswer phải là số 1, 2, 3, hoặc 4 (1-based), KHÔNG phải 0, 1, 2, 3 (0-based)
+   - Đáp án ① = 1, ② = 2, ③ = 3, ④ = 4
+   - Lấy từ ảnh đáp án (ảnh thứ 2 nếu có)
+2. options chỉ chứa nội dung, KHÔNG có số thứ tự phía trước
+   - Đúng: ["ようか", "よか", "よが", "ようが"]
+   - Sai: ["1 ようか", "2 よか", "3 よが", "4 ようが"]
+   - Trích xuất từ ảnh câu hỏi
+3. question giữ nguyên format từ ảnh (có thể có gạch chân, chỗ trống, đoạn văn...)
+   - Không thêm số thứ tự vào đầu question
+   - Không thêm instruction của section vào question
+   - Trích xuất chính xác từ ảnh câu hỏi
+4. explanation: TRÍCH XUẤT từ ảnh đáp án (ảnh thứ 2), KHÔNG tự tạo giải thích
+   - Nếu ảnh đáp án có giải thích/note → copy nguyên văn vào explanation
+   - Nếu ảnh đáp án chỉ có đáp án đúng (ví dụ: "② よか") → explanation có thể để trống hoặc chỉ ghi đáp án
+   - KHÔNG tự giải thích hay tạo nội dung mới
+${selectedTestType === 'reading' ? '5. passage: Đoạn văn dài - trích xuất từ ảnh nếu có\n' : ''}${selectedTestType === 'listening' ? '5. listening: Audio được quản lý riêng, không cần thêm vào JSON\n' : ''}
+LƯU Ý:
+- Bạn chỉ cần TRÍCH XUẤT và FORMAT lại thông tin từ ảnh thành JSON
+- KHÔNG tự tạo nội dung, KHÔNG tự giải thích
+- Tất cả thông tin phải có trong ảnh đã cung cấp
+
+Thông tin context (để tham khảo - KHÔNG cần thêm vào JSON):
+- Loại câu hỏi: ${testTypeLabel}${sectionInfo}
+${selectedSection ? `\n⚠️ LƯU Ý QUAN TRỌNG: Instruction "${selectedSection.instruction || '[Chưa có]'}" là của Section này, KHÔNG được thêm vào field "question" trong JSON. Field "question" chỉ chứa nội dung câu hỏi từ ảnh.` : ''}
+
+Hãy phân tích ảnh câu hỏi và ảnh đáp án, trích xuất thông tin và trả về JSON chính xác theo format trên.`;
   }, [selectedTestType, selectedSection]);
 
   const canSwitchToTestType = useCallback((targetType) => {
@@ -2916,9 +3081,267 @@ function ExamManagementPage() {
     reader.readAsText(file);
   };
 
+  // ✅ NEW: Preview modal helper functions
+  // Check if question is complete
+  const isQuestionComplete = (q) => {
+    const hasQuestion = q.question && q.question.trim();
+    const options = Array.isArray(q.options) 
+      ? q.options 
+      : (q.options && typeof q.options === 'object' 
+          ? Object.values(q.options) 
+          : []);
+    const allOptionsValid = options.length >= 4 && options.every(opt => {
+      const optText = typeof opt === 'string' ? opt : (opt?.text || opt?.label || '');
+      return optText && optText.trim();
+    });
+    const hasCorrect = q.correctAnswer !== null && q.correctAnswer !== undefined;
+    return hasQuestion && allOptionsValid && hasCorrect;
+  };
+
+  // Get filtered and sorted questions for preview
+  const getFilteredAndSortedQuestions = () => {
+    if (!selectedSection || !selectedSection.questions) return [];
+    
+    let filtered = [...selectedSection.questions];
+
+    // Apply filter
+    if (previewFilter === 'complete') {
+      filtered = filtered.filter(q => isQuestionComplete(q));
+    } else if (previewFilter === 'incomplete') {
+      filtered = filtered.filter(q => !isQuestionComplete(q));
+    }
+
+    // Apply sort
+    if (previewSortBy === 'id') {
+      filtered.sort((a, b) => {
+        const idA = typeof a.id === 'number' ? a.id : parseInt(a.id) || 0;
+        const idB = typeof b.id === 'number' ? b.id : parseInt(b.id) || 0;
+        return idA - idB;
+      });
+    } else if (previewSortBy === 'status') {
+      filtered.sort((a, b) => {
+        const aComplete = isQuestionComplete(a);
+        const bComplete = isQuestionComplete(b);
+        if (aComplete === bComplete) {
+          const idA = typeof a.id === 'number' ? a.id : parseInt(a.id) || 0;
+          const idB = typeof b.id === 'number' ? b.id : parseInt(b.id) || 0;
+          return idA - idB;
+        }
+        return aComplete ? 1 : -1; // Incomplete first
+      });
+    }
+
+    return filtered;
+  };
+
+  // Copy question to clipboard (from preview)
+  const handleCopyQuestionPreview = async (question) => {
+    const options = Array.isArray(question.options) 
+      ? question.options 
+      : (question.options && typeof question.options === 'object' 
+          ? Object.values(question.options) 
+          : []);
+    
+    const correctAnswer = typeof question.correctAnswer === 'number' 
+      ? String.fromCharCode(65 + question.correctAnswer)
+      : (question.correctAnswer || 'N/A');
+
+    const questionText = `
+Câu hỏi ${question.id || question.number || 'N/A'}:
+${question.question || '(Chưa nhập)'}
+
+Đáp án:
+${options.map((opt, idx) => {
+  const optText = typeof opt === 'string' ? opt : (opt?.text || opt?.label || '');
+  return `${String.fromCharCode(65 + idx)}. ${optText || '(Chưa nhập)'}`;
+}).join('\n')}
+
+Đáp án đúng: ${correctAnswer}
+${question.explanation ? `\nGiải thích:\n${question.explanation}` : ''}
+    `.trim();
+
+    try {
+      await navigator.clipboard.writeText(questionText);
+      alert(`✅ Đã copy câu hỏi ${question.id || question.number || 'N/A'} vào clipboard!`);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = questionText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert(`✅ Đã copy câu hỏi ${question.id || question.number || 'N/A'} vào clipboard!`);
+    }
+  };
+
+  // Copy all questions to clipboard
+  const handleCopyAllQuestions = async () => {
+    if (!selectedSection || !selectedSection.questions || selectedSection.questions.length === 0) {
+      alert('⚠️ Không có câu hỏi nào để copy!');
+      return;
+    }
+
+    const allQuestionsText = selectedSection.questions.map(q => {
+      const options = Array.isArray(q.options) 
+        ? q.options 
+        : (q.options && typeof q.options === 'object' 
+            ? Object.values(q.options) 
+            : []);
+      
+      const correctAnswer = typeof q.correctAnswer === 'number' 
+        ? String.fromCharCode(65 + q.correctAnswer)
+        : (q.correctAnswer || 'N/A');
+
+      return `
+Câu hỏi ${q.id || q.number || 'N/A'}:
+${q.question || '(Chưa nhập)'}
+
+Đáp án:
+${options.map((opt, idx) => {
+  const optText = typeof opt === 'string' ? opt : (opt?.text || opt?.label || '');
+  return `${String.fromCharCode(65 + idx)}. ${optText || '(Chưa nhập)'}`;
+}).join('\n')}
+
+Đáp án đúng: ${correctAnswer}
+${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
+---
+      `.trim();
+    }).join('\n\n');
+
+    try {
+      await navigator.clipboard.writeText(allQuestionsText);
+      alert(`✅ Đã copy tất cả ${selectedSection.questions.length} câu hỏi vào clipboard!`);
+    } catch (err) {
+      const textArea = document.createElement('textarea');
+      textArea.value = allQuestionsText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert(`✅ Đã copy tất cả ${selectedSection.questions.length} câu hỏi vào clipboard!`);
+    }
+  };
+
+  // Print preview
+  const handlePrintPreview = () => {
+    if (!selectedSection || !selectedSection.questions || selectedSection.questions.length === 0) {
+      alert('⚠️ Không có câu hỏi nào để in!');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    const questions = getFilteredAndSortedQuestions();
+    
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Preview Quiz - ${selectedSection.title || selectedSection.id || 'Section'}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .section-title { font-size: 24px; font-weight: bold; color: #1e40af; margin-bottom: 20px; }
+            .question { margin-bottom: 30px; padding: 15px; border: 2px solid #000; border-radius: 8px; }
+            .question-header { font-size: 18px; font-weight: bold; color: #2563eb; margin-bottom: 10px; }
+            .question-text { margin-bottom: 15px; line-height: 1.6; }
+            .options { margin-bottom: 15px; }
+            .option { padding: 8px; margin-bottom: 5px; border: 1px solid #ccc; border-radius: 4px; }
+            .option.correct { background-color: #d1fae5; border-color: #10b981; font-weight: bold; }
+            .explanation { margin-top: 15px; padding: 10px; background-color: #f3e8ff; border-left: 4px solid #9333ea; }
+            .incomplete { background-color: #fef3c7; border-color: #f59e0b; }
+            @media print {
+              body { padding: 10px; }
+              .question { page-break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="section-title">${selectedSection.title || selectedSection.id || 'Section'}</div>
+          <p>Số câu hỏi: ${questions.length}</p>
+          ${questions.map((q, idx) => {
+            const isComplete = isQuestionComplete(q);
+            const options = Array.isArray(q.options) 
+              ? q.options 
+              : (q.options && typeof q.options === 'object' 
+                  ? Object.values(q.options) 
+                  : []);
+            const correctAnswer = typeof q.correctAnswer === 'number' 
+              ? String.fromCharCode(65 + q.correctAnswer)
+              : (q.correctAnswer || 'N/A');
+            
+            return `
+              <div class="question ${!isComplete ? 'incomplete' : ''}">
+                <div class="question-header">Câu hỏi ${q.id || q.number || idx + 1}${!isComplete ? ' ⚠️ (Chưa hoàn chỉnh)' : ''}</div>
+                <div class="question-text">${q.question || '(Chưa nhập)'}</div>
+                <div class="options">
+                  ${options.map((opt, optIdx) => {
+                    const optText = typeof opt === 'string' ? opt : (opt?.text || opt?.label || '');
+                    const isCorrect = typeof q.correctAnswer === 'number' 
+                      ? q.correctAnswer === optIdx
+                      : (q.correctAnswer === String.fromCharCode(65 + optIdx));
+                    return `
+                      <div class="option ${isCorrect ? 'correct' : ''}">
+                        ${String.fromCharCode(65 + optIdx)}. ${optText || '(Chưa nhập)'} ${isCorrect ? '✓' : ''}
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+                ${correctAnswer !== 'N/A' ? `<p><strong>Đáp án đúng: ${correctAnswer}</strong></p>` : ''}
+                ${q.explanation ? `<div class="explanation"><strong>Giải thích:</strong><br>${q.explanation}</div>` : ''}
+              </div>
+            `;
+          }).join('')}
+        </body>
+      </html>
+    `;
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
+  // Keyboard navigation for preview
+  useEffect(() => {
+    if (!showPreview) return;
+
+    const handleKeyDown = (e) => {
+      if (!previewContentRef.current) return;
+
+      // Arrow keys for scrolling
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        previewContentRef.current.scrollBy({ top: 100, behavior: 'smooth' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        previewContentRef.current.scrollBy({ top: -100, behavior: 'smooth' });
+      } else if (e.key === 'PageDown') {
+        e.preventDefault();
+        previewContentRef.current.scrollBy({ top: 500, behavior: 'smooth' });
+      } else if (e.key === 'PageUp') {
+        e.preventDefault();
+        previewContentRef.current.scrollBy({ top: -500, behavior: 'smooth' });
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        previewContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        previewContentRef.current.scrollTo({ top: previewContentRef.current.scrollHeight, behavior: 'smooth' });
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showPreview]);
+
   return (
     <div className="flex-1 flex justify-center px-3 sm:px-5 md:px-6">
-      <div className="w-full max-w-[1100px] min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-20 md:top-24 h-[calc(100vh-80px-1px)] md:h-[calc(100vh-120px-1px)] max-h-[calc(100vh-80px-1px)] md:max-h-[calc(100vh-120px-1px)] overflow-hidden">
+      <div 
+        ref={containerContentsRef}
+        className="w-full max-w-[1100px] min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-20 md:top-24 h-[calc(100vh-80px-1px)] md:h-[calc(100vh-120px-1px)] max-h-[calc(100vh-80px-1px)] md:max-h-[calc(100vh-120px-1px)] overflow-hidden"
+      >
         <div className="flex-1 overflow-y-auto px-2 sm:px-4 pb-8">
         {/* Header */}
         <div className="mb-4 sm:mb-6 flex items-center justify-between pt-4 sm:pt-6">
@@ -4559,26 +4982,78 @@ function ExamManagementPage() {
                   <button
                     type="button"
                     onClick={() => setShowTemplate(!showTemplate)}
-                    className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
                   >
-                    {showTemplate ? `📄 ${t('examManagement.questions.questionForm.hideTemplate')}` : `📄 ${t('examManagement.questions.questionForm.showTemplate')}`}
+                    {showTemplate ? `🤖 ${t('examManagement.questions.questionForm.hideGeminiPrompt') || 'Ẩn Gemini Prompt'}` : `🤖 ${t('examManagement.questions.questionForm.showGeminiPrompt') || 'Hiện Gemini Prompt'}`}
                   </button>
 
                   {showTemplate && (
-                    <div className="bg-gray-900 text-green-200 rounded-lg p-3 space-y-3 text-xs sm:text-sm max-h-64 overflow-y-auto border border-gray-700">
+                    <div className="bg-gray-900 text-green-200 rounded-lg p-3 space-y-3 text-xs sm:text-sm max-h-96 overflow-y-auto border border-gray-700">
                       <div className="flex items-center justify-between text-gray-100">
-                        <span>{t('examManagement.questions.questionForm.templateTitle', { type: getTestTypeLabel(selectedTestType) || selectedTestType })}</span>
+                        <span className="font-semibold">🤖 {t('examManagement.questions.questionForm.geminiPromptTitle') || 'Prompt Template cho Google Gemini'}</span>
                         <button
                           type="button"
-                          onClick={() => navigator.clipboard.writeText(templateJSON)}
-                          className="px-2 py-1 text-[11px] bg-gray-700 rounded hover:bg-gray-600"
+                          onClick={async () => {
+                            try {
+                              const promptText = geminiPromptTemplate;
+                              console.log('🔍 Copying prompt, length:', promptText?.length);
+                              console.log('🔍 First 100 chars:', promptText?.substring(0, 100));
+                              
+                              if (!promptText || promptText.trim().length === 0) {
+                                alert('⚠️ Prompt template chưa sẵn sàng. Vui lòng thử lại.');
+                                return;
+                              }
+                              
+                              await navigator.clipboard.writeText(promptText);
+                              alert('✅ Đã copy prompt vào clipboard!');
+                            } catch (error) {
+                              console.error('Error copying to clipboard:', error);
+                              // Fallback: Select text manually
+                              const textArea = document.createElement('textarea');
+                              textArea.value = geminiPromptTemplate;
+                              textArea.style.position = 'fixed';
+                              textArea.style.opacity = '0';
+                              textArea.style.left = '-9999px';
+                              document.body.appendChild(textArea);
+                              textArea.focus();
+                              textArea.select();
+                              try {
+                                const successful = document.execCommand('copy');
+                                if (successful) {
+                                  alert('✅ Đã copy prompt vào clipboard!');
+                                } else {
+                                  throw new Error('execCommand failed');
+                                }
+                              } catch (err) {
+                                console.error('Fallback copy failed:', err);
+                                alert('⚠️ Không thể copy tự động. Vui lòng chọn và copy thủ công từ text bên dưới.');
+                              }
+                              document.body.removeChild(textArea);
+                            }
+                          }}
+                          className="px-3 py-1 text-xs bg-blue-600 rounded hover:bg-blue-700 font-semibold"
                         >
-                          {t('examManagement.questions.questionForm.copy')}
+                          📋 {t('examManagement.questions.questionForm.copy') || 'Copy'}
                         </button>
                       </div>
-                      <pre className="whitespace-pre-wrap break-all">
-{templateJSON}
-                      </pre>
+                      <div className="bg-gray-800 rounded p-2 border border-gray-600">
+                        <pre 
+                          className="whitespace-pre-wrap break-words text-xs leading-relaxed font-mono select-all cursor-text"
+                          onClick={(e) => {
+                            // Select all text when clicking on pre
+                            const range = document.createRange();
+                            range.selectNodeContents(e.currentTarget);
+                            const selection = window.getSelection();
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                          }}
+                        >
+{geminiPromptTemplate}
+                        </pre>
+                      </div>
+                      <div className="text-yellow-300 text-xs bg-yellow-900/30 p-2 rounded border border-yellow-700">
+                        💡 <strong>Hướng dẫn:</strong> Copy prompt trên, paste vào Google Gemini, sau đó upload ảnh câu hỏi và đáp án. Gemini sẽ trả về JSON theo format trên.
+                      </div>
                     </div>
                   )}
 
@@ -4622,48 +5097,7 @@ function ExamManagementPage() {
                 </div>
               </div>
 
-              {/* Preview */}
-              {showPreview && (
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">Preview</h2>
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <p className="font-semibold text-blue-800">
-                        Câu hỏi {questionForm.id || 'mới'}: {questionForm.question || '(Chưa có câu hỏi)'}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <div className="space-y-1 text-sm">
-                        {questionForm.options.map((opt, idx) => {
-                          if (!opt.trim()) return null;
-                          return (
-                            <p
-                              key={idx}
-                              className={questionForm.correctAnswer === idx ? 'text-green-600 font-semibold' : 'text-gray-600'}
-                            >
-                              {String.fromCharCode(65 + idx)}. {opt || '(Chưa có đáp án)'}
-                            </p>
-                          );
-                        })}
-                      </div>
-                      {questionForm.explanation && (
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <p className="text-xs text-gray-600">
-                            <strong>Giải thích:</strong> {questionForm.explanation}
-                          </p>
-                        </div>
-                      )}
-                      {selectedTestType === 'listening' && questionForm.audioUrl && (
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <p className="text-xs text-purple-600">
-                            <strong>🎧 Audio:</strong> {questionForm.audioUrl}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Preview - Removed from sidebar to prevent overlap */}
 
               {/* Exported JSON */}
               {exportedJSON && (
@@ -4674,6 +5108,315 @@ function ExamManagementPage() {
                   </pre>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Preview Modal - Hiển thị trong modal overlay, phụ thuộc vào vị trí và kích thước container contents */}
+      {showPreview && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-[99999]"
+          onClick={() => setShowPreview(false)}
+          style={{ 
+            zIndex: 99999
+          }}
+        >
+          <div 
+            className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            style={{ 
+              position: 'fixed',
+              // ✅ Vị trí và kích thước phụ thuộc vào container contents
+              top: containerBounds.width > 0 ? `${Math.max(containerBounds.top + 20, 80)}px` : '80px', // ✅ Fallback nếu chưa tính toán
+              left: containerBounds.width > 0 ? `${Math.max(containerBounds.left + 20, 20)}px` : '50%', // ✅ Fallback: căn giữa nếu chưa tính toán
+              width: containerBounds.width > 0 
+                ? `${Math.max(Math.min(containerBounds.width - 40, 1000), 300)}px` 
+                : 'min(90vw, 1000px)', // ✅ Fallback: responsive width
+              maxWidth: containerBounds.width > 0 
+                ? `${Math.max(containerBounds.width - 40, 300)}px` 
+                : '1000px', // ✅ Fallback
+              maxHeight: containerBounds.height > 0 
+                ? `${Math.max(Math.min(containerBounds.height - 40, window.innerHeight - 120), 400)}px` 
+                : '85vh', // ✅ Fallback
+              transform: containerBounds.width > 0 ? 'none' : 'translateX(-50%)', // ✅ Căn giữa nếu chưa tính toán
+              zIndex: 100000,
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b-[3px] border-black bg-gradient-to-r from-blue-500 to-blue-600">
+              <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-wide flex items-center gap-2">
+                <span>📺</span>
+                <span>Preview</span>
+              </h2>
+              <div className="flex items-center gap-2">
+                {/* Copy All Button */}
+                {selectedSection && selectedSection.questions && selectedSection.questions.length > 0 && (
+                  <button
+                    onClick={handleCopyAllQuestions}
+                    className="px-3 py-2 bg-green-500 text-white rounded-lg border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-xs sm:text-sm"
+                    title="Copy tất cả câu hỏi"
+                  >
+                    📋 Copy All
+                  </button>
+                )}
+                {/* Print Button */}
+                {selectedSection && selectedSection.questions && selectedSection.questions.length > 0 && (
+                  <button
+                    onClick={handlePrintPreview}
+                    className="px-3 py-2 bg-purple-500 text-white rounded-lg border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-xs sm:text-sm"
+                    title="In preview"
+                  >
+                    🖨️ Print
+                  </button>
+                )}
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-sm sm:text-base"
+                  title="Đóng Preview (ESC)"
+                >
+                  ✕ Đóng
+                </button>
+              </div>
+            </div>
+
+            {/* Filter & Sort Controls */}
+            {selectedSection && selectedSection.questions && selectedSection.questions.length > 0 && (
+              <div className="p-4 bg-gray-100 border-b-[2px] border-gray-300 flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-black text-gray-700">Lọc:</label>
+                  <select
+                    value={previewFilter}
+                    onChange={(e) => setPreviewFilter(e.target.value)}
+                    className="px-3 py-1 border-[2px] border-black rounded-lg text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="all">Tất cả ({(selectedSection.questions || []).length})</option>
+                    <option value="complete">Hoàn chỉnh ({(selectedSection.questions || []).filter(q => isQuestionComplete(q)).length})</option>
+                    <option value="incomplete">Chưa hoàn chỉnh ({(selectedSection.questions || []).filter(q => !isQuestionComplete(q)).length})</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-black text-gray-700">Sắp xếp:</label>
+                  <select
+                    value={previewSortBy}
+                    onChange={(e) => setPreviewSortBy(e.target.value)}
+                    className="px-3 py-1 border-[2px] border-black rounded-lg text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="id">Theo ID</option>
+                    <option value="status">Theo trạng thái</option>
+                  </select>
+                </div>
+                <div className="ml-auto text-xs text-gray-600 font-semibold">
+                  Hiển thị: <strong>{getFilteredAndSortedQuestions().length}</strong> / {(selectedSection.questions || []).length} câu hỏi
+                </div>
+              </div>
+            )}
+
+            {/* Modal Content - Scrollable */}
+            <div 
+              ref={previewContentRef}
+              className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50"
+              tabIndex={0}
+            >
+              <div className="space-y-4">
+                {/* Section Info */}
+                {selectedSection && (
+                  <div className="p-4 bg-blue-50 border-[3px] border-blue-300 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <p className="font-black text-blue-900 text-lg sm:text-xl">
+                      {selectedSection.title || selectedSection.id || 'Section'}
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Số câu hỏi: <strong>{(selectedSection.questions || []).length}</strong>
+                    </p>
+                    {selectedSection.instruction && (
+                      <p className="text-sm text-blue-800 mt-2">
+                        {selectedSection.instruction}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Questions Preview */}
+                {!selectedSection || !selectedSection.questions || selectedSection.questions.length === 0 ? (
+                  <div className="p-6 bg-yellow-50 border-[3px] border-yellow-300 rounded-lg text-center">
+                    <p className="text-yellow-800 font-semibold">⚠️ Chưa có câu hỏi nào trong section này</p>
+                    <p className="text-xs text-yellow-700 mt-2">
+                      {questionForm.question ? 'Câu hỏi hiện tại chưa được lưu vào section' : 'Vui lòng tạo câu hỏi mới'}
+                    </p>
+                  </div>
+                ) : getFilteredAndSortedQuestions().length === 0 ? (
+                  <div className="p-6 bg-yellow-50 border-[3px] border-yellow-300 rounded-lg text-center">
+                    <p className="text-yellow-800 font-semibold">⚠️ Không có câu hỏi nào khớp với bộ lọc</p>
+                  </div>
+                ) : (
+                  getFilteredAndSortedQuestions().map((q, idx) => {
+                    // Handle both array and object options format
+                    const options = Array.isArray(q.options) 
+                      ? q.options 
+                      : (q.options && typeof q.options === 'object' 
+                          ? Object.values(q.options) 
+                          : ['', '', '', '']);
+                    
+                    const correctAnswer = typeof q.correctAnswer === 'number' 
+                      ? q.correctAnswer 
+                      : (q.correctAnswer && typeof q.correctAnswer === 'string' 
+                          ? q.correctAnswer.charCodeAt(0) - 65 
+                          : null);
+
+                    const isComplete = isQuestionComplete(q);
+
+                    return (
+                      <div 
+                        key={q.id || idx} 
+                        className={`rounded-lg border-[3px] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-6 transition-all ${
+                          isComplete 
+                            ? 'bg-white border-black' 
+                            : 'bg-yellow-50 border-yellow-400'
+                        }`}
+                      >
+                        {/* Question Header with Copy Button */}
+                        <div className="mb-3 pb-2 border-b-2 border-gray-300 flex items-center justify-between">
+                          <p className="font-black text-gray-900 text-base sm:text-lg">
+                            <span className="text-blue-600">Câu hỏi {q.id || q.number || idx + 1}:</span>
+                            {!isComplete && (
+                              <span className="ml-2 text-yellow-700 text-sm">⚠️ Chưa hoàn chỉnh</span>
+                            )}
+                          </p>
+                          <button
+                            onClick={() => handleCopyQuestionPreview(q)}
+                            className="px-2 py-1 bg-blue-500 text-white rounded border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-xs"
+                            title="Copy câu hỏi này"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+
+                        {/* Question Text */}
+                        <div className="mb-4">
+                          {q.question ? (
+                            <div 
+                              className="text-gray-800 text-sm sm:text-base leading-relaxed prose prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{ __html: q.question }}
+                            />
+                          ) : (
+                            <p className="text-yellow-600 italic font-semibold">⚠️ Chưa có câu hỏi</p>
+                          )}
+                        </div>
+
+                        {/* Options */}
+                        <div className="space-y-2 mb-4">
+                          <p className="text-xs font-black text-gray-700 uppercase tracking-wide mb-2">Đáp án:</p>
+                          {options.map((opt, optIdx) => {
+                            if (!opt || (typeof opt === 'string' && !opt.trim())) return null;
+                            const optText = typeof opt === 'string' ? opt : (opt.text || opt.label || '');
+                            const isCorrect = correctAnswer === optIdx;
+                            return (
+                              <div
+                                key={optIdx}
+                                className={`p-3 rounded-lg border-[2px] transition-all ${
+                                  isCorrect
+                                    ? 'text-green-800 font-bold bg-green-100 border-green-400 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                                    : 'text-gray-700 bg-gray-50 border-gray-300'
+                                }`}
+                              >
+                                <span className="font-black text-base">{String.fromCharCode(65 + optIdx)}.</span>{' '}
+                                <span className={isCorrect ? 'font-bold' : ''}>
+                                  {optText || '(Chưa có đáp án)'}
+                                </span>
+                                {isCorrect && (
+                                  <span className="ml-2 text-green-600 font-black">✓</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Correct Answer Indicator */}
+                        {correctAnswer !== null && correctAnswer !== undefined ? (
+                          <div className="mb-3 p-2 bg-blue-100 border-[2px] border-blue-300 rounded">
+                            <p className="text-sm font-black text-blue-800">
+                              ✅ Đáp án đúng: <span className="text-lg">{String.fromCharCode(65 + correctAnswer)}</span>
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="mb-3 p-2 bg-red-100 border-[2px] border-red-300 rounded">
+                            <p className="text-sm font-black text-red-800">
+                              ⚠️ Chưa chọn đáp án đúng
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Explanation */}
+                        {q.explanation && (
+                          <div className="mt-4 p-3 bg-purple-50 border-[2px] border-purple-300 rounded-lg">
+                            <p className="font-black text-purple-800 mb-2 text-sm uppercase tracking-wide">💡 Giải thích:</p>
+                            <div 
+                              className="text-purple-900 text-sm leading-relaxed prose prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{ __html: q.explanation }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Audio (for listening type) */}
+                        {selectedTestType === 'listening' && q.audioUrl && (
+                          <div className="mt-3 p-2 bg-purple-100 border-[2px] border-purple-300 rounded">
+                            <p className="text-xs font-semibold text-purple-800 flex items-center gap-1">
+                              <span>🎧</span>
+                              <span>Audio URL:</span>
+                              <span className="font-mono text-xs break-all">{q.audioUrl}</span>
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+
+                {/* Show current question form if it's not saved yet */}
+                {questionForm.question && (!selectedSection || !selectedSection.questions || !selectedSection.questions.find(q => q.id === questionForm.id)) && (
+                  <div className="p-4 bg-yellow-50 border-[3px] border-yellow-400 rounded-lg">
+                    <p className="text-xs font-black text-yellow-800 mb-2 uppercase">⚠️ Câu hỏi chưa lưu:</p>
+                    <div className="bg-white rounded-lg border-[2px] border-yellow-300 p-3">
+                      <p className="font-semibold text-gray-800 mb-2">
+                        Câu hỏi {questionForm.id || 'mới'}: {questionForm.question || '(Chưa có câu hỏi)'}
+                      </p>
+                      <div className="space-y-1 text-sm">
+                        {questionForm.options.map((opt, idx) => {
+                          if (!opt.trim()) return null;
+                          const isCorrect = questionForm.correctAnswer === idx;
+                          return (
+                            <p
+                              key={idx}
+                              className={isCorrect ? 'text-green-600 font-semibold' : 'text-gray-600'}
+                            >
+                              {String.fromCharCode(65 + idx)}. {opt}
+                            </p>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 sm:p-6 border-t-[3px] border-black bg-gray-100 flex items-center justify-between flex-wrap gap-2">
+              <div className="text-xs text-gray-600 font-semibold space-y-1">
+                <p>💡 Nhấn ESC hoặc click nút "Đóng" để đóng preview</p>
+                <p className="text-[10px]">⌨️ Keyboard: ↑↓ để scroll, Page Up/Down, Home/End</p>
+              </div>
+              <button
+                onClick={() => setShowPreview(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-sm"
+              >
+                ✕ Đóng Preview
+              </button>
             </div>
           </div>
         </div>

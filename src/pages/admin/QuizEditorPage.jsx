@@ -52,6 +52,13 @@ function QuizEditorPage() {
   const [showImportTemplate, setShowImportTemplate] = useState(false);
   const [showPreview, setShowPreview] = useState(false); // For quiz preview
   const [showQuestionPreview, setShowQuestionPreview] = useState({}); // Per question preview
+  // ✅ NEW: Preview modal enhancements
+  const [previewSortBy, setPreviewSortBy] = useState('id'); // 'id', 'status'
+  const [previewFilter, setPreviewFilter] = useState('all'); // 'all', 'complete', 'incomplete'
+  const previewContentRef = React.useRef(null); // For keyboard navigation
+  // ✅ NEW: Container bounds for dynamic modal positioning
+  const [containerBounds, setContainerBounds] = useState({ width: 1100, top: 0, left: 0, height: 0 });
+  const containerContentsRef = React.useRef(null); // Ref to main content container
   const [isImporting, setIsImporting] = useState(false); // ✅ NEW: Flag to prevent auto-reload during import
   const [justImported, setJustImported] = useState(false); // ✅ NEW: Flag to prevent loading old quiz after import
   const importInputRef = React.useRef(null);
@@ -66,6 +73,108 @@ function QuizEditorPage() {
       justImported
     });
   }, [questions, isImporting, justImported]);
+  
+  // ✅ NEW: Handle ESC key to close preview modal
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && showPreview) {
+        setShowPreview(false);
+      }
+    };
+    
+    if (showPreview) {
+      document.addEventListener('keydown', handleEscape);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+    
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showPreview]);
+
+  // ✅ NEW: Tính toán vị trí và kích thước container contents khi mở preview
+  useEffect(() => {
+    if (showPreview && containerContentsRef.current) {
+      const updateBounds = () => {
+        if (containerContentsRef.current) {
+          const rect = containerContentsRef.current.getBoundingClientRect();
+          setContainerBounds({
+            width: rect.width,
+            height: rect.height,
+            top: rect.top,
+            left: rect.left,
+            right: rect.right,
+            bottom: rect.bottom
+          });
+        }
+      };
+
+      // Tính toán ngay lập tức
+      updateBounds();
+
+      // ✅ ResizeObserver để theo dõi container thay đổi kích thước
+      const resizeObserver = new ResizeObserver(() => {
+        updateBounds();
+      });
+      resizeObserver.observe(containerContentsRef.current);
+
+      // Tính toán lại khi window resize hoặc scroll
+      window.addEventListener('resize', updateBounds);
+      window.addEventListener('scroll', updateBounds, true);
+
+      // ✅ Throttle để tránh update quá nhiều
+      let rafId = null;
+      const throttledUpdate = () => {
+        if (rafId) return;
+        rafId = requestAnimationFrame(() => {
+          updateBounds();
+          rafId = null;
+        });
+      };
+
+      // ✅ MutationObserver để theo dõi thay đổi DOM của container
+      const mutationObserver = new MutationObserver(throttledUpdate);
+      if (containerContentsRef.current) {
+        mutationObserver.observe(containerContentsRef.current, {
+          attributes: true,
+          attributeFilter: ['style', 'class'],
+          childList: false,
+          subtree: false
+        });
+      }
+
+      // ✅ Interval check để đảm bảo luôn cập nhật (fallback)
+      let lastWidth = 0;
+      let lastHeight = 0;
+      const intervalId = setInterval(() => {
+        if (containerContentsRef.current) {
+          const rect = containerContentsRef.current.getBoundingClientRect();
+          const currentWidth = rect.width;
+          const currentHeight = rect.height;
+          // Chỉ update nếu kích thước thay đổi đáng kể (> 1px)
+          if (Math.abs(currentWidth - lastWidth) > 1 || 
+              Math.abs(currentHeight - lastHeight) > 1) {
+            lastWidth = currentWidth;
+            lastHeight = currentHeight;
+            updateBounds();
+          }
+        }
+      }, 100); // Check mỗi 100ms
+
+      return () => {
+        resizeObserver.disconnect();
+        mutationObserver.disconnect();
+        clearInterval(intervalId);
+        window.removeEventListener('resize', updateBounds);
+        window.removeEventListener('scroll', updateBounds, true);
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+        }
+      };
+    }
+  }, [showPreview]);
   
   // ✅ NEW: Lưu directory handle để tự động lưu vào đúng thư mục
   const [savedDirectoryHandle, setSavedDirectoryHandle] = useState(null);
@@ -2136,18 +2245,207 @@ function QuizEditorPage() {
     return errors;
   };
 
+  // ✅ NEW: Preview modal helper functions
+  // Check if question is complete
+  const isQuestionComplete = (q) => {
+    const hasText = q.text && q.text.trim();
+    const allOptionsValid = q.options.every(opt => opt.text && opt.text.trim());
+    const hasCorrect = q.correct && q.correct.trim();
+    return hasText && allOptionsValid && hasCorrect;
+  };
+
+  // Get filtered and sorted questions for preview
+  const getFilteredAndSortedQuestions = () => {
+    let filtered = [...questions];
+
+    // Apply filter
+    if (previewFilter === 'complete') {
+      filtered = filtered.filter(q => isQuestionComplete(q));
+    } else if (previewFilter === 'incomplete') {
+      filtered = filtered.filter(q => !isQuestionComplete(q));
+    }
+
+    // Apply sort
+    if (previewSortBy === 'id') {
+      filtered.sort((a, b) => (a.id || 0) - (b.id || 0));
+    } else if (previewSortBy === 'status') {
+      filtered.sort((a, b) => {
+        const aComplete = isQuestionComplete(a);
+        const bComplete = isQuestionComplete(b);
+        if (aComplete === bComplete) return (a.id || 0) - (b.id || 0);
+        return aComplete ? 1 : -1; // Incomplete first
+      });
+    }
+
+    return filtered;
+  };
+
+  // Copy question to clipboard
+  const handleCopyQuestion = async (question) => {
+    const questionText = `
+Câu hỏi ${question.id}:
+${question.text || '(Chưa nhập)'}
+
+Đáp án:
+${question.options.map(opt => `${opt.label}. ${opt.text || '(Chưa nhập)'}`).join('\n')}
+
+Đáp án đúng: ${question.correct || '(Chưa chọn)'}
+${question.explanation ? `\nGiải thích:\n${question.explanation}` : ''}
+    `.trim();
+
+    try {
+      await navigator.clipboard.writeText(questionText);
+      alert(`✅ Đã copy câu hỏi ${question.id} vào clipboard!`);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = questionText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert(`✅ Đã copy câu hỏi ${question.id} vào clipboard!`);
+    }
+  };
+
+  // Copy all questions to clipboard
+  const handleCopyAllQuestions = async () => {
+    const allQuestionsText = questions.map(q => {
+      return `
+Câu hỏi ${q.id}:
+${q.text || '(Chưa nhập)'}
+
+Đáp án:
+${q.options.map(opt => `${opt.label}. ${opt.text || '(Chưa nhập)'}`).join('\n')}
+
+Đáp án đúng: ${q.correct || '(Chưa chọn)'}
+${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
+---
+      `.trim();
+    }).join('\n\n');
+
+    try {
+      await navigator.clipboard.writeText(allQuestionsText);
+      alert(`✅ Đã copy tất cả ${questions.length} câu hỏi vào clipboard!`);
+    } catch (err) {
+      const textArea = document.createElement('textarea');
+      textArea.value = allQuestionsText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert(`✅ Đã copy tất cả ${questions.length} câu hỏi vào clipboard!`);
+    }
+  };
+
+  // Print preview
+  const handlePrintPreview = () => {
+    const printWindow = window.open('', '_blank');
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Preview Quiz - ${quizTitle || 'Untitled Quiz'}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .quiz-title { font-size: 24px; font-weight: bold; color: #1e40af; margin-bottom: 20px; }
+            .question { margin-bottom: 30px; padding: 15px; border: 2px solid #000; border-radius: 8px; }
+            .question-header { font-size: 18px; font-weight: bold; color: #2563eb; margin-bottom: 10px; }
+            .question-text { margin-bottom: 15px; line-height: 1.6; }
+            .options { margin-bottom: 15px; }
+            .option { padding: 8px; margin-bottom: 5px; border: 1px solid #ccc; border-radius: 4px; }
+            .option.correct { background-color: #d1fae5; border-color: #10b981; font-weight: bold; }
+            .explanation { margin-top: 15px; padding: 10px; background-color: #f3e8ff; border-left: 4px solid #9333ea; }
+            .incomplete { background-color: #fef3c7; border-color: #f59e0b; }
+            @media print {
+              body { padding: 10px; }
+              .question { page-break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="quiz-title">${quizTitle || 'Untitled Quiz'}</div>
+          <p>Số câu hỏi: ${questions.length}</p>
+          ${getFilteredAndSortedQuestions().map((q, idx) => {
+            const isComplete = isQuestionComplete(q);
+            return `
+              <div class="question ${!isComplete ? 'incomplete' : ''}">
+                <div class="question-header">Câu hỏi ${q.id}${!isComplete ? ' ⚠️ (Chưa hoàn chỉnh)' : ''}</div>
+                <div class="question-text">${q.text || '(Chưa nhập)'}</div>
+                <div class="options">
+                  ${q.options.map(opt => `
+                    <div class="option ${q.correct === opt.label ? 'correct' : ''}">
+                      ${opt.label}. ${opt.text || '(Chưa nhập)'} ${q.correct === opt.label ? '✓' : ''}
+                    </div>
+                  `).join('')}
+                </div>
+                ${q.correct ? `<p><strong>Đáp án đúng: ${q.correct}</strong></p>` : ''}
+                ${q.explanation ? `<div class="explanation"><strong>Giải thích:</strong><br>${q.explanation}</div>` : ''}
+              </div>
+            `;
+          }).join('')}
+        </body>
+      </html>
+    `;
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
+  // Keyboard navigation for preview
+  useEffect(() => {
+    if (!showPreview) return;
+
+    const handleKeyDown = (e) => {
+      if (!previewContentRef.current) return;
+
+      // Arrow keys for scrolling
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        previewContentRef.current.scrollBy({ top: 100, behavior: 'smooth' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        previewContentRef.current.scrollBy({ top: -100, behavior: 'smooth' });
+      } else if (e.key === 'PageDown') {
+        e.preventDefault();
+        previewContentRef.current.scrollBy({ top: 500, behavior: 'smooth' });
+      } else if (e.key === 'PageUp') {
+        e.preventDefault();
+        previewContentRef.current.scrollBy({ top: -500, behavior: 'smooth' });
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        previewContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        previewContentRef.current.scrollTo({ top: previewContentRef.current.scrollHeight, behavior: 'smooth' });
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showPreview]);
+
   return (
-    <div className="flex-1 flex justify-center px-3 sm:px-5 md:px-6">
-      <div className="w-full max-w-[1100px] min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-20 md:top-24 h-[calc(100vh-80px-1px)] md:h-[calc(100vh-120px-1px)] max-h-[calc(100vh-80px-1px)] md:max-h-[calc(100vh-120px-1px)] overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+    <div className="flex-1 w-full pr-0 md:pr-4">
+      <div 
+        ref={containerContentsRef}
+        className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-20 md:top-24 h-[calc(100vh-80px-1px)] md:h-[calc(100vh-120px-1px)] max-h-[calc(100vh-80px-1px)] md:max-h-[calc(100vh-120px-1px)] overflow-hidden"
+      >
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
       {/* Header */}
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6 flex items-center justify-between">
+        <div>
         <h1 className="text-2xl sm:text-3xl font-black text-gray-800 mb-2 uppercase tracking-wide">
           📝 {t('quizEditor.title')}
         </h1>
         <p className="text-sm sm:text-base text-gray-600 font-semibold">
           {t('quizEditor.description')}
         </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -3200,49 +3498,7 @@ D: みなさん (minasan) có nghĩa là Mọi người"</pre>
               </div>
             </div>
 
-            {/* Preview */}
-            {showPreview && (
-              <div className="bg-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-6 mt-4 sm:mt-6 sticky top-6 z-50 max-h-[calc(100vh-200px)] overflow-y-auto">
-                <h2 className="text-xl font-black text-gray-800 mb-4 uppercase tracking-wide">📺 {t('quizEditor.actions.preview', 'Preview')}</h2>
-                <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
-                  <div className="p-3 bg-blue-50 border-[2px] border-blue-200 rounded-lg">
-                    <p className="font-bold text-blue-800 text-lg">{quizTitle || 'Untitled Quiz'}</p>
-                  </div>
-                  {questions.map((q, idx) => (
-                    <div key={idx} className="p-3 bg-gray-50 border-[2px] border-gray-200 rounded-lg">
-                      <p className="font-semibold text-gray-800 mb-2">
-                        <span className="text-blue-600">{t('quizEditor.questionForm.questionHeader', { id: q.id })}:</span>{' '}
-                        {q.text ? (
-                          <span className="text-gray-700" dangerouslySetInnerHTML={{ __html: q.text.substring(0, 100) + (q.text.length > 100 ? '...' : '') }} />
-                        ) : (
-                          <span className="text-yellow-600 italic">{t('quizEditor.questions.notEntered')}</span>
-                        )}
-                      </p>
-                      <div className="space-y-1 text-sm mt-2">
-                        {q.options.map((opt) => (
-                          <p
-                            key={opt.label}
-                            className={`p-2 rounded ${
-                              q.correct === opt.label 
-                                ? 'text-green-700 font-bold bg-green-100 border-[2px] border-green-300' 
-                                : 'text-gray-600 bg-white border border-gray-200'
-                            }`}
-                          >
-                            <span className="font-bold">{opt.label}.</span> {opt.text || t('quizEditor.questions.answerNotEntered', 'No answer')}
-                          </p>
-                        ))}
-                      </div>
-                      {q.explanation && (
-                        <div className="mt-2 p-2 bg-purple-50 border border-purple-200 rounded text-xs">
-                          <p className="font-semibold text-purple-800 mb-1">💡 {t('quizEditor.questions.explanation')}:</p>
-                          <p className="text-purple-700" dangerouslySetInnerHTML={{ __html: q.explanation.substring(0, 150) + (q.explanation.length > 150 ? '...' : '') }} />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Preview - Removed from sidebar to prevent overlap */}
 
             {/* Exported JSON */}
             {exportedJSON && (
@@ -3288,6 +3544,250 @@ D: みなさん (minasan) có nghĩa là Mọi người"</pre>
           </div>
         )}
 
+        {/* ✅ Preview Modal - Hiển thị trong modal overlay, phụ thuộc vào vị trí và kích thước container contents */}
+        {showPreview && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={() => setShowPreview(false)}
+            style={{ 
+              zIndex: 99999
+            }}
+          >
+            <div 
+              className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+              style={{ 
+                position: 'fixed',
+                // ✅ Vị trí và kích thước phụ thuộc vào container contents
+                top: containerBounds.width > 0 ? `${Math.max(containerBounds.top + 20, 80)}px` : '80px', // ✅ Fallback nếu chưa tính toán
+                left: containerBounds.width > 0 ? `${Math.max(containerBounds.left + 20, 20)}px` : '50%', // ✅ Fallback: căn giữa nếu chưa tính toán
+                width: containerBounds.width > 0 
+                  ? `${Math.max(Math.min(containerBounds.width - 40, 1000), 300)}px` 
+                  : 'min(90vw, 1000px)', // ✅ Fallback: responsive width
+                maxWidth: containerBounds.width > 0 
+                  ? `${Math.max(containerBounds.width - 40, 300)}px` 
+                  : '1000px', // ✅ Fallback
+                maxHeight: containerBounds.height > 0 
+                  ? `${Math.max(Math.min(containerBounds.height - 40, window.innerHeight - 120), 400)}px` 
+                  : '85vh', // ✅ Fallback
+                transform: containerBounds.width > 0 ? 'none' : 'translateX(-50%)', // ✅ Căn giữa nếu chưa tính toán
+                zIndex: 100000,
+                boxSizing: 'border-box',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b-[3px] border-black bg-gradient-to-r from-blue-500 to-blue-600">
+                <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-wide flex items-center gap-2">
+                  <span>📺</span>
+                  <span>{t('quizEditor.actions.preview', 'Preview')}</span>
+                </h2>
+                <div className="flex items-center gap-2">
+                  {/* Copy All Button */}
+                  <button
+                    onClick={handleCopyAllQuestions}
+                    className="px-3 py-2 bg-green-500 text-white rounded-lg border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-xs sm:text-sm"
+                    title="Copy tất cả câu hỏi"
+                  >
+                    📋 Copy All
+                  </button>
+                  {/* Print Button */}
+                  <button
+                    onClick={handlePrintPreview}
+                    className="px-3 py-2 bg-purple-500 text-white rounded-lg border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-xs sm:text-sm"
+                    title="In preview"
+                  >
+                    🖨️ Print
+                  </button>
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setShowPreview(false)}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-sm sm:text-base"
+                    title="Đóng Preview (ESC)"
+                  >
+                    ✕ Đóng
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter & Sort Controls */}
+              <div className="p-4 bg-gray-100 border-b-[2px] border-gray-300 flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-black text-gray-700">Lọc:</label>
+                  <select
+                    value={previewFilter}
+                    onChange={(e) => setPreviewFilter(e.target.value)}
+                    className="px-3 py-1 border-[2px] border-black rounded-lg text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="all">Tất cả ({questions.length})</option>
+                    <option value="complete">Hoàn chỉnh ({questions.filter(q => isQuestionComplete(q)).length})</option>
+                    <option value="incomplete">Chưa hoàn chỉnh ({questions.filter(q => !isQuestionComplete(q)).length})</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-black text-gray-700">Sắp xếp:</label>
+                  <select
+                    value={previewSortBy}
+                    onChange={(e) => setPreviewSortBy(e.target.value)}
+                    className="px-3 py-1 border-[2px] border-black rounded-lg text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="id">Theo ID</option>
+                    <option value="status">Theo trạng thái</option>
+                  </select>
+                </div>
+                <div className="ml-auto text-xs text-gray-600 font-semibold">
+                  Hiển thị: <strong>{getFilteredAndSortedQuestions().length}</strong> / {questions.length} câu hỏi
+                </div>
+              </div>
+
+              {/* Modal Content - Scrollable */}
+              <div 
+                ref={previewContentRef}
+                className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50"
+                tabIndex={0}
+              >
+                <div className="space-y-4">
+                  {/* Quiz Title */}
+                  <div className="p-4 bg-blue-50 border-[3px] border-blue-300 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <p className="font-black text-blue-900 text-lg sm:text-xl">{quizTitle || 'Untitled Quiz'}</p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      {t('quizEditor.quizInfo.numberOfQuestions')}: <strong>{questions.length}</strong>
+                    </p>
+                  </div>
+
+                  {/* Questions Preview */}
+                  {questions.length === 0 ? (
+                    <div className="p-6 bg-yellow-50 border-[3px] border-yellow-300 rounded-lg text-center">
+                      <p className="text-yellow-800 font-semibold">⚠️ {t('quizEditor.questions.noQuestions', 'Chưa có câu hỏi nào')}</p>
+                    </div>
+                  ) : getFilteredAndSortedQuestions().length === 0 ? (
+                    <div className="p-6 bg-yellow-50 border-[3px] border-yellow-300 rounded-lg text-center">
+                      <p className="text-yellow-800 font-semibold">⚠️ Không có câu hỏi nào khớp với bộ lọc</p>
+                    </div>
+                  ) : (
+                    getFilteredAndSortedQuestions().map((q, idx) => {
+                      const isComplete = isQuestionComplete(q);
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`rounded-lg border-[3px] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-6 transition-all ${
+                            isComplete 
+                              ? 'bg-white border-black' 
+                              : 'bg-yellow-50 border-yellow-400'
+                          }`}
+                        >
+                          {/* Question Header with Copy Button */}
+                          <div className="mb-3 pb-2 border-b-2 border-gray-300 flex items-center justify-between">
+                            <p className="font-black text-gray-900 text-base sm:text-lg">
+                              <span className="text-blue-600">{t('quizEditor.questionForm.questionHeader', { id: q.id })}:</span>
+                              {!isComplete && (
+                                <span className="ml-2 text-yellow-700 text-sm">⚠️ Chưa hoàn chỉnh</span>
+                              )}
+                            </p>
+                            <button
+                              onClick={() => handleCopyQuestion(q)}
+                              className="px-2 py-1 bg-blue-500 text-white rounded border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-xs"
+                              title="Copy câu hỏi này"
+                            >
+                              📋 Copy
+                            </button>
+                          </div>
+
+                          {/* Question Text */}
+                          <div className="mb-4">
+                            {q.text ? (
+                              <div 
+                                className="text-gray-800 text-sm sm:text-base leading-relaxed prose prose-sm max-w-none"
+                                dangerouslySetInnerHTML={{ __html: q.text }}
+                              />
+                            ) : (
+                              <p className="text-yellow-600 italic font-semibold">⚠️ {t('quizEditor.questions.notEntered')}</p>
+                            )}
+                          </div>
+
+                          {/* Options */}
+                          <div className="space-y-2 mb-4">
+                            <p className="text-xs font-black text-gray-700 uppercase tracking-wide mb-2">Đáp án:</p>
+                            {q.options.map((opt) => (
+                              <div
+                                key={opt.label}
+                                className={`p-3 rounded-lg border-[2px] transition-all ${
+                                  q.correct === opt.label 
+                                    ? 'text-green-800 font-bold bg-green-100 border-green-400 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' 
+                                    : 'text-gray-700 bg-gray-50 border-gray-300'
+                                }`}
+                              >
+                                <span className="font-black text-base">{opt.label}.</span>{' '}
+                                <span className={q.correct === opt.label ? 'font-bold' : ''}>
+                                  {opt.text || <span className="text-yellow-600 italic">{t('quizEditor.questions.answerNotEntered', 'No answer')}</span>}
+                                </span>
+                                {q.correct === opt.label && (
+                                  <span className="ml-2 text-green-600 font-black">✓</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Correct Answer Indicator */}
+                          {q.correct ? (
+                            <div className="mb-3 p-2 bg-blue-100 border-[2px] border-blue-300 rounded">
+                              <p className="text-sm font-black text-blue-800">
+                                ✅ {t('quizEditor.questions.correct')}: <span className="text-lg">{q.correct}</span>
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="mb-3 p-2 bg-red-100 border-[2px] border-red-300 rounded">
+                              <p className="text-sm font-black text-red-800">
+                                ⚠️ Chưa chọn đáp án đúng
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Explanation */}
+                          {q.explanation && (
+                            <div className="mt-4 p-3 bg-purple-50 border-[2px] border-purple-300 rounded-lg">
+                              <p className="font-black text-purple-800 mb-2 text-sm uppercase tracking-wide">💡 {t('quizEditor.questions.explanation')}:</p>
+                              <div 
+                                className="text-purple-900 text-sm leading-relaxed prose prose-sm max-w-none"
+                                dangerouslySetInnerHTML={{ __html: q.explanation }}
+                              />
+                            </div>
+                          )}
+
+                          {/* Audio Indicator */}
+                          {q.audioUrl && (
+                            <div className="mt-3 p-2 bg-purple-100 border-[2px] border-purple-300 rounded">
+                              <p className="text-xs font-semibold text-purple-800 flex items-center gap-1">
+                                <span>🎧</span>
+                                <span>{t('quizEditor.questions.hasAudio', 'Has audio file')}</span>
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 sm:p-6 border-t-[3px] border-black bg-gray-100 flex items-center justify-between flex-wrap gap-2">
+                <div className="text-xs text-gray-600 font-semibold space-y-1">
+                  <p>💡 Nhấn ESC hoặc click nút "Đóng" để đóng preview</p>
+                  <p className="text-[10px]">⌨️ Keyboard: ↑↓ để scroll, Page Up/Down, Home/End</p>
+                </div>
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-sm"
+                >
+                  ✕ Đóng Preview
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         </div>
       </div>
