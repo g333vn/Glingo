@@ -193,7 +193,8 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
           dangerouslySetInnerHTML={{ __html: question.question || question.instruction }}
           style={{
             wordWrap: 'break-word',
-            overflowWrap: 'break-word'
+            overflowWrap: 'break-word',
+            whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
           }}
         />
         {question.text && (
@@ -211,7 +212,8 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
                 dangerouslySetInnerHTML={{ __html: question.text }}
                 style={{
                   wordWrap: 'break-word',
-                  overflowWrap: 'break-word'
+                  overflowWrap: 'break-word',
+                  whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
                 }}
               />
             )}
@@ -276,7 +278,8 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
           dangerouslySetInnerHTML={{ __html: question.explanation || t('jlpt.answersPage.explanationMissing') }}
           style={{
             wordWrap: 'break-word',
-            overflowWrap: 'break-word'
+            overflowWrap: 'break-word',
+            whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
           }}
         />
       </div>

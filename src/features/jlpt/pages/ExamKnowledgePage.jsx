@@ -76,7 +76,8 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer, t }) => {
         dangerouslySetInnerHTML={{ __html: question.question }}
         style={{
           wordWrap: 'break-word',
-          overflowWrap: 'break-word'
+          overflowWrap: 'break-word',
+          whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
         }}
       />
       
@@ -86,7 +87,8 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer, t }) => {
           dangerouslySetInnerHTML={{ __html: question.passage }}
           style={{
             wordWrap: 'break-word',
-            overflowWrap: 'break-word'
+            overflowWrap: 'break-word',
+            whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
           }}
         />
       )}
@@ -106,7 +108,8 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer, t }) => {
               dangerouslySetInnerHTML={{ __html: question.text }}
               style={{
                 wordWrap: 'break-word',
-                overflowWrap: 'break-word'
+                overflowWrap: 'break-word',
+                whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
               }}
             />
           )}

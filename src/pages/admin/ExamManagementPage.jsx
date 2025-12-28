@@ -30,6 +30,8 @@ import {
   extractQuestionsFromJSON,
   normalizeImportedQuestion
 } from '../../utils/richTextEditorUtils.js';
+// ✅ NEW: ContentEditable component for rich text editing
+import ContentEditable from '../../components/ContentEditable.jsx';
 
 const TEST_TYPE_ORDER = ['knowledge', 'reading', 'listening'];
 
@@ -1595,43 +1597,44 @@ function ExamManagementPage() {
       } else {
         console.log('[ExamManagement] ✅ Image uploaded to Supabase:', result.url);
         
-        // Insert <img> tag vào textarea tại vị trí cursor
-        const textarea = field === 'explanation' 
-          ? explanationTextareaRef.current
-          : field === 'instruction'
-          ? instructionTextareaRef.current
-          : questionTextareaRef.current;
-          
-        if (textarea) {
-          const start = textarea.selectionStart;
-          const end = textarea.selectionEnd;
-          const currentValue = field === 'explanation'
-            ? questionForm.explanation || ''
-            : field === 'instruction'
-            ? sectionForm.instruction || ''
-            : questionForm.question || '';
-          
-          const imgTag = `<img src="${result.url}" alt="${field === 'explanation' ? 'Explanation image' : field === 'instruction' ? 'Instruction image' : 'Question image'}" style="max-width: 100%; height: auto; display: block; margin: 10px 0;" />`;
-          
-          const newValue = 
-            currentValue.substring(0, start) + 
-            imgTag + 
-            currentValue.substring(end);
-          
-          if (field === 'explanation') {
-            setQuestionForm({ ...questionForm, explanation: newValue });
-          } else if (field === 'instruction') {
-            setSectionForm({ ...sectionForm, instruction: newValue });
-          } else {
-            setQuestionForm({ ...questionForm, question: newValue });
+        const imgTag = `<img src="${result.url}" alt="${field === 'explanation' ? 'Explanation image' : field === 'instruction' ? 'Instruction image' : 'Question image'}" style="max-width: 100%; height: auto; display: block; margin: 10px 0;" />`;
+        
+        // ✅ Handle explanation field (ContentEditable) differently
+        if (field === 'explanation') {
+          // For ContentEditable, append to end (or could insert at cursor if needed)
+          const currentValue = questionForm.explanation || '';
+          setQuestionForm({ ...questionForm, explanation: currentValue + imgTag });
+        } else {
+          // Handle textarea fields (question, instruction)
+          const textarea = field === 'instruction'
+            ? instructionTextareaRef.current
+            : questionTextareaRef.current;
+            
+          if (textarea) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const currentValue = field === 'instruction'
+              ? sectionForm.instruction || ''
+              : questionForm.question || '';
+            
+            const newValue = 
+              currentValue.substring(0, start) + 
+              imgTag + 
+              currentValue.substring(end);
+            
+            if (field === 'instruction') {
+              setSectionForm({ ...sectionForm, instruction: newValue });
+            } else {
+              setQuestionForm({ ...questionForm, question: newValue });
+            }
+            
+            // Restore cursor position
+            setTimeout(() => {
+              textarea.focus();
+              const newPos = start + imgTag.length;
+              textarea.setSelectionRange(newPos, newPos);
+            }, 0);
           }
-          
-          // Restore cursor position
-          setTimeout(() => {
-            textarea.focus();
-            const newPos = start + imgTag.length;
-            textarea.setSelectionRange(newPos, newPos);
-          }, 0);
         }
         
         alert(`✅ Upload ảnh thành công!\n\nFile: ${file.name}`);
@@ -1647,8 +1650,75 @@ function ExamManagementPage() {
 
   // ✅ UPDATED: Use shared processPastedHTML utility (already imported)
 
-  // ✅ NEW: Paste handler (detect image or text/HTML)
+  // ✅ NEW: Paste handler for ContentEditable (explanation field)
+  const handlePasteForContentEditable = async (e, file, html, plainText, field = 'explanation') => {
+    // Handle image paste
+    if (file) {
+      const imgTag = await handleImageUploadForContentEditable(file, field);
+      return imgTag || false;
+    }
+    
+    // Handle HTML paste
+    if (html && html.trim()) {
+      const processed = processPastedHTML(html, plainText);
+      return processed;
+    }
+    
+    // ✅ NEW: Handle plain text with newlines
+    if (plainText && plainText.trim()) {
+      const processed = processPastedHTML(null, plainText);
+      return processed;
+    }
+    
+    return null;
+  };
+
+  // ✅ NEW: Image upload handler for ContentEditable
+  const handleImageUploadForContentEditable = async (file, field = 'explanation') => {
+    setIsUploadingImage(true);
+    setUploadingImageField(field);
+    
+    try {
+      const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
+      
+      const safeLevel = selectedLevel || 'unknown-level';
+      const safeExam = selectedExam?.id || 'unknown-exam';
+      const safeTestType = selectedTestType || 'unknown-type';
+      const safeSection = selectedSection?.id || 'unknown-section';
+      const safeQuestion = questionForm.id || 'question-unknown';
+      const prefix = `level-${safeLevel}/exam-${safeExam}/${safeTestType}/section-${safeSection}/${safeQuestion}`;
+      const path = generateFilePath(prefix, file.name);
+      
+      const result = await uploadImage(file, path);
+      
+      if (!result.success) {
+        console.error('[ExamManagement] ❌ Error uploading image:', result.error);
+        alert('❌ Lỗi upload ảnh!');
+        return null;
+      }
+      
+      console.log('[ExamManagement] ✅ Image uploaded:', result.url);
+      
+      const imgTag = `<img src="${result.url}" alt="${field === 'explanation' ? 'Explanation image' : 'Instruction image'}" style="max-width: 100%; height: auto; display: block; margin: 10px 0;" />`;
+      
+      alert(`✅ Upload ảnh thành công!\n\nFile: ${file.name}`);
+      return imgTag;
+    } catch (error) {
+      console.error('[ExamManagement] ❌ Error during image upload:', error);
+      alert('❌ Lỗi upload ảnh!');
+      return null;
+    } finally {
+      setIsUploadingImage(false);
+      setUploadingImageField('');
+    }
+  };
+
+  // ✅ KEEP: Original paste handler for textarea fields (question, instruction)
   const handlePaste = async (e, field = 'question') => {
+    // Only handle for textarea fields (not explanation which uses ContentEditable)
+    if (field === 'explanation') {
+      return; // This shouldn't be called for explanation anymore
+    }
     const items = e.clipboardData.items;
     let hasImage = false;
     
@@ -1718,18 +1788,23 @@ function ExamManagementPage() {
 
   // ✅ UPDATED: Toolbar functions using shared utilities
   const insertTextAtCursor = (beforeText, afterText = '', field = 'question') => {
-    const textarea = field === 'explanation'
-      ? explanationTextareaRef.current
-      : field === 'instruction'
+    // ✅ Note: explanation field uses ContentEditable, toolbar buttons work via document.execCommand
+    // For explanation field, we'll use a different approach if needed
+    if (field === 'explanation') {
+      // ContentEditable - use document.execCommand for formatting
+      document.execCommand('insertText', false, beforeText);
+      // Note: This is a simplified approach, full implementation would need selection handling
+      return;
+    }
+    
+    const textarea = field === 'instruction'
       ? instructionTextareaRef.current
       : questionTextareaRef.current;
     
     if (!textarea) return;
     
     const updateValue = (newValue) => {
-      if (field === 'explanation') {
-        setQuestionForm({ ...questionForm, explanation: newValue });
-      } else if (field === 'instruction') {
+      if (field === 'instruction') {
         setSectionForm({ ...sectionForm, instruction: newValue });
       } else {
         setQuestionForm({ ...questionForm, question: newValue });
@@ -2167,10 +2242,7 @@ function ExamManagementPage() {
         questionTextareaRef.current.value = '';
         handleTextareaResize('question');
       }
-      if (explanationTextareaRef.current) {
-        explanationTextareaRef.current.value = '';
-        handleTextareaResize('explanation');
-      }
+      // ✅ ContentEditable is controlled, no need to clear ref
       
       alert(`✅ Đã lưu thành công ${updatedImportedQuestions.length} câu hỏi (bao gồm câu đã sửa) vào section!\n\n` +
             `📝 Câu hỏi ID: ${questionForm.id} đã được cập nhật.\n` +
@@ -2250,10 +2322,7 @@ function ExamManagementPage() {
           questionTextareaRef.current.value = '';
           handleTextareaResize('question');
         }
-        if (explanationTextareaRef.current) {
-          explanationTextareaRef.current.value = '';
-          handleTextareaResize('explanation');
-        }
+        // ✅ ContentEditable is controlled, no need to clear ref
         
         alert(`✅ ${t('examManagement.config.saveSuccess')}\n\n` +
               `❓ ${t('examManagement.questions.questionForm.questionAdded')} ${t('examManagement.questions.questionForm.questionSavedText')}:\n` +
@@ -3853,6 +3922,9 @@ function ExamManagementPage() {
                             <div 
                               className="p-3 bg-gray-50 rounded border border-gray-200 text-sm"
                               dangerouslySetInnerHTML={{ __html: question.explanation }}
+                              style={{
+                                whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
+                              }}
                             />
                           </div>
                         )}
@@ -4206,7 +4278,9 @@ function ExamManagementPage() {
                         dangerouslySetInnerHTML={{ __html: questionForm.question }}
                         style={{
                           wordWrap: 'break-word',
-                          overflowWrap: 'break-word'
+                          overflowWrap: 'break-word',
+                          whiteSpace: 'pre-wrap', // ✅ FIX: Preserve line breaks from <br/> tags
+                          lineHeight: '1.75'
                         }}
                       />
                     </div>
@@ -4365,20 +4439,19 @@ function ExamManagementPage() {
                       </button>
                     </div>
                   </div>
-                  <textarea
-                    ref={explanationTextareaRef}
-                    value={questionForm.explanation}
-                    onChange={(e) => {
-                      setQuestionForm({ ...questionForm, explanation: e.target.value });
-                      handleTextareaResize('explanation');
+                  <ContentEditable
+                    value={questionForm.explanation || ''}
+                    onChange={(newValue) => {
+                      setQuestionForm({ ...questionForm, explanation: newValue });
                     }}
-                    onPaste={(e) => handlePaste(e, 'explanation')}
-                    onInput={() => handleTextareaResize('explanation')}
-                    required
+                    onPaste={async (e, file, html, plainText) => {
+                      return await handlePasteForContentEditable(e, file, html, plainText, 'explanation');
+                    }}
                     placeholder={t('examManagement.questions.questionForm.explanationPlaceholder') || 'Nhập giải thích... (Có thể paste từ Word/Google Docs hoặc paste ảnh)'}
-                    rows={4}
-                    style={{ minHeight: '100px', resize: 'vertical' }}
-                    className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white font-mono text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)]"
+                    className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black transition-all bg-white text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] prose prose-sm max-w-none overflow-y-auto"
+                    style={{ minHeight: '100px', maxHeight: '400px' }}
+                    minHeight={100}
+                    field="explanation"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     💡 Tip: Paste từ Word/Google Docs sẽ tự động format. Paste ảnh (Ctrl+V) sẽ tự động upload và chèn vào.
@@ -4392,7 +4465,9 @@ function ExamManagementPage() {
                         dangerouslySetInnerHTML={{ __html: questionForm.explanation }}
                         style={{
                           wordWrap: 'break-word',
-                          overflowWrap: 'break-word'
+                          overflowWrap: 'break-word',
+                          whiteSpace: 'pre-wrap', // ✅ FIX: Preserve line breaks from <br/> tags
+                          lineHeight: '1.75'
                         }}
                       />
                     </div>

@@ -618,7 +618,8 @@ function QuizPage() {
                   dangerouslySetInnerHTML={{ __html: currentQuestion.text }}
                   style={{
                     wordWrap: 'break-word',
-                    overflowWrap: 'break-word'
+                    overflowWrap: 'break-word',
+                    whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
                   }}
                 />
                 
@@ -694,7 +695,8 @@ function QuizPage() {
                           className="prose prose-sm max-w-none"
                           style={{
                             wordWrap: 'break-word',
-                            overflowWrap: 'break-word'
+                            overflowWrap: 'break-word',
+                            whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
                           }}
                         />
                       </p>

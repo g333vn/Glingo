@@ -14,6 +14,9 @@ import { n1Books } from '../../data/level/n1/books.js';
 // import { n2Books } from '../../data/level/n2/books.js';
 // 🔒 SECURITY: Import error handler
 import { getErrorMessage } from '../../utils/uiErrorHandler.js';
+// ✅ NEW: ContentEditable component for rich text editing
+import ContentEditable from '../../components/ContentEditable.jsx';
+import { processPastedHTML } from '../../utils/richTextEditorUtils.js';
 
 function QuizEditorPage() {
   const { user } = useAuth();
@@ -663,61 +666,82 @@ function QuizEditorPage() {
     }
   };
 
-  // ✅ NEW: Process pasted HTML (clean up, convert formatting, furigana)
-  const processPastedHTML = (html) => {
-    if (!html || !html.trim()) return '';
+  // ✅ UPDATED: Paste handler for ContentEditable (returns processed HTML)
+  const handlePasteForContentEditable = async (e, file, html, plainText, questionIndex, field = 'text') => {
+    // Handle image paste
+    if (file) {
+      const imgTag = await handleImageUploadForContentEditable(file, questionIndex, field);
+      // Return imgTag to insert at cursor, or false if upload failed
+      return imgTag || false;
+    }
     
-    // Create temporary div to parse HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
+    // Handle HTML paste
+    if (html && html.trim()) {
+      const processed = processPastedHTML(html, plainText);
+      // Return processed HTML - ContentEditable will insert it at cursor and trigger onChange
+      return processed;
+    }
     
-    // Convert <b> to <strong>
-    tempDiv.querySelectorAll('b').forEach(el => {
-      const strong = document.createElement('strong');
-      strong.innerHTML = el.innerHTML;
-      el.replaceWith(strong);
-    });
+    // ✅ NEW: Handle plain text with newlines
+    if (plainText && plainText.trim()) {
+      const processed = processPastedHTML(null, plainText);
+      return processed;
+    }
     
-    // Convert <i> to <em>
-    tempDiv.querySelectorAll('i').forEach(el => {
-      const em = document.createElement('em');
-      em.innerHTML = el.innerHTML;
-      el.replaceWith(em);
-    });
-    
-    // Convert <p> to preserve line breaks
-    tempDiv.querySelectorAll('p').forEach(el => {
-      if (el.textContent.trim()) {
-        el.outerHTML = el.innerHTML + '<br/>';
-      } else {
-        el.remove();
-      }
-    });
-    
-    // Convert <div> to <br/> if it's a line break
-    tempDiv.querySelectorAll('div').forEach(el => {
-      if (el.textContent.trim() && !el.querySelector('p, div, h1, h2, h3, h4, h5, h6')) {
-        el.outerHTML = el.innerHTML + '<br/>';
-      }
-    });
-    
-    // Remove empty tags
-    tempDiv.querySelectorAll('*').forEach(el => {
-      if (!el.textContent.trim() && !el.querySelector('img, br')) {
-        el.remove();
-      }
-    });
-    
-    // Detect furigana pattern: 渋谷(しぶや) → <ruby>渋谷<rt>しぶや</rt></ruby>
-    let processed = tempDiv.innerHTML;
-    const furiganaPattern = /([\u4E00-\u9FAF]+)\(([\u3040-\u309F\u30A0-\u30FF]+)\)/g;
-    processed = processed.replace(furiganaPattern, '<ruby>$1<rt>$2</rt></ruby>');
-    
-    return processed;
+    return null; // Let default paste behavior happen
   };
 
-  // ✅ NEW: Paste handler (detect image or text/HTML)
+  // ✅ UPDATED: Image upload handler for ContentEditable (returns imgTag to insert at cursor)
+  const handleImageUploadForContentEditable = async (file, questionIndex, field = 'text') => {
+    setIsUploadingImage(true);
+    setUploadingImageIndex(questionIndex);
+    setUploadingImageField(field);
+    
+    try {
+      const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
+      
+      const safeLevel = selectedLevel || 'unknown-level';
+      const safeBook = selectedBook || 'unknown-book';
+      const safeChapter = selectedChapter || 'unknown-chapter';
+      const safeLesson = selectedLesson || 'unknown-lesson';
+      const safeQuestion = questionIndex != null ? `question-${questionIndex + 1}` : 'question-unknown';
+      const prefix = `level-${safeLevel}/book-${safeBook}/chapter-${safeChapter}/lesson-${safeLesson}/${safeQuestion}`;
+      const path = generateFilePath(prefix, file.name);
+      
+      const result = await uploadImage(file, path);
+      
+      if (!result.success) {
+        console.error('[QuizEditor] ❌ Error uploading image:', result.error);
+        alert('❌ Lỗi upload ảnh!');
+        return null;
+      }
+      
+      console.log('[QuizEditor] ✅ Image uploaded:', result.url);
+      
+      // Return imgTag - ContentEditable will insert it at cursor position
+      const imgTag = `<img src="${result.url}" alt="${field === 'explanation' ? 'Explanation image' : 'Question image'}" style="max-width: 100%; height: auto; display: block; margin: 10px 0;" />`;
+      
+      alert(`✅ Upload ảnh thành công!\n\nFile: ${file.name}`);
+      return imgTag;
+    } catch (error) {
+      console.error('[QuizEditor] ❌ Error during image upload:', error);
+      alert('❌ Lỗi upload ảnh!');
+      return null;
+    } finally {
+      setIsUploadingImage(false);
+      setUploadingImageIndex(-1);
+      setUploadingImageField('');
+    }
+  };
+
+  // ✅ KEEP: Original paste handler for textarea (question text field)
   const handlePaste = async (e, questionIndex, field = 'text') => {
+    // Only handle for textarea fields (not explanation which uses ContentEditable)
+    if (field === 'explanation') {
+      // This shouldn't be called for explanation anymore, but keep for safety
+      return;
+    }
+    
     const items = e.clipboardData.items;
     let hasImage = false;
     
@@ -746,16 +770,12 @@ function QuizEditorPage() {
         const processed = processPastedHTML(html);
         
         // Insert into textarea
-        const textarea = field === 'explanation'
-          ? explanationTextareaRefs.current[questionIndex]
-          : textareaRefs.current[questionIndex];
+        const textarea = textareaRefs.current[questionIndex];
           
         if (textarea) {
           const start = textarea.selectionStart;
           const end = textarea.selectionEnd;
-          const currentValue = field === 'explanation'
-            ? questions[questionIndex].explanation || ''
-            : questions[questionIndex].text || '';
+          const currentValue = questions[questionIndex].text || '';
           
           const newValue = 
             currentValue.substring(0, start) + 
@@ -763,11 +783,7 @@ function QuizEditorPage() {
             currentValue.substring(end);
           
           const newQuestions = [...questions];
-          if (field === 'explanation') {
-            newQuestions[questionIndex].explanation = newValue;
-          } else {
-            newQuestions[questionIndex].text = newValue;
-          }
+          newQuestions[questionIndex].text = newValue;
           setQuestions(newQuestions);
           
           // Restore cursor position
@@ -781,8 +797,47 @@ function QuizEditorPage() {
     }
   };
 
-  // ✅ NEW: Toolbar functions (format text)
+  // ✅ UPDATED: Toolbar functions - Support both textarea and ContentEditable
   const insertTextAtCursor = (questionIndex, beforeText, afterText = '', field = 'text') => {
+    // ✅ NEW: For ContentEditable fields (text, explanation, options), use document.execCommand
+    if (field === 'text' || field === 'explanation' || field.startsWith('option-')) {
+      // Find the ContentEditable element
+      const contentEditable = document.querySelector(`[data-field="${field}"][data-question-index="${questionIndex}"]`);
+      if (contentEditable) {
+        contentEditable.focus();
+        // Use document.execCommand for ContentEditable
+        if (beforeText === '<strong>' && afterText === '</strong>') {
+          document.execCommand('bold', false, null);
+          return;
+        }
+        if (beforeText === '<em>' && afterText === '</em>') {
+          document.execCommand('italic', false, null);
+          return;
+        }
+        if (beforeText === '<br/>' && afterText === '') {
+          document.execCommand('insertLineBreak', false, null);
+          return;
+        }
+        // Fallback: insert HTML
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = beforeText + (range.toString() || '') + afterText;
+          const fragment = document.createDocumentFragment();
+          while (tempDiv.firstChild) {
+            fragment.appendChild(tempDiv.firstChild);
+          }
+          range.insertNode(fragment);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        return;
+      }
+    }
+    
+    // ✅ KEEP: Original logic for textarea (backward compatibility)
     const textarea = field === 'explanation'
       ? explanationTextareaRefs.current[questionIndex]
       : textareaRefs.current[questionIndex];
@@ -2592,25 +2647,24 @@ function QuizEditorPage() {
                       </button>
                     </div>
                   </div>
-                  <textarea
-                    ref={(el) => {
-                      if (el) textareaRefs.current[qIndex] = el;
+                  <ContentEditable
+                    value={question.text || ''}
+                    onChange={(newValue) => {
+                      updateQuestion(qIndex, 'text', newValue);
                     }}
-                    value={question.text}
-                    onChange={(e) => {
-                      updateQuestion(qIndex, 'text', e.target.value);
-                      handleTextareaResize(qIndex);
+                    onPaste={async (e, file, html, plainText) => {
+                      return await handlePasteForContentEditable(e, file, html, plainText, qIndex, 'text');
                     }}
-                    onPaste={(e) => handlePaste(e, qIndex)}
-                    onInput={() => handleTextareaResize(qIndex)}
                     placeholder={t('quizEditor.questions.questionTextPlaceholder') || 'Nhập nội dung câu hỏi... (Có thể paste từ Word/Google Docs hoặc paste ảnh)'}
-                    rows={6}
-                    style={{ minHeight: '150px', resize: 'vertical' }}
-                    className={`w-full px-4 py-2 border-[3px] rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 transition-colors font-mono text-sm ${
+                    className={`w-full px-4 py-2 border-[3px] rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 transition-colors text-sm prose prose-sm max-w-none overflow-y-auto ${
                       checkDuplicateQuestion(question.text, qIndex)
                         ? 'border-red-500 bg-red-50 focus:border-red-500'
                         : 'border-black focus:border-black'
                     }`}
+                    style={{ minHeight: '150px', maxHeight: '400px' }}
+                    minHeight={150}
+                    field="text"
+                    questionIndex={qIndex}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     💡 Tip: Paste từ Word/Google Docs sẽ tự động format. Paste ảnh (Ctrl+V) sẽ tự động upload và chèn vào.
@@ -2624,7 +2678,9 @@ function QuizEditorPage() {
                         dangerouslySetInnerHTML={{ __html: question.text }}
                         style={{
                           wordWrap: 'break-word',
-                          overflowWrap: 'break-word'
+                          overflowWrap: 'break-word',
+                          whiteSpace: 'pre-wrap', // ✅ FIX: Preserve line breaks from <br/> tags
+                          lineHeight: '1.75'
                         }}
                       />
                     </div>
@@ -2701,14 +2757,22 @@ function QuizEditorPage() {
                       <label className="block text-sm font-black text-gray-700 mb-1 uppercase tracking-wide">
                         {t('quizEditor.questions.optionLabel', { label: option.label })}:
                       </label>
-                      <input
-                        type="text"
-                        value={option.text}
-                        onChange={(e) => updateQuestion(qIndex, `option-${optIndex}`, e.target.value)}
+                      <ContentEditable
+                        value={option.text || ''}
+                        onChange={(newValue) => {
+                          updateQuestion(qIndex, `option-${optIndex}`, newValue);
+                        }}
+                        onPaste={async (e, file, html, plainText) => {
+                          return await handlePasteForContentEditable(e, file, html, plainText, qIndex, `option-${optIndex}`);
+                        }}
                         placeholder={t('quizEditor.questions.optionLabel', { label: option.label })}
-                        className={`w-full px-3 py-2 border-[3px] rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 font-bold ${
+                        className={`w-full px-3 py-2 border-[3px] rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 font-bold prose prose-sm max-w-none ${
                           question.correct === option.label ? 'border-green-500 bg-green-50 focus:border-green-500' : 'border-black focus:border-black'
                         }`}
+                        style={{ minHeight: '50px', maxHeight: '200px' }}
+                        minHeight={50}
+                        field={`option-${optIndex}`}
+                        questionIndex={qIndex}
                       />
                     </div>
                   ))}
@@ -2785,21 +2849,20 @@ function QuizEditorPage() {
                       </button>
                     </div>
                   </div>
-                  <textarea
-                    ref={(el) => {
-                      if (el) explanationTextareaRefs.current[qIndex] = el;
+                  <ContentEditable
+                    value={question.explanation || ''}
+                    onChange={(newValue) => {
+                      updateQuestion(qIndex, 'explanation', newValue);
                     }}
-                    value={question.explanation}
-                    onChange={(e) => {
-                      updateQuestion(qIndex, 'explanation', e.target.value);
-                      handleTextareaResize(qIndex, 'explanation');
+                    onPaste={async (e, file, html, plainText) => {
+                      return await handlePasteForContentEditable(e, file, html, plainText, qIndex, 'explanation');
                     }}
-                    onPaste={(e) => handlePaste(e, qIndex, 'explanation')}
-                    onInput={() => handleTextareaResize(qIndex, 'explanation')}
                     placeholder={t('quizEditor.questions.explanationPlaceholder') || 'Nhập giải thích... (Có thể paste từ Word/Google Docs hoặc paste ảnh)'}
-                    rows={4}
-                    style={{ minHeight: '100px', resize: 'vertical' }}
-                    className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black font-mono text-sm"
+                    className="w-full px-4 py-2 border-[3px] border-black rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 focus:border-black text-sm prose prose-sm max-w-none overflow-y-auto"
+                    style={{ minHeight: '100px', maxHeight: '400px' }}
+                    minHeight={100}
+                    field="explanation"
+                    questionIndex={qIndex}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     💡 Tip: Paste từ Word/Google Docs sẽ tự động format. Paste ảnh (Ctrl+V) sẽ tự động upload và chèn vào.
@@ -2813,7 +2876,9 @@ function QuizEditorPage() {
                         dangerouslySetInnerHTML={{ __html: question.explanation }}
                         style={{
                           wordWrap: 'break-word',
-                          overflowWrap: 'break-word'
+                          overflowWrap: 'break-word',
+                          whiteSpace: 'pre-wrap', // ✅ FIX: Preserve line breaks from <br/> tags
+                          lineHeight: '1.75'
                         }}
                       />
                     </div>

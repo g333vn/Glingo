@@ -3,15 +3,39 @@
 
 /**
  * Process pasted HTML - clean up, convert formatting, support furigana
+ * ✅ IMPROVED: Better handling of Word/Google Docs formats
  * @param {string} html - HTML string from clipboard
  * @returns {string} - Cleaned HTML string
  */
-export const processPastedHTML = (html) => {
-  if (!html || !html.trim()) return '';
+export const processPastedHTML = (html, plainText = null) => {
+  if (!html || !html.trim()) {
+    // ✅ NEW: If no HTML, try to process plain text with newlines
+    if (plainText) {
+      return processPlainTextWithNewlines(plainText);
+    }
+    return '';
+  }
+  
+  // ✅ DEBUG: Log original HTML to understand format (can remove in production)
+  // console.log('[processPastedHTML] Original HTML:', html.substring(0, 500));
   
   // Create temporary div to parse HTML
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
+  
+  // ✅ IMPROVED: Remove all inline styles (Word/Google Docs add many)
+  // But preserve structure - don't remove style attribute until after processing
+  tempDiv.querySelectorAll('*').forEach(el => {
+    // Store original style for processing if needed
+    const originalStyle = el.getAttribute('style') || '';
+    el.removeAttribute('style');
+    el.removeAttribute('class');
+    el.removeAttribute('id');
+    // Store original style in data attribute temporarily if needed for processing
+    if (originalStyle) {
+      el.setAttribute('data-original-style', originalStyle);
+    }
+  });
   
   // Convert <b> to <strong>
   tempDiv.querySelectorAll('b').forEach(el => {
@@ -27,35 +51,159 @@ export const processPastedHTML = (html) => {
     el.replaceWith(em);
   });
   
-  // Convert <p> to preserve line breaks
-  tempDiv.querySelectorAll('p').forEach(el => {
-    if (el.textContent.trim()) {
-      el.outerHTML = el.innerHTML + '<br/>';
+  // ✅ IMPROVED: Handle <span> with font-weight:bold → <strong>
+  tempDiv.querySelectorAll('span').forEach(el => {
+    const style = el.getAttribute('style') || '';
+    if (style.includes('font-weight') && (style.includes('bold') || style.includes('700'))) {
+      const strong = document.createElement('strong');
+      strong.innerHTML = el.innerHTML;
+      el.replaceWith(strong);
+    } else if (style.includes('font-style') && style.includes('italic')) {
+      const em = document.createElement('em');
+      em.innerHTML = el.innerHTML;
+      el.replaceWith(em);
     } else {
+      // Just unwrap span, keep content
+      const parent = el.parentNode;
+      while (el.firstChild) {
+        parent.insertBefore(el.firstChild, el);
+      }
+      parent.removeChild(el);
+    }
+  });
+  
+  // ✅ IMPROVED: Convert <p> to preserve line breaks (handle empty paragraphs)
+  // Process in reverse order to avoid issues with live NodeList
+  const paragraphs = Array.from(tempDiv.querySelectorAll('p'));
+  paragraphs.reverse().forEach((el) => {
+    const text = el.textContent.trim();
+    
+    if (text) {
+      // Replace <p> with its content + <br/> AFTER content
+      // Move all children out first
+      const fragment = document.createDocumentFragment();
+      while (el.firstChild) {
+        fragment.appendChild(el.firstChild);
+      }
+      // Insert content first
+      el.parentNode.insertBefore(fragment, el);
+      // Then insert <br/> after content (always add <br/> to preserve line breaks)
+      const br = document.createElement('br');
+      el.parentNode.insertBefore(br, el);
       el.remove();
+    } else {
+      // Empty paragraph = line break (always add <br/>)
+      const br = document.createElement('br');
+      el.replaceWith(br);
     }
   });
   
-  // Convert <div> to <br/> if it's a line break
-  tempDiv.querySelectorAll('div').forEach(el => {
-    if (el.textContent.trim() && !el.querySelector('p, div, h1, h2, h3, h4, h5, h6')) {
-      el.outerHTML = el.innerHTML + '<br/>';
+  // ✅ IMPROVED: Convert <div> to <br/> if it's a line break (better detection)
+  // Process in reverse order to avoid issues with live NodeList
+  const divs = Array.from(tempDiv.querySelectorAll('div'));
+  divs.reverse().forEach((el) => {
+    const hasBlockChildren = el.querySelector('p, div, h1, h2, h3, h4, h5, h6, ul, ol, table');
+    const text = el.textContent.trim();
+    
+    if (text && !hasBlockChildren) {
+      // Simple div = line break - insert content then <br/>
+      const fragment = document.createDocumentFragment();
+      while (el.firstChild) {
+        fragment.appendChild(el.firstChild);
+      }
+      el.parentNode.insertBefore(fragment, el);
+      // Add <br/> after content (always add <br/> to preserve line breaks)
+      const br = document.createElement('br');
+      el.parentNode.insertBefore(br, el);
+      el.remove();
+    } else if (!text && !hasBlockChildren) {
+      // Empty div = line break (always add <br/>)
+      const br = document.createElement('br');
+      el.replaceWith(br);
     }
   });
   
-  // Remove empty tags
+  // ✅ IMPROVED: Handle line breaks from Word (often uses <o:p></o:p> or <br style="...">)
+  tempDiv.querySelectorAll('br').forEach(br => {
+    br.removeAttribute('style');
+    br.removeAttribute('class');
+  });
+  
+  // Remove Microsoft Office specific tags
+  tempDiv.querySelectorAll('o\\:p, o\\:br, mso\\:*, w\\:*').forEach(el => el.remove());
+  
+  // Remove empty tags (but keep <br> and <img>)
   tempDiv.querySelectorAll('*').forEach(el => {
+    if (el.tagName === 'BR' || el.tagName === 'IMG') return;
     if (!el.textContent.trim() && !el.querySelector('img, br')) {
-      el.remove();
+      // Unwrap empty tags
+      const parent = el.parentNode;
+      while (el.firstChild) {
+        parent.insertBefore(el.firstChild, el);
+      }
+      parent.removeChild(el);
     }
   });
+  
+  // ✅ IMPROVED: Normalize whitespace (Word adds many &nbsp;)
+  let processed = tempDiv.innerHTML;
+  
+  // ✅ FIX: Preserve line breaks - convert newlines between tags to spaces, but keep <br/> tags
+  // First, protect <br/> tags by temporarily replacing them
+  processed = processed.replace(/<br\s*\/?>/gi, '___BR_TAG___');
+  
+  // Replace multiple consecutive whitespace (spaces, tabs, newlines) with single space
+  // But preserve the structure
+  processed = processed.replace(/[\r\n\t]+/g, ' '); // Replace newlines/tabs with space
+  processed = processed.replace(/[ \t]+/g, ' '); // Replace multiple spaces with single space
+  
+  // Restore <br/> tags
+  processed = processed.replace(/___BR_TAG___/g, '<br/>');
+  
+  // Replace multiple consecutive <br/> with max 2 (for paragraph spacing)
+  processed = processed.replace(/(<br\s*\/?>){3,}/gi, '<br/><br/>');
+  
+  // Replace &nbsp; with regular spaces (except in pre/code)
+  processed = processed.replace(/&nbsp;/g, ' ');
   
   // Detect furigana pattern: 渋谷(しぶや) → <ruby>渋谷<rt>しぶや</rt></ruby>
-  let processed = tempDiv.innerHTML;
   const furiganaPattern = /([\u4E00-\u9FAF]+)\(([\u3040-\u309F\u30A0-\u30FF]+)\)/g;
   processed = processed.replace(furiganaPattern, '<ruby>$1<rt>$2</rt></ruby>');
   
+  // ✅ FIX: Don't remove all whitespace - only clean up excessive spaces between text
+  // But preserve structure around tags
+  processed = processed.replace(/>\s+</g, '><'); // Remove whitespace between tags
+  processed = processed.replace(/>\s+/g, '>'); // Remove whitespace after opening tag
+  processed = processed.replace(/\s+</g, '<'); // Remove whitespace before closing tag
+  
+  // Clean up leading/trailing whitespace
+  processed = processed.trim();
+  
   return processed;
+};
+
+/**
+ * Process plain text with newlines - convert \n to <br/>
+ * @param {string} text - Plain text string
+ * @returns {string} - HTML string with <br/> tags
+ */
+const processPlainTextWithNewlines = (text) => {
+  if (!text) return '';
+  
+  // Escape HTML first
+  const div = document.createElement('div');
+  div.textContent = text;
+  let escaped = div.innerHTML;
+  
+  // Convert newlines to <br/>
+  escaped = escaped.replace(/\r\n/g, '<br/>'); // Windows
+  escaped = escaped.replace(/\n/g, '<br/>');   // Unix/Mac
+  escaped = escaped.replace(/\r/g, '<br/>');     // Old Mac
+  
+  // Clean up multiple consecutive <br/> (max 2)
+  escaped = escaped.replace(/(<br\s*\/?>){3,}/gi, '<br/><br/>');
+  
+  return escaped;
 };
 
 /**

@@ -1129,6 +1129,23 @@ header[lang="en"] div {
 }
 
 /* ============================================
+   EXPLANATION PREVIEW - Preserve line breaks
+   ============================================ */
+/* ✅ FIX: Ensure <br/> tags are always visible in preview panels */
+.prose br {
+  display: block !important;
+  content: "" !important;
+  margin-bottom: 0.5em !important;
+  line-height: 1.75 !important;
+}
+
+/* ✅ FIX: Override prose white-space to preserve line breaks */
+.prose[style*="white-space: pre-wrap"],
+.prose.preserve-line-breaks {
+  white-space: pre-wrap !important;
+}
+
+/* ============================================
    FOOTER GLASSMORPHISM ANIMATIONS
    ============================================ */
 
@@ -1527,4 +1544,21 @@ header[lang="en"] div {
   .link-active-glow {
     animation: none !important;
   }
+}
+
+/* ============================================
+   EXPLANATION PREVIEW - Preserve line breaks
+   ============================================ */
+/* ✅ FIX: Ensure <br/> tags are always visible in preview panels */
+.prose br {
+  display: block !important;
+  content: "" !important;
+  margin-bottom: 0.5em !important;
+  line-height: 1.75 !important;
+}
+
+/* ✅ FIX: Override prose white-space to preserve line breaks */
+.prose[style*="white-space: pre-wrap"],
+.prose.preserve-line-breaks {
+  white-space: pre-wrap !important;
 }
