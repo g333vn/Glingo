@@ -212,6 +212,8 @@ function ExamManagementPage() {
   const questionTextareaRef = React.useRef(null);
   const explanationTextareaRef = React.useRef(null);
   const instructionTextareaRef = React.useRef(null);
+  // ✅ FIX: Ref to store current question ID to avoid stale state in async handlers
+  const currentQuestionIdRef = React.useRef(null);
   const [showQuestionPreview, setShowQuestionPreview] = useState({}); // For question and explanation preview
   
   // ✅ NEW: Duplicate detection state
@@ -221,6 +223,7 @@ function ExamManagementPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [exportedJSON, setExportedJSON] = useState('');
   const [showTemplate, setShowTemplate] = useState(false);
+  const [showWatermarkTemplate, setShowWatermarkTemplate] = useState(false);
   
   // ✅ NEW: Imported questions state (for displaying multiple questions like Quiz Editor)
   const [importedQuestions, setImportedQuestions] = useState([]);
@@ -243,6 +246,11 @@ function ExamManagementPage() {
   const [previewSortBy, setPreviewSortBy] = useState('id'); // 'id', 'status'
   const [previewFilter, setPreviewFilter] = useState('all'); // 'all', 'complete', 'incomplete'
   const previewContentRef = useRef(null); // For keyboard navigation
+
+  // ✅ FIX: Sync current question ID to ref to avoid stale state in async handlers
+  useEffect(() => {
+    currentQuestionIdRef.current = questionForm.id || null;
+  }, [questionForm.id]);
 
   // ✅ NEW: Check for duplicate question text
   useEffect(() => {
@@ -1164,7 +1172,7 @@ function ExamManagementPage() {
     setIsUploadingImage(true);
     setUploadingImageField(`passageImage-${imageIndex}`);
     try {
-      const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
+      const { uploadImage, generateFilePath } = await import('@services/fileUploadService');
       
       // 📁 Đường dẫn: level / exam / testType / section / passage-{index}.jpg
       const safeLevel = selectedLevel || 'unknown-level';
@@ -1338,7 +1346,7 @@ function ExamManagementPage() {
 
     setIsUploadingAudio(true);
     try {
-      const { uploadAudio, generateFilePath } = await import('../../services/fileUploadService.js');
+      const { uploadAudio, generateFilePath } = await import('@services/fileUploadService');
       
       // 📁 Đường dẫn: level / exam / listening / audio.mp3 (không có sectionId)
       const safeLevel = selectedLevel || 'unknown-level';
@@ -1689,14 +1697,15 @@ function ExamManagementPage() {
     setUploadingImageField(field);
     
     try {
-      const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
+      const { uploadImage, generateFilePath } = await import('@services/fileUploadService');
       
       // 📁 Đường dẫn có ngữ nghĩa: level / exam / testType / section / question
       const safeLevel = selectedLevel || 'unknown-level';
       const safeExam = selectedExam?.id || 'unknown-exam';
       const safeTestType = selectedTestType || 'unknown-type';
       const safeSection = selectedSection?.id || 'unknown-section';
-      const safeQuestion = questionForm.id || 'question-unknown';
+      // ✅ FIX: Use ref to get current question ID to avoid stale state
+      const safeQuestion = currentQuestionIdRef.current || 'question-unknown';
       const prefix = `level-${safeLevel}/exam-${safeExam}/${safeTestType}/section-${safeSection}/${safeQuestion}`;
       const path = generateFilePath(prefix, file.name);
       
@@ -1713,8 +1722,8 @@ function ExamManagementPage() {
         // ✅ Handle explanation field (ContentEditable) differently
         if (field === 'explanation') {
           // For ContentEditable, append to end (or could insert at cursor if needed)
-          const currentValue = questionForm.explanation || '';
-          setQuestionForm({ ...questionForm, explanation: currentValue + imgTag });
+          // ✅ FIX: Use functional update to avoid stale state
+          setQuestionForm(prev => ({ ...prev, explanation: (prev.explanation || '') + imgTag }));
         } else {
           // Handle textarea fields (question, instruction)
           const textarea = field === 'instruction'
@@ -1736,7 +1745,8 @@ function ExamManagementPage() {
             if (field === 'instruction') {
               setSectionForm({ ...sectionForm, instruction: newValue });
             } else {
-              setQuestionForm({ ...questionForm, question: newValue });
+              // ✅ FIX: Use functional update to avoid stale state
+              setQuestionForm(prev => ({ ...prev, question: newValue }));
             }
             
             // Restore cursor position
@@ -1790,13 +1800,14 @@ function ExamManagementPage() {
     setUploadingImageField(field);
     
     try {
-      const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
+      const { uploadImage, generateFilePath } = await import('@services/fileUploadService');
       
       const safeLevel = selectedLevel || 'unknown-level';
       const safeExam = selectedExam?.id || 'unknown-exam';
       const safeTestType = selectedTestType || 'unknown-type';
       const safeSection = selectedSection?.id || 'unknown-section';
-      const safeQuestion = questionForm.id || 'question-unknown';
+      // ✅ FIX: Use ref to get current question ID to avoid stale state
+      const safeQuestion = currentQuestionIdRef.current || 'question-unknown';
       const prefix = `level-${safeLevel}/exam-${safeExam}/${safeTestType}/section-${safeSection}/${safeQuestion}`;
       const path = generateFilePath(prefix, file.name);
       
@@ -1810,7 +1821,7 @@ function ExamManagementPage() {
       
       console.log('[ExamManagement] ✅ Image uploaded:', result.url);
       
-      const imgTag = `<img src="${result.url}" alt="${field === 'explanation' ? 'Explanation image' : 'Instruction image'}" style="max-width: 100%; height: auto; display: block; margin: 10px 0;" />`;
+      const imgTag = `<img src="${result.url}" alt="${field === 'explanation' ? 'Explanation image' : field === 'question' ? 'Question image' : 'Instruction image'}" style="max-width: 100%; height: auto; display: block; margin: 10px 0;" />`;
       
       alert(`✅ Upload ảnh thành công!\n\nFile: ${file.name}`);
       return imgTag;
@@ -1879,11 +1890,13 @@ function ExamManagementPage() {
             currentValue.substring(end);
           
           if (field === 'explanation') {
-            setQuestionForm({ ...questionForm, explanation: newValue });
+            // ✅ FIX: Use functional update to avoid stale state
+            setQuestionForm(prev => ({ ...prev, explanation: newValue }));
           } else if (field === 'instruction') {
             setSectionForm({ ...sectionForm, instruction: newValue });
           } else {
-            setQuestionForm({ ...questionForm, question: newValue });
+            // ✅ FIX: Use functional update to avoid stale state
+            setQuestionForm(prev => ({ ...prev, question: newValue }));
           }
           
           // Restore cursor position
@@ -1918,7 +1931,8 @@ function ExamManagementPage() {
       if (field === 'instruction') {
         setSectionForm({ ...sectionForm, instruction: newValue });
       } else {
-        setQuestionForm({ ...questionForm, question: newValue });
+        // ✅ FIX: Use functional update to avoid stale state
+        setQuestionForm(prev => ({ ...prev, question: newValue }));
       }
     };
     
@@ -2766,6 +2780,45 @@ ${selectedSection ? `\n⚠️ LƯU Ý QUAN TRỌNG: Instruction "${selectedSecti
 
 Hãy phân tích ảnh câu hỏi và ảnh đáp án, trích xuất thông tin và trả về JSON chính xác theo format trên.`;
   }, [selectedTestType, selectedSection]);
+
+  // ✅ NEW: Watermark removal prompt template
+  const watermarkPromptTemplate = useMemo(() => {
+    return `🖼️ IMAGE GENERATION REQUEST
+
+Generate a clean replica of this Japanese document.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 1 - ANALYZE:
+Read all text from the uploaded image (Japanese characters, numbers, formatting)
+
+STEP 2 - GENERATE NEW IMAGE:
+
+Create image with:
+✅ White background (#FFFFFF)
+✅ All original text (100% exact, no translation)
+✅ Same layout and structure
+✅ Same fonts and sizes
+✅ High resolution and quality
+
+Remove:
+❌ All watermarks
+❌ All logos  
+❌ Background noise
+
+STEP 3 - OUTPUT:
+Return the generated clean image (PNG, high quality)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ REQUIREMENTS:
+- Text accuracy: 100%
+- No modifications to content
+- Only remove watermarks
+- Maintain professional document appearance
+
+🎨 GENERATE IMAGE NOW`;
+  }, []);
 
   const canSwitchToTestType = useCallback((targetType) => {
     const targetIndex = TEST_TYPE_ORDER.indexOf(targetType);
@@ -4632,9 +4685,55 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
                             imageInputRefs.current[key] = document.createElement('input');
                             imageInputRefs.current[key].type = 'file';
                             imageInputRefs.current[key].accept = 'image/jpeg,image/jpg,image/png,image/webp,image/gif';
-                            imageInputRefs.current[key].onchange = (e) => {
+                            imageInputRefs.current[key].onchange = async (e) => {
                               const file = e.target.files?.[0];
-                              if (file) handleImageUpload(file, 'question');
+                              if (file) {
+                                const imgTag = await handleImageUploadForContentEditable(file, 'question');
+                                if (imgTag) {
+                                  // Insert vào ContentEditable tại cursor position
+                                  const contentEditable = document.querySelector('[data-field="question"]');
+                                  if (contentEditable) {
+                                    const selection = window.getSelection();
+                                    let range;
+                                    
+                                    if (selection.rangeCount > 0) {
+                                      range = selection.getRangeAt(0);
+                                    } else {
+                                      range = document.createRange();
+                                      range.selectNodeContents(contentEditable);
+                                      range.collapse(false);
+                                    }
+                                    
+                                    if (contentEditable.contains(range.commonAncestorContainer)) {
+                                      const tempDiv = document.createElement('div');
+                                      tempDiv.innerHTML = imgTag;
+                                      const fragment = document.createDocumentFragment();
+                                      while (tempDiv.firstChild) {
+                                        fragment.appendChild(tempDiv.firstChild);
+                                      }
+                                      range.deleteContents();
+                                      range.insertNode(fragment);
+                                      range.setStartAfter(fragment.lastChild || range.startContainer);
+                                      range.collapse(true);
+                                      selection.removeAllRanges();
+                                      selection.addRange(range);
+                                      contentEditable.focus();
+                                      
+                                      // Update state to sync with ContentEditable
+                                      // ✅ FIX: Use functional update to avoid stale state
+                                      setQuestionForm(prev => ({ ...prev, question: contentEditable.innerHTML }));
+                                    } else {
+                                      // Fallback: append to end
+                                      // ✅ FIX: Use functional update to avoid stale state
+                                      setQuestionForm(prev => ({ ...prev, question: (prev.question || '') + imgTag }));
+                                    }
+                                  } else {
+                                    // Fallback: append to end
+                                    // ✅ FIX: Use functional update to avoid stale state
+                                    setQuestionForm(prev => ({ ...prev, question: (prev.question || '') + imgTag }));
+                                  }
+                                }
+                              }
                             };
                           }
                           imageInputRefs.current[key].click();
@@ -4663,24 +4762,24 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
                       </button>
                     </div>
                   </div>
-                  <textarea
-                    ref={questionTextareaRef}
-                    value={questionForm.question}
-                    onChange={(e) => {
-                      setQuestionForm({ ...questionForm, question: e.target.value });
-                      handleTextareaResize('question');
+                  <ContentEditable
+                    value={questionForm.question || ''}
+                    onChange={(newValue) => {
+                      // ✅ FIX: Use functional update to avoid stale state
+                      setQuestionForm(prev => ({ ...prev, question: newValue }));
                     }}
-                    onPaste={(e) => handlePaste(e, 'question')}
-                    onInput={() => handleTextareaResize('question')}
-                    required
+                    onPaste={async (e, file, html, plainText) => {
+                      return await handlePasteForContentEditable(e, file, html, plainText, 'question');
+                    }}
                     placeholder={t('examManagement.questions.questionForm.questionPlaceholder') || 'Nhập câu hỏi tiếng Nhật... (Có thể paste từ Word/Google Docs hoặc paste ảnh)'}
-                    rows={6}
-                    style={{ minHeight: '150px', resize: 'vertical' }}
-                    className={`w-full px-4 py-2 border-[3px] rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 transition-all bg-white font-mono text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] ${
+                    className={`w-full px-4 py-2 border-[3px] rounded-lg focus:outline-none focus:ring-4 focus:ring-yellow-400 transition-colors text-sm prose prose-sm max-w-none overflow-y-auto ${
                       isDuplicateQuestionText
                         ? 'border-red-500 bg-red-50 focus:border-red-500'
                         : 'border-black focus:border-black'
                     }`}
+                    style={{ minHeight: '150px', maxHeight: '400px' }}
+                    minHeight={150}
+                    field="question"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     💡 Tip: Paste từ Word/Google Docs sẽ tự động format. Paste ảnh (Ctrl+V) sẽ tự động upload và chèn vào.
@@ -4865,7 +4964,8 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
                   <ContentEditable
                     value={questionForm.explanation || ''}
                     onChange={(newValue) => {
-                      setQuestionForm({ ...questionForm, explanation: newValue });
+                      // ✅ FIX: Use functional update to avoid stale state
+                      setQuestionForm(prev => ({ ...prev, explanation: newValue }));
                     }}
                     onPaste={async (e, file, html, plainText) => {
                       return await handlePasteForContentEditable(e, file, html, plainText, 'explanation');
@@ -4979,13 +5079,23 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
                     onChange={handleQuestionJSONUpload}
                   />
 
-                  <button
-                    type="button"
-                    onClick={() => setShowTemplate(!showTemplate)}
-                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
-                  >
-                    {showTemplate ? `🤖 ${t('examManagement.questions.questionForm.hideGeminiPrompt') || 'Ẩn Gemini Prompt'}` : `🤖 ${t('examManagement.questions.questionForm.showGeminiPrompt') || 'Hiện Gemini Prompt'}`}
-                  </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowTemplate(!showTemplate)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
+                    >
+                      {showTemplate ? `🤖 ${t('examManagement.questions.questionForm.hideGeminiPrompt') || 'Ẩn Gemini Prompt'}` : `🤖 ${t('examManagement.questions.questionForm.showGeminiPrompt') || 'Hiện Gemini Prompt'}`}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowWatermarkTemplate(!showWatermarkTemplate)}
+                      className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-semibold"
+                    >
+                      {showWatermarkTemplate ? '🎨 Ẩn Xử lý Watermark' : '🎨 Xử lý Watermark'}
+                    </button>
+                  </div>
 
                   {showTemplate && (
                     <div className="bg-gray-900 text-green-200 rounded-lg p-3 space-y-3 text-xs sm:text-sm max-h-96 overflow-y-auto border border-gray-700">
@@ -5057,6 +5167,82 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
                     </div>
                   )}
 
+                  {showWatermarkTemplate && (
+                    <div className="bg-purple-900 text-purple-100 rounded-lg p-3 space-y-3 text-xs sm:text-sm max-h-96 overflow-y-auto border border-purple-700">
+                      <div className="flex items-center justify-between text-purple-50">
+                        <span className="font-semibold">🎨 Prompt Xử lý Watermark/Logo</span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const promptText = watermarkPromptTemplate;
+                              
+                              if (!promptText || promptText.trim().length === 0) {
+                                alert('⚠️ Prompt template chưa sẵn sàng. Vui lòng thử lại.');
+                                return;
+                              }
+                              
+                              await navigator.clipboard.writeText(promptText);
+                              alert('✅ Đã copy prompt xử lý watermark vào clipboard!');
+                            } catch (error) {
+                              console.error('Error copying to clipboard:', error);
+                              const textArea = document.createElement('textarea');
+                              textArea.value = watermarkPromptTemplate;
+                              textArea.style.position = 'fixed';
+                              textArea.style.opacity = '0';
+                              textArea.style.left = '-9999px';
+                              document.body.appendChild(textArea);
+                              textArea.focus();
+                              textArea.select();
+                              try {
+                                const successful = document.execCommand('copy');
+                                if (successful) {
+                                  alert('✅ Đã copy prompt vào clipboard!');
+                                } else {
+                                  throw new Error('execCommand failed');
+                                }
+                              } catch (err) {
+                                console.error('Fallback copy failed:', err);
+                                alert('⚠️ Không thể copy tự động. Vui lòng chọn và copy thủ công.');
+                              }
+                              document.body.removeChild(textArea);
+                            }
+                          }}
+                          className="px-3 py-1 text-xs bg-purple-600 rounded hover:bg-purple-700 font-semibold"
+                        >
+                          📋 Copy
+                        </button>
+                      </div>
+                      <div className="bg-purple-950 rounded p-2 border border-purple-600">
+                        <pre 
+                          className="whitespace-pre-wrap break-words text-xs leading-relaxed font-mono select-all cursor-text"
+                          onClick={(e) => {
+                            const range = document.createRange();
+                            range.selectNodeContents(e.currentTarget);
+                            const selection = window.getSelection();
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                          }}
+                        >
+{watermarkPromptTemplate}
+                        </pre>
+                      </div>
+                      <div className="text-yellow-300 text-xs bg-yellow-900/30 p-2 rounded border border-yellow-700">
+                        💡 <strong>Hướng dẫn:</strong> 
+                        <ol className="mt-1 ml-4 list-decimal space-y-1">
+                          <li>Copy prompt trên</li>
+                          <li>Vào Google Gemini (có khả năng tạo ảnh)</li>
+                          <li>Paste prompt và upload ảnh có watermark</li>
+                          <li>Gemini sẽ tạo ảnh mới không có watermark</li>
+                          <li>Dùng ảnh đã clean để trích xuất JSON</li>
+                        </ol>
+                      </div>
+                      <div className="text-blue-300 text-xs bg-blue-900/30 p-2 rounded border border-blue-700">
+                        ℹ️ <strong>Lưu ý:</strong> Tính năng này yêu cầu Google Gemini có khả năng tạo ảnh (Imagen). Nếu không tạo được ảnh, Gemini sẽ mô tả chi tiết để bạn có thể xử lý bằng tool khác (Photopea, GIMP...).
+                      </div>
+                    </div>
+                  )}
+
                   {exportedJSON && (
                     <>
                       <button
@@ -5098,16 +5284,6 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
               </div>
 
               {/* Preview - Removed from sidebar to prevent overlap */}
-
-              {/* Exported JSON */}
-              {exportedJSON && (
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                  <h2 className="text-xl font-bold text-gray-800 mb-4">Exported JSON</h2>
-                  <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-xs max-h-96 overflow-y-auto">
-                    {exportedJSON}
-                  </pre>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -5302,6 +5478,12 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
                             <div 
                               className="text-gray-800 text-sm sm:text-base leading-relaxed prose prose-sm max-w-none"
                               dangerouslySetInnerHTML={{ __html: q.question }}
+                              style={{
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word',
+                                whiteSpace: 'pre-wrap',
+                                lineHeight: '1.75'
+                              }}
                             />
                           ) : (
                             <p className="text-yellow-600 italic font-semibold">⚠️ Chưa có câu hỏi</p>
@@ -5383,8 +5565,18 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
                     <p className="text-xs font-black text-yellow-800 mb-2 uppercase">⚠️ Câu hỏi chưa lưu:</p>
                     <div className="bg-white rounded-lg border-[2px] border-yellow-300 p-3">
                       <p className="font-semibold text-gray-800 mb-2">
-                        Câu hỏi {questionForm.id || 'mới'}: {questionForm.question || '(Chưa có câu hỏi)'}
+                        Câu hỏi {questionForm.id || 'mới'}:
                       </p>
+                      <div 
+                        className="prose prose-sm max-w-none text-base leading-relaxed text-gray-800"
+                        dangerouslySetInnerHTML={{ __html: questionForm.question }}
+                        style={{
+                          wordWrap: 'break-word',
+                          overflowWrap: 'break-word',
+                          whiteSpace: 'pre-wrap',
+                          lineHeight: '1.75'
+                        }}
+                      />
                       <div className="space-y-1 text-sm">
                         {questionForm.options.map((opt, idx) => {
                           if (!opt.trim()) return null;

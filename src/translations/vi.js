@@ -1436,7 +1436,12 @@ const vi = {
             audioUrlPlaceholder: '/audio/quiz/listening1.mp3 hoặc upload từ thiết bị',
             audioUploadHint: 'Upload MP3/WAV (max 10MB) cho câu hỏi nghe hiểu JLPT',
             browserNotSupportAudio: 'Trình duyệt không hỗ trợ audio.',
-            clickToPlayAudio: '✅ Bấm ▶️ để nghe thử audio'
+            clickToPlayAudio: '✅ Bấm ▶️ để nghe thử audio',
+            answerNotEntered: '(Chưa nhập)',
+            incomplete: 'Chưa hoàn chỉnh',
+            answers: 'Đáp án:',
+            noCorrectAnswer: 'Chưa chọn đáp án đúng',
+            noQuestions: 'Chưa có câu hỏi nào'
         },
         actions: {
             title: 'Actions',
@@ -1462,9 +1467,15 @@ const vi = {
             fillAllInfoBeforeExport: '▲ Vui lòng điền đầy đủ thông tin trước khi export',
             numberOfQuestions: 'Số câu hỏi: {count}',
             pleaseSelectComplete: 'Vui lòng chon đầy đủ: Level →',
+            locationIncomplete: 'Chưa chọn đầy đủ location',
+            locationIncompleteDetails: 'Cần chọn:',
             readyToSave: 'Sẵn sàng lưu - Click nút "Lưu Quiz" để lưu dữ liệu vào hệ thống',
             readyToExport: 'Sẵn sàng export - Click để xuất file JSON',
-            hidePreview: 'Ẩn Preview'
+            hidePreview: 'Ẩn Preview',
+            preview: 'Preview',
+            copyAll: 'Copy All',
+            print: 'Print',
+            close: 'Đóng'
         },
         validation: {
             minQuestions: '⚠️ Phải có ít nhất 1 câu hỏi!',
@@ -1486,6 +1497,38 @@ const vi = {
             exportOptional: '📤 Export JSON (Tùy chọn): Click "Export JSON" nếu muốn export thủ công',
             exportTip1: 'Dùng khi muốn export lại sau khi đã lưu',
             exportTip2: 'Hoặc muốn xem JSON trước khi lưu'
+        },
+        preview: {
+            filter: 'Lọc:',
+            filterAll: 'Tất cả',
+            filterComplete: 'Hoàn chỉnh',
+            filterIncomplete: 'Chưa hoàn chỉnh',
+            sort: 'Sắp xếp:',
+            sortById: 'Theo ID',
+            sortByStatus: 'Theo trạng thái',
+            displaying: 'Hiển thị:',
+            questions: 'câu hỏi',
+            noQuestionsMatch: 'Không có câu hỏi nào khớp với bộ lọc',
+            footerInstructions: 'Nhấn ESC hoặc click nút "Đóng" để đóng preview',
+            footerKeyboard: 'Keyboard: ↑↓ để scroll, Page Up/Down, Home/End',
+            closePreview: 'Đóng Preview',
+            copyQuestion: 'Copy',
+            quizInfo: {
+                numberOfQuestions: 'Số câu hỏi'
+            },
+            copy: {
+                questionHeader: 'Câu hỏi',
+                answers: 'Đáp án:',
+                correctAnswer: 'Đáp án đúng:',
+                explanation: 'Giải thích:',
+                success: 'Đã copy câu hỏi {id} vào clipboard!',
+                successAll: 'Đã copy tất cả {count} câu hỏi vào clipboard!'
+            },
+            print: {
+                numberOfQuestions: 'Số câu hỏi:',
+                correctAnswer: 'Đáp án đúng:',
+                explanation: 'Giải thích:'
+            }
         },
         questionForm: {
             questionHeader: 'Câu hỏi {id}',

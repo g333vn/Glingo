@@ -549,7 +549,7 @@ function ContentManagementPage() {
     
     try {
       // ✅ Upload to Supabase Storage
-      const { uploadAudio, generateFilePath } = await import('../../services/fileUploadService.js');
+      const { uploadAudio, generateFilePath } = await import('@services/fileUploadService');
       // 📁 Đường dẫn có ngữ nghĩa: level / book / chapter / lesson / question
       const safeLevel = selectedLevel || 'unknown-level';
       const safeBook = selectedBook?.id || 'unknown-book';
@@ -616,7 +616,7 @@ function ContentManagementPage() {
     
     try {
       // ✅ Upload to Supabase Storage
-      const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
+      const { uploadImage, generateFilePath } = await import('@services/fileUploadService');
       // 📁 Đường dẫn có ngữ nghĩa: level / book
       const safeLevel = selectedLevel || 'unknown-level';
       const safeBookId = bookForm.id || editingBook?.id || 'unknown-book';

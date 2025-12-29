@@ -49,7 +49,8 @@ function QuizEditorPage() {
 
   const [exportedJSON, setExportedJSON] = useState('');
   const [importStatus, setImportStatus] = useState('');
-  const [showImportTemplate, setShowImportTemplate] = useState(false);
+  const [showWatermarkTemplate, setShowWatermarkTemplate] = useState(false);
+  const [showGeminiPrompt, setShowGeminiPrompt] = useState(false);
   const [showPreview, setShowPreview] = useState(false); // For quiz preview
   const [showQuestionPreview, setShowQuestionPreview] = useState({}); // Per question preview
   // ✅ NEW: Preview modal enhancements
@@ -652,7 +653,7 @@ function QuizEditorPage() {
     setUploadingAudioIndex(questionIndex);
     
     try {
-      const { uploadAudio, generateFilePath } = await import('../../services/fileUploadService.js');
+      const { uploadAudio, generateFilePath } = await import('@services/fileUploadService');
       
       // 📁 Đường dẫn có ngữ nghĩa: level / book / chapter / lesson / question
       const safeLevel = selectedLevel || 'unknown-level';
@@ -709,7 +710,7 @@ function QuizEditorPage() {
     setUploadingImageField(field);
     
     try {
-      const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
+      const { uploadImage, generateFilePath } = await import('@services/fileUploadService');
       
       // 📁 Đường dẫn có ngữ nghĩa: level / book / chapter / lesson / question
       const safeLevel = selectedLevel || 'unknown-level';
@@ -807,7 +808,7 @@ function QuizEditorPage() {
     setUploadingImageField(field);
     
     try {
-      const { uploadImage, generateFilePath } = await import('../../services/fileUploadService.js');
+      const { uploadImage, generateFilePath } = await import('@services/fileUploadService');
       
       const safeLevel = selectedLevel || 'unknown-level';
       const safeBook = selectedBook || 'unknown-book';
@@ -1436,6 +1437,144 @@ function QuizEditorPage() {
     navigator.clipboard.writeText(exportedJSON || generateJSON());
     alert(t('quizEditor.validation.copySuccess'));
   };
+
+  // ✅ NEW: Watermark removal prompt template
+  const watermarkPromptTemplate = `🖼️ IMAGE GENERATION REQUEST
+
+Generate a clean replica of this Japanese document.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STEP 1 - ANALYZE:
+Read all text from the uploaded image (Japanese characters, numbers, formatting)
+
+STEP 2 - GENERATE NEW IMAGE:
+
+Create image with:
+✅ White background (#FFFFFF)
+✅ All original text (100% exact, no translation)
+✅ Same layout and structure
+✅ Same fonts and sizes
+✅ High resolution and quality
+
+Remove:
+❌ All watermarks
+❌ All logos  
+❌ Background noise
+
+STEP 3 - OUTPUT:
+Return the generated clean image (PNG, high quality)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ REQUIREMENTS:
+- Text accuracy: 100%
+- No modifications to content
+- Only remove watermarks
+- Maintain professional document appearance
+
+🎨 GENERATE IMAGE NOW`;
+
+  // ✅ NEW: Validation for location metadata (5 levels - all required)
+  const isLocationComplete = useMemo(() => {
+    return !!(
+      selectedLevel &&
+      selectedSeries &&
+      selectedBook &&
+      selectedChapter &&
+      selectedLesson
+    );
+  }, [selectedLevel, selectedSeries, selectedBook, selectedChapter, selectedLesson]);
+
+  const getLocationStatus = useMemo(() => {
+    const status = {
+      level: { selected: !!selectedLevel, value: selectedLevel || 'chưa-chọn' },
+      series: { selected: !!selectedSeries, value: selectedSeries || 'chưa-chọn' },
+      book: { selected: !!selectedBook, value: selectedBook || 'chưa-chọn' },
+      chapter: { selected: !!selectedChapter, value: selectedChapter || 'chưa-chọn' },
+      lesson: { selected: !!selectedLesson, value: selectedLesson || 'chưa-chọn' }
+    };
+    return status;
+  }, [selectedLevel, selectedSeries, selectedBook, selectedChapter, selectedLesson]);
+
+  // ✅ NEW: Gemini Prompt Template for Quiz Editor (with 5-level metadata)
+  const geminiPromptTemplate = useMemo(() => {
+    const metadataStatus = getLocationStatus;
+    
+    return `Bạn là chuyên gia xử lý quiz bài học tiếng Nhật. Nhiệm vụ của bạn là phân tích ảnh quiz và trả về JSON theo format sau:
+
+{
+  "title": "Tên quiz (tự động từ ảnh hoặc để trống)",
+  "questions": [
+    {
+      "id": 1,
+      "text": "Nội dung câu hỏi (trích xuất chính xác từ ảnh)",
+      "options": [
+        { "label": "A", "text": "Đáp án A (chỉ nội dung, không có số thứ tự)" },
+        { "label": "B", "text": "Đáp án B" },
+        { "label": "C", "text": "Đáp án C" },
+        { "label": "D", "text": "Đáp án D" }
+      ],
+      "correct": "A",
+      "explanation": "A: Giải thích đáp án A\\nB: Giải thích đáp án B\\nC: Giải thích đáp án C\\nD: Giải thích đáp án D",
+      "audioUrl": ""
+    }
+  ],
+  "metadata": {
+    "level": "${metadataStatus.level.value}",
+    "seriesId": "${metadataStatus.series.value}",
+    "bookId": "${metadataStatus.book.value}",
+    "chapterId": "${metadataStatus.chapter.value}",
+    "lessonId": "${metadataStatus.lesson.value}"
+  }
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+QUAN TRỌNG - ĐỌC KỸ:
+
+1. correct phải là CHỮ CÁI: "A", "B", "C", hoặc "D"
+   - KHÔNG phải số (1, 2, 3, 4)
+   - KHÔNG phải ký tự đặc biệt (①, ②, ③, ④)
+   - Lấy từ đáp án trong ảnh
+
+2. options phải là ARRAY OBJECTS với "label" và "text"
+   - Đúng: [{"label": "A", "text": "わたし"}, {"label": "B", "text": "あなた"}]
+   - Sai: ["A わたし", "B あなた"] hoặc ["わたし", "あなた"]
+   - Trích xuất CHỈ nội dung, KHÔNG có số thứ tự phía trước
+
+3. text (câu hỏi): Trích xuất chính xác từ ảnh
+   - Giữ nguyên format (có thể có gạch chân, chỗ trống...)
+   - Không thêm số thứ tự vào đầu
+   - Không thêm instruction nếu có trong ảnh
+
+4. explanation: Mỗi đáp án xuống dòng riêng
+   - Dùng \\n để xuống dòng: "A: ...\\nB: ...\\nC: ...\\nD: ..."
+   - Hoặc xuống dòng thực sự trong JSON
+   - Nếu ảnh không có giải thích → để trống ""
+
+5. metadata: Sẽ được tự động điền bởi hệ thống
+   - Bạn có thể để giá trị mặc định như trong ví dụ
+   - Hệ thống sẽ tự động cập nhật khi import
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Thông tin context (để tham khảo - KHÔNG cần thêm vào JSON):
+- Level: ${metadataStatus.level.value}
+- Series: ${metadataStatus.series.value}${!metadataStatus.series.selected ? ' ⚠️ BẮT BUỘC' : ''}
+- Book: ${metadataStatus.book.value}${!metadataStatus.book.selected ? ' ⚠️ BẮT BUỘC' : ''}
+- Chapter: ${metadataStatus.chapter.value}${!metadataStatus.chapter.selected ? ' ⚠️ BẮT BUỘC' : ''}
+- Lesson: ${metadataStatus.lesson.value}${!metadataStatus.lesson.selected ? ' ⚠️ BẮT BUỘC' : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+LƯU Ý:
+- Bạn chỉ cần TRÍCH XUẤT và FORMAT lại thông tin từ ảnh thành JSON
+- KHÔNG tự tạo nội dung, KHÔNG tự giải thích nếu không có trong ảnh
+- Tất cả thông tin phải có trong ảnh đã cung cấp
+
+Hãy phân tích ảnh quiz và trả về JSON chính xác theo format trên.`;
+  }, [getLocationStatus]);
 
   // ✅ NEW: Save to IndexedDB/localStorage ONLY (không export JSON)
   const handleSaveOnly = async () => {
@@ -2151,7 +2290,7 @@ function QuizEditorPage() {
   const getFilePath = () => {
     const finalLessonId = selectedLesson || selectedChapter;
     if (!selectedLevel || !selectedBook || !selectedChapter) {
-      return 'Chưa chọn đầy đủ thông tin';
+      return t('quizEditor.actions.fillAllInfo');
     }
     
     // Map bookId to folder name (some books have different folder structure)
@@ -2283,19 +2422,19 @@ function QuizEditorPage() {
   // Copy question to clipboard
   const handleCopyQuestion = async (question) => {
     const questionText = `
-Câu hỏi ${question.id}:
-${question.text || '(Chưa nhập)'}
+${t('quizEditor.preview.copy.questionHeader')} ${question.id}:
+${question.text || t('quizEditor.questions.notEntered')}
 
-Đáp án:
-${question.options.map(opt => `${opt.label}. ${opt.text || '(Chưa nhập)'}`).join('\n')}
+${t('quizEditor.preview.copy.answers')}
+${question.options.map(opt => `${opt.label}. ${opt.text || t('quizEditor.questions.notEntered')}`).join('\n')}
 
-Đáp án đúng: ${question.correct || '(Chưa chọn)'}
-${question.explanation ? `\nGiải thích:\n${question.explanation}` : ''}
+${t('quizEditor.preview.copy.correctAnswer')} ${question.correct || t('quizEditor.questions.notEntered')}
+${question.explanation ? `\n${t('quizEditor.preview.copy.explanation')}\n${question.explanation}` : ''}
     `.trim();
 
     try {
       await navigator.clipboard.writeText(questionText);
-      alert(`✅ Đã copy câu hỏi ${question.id} vào clipboard!`);
+      alert(`✅ ${t('quizEditor.preview.copy.success', { id: question.id })}`);
     } catch (err) {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
@@ -2304,7 +2443,7 @@ ${question.explanation ? `\nGiải thích:\n${question.explanation}` : ''}
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      alert(`✅ Đã copy câu hỏi ${question.id} vào clipboard!`);
+      alert(`✅ ${t('quizEditor.preview.copy.success', { id: question.id })}`);
     }
   };
 
@@ -2312,21 +2451,21 @@ ${question.explanation ? `\nGiải thích:\n${question.explanation}` : ''}
   const handleCopyAllQuestions = async () => {
     const allQuestionsText = questions.map(q => {
       return `
-Câu hỏi ${q.id}:
-${q.text || '(Chưa nhập)'}
+${t('quizEditor.preview.copy.questionHeader')} ${q.id}:
+${q.text || t('quizEditor.questions.notEntered')}
 
-Đáp án:
-${q.options.map(opt => `${opt.label}. ${opt.text || '(Chưa nhập)'}`).join('\n')}
+${t('quizEditor.preview.copy.answers')}
+${q.options.map(opt => `${opt.label}. ${opt.text || t('quizEditor.questions.notEntered')}`).join('\n')}
 
-Đáp án đúng: ${q.correct || '(Chưa chọn)'}
-${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
+${t('quizEditor.preview.copy.correctAnswer')} ${q.correct || t('quizEditor.questions.notEntered')}
+${q.explanation ? `\n${t('quizEditor.preview.copy.explanation')}\n${q.explanation}` : ''}
 ---
       `.trim();
     }).join('\n\n');
 
     try {
       await navigator.clipboard.writeText(allQuestionsText);
-      alert(`✅ Đã copy tất cả ${questions.length} câu hỏi vào clipboard!`);
+      alert(`✅ ${t('quizEditor.preview.copy.successAll', { count: questions.length })}`);
     } catch (err) {
       const textArea = document.createElement('textarea');
       textArea.value = allQuestionsText;
@@ -2334,7 +2473,7 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      alert(`✅ Đã copy tất cả ${questions.length} câu hỏi vào clipboard!`);
+      alert(`✅ ${t('quizEditor.preview.copy.successAll', { count: questions.length })}`);
     }
   };
 
@@ -2365,22 +2504,22 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
         </head>
         <body>
           <div class="quiz-title">${quizTitle || 'Untitled Quiz'}</div>
-          <p>Số câu hỏi: ${questions.length}</p>
+          <p>${t('quizEditor.preview.print.numberOfQuestions')} ${questions.length}</p>
           ${getFilteredAndSortedQuestions().map((q, idx) => {
             const isComplete = isQuestionComplete(q);
             return `
               <div class="question ${!isComplete ? 'incomplete' : ''}">
-                <div class="question-header">Câu hỏi ${q.id}${!isComplete ? ' ⚠️ (Chưa hoàn chỉnh)' : ''}</div>
-                <div class="question-text">${q.text || '(Chưa nhập)'}</div>
+                <div class="question-header">${t('quizEditor.preview.copy.questionHeader')} ${q.id}${!isComplete ? ` ⚠️ (${t('quizEditor.questions.incomplete')})` : ''}</div>
+                <div class="question-text">${q.text || t('quizEditor.questions.notEntered')}</div>
                 <div class="options">
                   ${q.options.map(opt => `
                     <div class="option ${q.correct === opt.label ? 'correct' : ''}">
-                      ${opt.label}. ${opt.text || '(Chưa nhập)'} ${q.correct === opt.label ? '✓' : ''}
+                      ${opt.label}. ${opt.text || t('quizEditor.questions.notEntered')} ${q.correct === opt.label ? '✓' : ''}
                     </div>
                   `).join('')}
                 </div>
-                ${q.correct ? `<p><strong>Đáp án đúng: ${q.correct}</strong></p>` : ''}
-                ${q.explanation ? `<div class="explanation"><strong>Giải thích:</strong><br>${q.explanation}</div>` : ''}
+                ${q.correct ? `<p><strong>${t('quizEditor.preview.print.correctAnswer')} ${q.correct}</strong></p>` : ''}
+                ${q.explanation ? `<div class="explanation"><strong>${t('quizEditor.preview.print.explanation')}</strong><br>${q.explanation}</div>` : ''}
               </div>
             `;
           }).join('')}
@@ -2575,7 +2714,7 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
               {/* Lesson Selection */}
               <div>
                 <label className="block text-sm font-black text-gray-700 mb-2">
-                  {availableLessons.length > 0 ? t('quizEditor.locationSelection.lessonRequired') : t('quizEditor.locationSelection.lessonOptional')}
+                  {t('quizEditor.locationSelection.lessonRequired')}
                 </label>
                 <select
                   value={selectedLesson}
@@ -2914,9 +3053,9 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
                             imageInputRefs.current[qIndex] = document.createElement('input');
                             imageInputRefs.current[qIndex].type = 'file';
                             imageInputRefs.current[qIndex].accept = 'image/jpeg,image/jpg,image/png,image/webp,image/gif';
-                            imageInputRefs.current[qIndex].onchange = (e) => {
+                            imageInputRefs.current[qIndex].onchange = async (e) => {
                               const file = e.target.files?.[0];
-                              if (file) handleImageUpload(file, qIndex);
+                              if (file) await handleImageUpload(file, qIndex);
                             };
                           }
                           imageInputRefs.current[qIndex].click();
@@ -3116,9 +3255,9 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
                             imageInputRefs.current[key] = document.createElement('input');
                             imageInputRefs.current[key].type = 'file';
                             imageInputRefs.current[key].accept = 'image/jpeg,image/jpg,image/png,image/webp,image/gif';
-                            imageInputRefs.current[key].onchange = (e) => {
+                            imageInputRefs.current[key].onchange = async (e) => {
                               const file = e.target.files?.[0];
-                              if (file) handleImageUpload(file, qIndex, 'explanation');
+                              if (file) await handleImageUpload(file, qIndex, 'explanation');
                             };
                           }
                           imageInputRefs.current[key].click();
@@ -3320,122 +3459,6 @@ ${q.explanation ? `\nGiải thích:\n${q.explanation}` : ''}
                       ✅ {importStatus}
                     </p>
                   )}
-
-                  <button
-                    onClick={() => setShowImportTemplate(!showImportTemplate)}
-                    className="mt-2 w-full text-xs font-semibold text-blue-700 underline"
-                  >
-                    {showImportTemplate ? 'Ẩn cấu trúc mẫu JSON' : 'Xem cấu trúc mẫu JSON'}
-                  </button>
-                  {showImportTemplate && (() => {
-                    // ✅ FIXED: Always use current selection for template
-                    const finalLessonId = selectedLesson || selectedChapter || 'chưa-chọn';
-                    const finalLevel = selectedLevel || 'n5';
-                    const finalBookId = selectedBook || 'chưa-chọn';
-                    const finalChapterId = selectedChapter || 'chưa-chọn';
-                    const lessonNumber = getLessonNumber(finalLessonId);
-                    const titleSuffix = lessonNumber ? `Bài ${lessonNumber}` : (quizTitle || 'Nhập tên quiz');
-                    
-                    // ✅ Show current selection status
-                    const hasLocation = selectedLevel && selectedBook && selectedChapter;
-                    const locationStatus = hasLocation 
-                      ? `✅ Đã chọn: ${finalLevel.toUpperCase()} / ${finalBookId} / ${finalChapterId}${selectedLesson ? ` / ${selectedLesson}` : ''}`
-                      : `⚠️ Chưa chọn đầy đủ đường dẫn - Template sẽ dùng giá trị mặc định`;
-                    
-                    const jsonTemplate = `{
-  "title": "Trắc nghiệm mẫu - Trắc nghiệm Từ vựng Minna no Nihongo - ${titleSuffix}",
-  "questions": [
-    {
-      "id": 1,
-      "text": "Từ nào sau đây có nghĩa là \\"Tôi\\"?",
-      "options": [
-        { "label": "A", "text": "わたし" },
-        { "label": "B", "text": "あなた" },
-        { "label": "C", "text": "あのひと" },
-        { "label": "D", "text": "みなさん" }
-      ],
-      "correct": "A",
-      "explanation": "A: わたし (watashi) có nghĩa là Tôi
-B: あなた (anata) có nghĩa là Bạn
-C: あのひと (anohito) có nghĩa là Người kia
-D: みなさん (minasan) có nghĩa là Mọi người",
-      "audioUrl": ""
-    },
-    {
-      "id": 2,
-      "text": "Từ \\"がくせい\\" có nghĩa là gì?",
-      "options": [
-        { "label": "A", "text": "Giáo viên" },
-        { "label": "B", "text": "Học sinh, sinh viên" },
-        { "label": "C", "text": "Nhân viên công ty" },
-        { "label": "D", "text": "Bác sĩ" }
-      ],
-      "correct": "B",
-      "explanation": "B: がくせい (gakusei) nghĩa là học sinh/sinh viên
-A: せんせい (sensei) nghĩa là giáo viên
-C: かいしゃいん (kaishain) nghĩa là nhân viên công ty
-D: いしゃ (isha) nghĩa là bác sĩ",
-      "audioUrl": ""
-    }
-  ],
-  "metadata": {
-    "level": "${finalLevel}",
-    "bookId": "${finalBookId}",
-    "chapterId": "${finalChapterId}",
-    "lessonId": "${finalLessonId}"
-  }
-}`;
-                    return (
-                      <div className="mt-2 bg-gray-50 border border-gray-200 rounded p-2 text-[11px] leading-relaxed font-mono text-gray-800 overflow-x-auto">
-                        <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-blue-800 font-semibold">
-                          ✨ Metadata tự động cập nhật theo location bạn chọn ở trên!
-                        </div>
-                        <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-[10px]">
-                          📍 {locationStatus}
-                        </div>
-                        <pre className="whitespace-pre-wrap break-words text-[10px] leading-relaxed font-mono" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.6' }}>{jsonTemplate}</pre>
-                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-800 text-[10px]">
-                          <p className="font-bold mb-1">💡 LƯU Ý VỀ EXPLANATION:</p>
-                          <p className="mb-1">Trong JSON, dùng <code className="bg-white px-1 rounded">\\n</code> để xuống dòng. Khi hiển thị sẽ tự động format:</p>
-                          <div className="bg-white p-2 rounded border border-green-300 font-mono text-[9px] whitespace-pre-line">
-                            A: わたし (watashi) có nghĩa là Tôi{'\n'}
-                            B: あなた (anata) có nghĩa là Bạn{'\n'}
-                            C: あのひと (anohito) có nghĩa là Người kia{'\n'}
-                            D: みなさん (minasan) có nghĩa là Mọi người
-                          </div>
-                        </div>
-                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-[10px]">
-                          <p className="font-bold mb-1">⚠️ QUAN TRỌNG VỀ EXPLANATION:</p>
-                          <p className="mb-2 text-[9px]">Trong JSON file thực tế, bạn có thể:</p>
-                          <div className="bg-white p-2 rounded border border-yellow-300 mb-2">
-                            <p className="font-bold text-[9px] mb-1">Cách 1: Dùng \\n (khuyến nghị):</p>
-                            <pre className="font-mono text-[8px] whitespace-pre-wrap break-words">"explanation": "A: わたし (watashi) có nghĩa là Tôi\\nB: あなた (anata) có nghĩa là Bạn\\nC: あのひと (anohito) có nghĩa là Người kia\\nD: みなさん (minasan) có nghĩa là Mọi người"</pre>
-                          </div>
-                          <div className="bg-white p-2 rounded border border-yellow-300">
-                            <p className="font-bold text-[9px] mb-1">Cách 2: Xuống dòng thực sự (như mẫu trên):</p>
-                            <pre className="font-mono text-[8px] whitespace-pre-wrap break-words">"explanation": "A: わたし (watashi) có nghĩa là Tôi
-B: あなた (anata) có nghĩa là Bạn
-C: あのひと (anohito) có nghĩa là Người kia
-D: みなさん (minasan) có nghĩa là Mọi người"</pre>
-                          </div>
-                          <p className="mt-2 text-[9px] font-semibold">✅ Khi hiển thị trong app, mỗi đáp án sẽ tự động xuống dòng riêng.</p>
-                        </div>
-                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-xs">
-                          <p className="font-bold mb-1">📝 GHI CHÚ:</p>
-                          {!selectedBook || !selectedChapter 
-                            ? <p>⚠️ Vui lòng CHỌN LOCATION ở trên để metadata tự động cập nhật!</p>
-                            : <p>✅ Metadata đã được cập nhật theo location bạn chọn!</p>
-                          }
-                          <ul className="list-disc list-inside mt-1 space-y-1">
-                            <li>Đường dẫn sẽ lưu vào: <code className="bg-gray-100 px-1 rounded">{getFilePath()}</code></li>
-                            <li>Copy JSON này và thay thế phần "questions" bằng câu hỏi của bạn</li>
-                            <li>Giữ nguyên phần "metadata" để tự động set location khi import</li>
-                            <li>Trong "explanation", mỗi đáp án xuống dòng riêng (như mẫu trên)</li>
-                          </ul>
-                        </div>
-                      </div>
-                    );
-                  })()}
                 </div>
 
                 {/* ✅ Export JSON - Chỉ export, không lưu vào hệ thống */}
@@ -3479,6 +3502,247 @@ D: みなさん (minasan) có nghĩa là Mọi người"</pre>
                     </button>
                   </>
                 )}
+
+                {/* ✅ NEW: Image Processing - Watermark & Gemini Prompt (Option A: 2 columns) */}
+                <div className="border-[3px] border-black rounded-lg p-3 bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowWatermarkTemplate(!showWatermarkTemplate)}
+                      className="px-4 py-2 bg-purple-500 text-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black"
+                    >
+                      {showWatermarkTemplate ? '🎨 Ẩn Watermark' : '🎨 Xử lý Watermark'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowGeminiPrompt(!showGeminiPrompt)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black"
+                    >
+                      {showGeminiPrompt ? '🤖 Ẩn Gemini Prompt' : '🤖 Gemini Prompt'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1 text-center font-black">
+                    🎨 Xử lý watermark → 🤖 Trích xuất JSON từ ảnh
+                  </p>
+
+                  {showWatermarkTemplate && (
+                    <div className="mt-3 bg-purple-50 border-[3px] border-purple-500 rounded-lg p-3 space-y-3 text-xs sm:text-sm max-h-96 overflow-y-auto shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                      <div className="flex items-center justify-between text-purple-900">
+                        <span className="font-black">🎨 Prompt Xử lý Watermark/Logo</span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              if (!watermarkPromptTemplate || watermarkPromptTemplate.trim().length === 0) {
+                                alert('⚠️ Prompt template chưa sẵn sàng. Vui lòng thử lại.');
+                                return;
+                              }
+                              
+                              await navigator.clipboard.writeText(watermarkPromptTemplate);
+                              alert('✅ Đã copy prompt xử lý watermark vào clipboard!');
+                            } catch (error) {
+                              console.error('Error copying to clipboard:', error);
+                              const textArea = document.createElement('textarea');
+                              textArea.value = watermarkPromptTemplate;
+                              textArea.style.position = 'fixed';
+                              textArea.style.opacity = '0';
+                              textArea.style.left = '-9999px';
+                              document.body.appendChild(textArea);
+                              textArea.focus();
+                              textArea.select();
+                              try {
+                                const successful = document.execCommand('copy');
+                                if (successful) {
+                                  alert('✅ Đã copy prompt vào clipboard!');
+                                } else {
+                                  throw new Error('execCommand failed');
+                                }
+                              } catch (err) {
+                                console.error('Fallback copy failed:', err);
+                                alert('⚠️ Không thể copy tự động. Vui lòng chọn và copy thủ công.');
+                              }
+                              document.body.removeChild(textArea);
+                            }
+                          }}
+                          className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 font-black border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                        >
+                          📋 Copy
+                        </button>
+                      </div>
+                      <div className="bg-purple-100 rounded p-2 border-[2px] border-purple-300">
+                        <pre 
+                          className="whitespace-pre-wrap break-words text-[10px] leading-relaxed font-mono select-all cursor-text"
+                          onClick={(e) => {
+                            const range = document.createRange();
+                            range.selectNodeContents(e.currentTarget);
+                            const selection = window.getSelection();
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                          }}
+                        >
+{watermarkPromptTemplate}
+                        </pre>
+                      </div>
+                      <div className="text-yellow-800 text-xs bg-yellow-100 border-[2px] border-yellow-400 p-2 rounded">
+                        💡 <strong className="font-black">Hướng dẫn:</strong> 
+                        <ol className="mt-1 ml-4 list-decimal space-y-1 font-semibold">
+                          <li>Copy prompt trên</li>
+                          <li>Vào Google Gemini (có khả năng tạo ảnh)</li>
+                          <li>Paste prompt và upload ảnh có watermark</li>
+                          <li>Gemini sẽ tạo ảnh mới không có watermark</li>
+                          <li>Dùng ảnh đã clean để trích xuất JSON</li>
+                        </ol>
+                      </div>
+                      <div className="text-blue-800 text-xs bg-blue-100 border-[2px] border-blue-400 p-2 rounded">
+                        ℹ️ <strong className="font-black">Lưu ý:</strong> Tính năng này yêu cầu Google Gemini có khả năng tạo ảnh (Imagen). Nếu không tạo được ảnh, Gemini sẽ mô tả chi tiết để bạn có thể xử lý bằng tool khác (Photopea, GIMP...).
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ✅ NEW: Gemini Prompt Panel */}
+                  {showGeminiPrompt && (
+                    <div className="mt-3 bg-blue-50 border-[3px] border-blue-500 rounded-lg p-3 space-y-3 text-xs sm:text-sm max-h-96 overflow-y-auto shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                      <div className="flex items-center justify-between text-blue-900">
+                        <span className="font-black">🤖 Prompt Template cho Google Gemini</span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              if (!geminiPromptTemplate || geminiPromptTemplate.trim().length === 0) {
+                                alert('⚠️ Prompt template chưa sẵn sàng. Vui lòng thử lại.');
+                                return;
+                              }
+                              
+                              await navigator.clipboard.writeText(geminiPromptTemplate);
+                              alert('✅ Đã copy prompt vào clipboard!');
+                            } catch (error) {
+                              console.error('Error copying to clipboard:', error);
+                              const textArea = document.createElement('textarea');
+                              textArea.value = geminiPromptTemplate;
+                              textArea.style.position = 'fixed';
+                              textArea.style.opacity = '0';
+                              textArea.style.left = '-9999px';
+                              document.body.appendChild(textArea);
+                              textArea.focus();
+                              textArea.select();
+                              try {
+                                const successful = document.execCommand('copy');
+                                if (successful) {
+                                  alert('✅ Đã copy prompt vào clipboard!');
+                                } else {
+                                  throw new Error('execCommand failed');
+                                }
+                              } catch (err) {
+                                console.error('Fallback copy failed:', err);
+                                alert('⚠️ Không thể copy tự động. Vui lòng chọn và copy thủ công.');
+                              }
+                              document.body.removeChild(textArea);
+                            }
+                          }}
+                          className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 font-black border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                        >
+                          📋 Copy
+                        </button>
+                      </div>
+
+                      {/* ✅ Metadata Status */}
+                      <div className="bg-white border-[2px] border-blue-300 rounded p-2">
+                        <p className="font-black text-blue-900 mb-2">📍 Metadata Status:</p>
+                        <div className="space-y-1 text-[10px]">
+                          <div className={`flex items-center gap-2 ${getLocationStatus.level.selected ? 'text-green-700' : 'text-red-700'}`}>
+                            <span>{getLocationStatus.level.selected ? '✅' : '❌'}</span>
+                            <span className="font-semibold">Level:</span>
+                            <span>{getLocationStatus.level.value}</span>
+                            {!getLocationStatus.level.selected && <span className="text-red-600 font-black">⚠️ BẮT BUỘC</span>}
+                          </div>
+                          <div className={`flex items-center gap-2 ${getLocationStatus.series.selected ? 'text-green-700' : 'text-red-700'}`}>
+                            <span>{getLocationStatus.series.selected ? '✅' : '❌'}</span>
+                            <span className="font-semibold">Series:</span>
+                            <span>{getLocationStatus.series.value}</span>
+                            {!getLocationStatus.series.selected && <span className="text-red-600 font-black">⚠️ BẮT BUỘC</span>}
+                          </div>
+                          <div className={`flex items-center gap-2 ${getLocationStatus.book.selected ? 'text-green-700' : 'text-red-700'}`}>
+                            <span>{getLocationStatus.book.selected ? '✅' : '❌'}</span>
+                            <span className="font-semibold">Book:</span>
+                            <span>{getLocationStatus.book.value}</span>
+                            {!getLocationStatus.book.selected && <span className="text-red-600 font-black">⚠️ BẮT BUỘC</span>}
+                          </div>
+                          <div className={`flex items-center gap-2 ${getLocationStatus.chapter.selected ? 'text-green-700' : 'text-red-700'}`}>
+                            <span>{getLocationStatus.chapter.selected ? '✅' : '❌'}</span>
+                            <span className="font-semibold">Chapter:</span>
+                            <span>{getLocationStatus.chapter.value}</span>
+                            {!getLocationStatus.chapter.selected && <span className="text-red-600 font-black">⚠️ BẮT BUỘC</span>}
+                          </div>
+                          <div className={`flex items-center gap-2 ${getLocationStatus.lesson.selected ? 'text-green-700' : 'text-red-700'}`}>
+                            <span>{getLocationStatus.lesson.selected ? '✅' : '❌'}</span>
+                            <span className="font-semibold">Lesson:</span>
+                            <span>{getLocationStatus.lesson.value}</span>
+                            {!getLocationStatus.lesson.selected && <span className="text-red-600 font-black">⚠️ BẮT BUỘC</span>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ✅ Warning nếu thiếu location */}
+                      {!isLocationComplete && (
+                        <div className="bg-red-50 border-[2px] border-red-400 rounded p-2">
+                          <p className="font-black text-red-800 mb-2">⚠️ {t('quizEditor.actions.locationIncomplete')}</p>
+                          <p className="text-[10px] text-red-700 mb-1">{t('quizEditor.actions.locationIncompleteDetails')}</p>
+                          <ul className="text-[10px] text-red-600 space-y-0.5 list-disc list-inside font-semibold">
+                            {!getLocationStatus.level.selected && <li>Level (Bắt buộc)</li>}
+                            {!getLocationStatus.series.selected && <li>Series (Bắt buộc)</li>}
+                            {!getLocationStatus.book.selected && <li>Book (Bắt buộc)</li>}
+                            {!getLocationStatus.chapter.selected && <li>Chapter (Bắt buộc)</li>}
+                            {!getLocationStatus.lesson.selected && <li>Lesson (Bắt buộc)</li>}
+                          </ul>
+                          <p className="text-[10px] text-red-700 mt-2 font-semibold">
+                            Prompt sẽ dùng giá trị mặc định "chưa-chọn" cho các cấp độ chưa chọn.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* ✅ Success nếu đầy đủ */}
+                      {isLocationComplete && (
+                        <div className="bg-green-50 border-[2px] border-green-400 rounded p-2">
+                          <p className="font-black text-green-800">✅ Đã chọn đầy đủ location</p>
+                          <p className="text-[10px] text-green-700 mt-1">
+                            Metadata sẽ tự động điền khi import JSON.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Prompt Display */}
+                      <div className="bg-blue-100 rounded p-2 border-[2px] border-blue-300">
+                        <pre 
+                          className="whitespace-pre-wrap break-words text-[10px] leading-relaxed font-mono select-all cursor-text"
+                          onClick={(e) => {
+                            const range = document.createRange();
+                            range.selectNodeContents(e.currentTarget);
+                            const selection = window.getSelection();
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                          }}
+                        >
+{geminiPromptTemplate}
+                        </pre>
+                      </div>
+
+                      {/* Hướng dẫn */}
+                      <div className="text-yellow-800 text-xs bg-yellow-100 border-[2px] border-yellow-400 p-2 rounded">
+                        💡 <strong className="font-black">Hướng dẫn:</strong> 
+                        <ol className="mt-1 ml-4 list-decimal space-y-1 font-semibold">
+                          <li>Copy prompt trên</li>
+                          <li>Vào Google Gemini</li>
+                          <li>Paste prompt + upload ảnh quiz (đã xử lý watermark nếu cần)</li>
+                          <li>Gemini trả về JSON</li>
+                          <li>Copy JSON → Click "📥 Upload JSON" để import</li>
+                        </ol>
+                      </div>
+                      <div className="text-blue-800 text-xs bg-blue-100 border-[2px] border-blue-400 p-2 rounded">
+                        ℹ️ <strong className="font-black">Lưu ý:</strong> Metadata sẽ tự động điền theo location đã chọn. Nếu chưa chọn đầy đủ, cần chỉnh sửa metadata trong JSON sau khi import.
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Validation Status */}
@@ -3582,32 +3846,32 @@ D: みなさん (minasan) có nghĩa là Mọi người"</pre>
               <div className="flex items-center justify-between p-4 sm:p-6 border-b-[3px] border-black bg-gradient-to-r from-blue-500 to-blue-600">
                 <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-wide flex items-center gap-2">
                   <span>📺</span>
-                  <span>{t('quizEditor.actions.preview', 'Preview')}</span>
+                  <span>{t('quizEditor.actions.preview')}</span>
                 </h2>
                 <div className="flex items-center gap-2">
                   {/* Copy All Button */}
                   <button
                     onClick={handleCopyAllQuestions}
                     className="px-3 py-2 bg-green-500 text-white rounded-lg border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-xs sm:text-sm"
-                    title="Copy tất cả câu hỏi"
+                    title={t('quizEditor.actions.copyAll')}
                   >
-                    📋 Copy All
+                    📋 {t('quizEditor.actions.copyAll')}
                   </button>
                   {/* Print Button */}
                   <button
                     onClick={handlePrintPreview}
                     className="px-3 py-2 bg-purple-500 text-white rounded-lg border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-xs sm:text-sm"
-                    title="In preview"
+                    title={t('quizEditor.actions.print')}
                   >
-                    🖨️ Print
+                    🖨️ {t('quizEditor.actions.print')}
                   </button>
                   {/* Close Button */}
                   <button
                     onClick={() => setShowPreview(false)}
                     className="px-4 py-2 bg-red-500 text-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-sm sm:text-base"
-                    title="Đóng Preview (ESC)"
+                    title={`${t('quizEditor.preview.closePreview')} (ESC)`}
                   >
-                    ✕ Đóng
+                    ✕ {t('quizEditor.actions.close')}
                   </button>
                 </div>
               </div>
@@ -3615,30 +3879,30 @@ D: みなさん (minasan) có nghĩa là Mọi người"</pre>
               {/* Filter & Sort Controls */}
               <div className="p-4 bg-gray-100 border-b-[2px] border-gray-300 flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <label className="text-xs font-black text-gray-700">Lọc:</label>
+                  <label className="text-xs font-black text-gray-700">{t('quizEditor.preview.filter')}</label>
                   <select
                     value={previewFilter}
                     onChange={(e) => setPreviewFilter(e.target.value)}
                     className="px-3 py-1 border-[2px] border-black rounded-lg text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
-                    <option value="all">Tất cả ({questions.length})</option>
-                    <option value="complete">Hoàn chỉnh ({questions.filter(q => isQuestionComplete(q)).length})</option>
-                    <option value="incomplete">Chưa hoàn chỉnh ({questions.filter(q => !isQuestionComplete(q)).length})</option>
+                    <option value="all">{t('quizEditor.preview.filterAll')} ({questions.length})</option>
+                    <option value="complete">{t('quizEditor.preview.filterComplete')} ({questions.filter(q => isQuestionComplete(q)).length})</option>
+                    <option value="incomplete">{t('quizEditor.preview.filterIncomplete')} ({questions.filter(q => !isQuestionComplete(q)).length})</option>
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="text-xs font-black text-gray-700">Sắp xếp:</label>
+                  <label className="text-xs font-black text-gray-700">{t('quizEditor.preview.sort')}</label>
                   <select
                     value={previewSortBy}
                     onChange={(e) => setPreviewSortBy(e.target.value)}
                     className="px-3 py-1 border-[2px] border-black rounded-lg text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
-                    <option value="id">Theo ID</option>
-                    <option value="status">Theo trạng thái</option>
+                    <option value="id">{t('quizEditor.preview.sortById')}</option>
+                    <option value="status">{t('quizEditor.preview.sortByStatus')}</option>
                   </select>
                 </div>
                 <div className="ml-auto text-xs text-gray-600 font-semibold">
-                  Hiển thị: <strong>{getFilteredAndSortedQuestions().length}</strong> / {questions.length} câu hỏi
+                  {t('quizEditor.preview.displaying')} <strong>{getFilteredAndSortedQuestions().length}</strong> / {questions.length} {t('quizEditor.preview.questions')}
                 </div>
               </div>
 
@@ -3653,18 +3917,18 @@ D: みなさん (minasan) có nghĩa là Mọi người"</pre>
                   <div className="p-4 bg-blue-50 border-[3px] border-blue-300 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                     <p className="font-black text-blue-900 text-lg sm:text-xl">{quizTitle || 'Untitled Quiz'}</p>
                     <p className="text-xs text-blue-700 mt-1">
-                      {t('quizEditor.quizInfo.numberOfQuestions')}: <strong>{questions.length}</strong>
+                      {t('quizEditor.preview.quizInfo.numberOfQuestions')}: <strong>{questions.length}</strong>
                     </p>
                   </div>
 
                   {/* Questions Preview */}
                   {questions.length === 0 ? (
                     <div className="p-6 bg-yellow-50 border-[3px] border-yellow-300 rounded-lg text-center">
-                      <p className="text-yellow-800 font-semibold">⚠️ {t('quizEditor.questions.noQuestions', 'Chưa có câu hỏi nào')}</p>
+                      <p className="text-yellow-800 font-semibold">⚠️ {t('quizEditor.questions.noQuestions')}</p>
                     </div>
                   ) : getFilteredAndSortedQuestions().length === 0 ? (
                     <div className="p-6 bg-yellow-50 border-[3px] border-yellow-300 rounded-lg text-center">
-                      <p className="text-yellow-800 font-semibold">⚠️ Không có câu hỏi nào khớp với bộ lọc</p>
+                      <p className="text-yellow-800 font-semibold">⚠️ {t('quizEditor.preview.noQuestionsMatch')}</p>
                     </div>
                   ) : (
                     getFilteredAndSortedQuestions().map((q, idx) => {
@@ -3683,15 +3947,15 @@ D: みなさん (minasan) có nghĩa là Mọi người"</pre>
                             <p className="font-black text-gray-900 text-base sm:text-lg">
                               <span className="text-blue-600">{t('quizEditor.questionForm.questionHeader', { id: q.id })}:</span>
                               {!isComplete && (
-                                <span className="ml-2 text-yellow-700 text-sm">⚠️ Chưa hoàn chỉnh</span>
+                                <span className="ml-2 text-yellow-700 text-sm">⚠️ {t('quizEditor.questions.incomplete')}</span>
                               )}
                             </p>
                             <button
                               onClick={() => handleCopyQuestion(q)}
                               className="px-2 py-1 bg-blue-500 text-white rounded border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-xs"
-                              title="Copy câu hỏi này"
+                              title={t('quizEditor.preview.copyQuestion')}
                             >
-                              📋 Copy
+                              📋 {t('quizEditor.preview.copyQuestion')}
                             </button>
                           </div>
 
@@ -3701,6 +3965,12 @@ D: みなさん (minasan) có nghĩa là Mọi người"</pre>
                               <div 
                                 className="text-gray-800 text-sm sm:text-base leading-relaxed prose prose-sm max-w-none"
                                 dangerouslySetInnerHTML={{ __html: q.text }}
+                                style={{
+                                  wordWrap: 'break-word',
+                                  overflowWrap: 'break-word',
+                                  whiteSpace: 'pre-wrap',
+                                  lineHeight: '1.75'
+                                }}
                               />
                             ) : (
                               <p className="text-yellow-600 italic font-semibold">⚠️ {t('quizEditor.questions.notEntered')}</p>
@@ -3709,7 +3979,7 @@ D: みなさん (minasan) có nghĩa là Mọi người"</pre>
 
                           {/* Options */}
                           <div className="space-y-2 mb-4">
-                            <p className="text-xs font-black text-gray-700 uppercase tracking-wide mb-2">Đáp án:</p>
+                            <p className="text-xs font-black text-gray-700 uppercase tracking-wide mb-2">{t('quizEditor.questions.answers')}</p>
                             {q.options.map((opt) => (
                               <div
                                 key={opt.label}
@@ -3721,7 +3991,7 @@ D: みなさん (minasan) có nghĩa là Mọi người"</pre>
                               >
                                 <span className="font-black text-base">{opt.label}.</span>{' '}
                                 <span className={q.correct === opt.label ? 'font-bold' : ''}>
-                                  {opt.text || <span className="text-yellow-600 italic">{t('quizEditor.questions.answerNotEntered', 'No answer')}</span>}
+                                  {opt.text || <span className="text-yellow-600 italic">{t('quizEditor.questions.answerNotEntered')}</span>}
                                 </span>
                                 {q.correct === opt.label && (
                                   <span className="ml-2 text-green-600 font-black">✓</span>
@@ -3740,7 +4010,7 @@ D: みなさん (minasan) có nghĩa là Mọi người"</pre>
                           ) : (
                             <div className="mb-3 p-2 bg-red-100 border-[2px] border-red-300 rounded">
                               <p className="text-sm font-black text-red-800">
-                                ⚠️ Chưa chọn đáp án đúng
+                                ⚠️ {t('quizEditor.questions.noCorrectAnswer')}
                               </p>
                             </div>
                           )}
@@ -3775,14 +4045,14 @@ D: みなさん (minasan) có nghĩa là Mọi người"</pre>
               {/* Modal Footer */}
               <div className="p-4 sm:p-6 border-t-[3px] border-black bg-gray-100 flex items-center justify-between flex-wrap gap-2">
                 <div className="text-xs text-gray-600 font-semibold space-y-1">
-                  <p>💡 Nhấn ESC hoặc click nút "Đóng" để đóng preview</p>
-                  <p className="text-[10px]">⌨️ Keyboard: ↑↓ để scroll, Page Up/Down, Home/End</p>
+                  <p>💡 {t('quizEditor.preview.footerInstructions')}</p>
+                  <p className="text-[10px]">⌨️ {t('quizEditor.preview.footerKeyboard')}</p>
                 </div>
                 <button
                   onClick={() => setShowPreview(false)}
                   className="px-4 py-2 bg-gray-600 text-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all font-black text-sm"
                 >
-                  ✕ Đóng Preview
+                  ✕ {t('quizEditor.preview.closePreview')}
                 </button>
               </div>
             </div>

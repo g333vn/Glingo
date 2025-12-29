@@ -1145,6 +1145,21 @@ header[lang="en"] div {
   white-space: pre-wrap !important;
 }
 
+/* ✅ FIX: Ensure images display properly in preview panels */
+.prose img {
+  display: block !important;
+  max-width: 100% !important;
+  height: auto !important;
+  margin: 10px 0 !important;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.prose img[src] {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
 /* ============================================
    FOOTER GLASSMORPHISM ANIMATIONS
    ============================================ */

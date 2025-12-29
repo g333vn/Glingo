@@ -108,7 +108,7 @@ function TheoryTabEnhanced({ theoryData, onChange, lessonContext = {} }) {
         // ✅ PDF: upload lên Supabase Storage và lưu public URL
         if (fileExt === 'pdf' || file.type === 'application/pdf') {
           try {
-            const { uploadPDF, generateFilePath } = await import('../../../../services/fileUploadService.js');
+            const { uploadPDF, generateFilePath } = await import('@services/fileUploadService');
             // 📁 Tạo folder theo cấu trúc: level-n1/book-xxx/chapter-yyy/lesson-zzz
             const safeLevel = levelId || 'unknown-level';
             const safeBook = bookId || 'unknown-book';

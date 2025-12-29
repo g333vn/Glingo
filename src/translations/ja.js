@@ -1442,7 +1442,12 @@ quizEditor: {
                                               audioUrlPlaceholder: '/audio/quiz/listening1.mp3 またはデバイスからアップロード',
                                                 audioUploadHint: 'JLPTリスニング理解問題用にMP3/WAV（最大10MB）をアップロード',
                                                   browserNotSupportAudio: 'ブラウザはオーディオをサポートしていません。',
-                                                    clickToPlayAudio: '✅ ▶️をクリックしてオーディオをプレビュー'
+                                                    clickToPlayAudio: '✅ ▶️をクリックしてオーディオをプレビュー',
+                                                      answerNotEntered: '（未入力）',
+                                                        incomplete: '未完成',
+                                                          answers: '選択肢:',
+                                                            noCorrectAnswer: '正解が選択されていません',
+                                                              noQuestions: '質問がまだありません'
   },
   actions: {
     title: 'アクション',
@@ -1466,11 +1471,17 @@ quizEditor: {
                           requiredAnswers: '各質問に4つの選択肢を入力',
                             fillAllInfo: '▲ すべての情報を入力してください',
                               fillAllInfoBeforeExport: '▲ エクスポート前にすべての情報を入力してください',
+                                locationIncomplete: '場所の選択が不完全です',
+                                  locationIncompleteDetails: '選択が必要:',
                                 numberOfQuestions: '質問数: {count}',
                                   pleaseSelectComplete: '完全に選択してください: レベル →',
                                     readyToSave: '保存準備完了 - 「クイズを保存」ボタンをクリックしてシステムにデータを保存',
                                       readyToExport: 'エクスポート準備完了 - クリックしてJSONファイルをエクスポート',
-                                        hidePreview: 'プレビューを非表示'
+                                        hidePreview: 'プレビューを非表示',
+                                          preview: 'プレビュー',
+                                            copyAll: 'すべてコピー',
+                                              print: '印刷',
+                                                close: '閉じる'
   },
   validation: {
     minQuestions: '⚠️ 少なくとも1つの質問が必要です！',
@@ -1492,6 +1503,38 @@ quizEditor: {
                 exportOptional: '📤 JSONをエクスポート（オプション）: 手動でエクスポートしたい場合は「JSONをエクスポート」をクリック',
                   exportTip1: '保存後に再度エクスポートしたい場合に使用',
                     exportTip2: 'または保存前にJSONを表示したい場合'
+  },
+  preview: {
+    filter: 'フィルター:',
+      filterAll: 'すべて',
+        filterComplete: '完成',
+          filterIncomplete: '未完成',
+            sort: '並び替え:',
+              sortById: 'ID順',
+                sortByStatus: 'ステータス順',
+                  displaying: '表示:',
+                    questions: '質問',
+                      noQuestionsMatch: 'フィルターに一致する質問がありません',
+                        footerInstructions: 'ESCキーを押すか「閉じる」ボタンをクリックしてプレビューを閉じる',
+                          footerKeyboard: 'キーボード: ↑↓でスクロール、Page Up/Down、Home/End',
+                            closePreview: 'プレビューを閉じる',
+                              copyQuestion: 'コピー',
+                                quizInfo: {
+                                  numberOfQuestions: '質問数'
+                                },
+                                  copy: {
+                                    questionHeader: '質問',
+                                      answers: '選択肢:',
+                                        correctAnswer: '正解:',
+                                          explanation: '説明:',
+                                            success: '質問{id}をクリップボードにコピーしました！',
+                                              successAll: 'すべての{count}個の質問をクリップボードにコピーしました！'
+                                  },
+                                    print: {
+                                      numberOfQuestions: '質問数:',
+                                        correctAnswer: '正解:',
+                                          explanation: '説明:'
+                                    }
   },
   questionForm: {
     questionHeader: '質問{id}',

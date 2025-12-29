@@ -1455,7 +1455,12 @@ quizEditor: {
                                               audioUrlPlaceholder: '/audio/quiz/listening1.mp3 or upload from device',
                                                 audioUploadHint: 'Upload MP3/WAV (max 10MB) for JLPT listening comprehension questions',
                                                   browserNotSupportAudio: 'Browser does not support audio.',
-                                                    clickToPlayAudio: '✅ Click ▶️ to preview audio'
+                                                    clickToPlayAudio: '✅ Click ▶️ to preview audio',
+                                                      answerNotEntered: '(Not entered)',
+                                                        incomplete: 'Incomplete',
+                                                          answers: 'Answers:',
+                                                            noCorrectAnswer: 'No correct answer selected',
+                                                              noQuestions: 'No questions yet'
   },
   actions: {
     title: 'Actions',
@@ -1479,11 +1484,17 @@ quizEditor: {
                           requiredAnswers: 'Enter 4 answers for each question',
                             fillAllInfo: 'Please fill in all information',
                               fillAllInfoBeforeExport: 'Please fill in all information before exporting',
+                                locationIncomplete: 'Location selection incomplete',
+                                  locationIncompleteDetails: 'Need to select:',
                                 numberOfQuestions: 'Number of questions: {count}',
                                   pleaseSelectComplete: 'Please select completely: Level →',
                                     readyToSave: 'Ready to save - Click "Save Quiz" button to save data to system',
                                       readyToExport: 'Ready to export - Click to export JSON file',
-                                        hidePreview: 'Hide Preview'
+                                        hidePreview: 'Hide Preview',
+                                          preview: 'Preview',
+                                            copyAll: 'Copy All',
+                                              print: 'Print',
+                                                close: 'Close'
   },
   validation: {
     minQuestions: 'Must have at least 1 question!',
@@ -1505,6 +1516,38 @@ quizEditor: {
                 exportOptional: 'Export JSON (Optional): Click "Export JSON" if you want to export manually',
                   exportTip1: 'Use when you want to export again after saving',
                     exportTip2: 'Or want to view JSON before saving'
+  },
+  preview: {
+    filter: 'Filter:',
+      filterAll: 'All',
+        filterComplete: 'Complete',
+          filterIncomplete: 'Incomplete',
+            sort: 'Sort by:',
+              sortById: 'By ID',
+                sortByStatus: 'By status',
+                  displaying: 'Displaying:',
+                    questions: 'questions',
+                      noQuestionsMatch: 'No questions match the filter',
+                        footerInstructions: 'Press ESC or click "Close" button to close preview',
+                          footerKeyboard: 'Keyboard: ↑↓ to scroll, Page Up/Down, Home/End',
+                            closePreview: 'Close Preview',
+                              copyQuestion: 'Copy',
+                                quizInfo: {
+                                  numberOfQuestions: 'Number of questions'
+                                },
+                                  copy: {
+                                    questionHeader: 'Question',
+                                      answers: 'Answers:',
+                                        correctAnswer: 'Correct Answer:',
+                                          explanation: 'Explanation:',
+                                            success: 'Copied question {id} to clipboard!',
+                                              successAll: 'Copied all {count} questions to clipboard!'
+                                  },
+                                    print: {
+                                      numberOfQuestions: 'Number of questions:',
+                                        correctAnswer: 'Correct Answer:',
+                                          explanation: 'Explanation:'
+                                    }
   },
   questionForm: {
     questionHeader: 'Question {id}',
