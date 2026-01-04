@@ -185,19 +185,52 @@ function JLPTExamResultPage() {
         }
       } else {
         // User chưa đăng nhập, đọc từ localStorage
-        knowledgeBreakdown = JSON.parse(localStorage.getItem(`exam-${levelId}-${examId}-knowledge-breakdown`)) || knowledgeBreakdown;
-        listeningBreakdown = JSON.parse(localStorage.getItem(`exam-${levelId}-${examId}-listening-breakdown`)) || listeningBreakdown;
+        const knowledgeBreakdownStr = localStorage.getItem(`exam-${levelId}-${examId}-knowledge-breakdown`);
+        const listeningBreakdownStr = localStorage.getItem(`exam-${levelId}-${examId}-listening-breakdown`);
+        
+        console.log('[ExamResult] Reading from localStorage:', {
+          knowledgeBreakdownStr,
+          listeningBreakdownStr
+        });
+        
+        knowledgeBreakdown = knowledgeBreakdownStr ? JSON.parse(knowledgeBreakdownStr) : knowledgeBreakdown;
+        listeningBreakdown = listeningBreakdownStr ? JSON.parse(listeningBreakdownStr) : listeningBreakdown;
       }
 
-      const knowledgePoints = knowledgeBreakdown.totals.knowledge > 0
-        ? Math.round((knowledgeBreakdown.knowledge / knowledgeBreakdown.totals.knowledge) * SCORING_CONFIG.knowledge.max)
-        : 0;
-      const readingPoints = knowledgeBreakdown.totals.reading > 0
-        ? Math.round((knowledgeBreakdown.reading / knowledgeBreakdown.totals.reading) * SCORING_CONFIG.reading.max)
-        : 0;
-      const listeningPoints = listeningBreakdown.total > 0
-        ? Math.round((listeningBreakdown.listening / listeningBreakdown.total) * SCORING_CONFIG.listening.max)
-        : 0;
+      // ✅ DEBUG: Log breakdown đã đọc được
+      console.log('[ExamResult] Breakdown loaded:', {
+        knowledgeBreakdown,
+        listeningBreakdown
+      });
+
+      // ✅ PHƯƠNG ÁN 3 (HYBRID): Tính điểm theo công thức (correct/total) × maxScore
+      // Xem chi tiết: archive/data/JLPT_SCORING_LOGIC_VI.md
+      const calculateSectionScore = (correct, total, maxScore) => {
+        if (total === 0) {
+          console.warn('[ExamResult] Total is 0, returning 0 score');
+          return 0;
+        }
+        const accuracy = correct / total;
+        const score = Math.round(accuracy * maxScore);
+        console.log(`[ExamResult] Calculated score: ${correct}/${total} = ${accuracy.toFixed(2)} × ${maxScore} = ${score}`);
+        return score;
+      };
+
+      const knowledgePoints = calculateSectionScore(
+        knowledgeBreakdown.knowledge,
+        knowledgeBreakdown.totals.knowledge,
+        SCORING_CONFIG.knowledge.max
+      );
+      const readingPoints = calculateSectionScore(
+        knowledgeBreakdown.reading,
+        knowledgeBreakdown.totals.reading,
+        SCORING_CONFIG.reading.max
+      );
+      const listeningPoints = calculateSectionScore(
+        listeningBreakdown.listening,
+        listeningBreakdown.total,
+        SCORING_CONFIG.listening.max
+      );
 
       const totalScore = knowledgePoints + readingPoints + listeningPoints;
       setScores({ knowledge: knowledgePoints, reading: readingPoints, listening: listeningPoints, total: totalScore });

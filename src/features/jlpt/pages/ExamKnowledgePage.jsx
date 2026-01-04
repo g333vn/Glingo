@@ -712,33 +712,100 @@ function ExamKnowledgePage() {
     let knowledgeCorrect = 0, knowledgeTotal = 0;
     let readingCorrect = 0, readingTotal = 0;
 
-    allQuestions.forEach(q => {
+    // ✅ DEBUG: Log exam data structure
+    console.log('[ExamKnowledge] Exam data structure:', {
+      knowledgeSectionsCount: knowledgeSections.length,
+      readingSectionsCount: readingSections.length,
+      knowledgeQuestionsCount: knowledgeSections.reduce((sum, s) => sum + (s.questions?.length || 0), 0),
+      readingQuestionsCount: readingSections.reduce((sum, s) => sum + (s.questions?.length || 0), 0),
+      allQuestionsCount: allQuestions.length,
+      answersCount: Object.keys(answers).length
+    });
+
+    // ✅ FIX: Xác định category dựa vào section chứa câu hỏi, không dựa vào q.category
+    // Tạo map để tra cứu nhanh: question ID -> category
+    const questionCategoryMap = new Map();
+    
+    // Map questions từ knowledge sections
+    knowledgeSections.forEach(section => {
+      (section.questions || []).forEach(q => {
+        questionCategoryMap.set(String(q.id), 'knowledge');
+      });
+    });
+    
+    // Map questions từ reading sections
+    readingSections.forEach(section => {
+      (section.questions || []).forEach(q => {
+        questionCategoryMap.set(String(q.id), 'reading');
+      });
+    });
+    
+    console.log('[ExamKnowledge] Question category map size:', questionCategoryMap.size);
+    if (questionCategoryMap.size === 0) {
+      console.error('[ExamKnowledge] ❌ ERROR: No questions mapped! knowledgeSections or readingSections might be empty');
+      console.log('knowledgeSections:', knowledgeSections);
+      console.log('readingSections:', readingSections);
+    }
+
+    allQuestions.forEach((q, idx) => {
       const questionKey = String(q.id);
-      const isCorrect = answers[questionKey] === q.correctAnswer;
+      const userAnswer = answers[questionKey];
+      const correctAnswer = q.correctAnswer;
+      // ✅ FIX: Normalize về cùng type để so sánh (string hoặc number)
+      const normalizedUserAnswer = userAnswer !== undefined ? Number(userAnswer) : undefined;
+      const normalizedCorrectAnswer = Number(correctAnswer);
+      const isCorrect = normalizedUserAnswer !== undefined && normalizedUserAnswer === normalizedCorrectAnswer;
+      
       if (isCorrect) {
         correctCount++;
       }
 
-      // NEW: Breakdown per category (expandable: assume q.category exists in data.js)
-      if (q.category === 'knowledge') {
+      // ✅ FIX: Xác định category từ map (dựa vào section), fallback về q.category nếu không có
+      const category = questionCategoryMap.get(questionKey) || q.category;
+      
+      // ✅ DEBUG: Log first 5 questions để kiểm tra
+      if (idx < 5) {
+        console.log(`[ExamKnowledge] Question ${idx}: ID=${questionKey}, category=${category}, userAnswer=${userAnswer}, correct=${correctAnswer}, isCorrect=${isCorrect}`);
+      }
+      
+      if (category === 'knowledge') {
         knowledgeTotal++;
         if (isCorrect) knowledgeCorrect++;
-      } else if (q.category === 'reading') {
+      } else if (category === 'reading') {
         readingTotal++;
         if (isCorrect) readingCorrect++;
+      } else {
+        console.warn(`[ExamKnowledge] ⚠️ Question ${questionKey} has unknown category: ${category}`);
       }
+    });
+
+    // ✅ DEBUG: Log breakdown để kiểm tra
+    console.log('[ExamKnowledge] Breakdown calculated:', {
+      knowledgeCorrect,
+      knowledgeTotal,
+      readingCorrect,
+      readingTotal,
+      totalQuestions: allQuestions.length,
+      answersCount: Object.keys(answers).length,
+      questionCategoryMapSize: questionCategoryMap.size
     });
 
     const totalCorrect = knowledgeCorrect + readingCorrect;
     const totalQuestions = knowledgeTotal + readingTotal;
     const score = Math.round((totalCorrect / totalQuestions) * 100); // Existing % score
     
-    // NEW: Lưu breakdown cho result page
-    localStorage.setItem(`exam-${levelId}-${examId}-knowledge-breakdown`, JSON.stringify({
+    // ✅ FIX: Đảm bảo breakdown được lưu đúng format
+    const breakdown = {
       knowledge: knowledgeCorrect,
       reading: readingCorrect,
-      totals: { knowledge: knowledgeTotal, reading: readingTotal }
-    }));
+      totals: { 
+        knowledge: knowledgeTotal, 
+        reading: readingTotal 
+      }
+    };
+    
+    console.log('[ExamKnowledge] Saving breakdown to localStorage:', breakdown);
+    localStorage.setItem(`exam-${levelId}-${examId}-knowledge-breakdown`, JSON.stringify(breakdown));
     
     localStorage.setItem(`exam-${levelId}-${examId}-knowledge-score`, score);
     localStorage.setItem(`exam-${levelId}-${examId}-knowledge-completed`, 'true');

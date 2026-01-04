@@ -45,22 +45,35 @@ export async function scanLocalStorageForSync(userId) {
         const knowledgeBreakdown = data.knowledge;
         const listeningBreakdown = data.listening;
 
-        // Calculate scores (same logic as JLPTExamResultPage)
+        // ✅ PHƯƠNG ÁN 3 (HYBRID): Tính điểm theo công thức (correct/total) × maxScore
+        // Xem chi tiết: archive/data/JLPT_SCORING_LOGIC_VI.md
         const SCORING_CONFIG = {
           knowledge: { max: 60 },
           reading: { max: 60 },
           listening: { max: 60 }
         };
 
-        const knowledgePoints = knowledgeBreakdown.totals?.knowledge > 0
-          ? Math.round((knowledgeBreakdown.knowledge / knowledgeBreakdown.totals.knowledge) * SCORING_CONFIG.knowledge.max)
-          : 0;
-        const readingPoints = knowledgeBreakdown.totals?.reading > 0
-          ? Math.round((knowledgeBreakdown.reading / knowledgeBreakdown.totals.reading) * SCORING_CONFIG.reading.max)
-          : 0;
-        const listeningPoints = listeningBreakdown.total > 0
-          ? Math.round((listeningBreakdown.listening / listeningBreakdown.total) * SCORING_CONFIG.listening.max)
-          : 0;
+        const calculateSectionScore = (correct, total, maxScore) => {
+          if (total === 0) return 0;
+          const accuracy = correct / total;
+          return Math.round(accuracy * maxScore);
+        };
+
+        const knowledgePoints = calculateSectionScore(
+          knowledgeBreakdown.knowledge,
+          knowledgeBreakdown.totals?.knowledge || 0,
+          SCORING_CONFIG.knowledge.max
+        );
+        const readingPoints = calculateSectionScore(
+          knowledgeBreakdown.reading,
+          knowledgeBreakdown.totals?.reading || 0,
+          SCORING_CONFIG.reading.max
+        );
+        const listeningPoints = calculateSectionScore(
+          listeningBreakdown.listening,
+          listeningBreakdown.total || 0,
+          SCORING_CONFIG.listening.max
+        );
 
         const totalScore = knowledgePoints + readingPoints + listeningPoints;
         const isPassed = totalScore >= 100 &&

@@ -1039,7 +1039,13 @@ function ExamListeningPage() {
 
     allQuestions.forEach(q => {
       const key = `${q.sectionId}-${q.number}`;
-      const isCorrect = answers[key] === q.correctAnswer;
+      const userAnswer = answers[key];
+      const correctAnswer = q.correctAnswer;
+      // ✅ FIX: Normalize về cùng type để so sánh (string hoặc number)
+      const normalizedUserAnswer = userAnswer !== undefined ? Number(userAnswer) : undefined;
+      const normalizedCorrectAnswer = Number(correctAnswer);
+      const isCorrect = normalizedUserAnswer !== undefined && normalizedUserAnswer === normalizedCorrectAnswer;
+      
       if (isCorrect) {
         correctCount++;
       }
@@ -1049,13 +1055,24 @@ function ExamListeningPage() {
       if (isCorrect) listeningCorrect++;
     });
 
+    // ✅ DEBUG: Log breakdown để kiểm tra
+    console.log('[ExamListening] Breakdown calculated:', {
+      listeningCorrect,
+      listeningTotal,
+      totalQuestions: allQuestions.length,
+      answersCount: Object.keys(answers).length
+    });
+
     const score = Math.round((correctCount / allQuestions.length) * 100);
 
-    // NEW: Lưu breakdown cho result page
-    localStorage.setItem(`exam-${levelId}-${examId}-listening-breakdown`, JSON.stringify({
+    // ✅ FIX: Đảm bảo breakdown được lưu đúng format
+    const breakdown = {
       listening: listeningCorrect,
       total: listeningTotal
-    }));
+    };
+    
+    console.log('[ExamListening] Saving breakdown to localStorage:', breakdown);
+    localStorage.setItem(`exam-${levelId}-${examId}-listening-breakdown`, JSON.stringify(breakdown));
 
     localStorage.setItem(`exam-${levelId}-${examId}-listening-score`, score);
     localStorage.setItem(`exam-${levelId}-${examId}-listening-completed`, 'true');

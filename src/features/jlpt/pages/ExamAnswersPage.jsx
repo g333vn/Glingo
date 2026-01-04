@@ -288,9 +288,13 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
 };
 
 // Component thống kê tổng quan
-const ScoreSummary = ({ knowledgeScore, listeningScore, totalQuestions, correctAnswers }) => {
+// ✅ UPDATED: Nhận knowledgeScore + readingScore riêng để hiển thị đúng
+const ScoreSummary = ({ knowledgeScore, readingScore, listeningScore, totalQuestions, correctAnswers }) => {
   const percentage = Math.round((correctAnswers / totalQuestions) * 100);
   const { t } = useLanguage();
+  
+  // ✅ Tính tổng điểm "Ngôn ngữ & Đọc hiểu" = Knowledge + Reading
+  const languageReadingScore = knowledgeScore + readingScore;
   
   return (
     <div className="bg-blue-500 rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 text-white flex-shrink-0">
@@ -307,7 +311,7 @@ const ScoreSummary = ({ knowledgeScore, listeningScore, totalQuestions, correctA
         <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-3 sm:p-4 backdrop-blur-sm">
           <div className="text-xs sm:text-sm opacity-90 mb-1">{t('jlpt.answersPage.scoreKnowledge')}</div>
           <div className="text-xl sm:text-2xl md:text-3xl font-bold">
-            {t('jlpt.answersPage.scoreValue', { score: knowledgeScore })}
+            {t('jlpt.answersPage.scoreValue', { score: languageReadingScore })}
           </div>
         </div>
         <div className="bg-white/20 rounded-lg border-[2px] border-white/30 p-3 sm:p-4 backdrop-blur-sm">
@@ -334,7 +338,9 @@ function ExamAnswersPage() {
   
   const [knowledgeAnswers, setKnowledgeAnswers] = useState({});
   const [listeningAnswers, setListeningAnswers] = useState({});
+  // ✅ UPDATED: Tách knowledgeScore và readingScore riêng
   const [knowledgeScore, setKnowledgeScore] = useState(0);
+  const [readingScore, setReadingScore] = useState(0);
   const [listeningScore, setListeningScore] = useState(0);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
@@ -548,17 +554,57 @@ function ExamAnswersPage() {
     loadExamData();
   }, [levelId, examId]);
 
-  // Load user answers và scores
+  // ✅ UPDATED: Load breakdown và tính điểm theo công thức (correct/total) × 60
+  // Xem chi tiết: archive/data/JLPT_SCORING_LOGIC_VI.md
   useEffect(() => {
     const savedKnowledgeAnswers = localStorage.getItem(`exam-${levelId}-${examId}-knowledge`);
     const savedListeningAnswers = localStorage.getItem(`exam-${levelId}-${examId}-listening`);
-    const savedKnowledgeScore = localStorage.getItem(`exam-${levelId}-${examId}-knowledge-score`);
-    const savedListeningScore = localStorage.getItem(`exam-${levelId}-${examId}-listening-score`);
     
     if (savedKnowledgeAnswers) setKnowledgeAnswers(JSON.parse(savedKnowledgeAnswers));
     if (savedListeningAnswers) setListeningAnswers(JSON.parse(savedListeningAnswers));
-    if (savedKnowledgeScore) setKnowledgeScore(parseInt(savedKnowledgeScore));
-    if (savedListeningScore) setListeningScore(parseInt(savedListeningScore));
+    
+    // ✅ Đọc breakdown từ localStorage (giống JLPTExamResultPage)
+    const knowledgeBreakdownStr = localStorage.getItem(`exam-${levelId}-${examId}-knowledge-breakdown`);
+    const listeningBreakdownStr = localStorage.getItem(`exam-${levelId}-${examId}-listening-breakdown`);
+    
+    // ✅ PHƯƠNG ÁN 3 (HYBRID): Tính điểm theo công thức (correct/total) × maxScore
+    const SCORING_CONFIG = {
+      knowledge: { max: 60 },
+      reading: { max: 60 },
+      listening: { max: 60 }
+    };
+    
+    const calculateSectionScore = (correct, total, maxScore) => {
+      if (total === 0) return 0;
+      const accuracy = correct / total;
+      return Math.round(accuracy * maxScore);
+    };
+    
+    if (knowledgeBreakdownStr) {
+      const knowledgeBreakdown = JSON.parse(knowledgeBreakdownStr);
+      const knowledgePoints = calculateSectionScore(
+        knowledgeBreakdown.knowledge || 0,
+        knowledgeBreakdown.totals?.knowledge || 0,
+        SCORING_CONFIG.knowledge.max
+      );
+      const readingPoints = calculateSectionScore(
+        knowledgeBreakdown.reading || 0,
+        knowledgeBreakdown.totals?.reading || 0,
+        SCORING_CONFIG.reading.max
+      );
+      setKnowledgeScore(knowledgePoints);
+      setReadingScore(readingPoints);
+    }
+    
+    if (listeningBreakdownStr) {
+      const listeningBreakdown = JSON.parse(listeningBreakdownStr);
+      const listeningPoints = calculateSectionScore(
+        listeningBreakdown.listening || 0,
+        listeningBreakdown.total || 0,
+        SCORING_CONFIG.listening.max
+      );
+      setListeningScore(listeningPoints);
+    }
   }, [levelId, examId]);
 
   // Loading state
@@ -674,6 +720,7 @@ function ExamAnswersPage() {
               <div className="max-w-4xl mx-auto">
                 <ScoreSummary
                   knowledgeScore={knowledgeScore}
+                  readingScore={readingScore}
                   listeningScore={listeningScore}
                   totalQuestions={allQuestions.length}
                   correctAnswers={correctCount}
