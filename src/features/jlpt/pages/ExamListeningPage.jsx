@@ -188,21 +188,34 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
       const waitForReady = () => {
         return new Promise((resolve, reject) => {
           if (audio.readyState >= 2) {
+            console.log('✅ Audio already ready, readyState:', audio.readyState);
             resolve();
             return;
           }
           
+          // ✅ Tăng timeout lên 30 giây cho network chậm
+          const TIMEOUT_MS = 30000; // 30 seconds
           const timeout = setTimeout(() => {
             audio.removeEventListener('loadedmetadata', onMetadataLoaded);
             audio.removeEventListener('canplay', onCanPlay);
+            audio.removeEventListener('progress', onProgress);
+            console.error('❌ Audio load timeout after', TIMEOUT_MS / 1000, 'seconds');
+            console.error('📊 Audio state:', {
+              readyState: audio.readyState,
+              networkState: audio.networkState,
+              buffered: audio.buffered.length > 0 ? `${Math.round((audio.buffered.end(0) / audio.duration) * 100)}%` : '0%',
+              currentTime: audio.currentTime,
+              duration: audio.duration
+            });
             reject(new Error('Timeout waiting for audio to load'));
-          }, 10000); // 10 seconds timeout
+          }, TIMEOUT_MS);
           
           const onMetadataLoaded = () => {
             clearTimeout(timeout);
             audio.removeEventListener('loadedmetadata', onMetadataLoaded);
             audio.removeEventListener('canplay', onCanPlay);
-            console.log('✅ Audio metadata loaded, readyState:', audio.readyState);
+            audio.removeEventListener('progress', onProgress);
+            console.log('✅ Audio metadata loaded, readyState:', audio.readyState, 'duration:', audio.duration);
             resolve();
           };
           
@@ -210,15 +223,26 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
             clearTimeout(timeout);
             audio.removeEventListener('loadedmetadata', onMetadataLoaded);
             audio.removeEventListener('canplay', onCanPlay);
+            audio.removeEventListener('progress', onProgress);
             console.log('✅ Audio can play, readyState:', audio.readyState);
             resolve();
           };
           
+          // ✅ NEW: Track progress để debug network issues
+          const onProgress = () => {
+            if (audio.buffered.length > 0) {
+              const bufferedPercent = Math.round((audio.buffered.end(0) / audio.duration) * 100);
+              console.log('📊 Audio loading progress:', `${bufferedPercent}%`);
+            }
+          };
+          
           audio.addEventListener('loadedmetadata', onMetadataLoaded, { once: true });
           audio.addEventListener('canplay', onCanPlay, { once: true });
+          audio.addEventListener('progress', onProgress);
           
           // Trigger load nếu chưa load
           if (audio.readyState === 0) {
+            console.log('🔄 Starting audio load...');
             audio.load();
           }
         });
@@ -227,9 +251,11 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
       try {
         await waitForReady();
         setPlayError(null);
+        console.log('✅ Audio ready, proceeding to play');
       } catch (error) {
-        console.error('❌ Timeout waiting for audio:', error);
-        setPlayError('Không thể tải audio. Vui lòng thử lại hoặc kiểm tra kết nối mạng.');
+        console.error('❌ Error waiting for audio:', error);
+        setPlayError('Không thể tải audio. File có thể quá lớn hoặc mạng bị chậm. Vui lòng thử lại.');
+        setIsLoading(false);
         return;
       }
     }
