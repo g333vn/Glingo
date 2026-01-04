@@ -153,8 +153,9 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
     audio.addEventListener('loadstart', handleLoadStart);
     audio.addEventListener('error', handleError);
 
-    // Force load metadata
-    audio.load();
+    // ✅ FIX: Set src và load metadata
+    audio.src = sectionAudioUrl;
+    audio.load(); // Force load metadata
 
     return () => {
       audio.removeEventListener('canplay', handleCanPlay);
@@ -164,8 +165,8 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
   }, [sectionAudioUrl]);
 
   // ✅ UPDATED: Logic thi thật - chỉ play một lần, không pause/seek
-  // ✅ FIX: Mobile-friendly play handler - CRITICAL: Must call play() immediately in user gesture
-  const handlePlay = (e) => {
+  // ✅ FIX: Mobile-friendly play handler - Đợi audio ready trước khi play
+  const handlePlay = async (e) => {
     // ✅ CRITICAL: Prevent default to ensure user gesture is preserved
     if (e) {
       e.preventDefault();
@@ -177,15 +178,64 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
     const audio = audioRef.current;
     setPlayError(null);
 
-    // ✅ CRITICAL for mobile: Check readyState but don't wait - call play() immediately
-    // Mobile browsers require play() to be called directly in user gesture handler
+    // ✅ FIX: Đợi audio ready trước khi play (readyState >= 2 = HAVE_CURRENT_DATA)
+    // readyState values: 0=HAVE_NOTHING, 1=HAVE_METADATA, 2=HAVE_CURRENT_DATA, 3=HAVE_FUTURE_DATA, 4=HAVE_ENOUGH_DATA
     if (audio.readyState < 2) {
-      console.warn('⚠️ Audio not fully ready (readyState:', audio.readyState, '), but attempting play anyway...');
-      // Still try to play - browser may handle it
+      console.warn('⚠️ Audio not fully ready (readyState:', audio.readyState, '), waiting for metadata...');
+      setPlayError('Đang tải audio, vui lòng đợi...');
+      
+      // Đợi metadata load xong
+      const waitForReady = () => {
+        return new Promise((resolve, reject) => {
+          if (audio.readyState >= 2) {
+            resolve();
+            return;
+          }
+          
+          const timeout = setTimeout(() => {
+            audio.removeEventListener('loadedmetadata', onMetadataLoaded);
+            audio.removeEventListener('canplay', onCanPlay);
+            reject(new Error('Timeout waiting for audio to load'));
+          }, 10000); // 10 seconds timeout
+          
+          const onMetadataLoaded = () => {
+            clearTimeout(timeout);
+            audio.removeEventListener('loadedmetadata', onMetadataLoaded);
+            audio.removeEventListener('canplay', onCanPlay);
+            console.log('✅ Audio metadata loaded, readyState:', audio.readyState);
+            resolve();
+          };
+          
+          const onCanPlay = () => {
+            clearTimeout(timeout);
+            audio.removeEventListener('loadedmetadata', onMetadataLoaded);
+            audio.removeEventListener('canplay', onCanPlay);
+            console.log('✅ Audio can play, readyState:', audio.readyState);
+            resolve();
+          };
+          
+          audio.addEventListener('loadedmetadata', onMetadataLoaded, { once: true });
+          audio.addEventListener('canplay', onCanPlay, { once: true });
+          
+          // Trigger load nếu chưa load
+          if (audio.readyState === 0) {
+            audio.load();
+          }
+        });
+      };
+      
+      try {
+        await waitForReady();
+        setPlayError(null);
+      } catch (error) {
+        console.error('❌ Timeout waiting for audio:', error);
+        setPlayError('Không thể tải audio. Vui lòng thử lại hoặc kiểm tra kết nối mạng.');
+        return;
+      }
     }
 
-    // ✅ CRITICAL: Call play() immediately - don't await anything before this
-    // This must happen synchronously in the user gesture handler
+    // ✅ CRITICAL: Call play() after audio is ready
+    // Note: Even though this is async, the user gesture context is preserved
     const playPromise = audio.play();
 
     // ✅ Handle promise if returned (modern browsers)
