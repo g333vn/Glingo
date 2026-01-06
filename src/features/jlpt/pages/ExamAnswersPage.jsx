@@ -11,7 +11,9 @@ import { getListeningQuestions } from '../../../data/jlpt/listeningQuestionsData
 import storageManager from '../../../utils/localStorageManager.js';
 import ReactModal from 'react-modal';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
+import { useAuth } from '../../../contexts/AuthContext.jsx';
 import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
+import LoginModal from '../../../components/LoginModal.jsx';
 
 // ✅ NEW: Import dictionary components
 import { DictionaryButton, DictionaryPopup, useDictionaryDoubleClick } from '../../../components/api_translate/index.js';
@@ -142,6 +144,67 @@ const QuickAnswerKey = ({ knowledgeQuestions, listeningQuestions, knowledgeAnswe
   );
 };
 
+// ✅ NEW: Component kêu gọi đăng nhập
+const LoginPrompt = ({ onLoginClick, onRegisterClick }) => {
+  const { t } = useLanguage();
+  
+  return (
+    <div className="bg-gradient-to-br from-blue-500 to-green-500 rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 md:p-10 mb-6 sm:mb-8 text-white flex-shrink-0">
+      <div className="text-center mb-6">
+        <div className="text-4xl sm:text-5xl mb-4">🔒</div>
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-black mb-2 uppercase tracking-wide">
+          {t('jlpt.answersPage.loginPrompt.title')}
+        </h2>
+      </div>
+      
+      <div className="bg-white/20 backdrop-blur-sm rounded-lg border-[3px] border-white/30 p-4 sm:p-5 mb-6">
+        <p className="text-base sm:text-lg font-bold mb-3">
+          {t('jlpt.answersPage.loginPrompt.subtitle')}
+        </p>
+        <ul className="space-y-2 text-sm sm:text-base">
+          <li className="flex items-start gap-2">
+            <span className="text-green-300 font-black text-lg">✓</span>
+            <span>{t('jlpt.answersPage.loginPrompt.benefit1')}</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-green-300 font-black text-lg">✓</span>
+            <span>{t('jlpt.answersPage.loginPrompt.benefit2')}</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-green-300 font-black text-lg">✓</span>
+            <span>{t('jlpt.answersPage.loginPrompt.benefit3')}</span>
+          </li>
+        </ul>
+      </div>
+      
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onLoginClick();
+          }}
+          className="bg-white text-blue-600 font-black px-6 sm:px-8 py-3 sm:py-4 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 uppercase tracking-wide text-sm sm:text-base hover:translate-x-[-2px] hover:translate-y-[-2px]"
+        >
+          {t('jlpt.answersPage.loginPrompt.loginButton')}
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRegisterClick();
+          }}
+          className="bg-[#FFB800] text-black font-black px-6 sm:px-8 py-3 sm:py-4 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 uppercase tracking-wide text-sm sm:text-base hover:translate-x-[-2px] hover:translate-y-[-2px]"
+        >
+          {t('jlpt.answersPage.loginPrompt.registerButton')}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // Component hiển thị một câu hỏi với đáp án
 const AnswerCard = ({ question, userAnswer, index, section }) => {
   // ✅ UPDATED: Ref cho TOÀN BỘ card để tra từ mọi nơi (sau khi xem đáp án)
@@ -151,6 +214,15 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
 
   const isCorrect = userAnswer === question.correctAnswer;
   const isListening = section === 'listening';
+  
+  // ✅ NEW: Check xem có explanation không (kể cả khi chỉ có HTML trống)
+  const rawExplanation = question.explanation || '';
+  const cleanedExplanation = rawExplanation
+    .replace(/<[^>]*>/g, '') // remove HTML tags
+    .replace(/&nbsp;/gi, '') // remove &nbsp;
+    .replace(/\s+/g, '')     // remove whitespace
+    .trim();
+  const hasExplanation = cleanedExplanation.length > 0;
   
   return (
     // ✅ UPDATED: Wrap toàn bộ card với ref và select-text
@@ -265,24 +337,38 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
         })}
       </div>
 
-      {/* ✅ UPDATED: Giải thích không cần ref riêng nữa, đã có ref toàn card */}
-      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-        <div className="flex items-center gap-2 mb-2">
-          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span className="font-bold text-blue-800">{t('jlpt.answersPage.explanationLabel')}</span>
+      {/* ✅ UPDATED: Giải thích - hiển thị message nếu chưa có explanation */}
+      {hasExplanation ? (
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+          <div className="flex items-center gap-2 mb-2">
+            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-bold text-blue-800">{t('jlpt.answersPage.explanationLabel')}</span>
+          </div>
+          <div 
+            className="text-gray-700 leading-relaxed prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: question.explanation }}
+            style={{
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+              whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
+            }}
+          />
         </div>
-        <div 
-          className="text-gray-700 leading-relaxed prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: question.explanation || t('jlpt.answersPage.explanationMissing') }}
-          style={{
-            wordWrap: 'break-word',
-            overflowWrap: 'break-word',
-            whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
-          }}
-        />
-      </div>
+      ) : (
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+          <div className="flex items-center gap-2 mb-2">
+            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-bold text-blue-800">{t('jlpt.answersPage.explanationLabel')}</span>
+          </div>
+          <div className="text-gray-700 leading-relaxed">
+            {t('jlpt.answersPage.explanationMissing')}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -329,6 +415,7 @@ function ExamAnswersPage() {
   const { levelId, examId } = useParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user } = useAuth();
   
   // ✅ UPDATED: Load exam data từ storage trước, fallback về static file
   const [currentExam, setCurrentExam] = useState(null);
@@ -345,6 +432,9 @@ function ExamAnswersPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [pendingPath, setPendingPath] = useState('');
+  // ✅ NEW: State cho LoginModal
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState('login'); // 'login' or 'register'
 
   // ✅ UPDATED: Load exam data từ storage hoặc static file
   useEffect(() => {
@@ -733,6 +823,23 @@ function ExamAnswersPage() {
                   listeningAnswers={listeningAnswers}
                 />
 
+                {/* ✅ NEW: Hiển thị LoginPrompt nếu chưa đăng nhập */}
+                {!user && (
+                  <LoginPrompt
+                    onLoginClick={() => {
+                      setLoginModalMode('login');
+                      setShowLoginModal(true);
+                    }}
+                    onRegisterClick={() => {
+                      setLoginModalMode('register');
+                      setShowLoginModal(true);
+                    }}
+                  />
+                )}
+
+                {/* ✅ UPDATED: Chỉ hiển thị chi tiết từng câu nếu đã đăng nhập */}
+                {user && (
+                  <>
                 <div className="mb-4 sm:mb-6 md:mb-8 flex-shrink-0">
                   <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 flex items-center gap-2 flex-wrap">
                     <span className="bg-blue-500 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm md:text-base">
@@ -847,6 +954,8 @@ function ExamAnswersPage() {
                     );
                   })}
                 </div>
+                  </>
+                )}
 
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-4 sm:mt-6 md:mt-8 pb-2 sm:pb-4 flex-shrink-0">
                   <button
@@ -939,6 +1048,18 @@ function ExamAnswersPage() {
           </button>
         </div>
       </ReactModal>
+
+      {/* ✅ NEW: LoginModal */}
+      {showLoginModal && (
+        <LoginModal
+          onClose={() => {
+            setShowLoginModal(false);
+            // Reset về login mode sau khi đóng
+            setLoginModalMode('login');
+          }}
+          initialView={loginModalMode}
+        />
+      )}
     </>
   );
 }

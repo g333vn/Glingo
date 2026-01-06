@@ -703,7 +703,16 @@ const vi = {
             statusIncorrect: '✗ Sai',
             userAnswerLabel: 'Đáp án của bạn',
             explanationLabel: 'Giải thích',
-            explanationMissing: 'Đang cập nhật giải thích.',
+            explanationMissing: 'Giải thích chi tiết cho câu này đang được cập nhật. Bạn có thể xem đáp án đúng ở phần trên.',
+            loginPrompt: {
+                title: '🔒 Đăng nhập để xem chi tiết bài làm',
+                subtitle: 'Đăng nhập để xem:',
+                benefit1: '✓ Đáp án chi tiết cho từng câu bạn đã làm',
+                benefit2: '✓ Giải thích đúng/sai (đang được bổ sung dần…)',
+                benefit3: '✓ Lưu lịch sử bài thi và tiến bộ của bạn',
+                loginButton: 'Đăng nhập',
+                registerButton: 'Tạo tài khoản miễn phí'
+            },
             buttons: {
                 backToResults: '← Quay lại kết quả',
                 retake: '🔄 Thi lại đề này',
