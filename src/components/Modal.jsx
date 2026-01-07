@@ -77,12 +77,12 @@ function Modal({
         right: 0,
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        zIndex: 9999,
+        zIndex: 99999, // ✅ Increased to match admin pages and ensure modal is always on top
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
-        overflowY: 'auto',
+        overflow: 'hidden', // ✅ Removed overflowY: 'auto' - overlay should not scroll
         overflowX: 'hidden',
       }}
       onClick={handleBackdropClick}
@@ -99,8 +99,8 @@ function Modal({
           boxShadow: '8px 8px 0px 0px rgba(0,0,0,1)',
           maxWidth,
           width: '100%',
-          maxHeight: 'calc(100vh - 2rem)',
-          margin: '2rem auto',
+          maxHeight: '90vh', // ✅ Changed from calc(100vh - 2rem) to 90vh for better viewport fit
+          margin: 'auto', // ✅ Removed '2rem auto' - let flexbox center handle it
           position: 'relative',
           display: 'flex',
           flexDirection: 'column',

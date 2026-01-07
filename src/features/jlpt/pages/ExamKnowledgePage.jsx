@@ -11,6 +11,7 @@ import { useAuth } from '../../../contexts/AuthContext.jsx';
 import { saveLearningProgress } from '../../../services/learningProgressService.js';
 import { getExam as getExamFromSupabase } from '../../../services/examService.js';
 import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
+import Modal from '../../../components/Modal.jsx';
 
 // ✅ Helper: Lock/unlock body scroll
 const useBodyScrollLock = (isLocked) => {
@@ -967,156 +968,72 @@ function ExamKnowledgePage() {
         </div>
 
         {/* ✅ Modal cảnh báo thiếu câu - Thiết kế mới */}
-        {showIncompleteWarning && (
-          <div 
-            className="modal-overlay-enter"
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 9999,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '1rem',
-              overflowY: 'auto',
-            }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setShowIncompleteWarning(false);
-              }
-            }}
-          >
-            <div 
-              className="modal-content-enter"
-              style={{
-                backgroundColor: 'white',
-                borderRadius: '0.5rem',
-                padding: '2rem',
-                maxWidth: '28rem',
-                width: '100%',
-                maxHeight: 'calc(100vh - 4rem)',
-                overflowY: 'auto',
-                overscrollBehavior: 'contain',
-              }}
-              onWheel={(e) => {
-                // ✅ Allow scroll inside modal content
-                // Only prevent body scroll when at boundaries
-                const element = e.currentTarget;
-                const { scrollTop, scrollHeight, clientHeight } = element;
-                const isAtTop = scrollTop <= 1;
-                const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
-                
-                // If at top and scrolling up, or at bottom and scrolling down, prevent body scroll
-                if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
-                  e.stopPropagation();
-                }
-                // Otherwise, allow normal scroll in modal
-              }}
-            >
-              <h2 className="text-xl font-bold mb-4 text-yellow-600">{t('jlpt.knowledgePage.incompleteModal.title')}</h2>
-              <div className="mb-6">
-                <p className="mb-3">
-                  {t('jlpt.knowledgePage.incompleteModal.description', { count: unansweredCount })}
-                </p>
-                <p className="mb-3">
-                  {t('jlpt.knowledgePage.incompleteModal.submitWarning')}
-                </p>
-                <p className="mb-3">
-                  {t('jlpt.knowledgePage.incompleteModal.continueHint')}
-                </p>
-              </div>
-              <div className="flex justify-end gap-4">
-                <button
-                  onClick={() => setShowIncompleteWarning(false)}
-                  className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold"
-                >
-                  {t('jlpt.knowledgePage.incompleteModal.continueButton')}
-                </button>
-                <button
-                  onClick={handleConfirmIncompleteSubmit}
-                  className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold"
-                >
-                  {t('jlpt.knowledgePage.incompleteModal.submitButton')}
-                </button>
-              </div>
+        <Modal
+          isOpen={showIncompleteWarning}
+          onClose={() => setShowIncompleteWarning(false)}
+          maxWidth="28rem"
+          showCloseButton={false}
+          closeOnEscape={true}
+          closeOnClickOutside={true}
+        >
+          <div className="py-2">
+            <h2 className="text-xl font-bold mb-4 text-yellow-600">{t('jlpt.knowledgePage.incompleteModal.title')}</h2>
+            <div className="mb-6">
+              <p className="mb-3">
+                {t('jlpt.knowledgePage.incompleteModal.description', { count: unansweredCount })}
+              </p>
+              <p className="mb-3">
+                {t('jlpt.knowledgePage.incompleteModal.submitWarning')}
+              </p>
+              <p className="mb-3">
+                {t('jlpt.knowledgePage.incompleteModal.continueHint')}
+              </p>
+            </div>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowIncompleteWarning(false)}
+                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold"
+              >
+                {t('jlpt.knowledgePage.incompleteModal.continueButton')}
+              </button>
+              <button
+                onClick={handleConfirmIncompleteSubmit}
+                className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold"
+              >
+                {t('jlpt.knowledgePage.incompleteModal.submitButton')}
+              </button>
             </div>
           </div>
-        )}
+        </Modal>
 
         {/* Modal xác nhận submit cuối cùng */}
-        {showSubmitModal && (
-          <div 
-            className="modal-overlay-enter"
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 9999,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '1rem',
-              overflowY: 'auto',
-            }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setShowSubmitModal(false);
-              }
-            }}
-          >
-            <div 
-              className="modal-content-enter"
-              style={{
-                backgroundColor: 'white',
-                borderRadius: '0.5rem',
-                padding: '2rem',
-                maxWidth: '28rem',
-                width: '100%',
-                maxHeight: 'calc(100vh - 4rem)',
-                overflowY: 'auto',
-                overscrollBehavior: 'contain',
-              }}
-              onWheel={(e) => {
-                // ✅ Allow scroll inside modal content
-                // Only prevent body scroll when at boundaries
-                const element = e.currentTarget;
-                const { scrollTop, scrollHeight, clientHeight } = element;
-                const isAtTop = scrollTop <= 1;
-                const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
-                
-                // If at top and scrolling up, or at bottom and scrolling down, prevent body scroll
-                if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
-                  e.stopPropagation();
-                }
-                // Otherwise, allow normal scroll in modal
-              }}
-            >
-              <h2 className="text-xl font-bold mb-4">{t('jlpt.knowledgePage.submitModal.title')}</h2>
-              <p className="mb-6">{t('jlpt.knowledgePage.submitModal.message')}</p>
-              <div className="flex justify-end gap-4">
-                <button
-                  onClick={() => setShowSubmitModal(false)}
-                  className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
-                >
-                  {t('jlpt.knowledgePage.submitModal.cancelButton')}
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                >
-                  {t('jlpt.knowledgePage.submitModal.confirmButton')}
-                </button>
-              </div>
+        <Modal
+          isOpen={showSubmitModal}
+          onClose={() => setShowSubmitModal(false)}
+          maxWidth="28rem"
+          showCloseButton={false}
+          closeOnEscape={true}
+          closeOnClickOutside={true}
+        >
+          <div className="py-2">
+            <h2 className="text-xl font-bold mb-4">{t('jlpt.knowledgePage.submitModal.title')}</h2>
+            <p className="mb-6">{t('jlpt.knowledgePage.submitModal.message')}</p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowSubmitModal(false)}
+                className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
+              >
+                {t('jlpt.knowledgePage.submitModal.cancelButton')}
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                {t('jlpt.knowledgePage.submitModal.confirmButton')}
+              </button>
             </div>
           </div>
-        )}
+        </Modal>
       </div>
 
       {/* ✅ Hiển thị Modal cảnh báo từ useExamGuard */}

@@ -2,11 +2,11 @@
 // ✨ NEO BRUTALISM + JAPANESE AESTHETIC LOGIN MODAL
 
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
 import { FaApple } from 'react-icons/fa'; 
 import { FcGoogle } from "react-icons/fc";
 import { SiFacebook, SiLine } from "react-icons/si";
 import * as authService from '../services/authService.js';
+import Modal from './Modal.jsx';
 
 function LoginModal({ onClose, initialView = 'register' }) { 
   // ✅ UPDATED: Nhận initialView prop để set view ban đầu ('login' hoặc 'register')
@@ -25,15 +25,7 @@ function LoginModal({ onClose, initialView = 'register' }) {
   useEffect(() => {
     setIsRegisterView(initialView === 'register');
     setError(null);
-  }, [initialView]);
-  
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = originalOverflow || '';
-    };
-  }, []); 
+  }, [initialView]); 
 
   const toggleView = () => {
     setIsRegisterView(!isRegisterView);
@@ -109,60 +101,16 @@ function LoginModal({ onClose, initialView = 'register' }) {
     alert(`${provider} login functionality coming soon!`);
   };
 
-  return ReactDOM.createPortal(
-    <div 
-      className="modal-overlay-enter"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem',
-        overflowY: 'auto',
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
+  return (
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      maxWidth="24rem"
+      showCloseButton={true}
+      closeOnEscape={true}
+      closeOnClickOutside={true}
+      className=""
     >
-      {/* ✨ NEO BRUTALISM MODAL */}
-      {/* ✨ NEO BRUTALISM MODAL */}
-      <div 
-        className="modal-content-enter"
-        style={{
-          backgroundColor: 'white',
-          padding: '1.5rem',
-          borderRadius: '12px',
-          border: '4px solid black',
-          boxShadow: '8px 8px 0px 0px rgba(0,0,0,1)',
-          width: '100%',
-          maxWidth: '24rem',
-          position: 'relative',
-          margin: '2rem auto',
-        }}
-      >
-        
-        {/* ✨ NEO BRUTALISM Close Button */}
-        <button 
-          onClick={onClose}
-          className="absolute top-3 right-3 text-black font-black text-2xl bg-white border-[3px] border-black rounded-lg shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FF5722] hover:text-white hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 w-8 h-8 flex items-center justify-center"
-          aria-label="Close modal"
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translate(-2px, -2px)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translate(0, 0)';
-          }}
-        >
-          &times;
-        </button>
 
         {/* --- Phần Form (Render có điều kiện) --- */}
         {isRegisterView ? (
@@ -360,10 +308,7 @@ function LoginModal({ onClose, initialView = 'register' }) {
              <span className="hidden sm:inline">Apple</span>
           </button>
         </div>
-        
-      </div>
-    </div>,
-    document.body // ✅ FIX: Explicitly render to document.body
+    </Modal>
   );
 }
 
