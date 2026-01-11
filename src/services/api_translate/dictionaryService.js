@@ -6,24 +6,41 @@ import { getJLPTDictionary, lookupJLPT } from '../../data/jlptDictionary.js';
 // JLPT Dictionary cache (loaded once)
 let JLPT_DICT = null;
 let JLPT_DICT_LOADING = false;
+let JLPT_DICT_PROMISE = null; // Promise to track loading state
 
 /**
  * Initialize JLPT Dictionary (call on app start)
  */
 export async function initJLPTDictionary() {
-  if (JLPT_DICT || JLPT_DICT_LOADING) return;
-  
-  JLPT_DICT_LOADING = true;
-  try {
-    console.log('[JLPT Dict] Loading...');
-    JLPT_DICT = await getJLPTDictionary();
-    console.log(`[JLPT Dict] Loaded ${Object.keys(JLPT_DICT).length} entries`);
-  } catch (error) {
-    console.error('[JLPT Dict] Load failed:', error);
-    JLPT_DICT = {}; // Empty fallback
-  } finally {
-    JLPT_DICT_LOADING = false;
+  // If already loading, return the promise
+  if (JLPT_DICT_PROMISE) {
+    return JLPT_DICT_PROMISE;
   }
+  
+  // If already loaded, return immediately
+  if (JLPT_DICT && Object.keys(JLPT_DICT).length > 0) {
+    return JLPT_DICT;
+  }
+  
+  // Create promise for this load attempt
+  JLPT_DICT_PROMISE = (async () => {
+    JLPT_DICT_LOADING = true;
+    try {
+      console.log('[JLPT Dict] Loading...');
+      JLPT_DICT = await getJLPTDictionary();
+      const entryCount = Object.keys(JLPT_DICT).length;
+      console.log(`[JLPT Dict] ✅ Loaded ${entryCount} entries`);
+      return JLPT_DICT;
+    } catch (error) {
+      console.error('[JLPT Dict] ❌ Load failed:', error);
+      JLPT_DICT = {}; // Empty fallback
+      return JLPT_DICT;
+    } finally {
+      JLPT_DICT_LOADING = false;
+    }
+  })();
+  
+  return JLPT_DICT_PROMISE;
 }
 
 /**
@@ -45,6 +62,11 @@ export async function translateToVietnamese(text) {
   }
 
   try {
+    // ✅ Wait for JLPT Dictionary to load if still loading
+    if (JLPT_DICT_LOADING && JLPT_DICT_PROMISE) {
+      await JLPT_DICT_PROMISE;
+    }
+
     // ===== LEVEL 1: JLPT DICTIONARY (HIGHEST PRIORITY) =====
     // 8,292 từ JLPT với nghĩa chuẩn
     if (JLPT_DICT && JLPT_DICT[text]) {
@@ -205,19 +227,18 @@ export async function translateMultipleWords(words) {
 }
 
 /**
- * CORS Proxy alternatives
- * ✅ FIXED: Removed empty string to avoid direct API calls (CORS errors)
- * Only use proxies to bypass CORS restrictions
+ * CORS Proxy alternatives - Better working proxies
+ * ✅ UPDATED: Added more reliable and working proxies
  */
 const CORS_PROXIES = [
-  'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?',
-  'https://cors-anywhere.herokuapp.com/',
-  'https://api.codetabs.com/v1/proxy?quest=',
+  'https://api.allorigins.win/raw?url=',      // Most reliable
+  'https://corsproxy.io/?',                    // Good uptime
+  'https://api.codetabs.com/v1/proxy?quest=', // Fast and reliable
+  'https://cors-anywhere.herokuapp.com/',      // Fallback
 ];
 
 /**
- * Tra cứu từ tiếng Nhật (Jisho.org API)
+ * Tra cứu từ tiếng Nhật (Jisho.org API with JLPT fallback)
  * @param {string} word 
  * @returns {Promise<Object>}
  */
@@ -243,13 +264,37 @@ export async function lookupWord(word) {
       }
     }
 
+    // ✅ NEW: Try JLPT Dictionary first (no CORS issues, instant lookup)
+    if (JLPT_DICT && Object.keys(JLPT_DICT).length > 0) {
+      const jlptEntry = JLPT_DICT[trimmedWord];
+      if (jlptEntry) {
+        console.log(`[Dictionary] Found in JLPT Dictionary: ${trimmedWord}`);
+        const result = {
+          success: true,
+          word: trimmedWord,
+          japanese: [{ word: trimmedWord, reading: jlptEntry.hiragana || jlptEntry.kanji || '' }],
+          senses: [{
+            parts_of_speech: [],
+            english_definitions: [jlptEntry.vietnamese],
+            tags: [],
+            info: []
+          }],
+          isCommon: true,
+          jlpt: jlptEntry.level ? [jlptEntry.level] : [],
+          tags: [],
+          source: 'JLPT'
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(result));
+        return result;
+      }
+    }
+
     const apiUrl = `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(trimmedWord)}`;
     
     let lastError;
-    // ✅ FIXED: Only use proxies, never call API directly to avoid CORS
+    // ✅ FIXED: Try proxies with better error handling
     for (let i = 0; i < CORS_PROXIES.length; i++) {
       const proxy = CORS_PROXIES[i];
-      // ✅ Always use proxy (never direct call)
       const requestUrl = `${proxy}${encodeURIComponent(apiUrl)}`;
       
       // Create timeout controller for better browser compatibility

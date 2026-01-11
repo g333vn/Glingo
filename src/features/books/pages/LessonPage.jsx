@@ -462,11 +462,17 @@ function LessonPage() {
   
   // Loading state
   if (isLoading) {
+    const loadingLabel = t('lesson.loading');
+    console.log('🔍 DEBUG lesson.loading:', {
+      key: 'lesson.loading',
+      value: loadingLabel,
+      currentLanguage: useLanguage ? 'has context' : 'no context'
+    });
     return (
       <>
         <DictionaryButton />
         <DictionaryPopup />
-        <LoadingSpinner label="Đang tải bài học..." icon="📚" />
+        <LoadingSpinner label={loadingLabel || 'Đang tải bài học...'} icon="📚" />
         <LessonPageSkeleton
           currentBookCategory={currentBookCategory}
           onCategoryClick={handleCategoryClick}

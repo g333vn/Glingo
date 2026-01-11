@@ -23,13 +23,18 @@
 
 export async function loadJLPTDictionary() {
   try {
+    console.log('[JLPT Dict] Fetching from /data/jlpt_dictionary.json');
     const response = await fetch('/data/jlpt_dictionary.json');
     if (!response.ok) {
-      throw new Error('Failed to load JLPT dictionary');
+      console.error(`[JLPT Dict] HTTP Error: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to load JLPT dictionary: HTTP ${response.status}`);
     }
-    return await response.json();
+    const data = await response.json();
+    console.log(`[JLPT Dict] Successfully loaded ${Object.keys(data).length} entries`);
+    return data;
   } catch (error) {
-    console.error('[JLPT Dict] Load error:', error);
+    console.error('[JLPT Dict] Load error:', error.message);
+    console.error('[JLPT Dict] Stack:', error.stack);
     return {};
   }
 }

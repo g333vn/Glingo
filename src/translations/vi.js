@@ -108,7 +108,8 @@ const vi = {
         dontGiveUp: 'Đừng bỏ cuộc! Mỗi lỗi sai là cơ hội để học. Hãy thử lại!',
         goodJob: 'Làm tốt lắm! Cố gắng tiếp nhé!',
         excellent: 'Xuất sắc! Bạn đã làm chủ bài học này!',
-        closeWindow: 'Đóng'
+        closeWindow: 'Đóng',
+        loading: 'Đang tải bài học...'
     },
 
     // ============================================================================
@@ -754,6 +755,7 @@ const vi = {
             breadcrumbLabel: 'Nghe hiểu',
             navigationTitle: '聴解',
             totalTime: '⏱ {{minutes}} phút',
+            noTimeLimit: 'Không giới hạn thời gian',
             answeredLabel: 'Đã trả lời',
             questionLabel: '問題 {{sectionTitle}}',
             emptyTitle: 'Đề thi chưa có câu hỏi',

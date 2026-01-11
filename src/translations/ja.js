@@ -71,33 +71,42 @@ header: {
 // ============================================================================
 lesson: {
   title: 'レッスン',
-    theory: '理論',
-      quiz: 'クイズ',
-        completed: '完了',
-          startQuiz: 'クイズを始める',
-            nextLesson: '次のレッスン',
-              previousLesson: '前のレッスン',
-                download: 'ダウンロード',
-                  noTheory: 'このレッスンの理論資料はまだありません',
-                    noQuiz: 'このレッスンのクイズはまだありません',
-                      contactAdmin: '更新については管理者に連絡してください',
-                        chapterList: 'チャプターリスト',
-                          lessonList: 'レッスンリスト',
-                          emptyState: 'この本にはまだコンテンツがありません。別の本やチャプターを選ぶか、後でもう一度お試しください。',
-                            chapterBadge: '章',
-                              lessonBadge: 'レッスン',
-                                questionCounter: '問題',
-                                  zoomIn: '拡大',
-                                    zoomOut: '縮小',
-                                      yourAnswer: 'あなたの答え',
-                                        nextQuestion: '次の問題',
-                                          submitAnswer: '答えを提出',
-                                            backToLesson: 'レッスンに戻る',
-                                              keepPracticing: '練習を続けよう！',
-                                                youScored: 'スコア',
-                                                  dontGiveUp: 'あきらめないで！すべての間違いは学ぶチャンスです。もう一度やってみましょう！',
-                                                    goodJob: 'よくできました！その調子です！',
-                                                      excellent: '素晴らしい！このレッスンをマスターしました！'
+  theory: '理論',
+  quiz: 'クイズ',
+  completed: '完了',
+  doQuiz: 'テストを受ける',
+  startQuiz: 'クイズを始める',
+  nextLesson: '次のレッスン',
+  previousLesson: '前のレッスン',
+  download: 'ダウンロード',
+  noTheory: 'このレッスンの理論資料はまだありません',
+  noQuiz: 'このレッスンのクイズはまだありません',
+  contactAdmin: '更新については管理者に連絡してください',
+  chapterList: 'チャプターリスト',
+  lessonList: 'レッスンリスト',
+  emptyState: 'この本にはまだコンテンツがありません。別の本やチャプターを選ぶか、後でもう一度お試しください。',
+  chapterBadge: '章',
+  lessonBadge: 'レッスン',
+  questionCounter: '問題',
+  zoomIn: '拡大',
+  zoomOut: '縮小',
+  correct: '正解',
+  wrong: '不正解',
+  total: '合計',
+  yourAnswer: 'あなたの答え',
+  nextQuestion: '次の問題',
+  submitAnswer: '答えを提出',
+  checkAnswer: '答えを確認',
+  next: '次へ',
+  finish: '完了',
+  backToLesson: 'レッスンに戻る',
+  keepPracticing: '練習を続けよう！',
+  youScored: 'スコア',
+  dontGiveUp: 'あきらめないで！すべての間違いは学ぶチャンスです。もう一度やってみましょう！',
+  goodJob: 'よくできました！その調子です！',
+  excellent: '素晴らしい！このレッスンをマスターしました！',
+  closeWindow: '閉じる',
+  loading: 'レッスンを読み込み中...'
 },
 
 
@@ -649,7 +658,16 @@ jlpt: {
           examList: '📋 試験一覧へ'
     },
     breadcrumbResult: '結果',
-      breadcrumbAnswers: '解答・解説'
+      breadcrumbAnswers: '解答・解説',
+      loginPrompt: {
+        title: '🔒 ログインして詳細を見る',
+        subtitle: 'ログインして以下を確認：',
+        benefit1: '✓ 各問題の詳細な解答',
+        benefit2: '✓ 正解・不正解の解説（随時更新中）',
+        benefit3: '✓ 試験履歴と進捗を保存',
+        loginButton: 'ログイン',
+        registerButton: '無料でアカウント作成'
+      }
   },
   knowledgePage: {
     breadcrumbLabel: '言語知識・読解',
@@ -684,6 +702,7 @@ jlpt: {
     breadcrumbLabel: '聴解',
       navigationTitle: '聴解',
         totalTime: '⏱ {{minutes}}分',
+          noTimeLimit: '時間制限なし',
           answeredLabel: '解答済み',
             questionLabel: '問題 {{sectionTitle}}',
               loading: '聴解試験を読み込み中...',
@@ -908,46 +927,8 @@ search: {
 
 
 // ============================================================================
-// LESSON - Trang bài học chi tiết
-// Sử dụng: LessonDetail component, LessonView page
+// AUTH - Authentication pages
 // ============================================================================
-lesson: {
-  chapterList: 'チャプターリスト',
-    lessonList: 'レッスンリスト',
-      emptyState: 'この本にはまだコンテンツがありません。別の本やチャプターを選ぶか、後でもう一度お試しください。',
-      chapterBadge: 'チャプター',
-        lessonBadge: 'レッスン',
-          questionCounter: '質問',
-            theory: '理論',
-              quiz: 'クイズ',
-                completed: '完了',
-                  doQuiz: 'クイズをする',
-                    nextLesson: '次のレッスン',
-                      noTheory: '理論コンテンツはまだありません',
-                        contactAdmin: '更新については管理者にお問い合わせください',
-                          noQuiz: 'このレッスンにはクイズがありません',
-                            startQuiz: 'クイズを開始',
-                              zoomIn: '拡大',
-                                zoomOut: '縮小',
-                                  download: 'ダウンロード',
-                                    correct: '正解',
-                                      wrong: '不正解',
-                                        total: '合計',
-                                          yourAnswer: 'あなたの答え',
-                                            correctAnswer: '正解',
-                                              explanation: '説明',
-                                                nextQuestion: '次の質問',
-                                                  submitAnswer: '答えを送信',
-                                                    tryAgain: '再挑戦',
-                                                      backToLesson: 'レッスンに戻る',
-                                                        keepPracticing: '練習を続けよう！',
-                                                          youScored: 'あなたのスコア',
-                                                            dontGiveUp: '諦めないで！間違いは学ぶチャンスです。もう一度挑戦しましょう！',
-                                                              goodJob: 'よくできました！その調子で！',
-                                                                excellent: '素晴らしい！このレッスンをマスターしました！',
-                                                                  closeWindow: '閉じる'
-},
-
 auth: {
   login: 'ログイン',
     register: '登録',
@@ -3043,6 +3024,6 @@ legal: {
         }
     }
 }
-  };
+};
 
 export default ja;

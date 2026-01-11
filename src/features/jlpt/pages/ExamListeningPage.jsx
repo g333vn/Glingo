@@ -27,7 +27,7 @@ const useBodyScrollLock = (isLocked) => {
 };
 
 // Component đồng hồ đếm ngược
-const CountdownTimer = ({ initialTime, onTimeUp }) => {
+const CountdownTimer = ({ initialTime, onTimeUp, t }) => {
   // ✅ FIX: Chỉ khởi tạo timeLeft nếu initialTime hợp lệ (> 0)
   const [timeLeft, setTimeLeft] = useState(() => {
     const validTime = (initialTime && initialTime > 0) ? initialTime : 0;
@@ -89,7 +89,7 @@ const CountdownTimer = ({ initialTime, onTimeUp }) => {
   if (!initialTime || initialTime <= 0) {
     return (
       <div className="text-lg font-semibold px-4 py-2 rounded-lg bg-gray-200 text-gray-600">
-        Không giới hạn thời gian
+        {t ? t('jlpt.listeningPage.noTimeLimit') : 'Không giới hạn thời gian'}
       </div>
     );
   }
@@ -676,7 +676,7 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer }) => {
 };
 
 // Component navigation panel
-const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect }) => {
+const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect, t }) => {
   return (
     <div className="bg-white rounded-lg shadow-lg flex flex-col h-full">
       {/* Header - Fixed */}
@@ -721,7 +721,7 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect 
         {/* Footer - Fixed */}
         <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
           <div className="flex justify-between mb-1">
-            <span>Đã trả lời:</span>
+            <span>{t ? t('jlpt.listeningPage.answeredLabel') : 'Answered'}:</span>
             <span className="font-bold">
               {Object.keys(answers).length}/{sections.reduce((acc, s) => acc + s.questions.length, 0)}
             </span>
@@ -1208,10 +1208,10 @@ function ExamListeningPage() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mt-4">
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-800">{currentExam.title} - 聴解</h1>
                 {totalTime > 0 ? (
-                  <CountdownTimer initialTime={totalTime} onTimeUp={handleTimeUp} />
+                  <CountdownTimer initialTime={totalTime} onTimeUp={handleTimeUp} t={t} />
                 ) : (
                   <div className="text-lg font-semibold px-4 py-2 rounded-lg bg-gray-200 text-gray-600">
-                    Không giới hạn thời gian
+                    {t('jlpt.listeningPage.noTimeLimit')}
                   </div>
                 )}
               </div>
@@ -1282,6 +1282,7 @@ function ExamListeningPage() {
                 currentQuestion={currentQuestionKey}
                 answers={answers}
                 onQuestionSelect={setCurrentQuestionKey}
+                t={t}
               />
             </div>
           </div>
@@ -1297,18 +1298,16 @@ function ExamListeningPage() {
           closeOnClickOutside={true}
         >
           <div className="py-2">
-            <h2 className="text-xl font-bold mb-4 text-yellow-600">⚠️ CẢNH BÁO: CÒN CÂU CHƯA TRẢ LỜI</h2>
+            <h2 className="text-xl font-bold mb-4 text-yellow-600">{t('jlpt.modals.incompleteTitle')}</h2>
             <div className="mb-6">
               <p className="mb-3">
-                Bạn còn <strong className="text-red-600">{unansweredCount} câu</strong> chưa trả lời.
+                {t('jlpt.modals.incompleteMessage', { count: unansweredCount })}
               </p>
               <p className="mb-3">
-                • Nếu bấm <strong className="text-red-600">Tiếp tục nộp bài</strong>: 
-                Các câu chưa trả lời sẽ bị tính là sai.
+                • {t('jlpt.modals.incompleteTip1')} <strong className="text-red-600">{t('jlpt.modals.incompleteTip1Bold')}</strong>{t('jlpt.modals.incompleteTip1Continue')}
               </p>
               <p className="mb-3">
-                • Nếu bấm <strong className="text-green-600">Quay lại làm tiếp</strong>: 
-                Bạn có thể hoàn thành các câu còn lại.
+                • {t('jlpt.modals.incompleteTip2')} <strong className="text-green-600">{t('jlpt.modals.incompleteTip2Bold')}</strong>{t('jlpt.modals.incompleteTip2Continue')}
               </p>
             </div>
             <div className="flex justify-end gap-4">
@@ -1316,13 +1315,13 @@ function ExamListeningPage() {
                 onClick={() => setShowIncompleteWarning(false)}
                 className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold"
               >
-                Quay lại làm tiếp
+                {t('jlpt.modals.incompleteBackButton')}
               </button>
               <button
                 onClick={handleConfirmIncompleteSubmit}
                 className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold"
               >
-                Tiếp tục nộp bài
+                {t('jlpt.modals.incompleteSubmitButton')}
               </button>
             </div>
           </div>

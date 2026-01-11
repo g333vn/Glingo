@@ -545,10 +545,8 @@ function QuizPage() {
                         {!unlimited && !noRetry && (
                           <p className="text-xs text-gray-700 font-semibold text-center sm:text-left">
                             {remainingAttempts > 0
-                              ? (t('quiz.retryRemaining', { used: attemptsSoFar, max: maxAttemptsSetting }) ||
-                                 `Lần làm: ${attemptsSoFar}/${maxAttemptsSetting}`)
-                              : (t('quiz.retryLimitReached', { max: maxAttemptsSetting }) ||
-                                 `Bạn đã dùng hết ${maxAttemptsSetting} lần làm lại được phép.`)
+                              ? t('quiz.retryRemaining', { used: attemptsSoFar, max: maxAttemptsSetting })
+                              : t('quiz.retryLimitReached', { max: maxAttemptsSetting })
                             }
                           </p>
                         )}
@@ -558,7 +556,7 @@ function QuizPage() {
                           className="px-6 py-3 bg-green-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] font-black hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all duration-200 uppercase tracking-wide"
                         >
                           <span className="relative z-10 flex items-center justify-center gap-2">
-                            Next Lesson
+                            {t('lesson.nextLesson')} →
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                             </svg>

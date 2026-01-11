@@ -71,43 +71,45 @@ header: {
 // ============================================================================
 lesson: {
   title: 'Lesson',
-    theory: 'Theory',
-      quiz: 'Quiz',
-        completed: 'Completed',
-          startQuiz: 'Start Quiz',
-            nextLesson: 'Next Lesson',
-              previousLesson: 'Previous Lesson',
-                download: 'Download',
-                  noTheory: 'No theory materials for this lesson yet',
-                  noQuiz: 'No quiz for this lesson yet',
-                  contactAdmin: 'Please contact admin for updates',
-                  chapterList: 'CHAPTER LIST',
-                          lessonList: 'Lesson List',
-                          emptyState: 'No content is available in this book yet. Please choose another book/chapter or check back later.',
-                            chapterBadge: 'Chapter',
-                              lessonBadge: 'Lesson',
-                                questionCounter: 'Question',
-                                  zoomIn: 'Zoom In',
-                                    zoomOut: 'Zoom Out',
-                                      correct: 'Correct',
-                                        wrong: 'Wrong',
-                                          total: 'Total',
-                                            yourAnswer: 'Your Answer',
-                                              correctAnswer: 'Correct Answer',
-                                                explanation: 'Explanation',
-                                                  nextQuestion: 'Next Question',
-                                                    submitAnswer: 'Submit Answer',
-                                                      checkAnswer: 'Check Answer',
-                                                        next: 'Next',
-                                                          finish: 'Finish',
-                                                            tryAgain: 'Try Again',
-                                                              backToLesson: 'Back to Lesson',
-                                                                keepPracticing: 'Keep Practicing!',
-                                                                  youScored: 'You scored',
-                                                                    dontGiveUp: "Don't give up! Every mistake is a chance to learn. Try again!",
-                                                                      goodJob: 'Good job! Keep it up!',
-                                                                        excellent: 'Excellent! You mastered this lesson!',
-                                                                          closeWindow: 'Close'
+  theory: 'Theory',
+  quiz: 'Quiz',
+  completed: 'Completed',
+  doQuiz: 'Take Test',
+  startQuiz: 'Start Quiz',
+  nextLesson: 'Next Lesson',
+  previousLesson: 'Previous Lesson',
+  download: 'Download',
+  noTheory: 'No theory materials for this lesson yet',
+  noQuiz: 'No quiz for this lesson yet',
+  contactAdmin: 'Please contact admin for updates',
+  chapterList: 'CHAPTER LIST',
+  lessonList: 'Lesson List',
+  emptyState: 'No content is available in this book yet. Please choose another book/chapter or check back later.',
+  chapterBadge: 'Chapter',
+  lessonBadge: 'Lesson',
+  questionCounter: 'Question',
+  zoomIn: 'Zoom In',
+  zoomOut: 'Zoom Out',
+  correct: 'Correct',
+  wrong: 'Wrong',
+  total: 'Total',
+  yourAnswer: 'Your Answer',
+  correctAnswer: 'Correct Answer',
+  explanation: 'Explanation',
+  nextQuestion: 'Next Question',
+  submitAnswer: 'Submit Answer',
+  checkAnswer: 'Check Answer',
+  next: 'Next',
+  finish: 'Finish',
+  tryAgain: 'Try Again',
+  backToLesson: 'Back to Lesson',
+  keepPracticing: 'Keep Practicing!',
+  youScored: 'You scored',
+  dontGiveUp: "Don't give up! Every mistake is a chance to learn. Try again!",
+  goodJob: 'Good job! Keep it up!',
+  excellent: 'Excellent! You mastered this lesson!',
+  closeWindow: 'Close',
+  loading: 'Loading lesson...'
 },
 
 
@@ -657,7 +659,16 @@ jlpt: {
           examList: '📋 Go to exam list'
     },
     breadcrumbResult: 'Results',
-      breadcrumbAnswers: 'Answers & Explanations'
+      breadcrumbAnswers: 'Answers & Explanations',
+      loginPrompt: {
+        title: '🔒 Login to see details',
+        subtitle: 'Login to see:',
+        benefit1: '✓ Detailed answers for each question',
+        benefit2: '✓ Explanations for correct/incorrect answers (being updated)',
+        benefit3: '✓ Save exam history and your progress',
+        loginButton: 'Login',
+        registerButton: 'Create free account'
+      }
   },
   knowledgePage: {
     breadcrumbLabel: 'Language Knowledge・Reading',
@@ -692,6 +703,7 @@ jlpt: {
     breadcrumbLabel: 'Listening',
       navigationTitle: '聴解',
         totalTime: '⏱ {{minutes}} min',
+          noTimeLimit: 'No time limit',
           answeredLabel: 'Answered',
             questionLabel: '問題 {{sectionTitle}}',
               emptyTitle: 'No questions yet',
@@ -916,48 +928,9 @@ search: {
 
 // ============================================================================
 // LESSON - Trang bài học chi tiết
-// Sử dụng: LessonDetail component, LessonView page
 // ============================================================================
-lesson: {
-  chapterList: 'Chapter List',
-    lessonList: 'Lesson List',
-      emptyState: 'No content is available in this book yet. Please choose another book/chapter or check back later.',
-      chapterBadge: 'Chapter',
-        lessonBadge: 'Lesson',
-          questionCounter: 'Question',
-            theory: 'Theory',
-              quiz: 'Quiz',
-                completed: 'Completed',
-                  doQuiz: 'Do Quiz',
-                    nextLesson: 'Next Lesson',
-                      noTheory: 'No theory content yet',
-                        contactAdmin: 'Please contact admin to update',
-                          noQuiz: 'No quiz for this lesson',
-                            startQuiz: 'Start Quiz',
-                              zoomIn: 'Zoom In',
-                                zoomOut: 'Zoom Out',
-                                  download: 'Download',
-                                    correct: 'Correct',
-                                      wrong: 'Wrong',
-                                        total: 'Total',
-                                          yourAnswer: 'Your Answer',
-                                            correctAnswer: 'Correct Answer',
-                                              explanation: 'Explanation',
-                                                nextQuestion: 'Next Question',
-                                                  submitAnswer: 'Submit Answer',
-                                                    checkAnswer: 'Check Answer',
-                                                      next: 'Next',
-                                                        finish: 'Finish',
-                                                          tryAgain: 'Try Again',
-                                                            backToLesson: 'Back to Lesson',
-                                                              keepPracticing: 'Keep Practicing!',
-                                                                youScored: 'You scored',
-                                                                  dontGiveUp: "Don't give up! Every mistake is a chance to learn. Try again!",
-                                                                    goodJob: 'Good job! Keep it up!',
-                                                                      excellent: 'Excellent! You mastered this lesson!',
-                                                                        closeWindow: 'Close'
-},
-
+// AUTH - Authentication pages
+// ============================================================================
 auth: {
   login: 'Login',
     register: 'Register',
@@ -3056,6 +3029,6 @@ legal: {
         }
     }
 }
-  };
+};
 
 export default en;

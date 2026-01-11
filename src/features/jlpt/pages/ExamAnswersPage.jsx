@@ -144,40 +144,46 @@ const QuickAnswerKey = ({ knowledgeQuestions, listeningQuestions, knowledgeAnswe
   );
 };
 
-// ✅ NEW: Component kêu gọi đăng nhập
+// ✅ NEW: Component kêu gọi đăng nhập - NEO BRUTALISM STYLE
 const LoginPrompt = ({ onLoginClick, onRegisterClick }) => {
   const { t } = useLanguage();
   
   return (
-    <div className="bg-gradient-to-br from-blue-500 to-green-500 rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 md:p-10 mb-6 sm:mb-8 text-white flex-shrink-0">
-      <div className="text-center mb-6">
-        <div className="text-4xl sm:text-5xl mb-4">🔒</div>
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-black mb-2 uppercase tracking-wide">
+    <div className="bg-[#FFFBEB] rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 md:p-10 mb-6 sm:mb-8 flex-shrink-0">
+      {/* Header với Icon và Tiêu đề */}
+      <div className="text-center mb-8 sm:mb-10">
+        <div className="text-5xl sm:text-6xl mb-4 inline-block">
+          <span className="drop-shadow-lg">🔒</span>
+        </div>
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-2 uppercase tracking-widest text-black">
           {t('jlpt.answersPage.loginPrompt.title')}
         </h2>
       </div>
       
-      <div className="bg-white/20 backdrop-blur-sm rounded-lg border-[3px] border-white/30 p-4 sm:p-5 mb-6">
-        <p className="text-base sm:text-lg font-bold mb-3">
+      {/* Benefits Box - NEO BRUTALISM */}
+      <div className="bg-white rounded-lg border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-7 mb-8">
+        <p className="text-base sm:text-lg font-black mb-4 uppercase tracking-wide text-black">
           {t('jlpt.answersPage.loginPrompt.subtitle')}
         </p>
-        <ul className="space-y-2 text-sm sm:text-base">
-          <li className="flex items-start gap-2">
-            <span className="text-green-300 font-black text-lg">✓</span>
-            <span>{t('jlpt.answersPage.loginPrompt.benefit1')}</span>
+        <ul className="space-y-3 text-sm sm:text-base">
+          <li className="flex items-start gap-3">
+            <span className="text-[#FFB800] font-black text-xl flex-shrink-0 mt-0.5">✓</span>
+            <span className="font-bold text-gray-800">{t('jlpt.answersPage.loginPrompt.benefit1')}</span>
           </li>
-          <li className="flex items-start gap-2">
-            <span className="text-green-300 font-black text-lg">✓</span>
-            <span>{t('jlpt.answersPage.loginPrompt.benefit2')}</span>
+          <li className="flex items-start gap-3">
+            <span className="text-[#FFB800] font-black text-xl flex-shrink-0 mt-0.5">✓</span>
+            <span className="font-bold text-gray-800">{t('jlpt.answersPage.loginPrompt.benefit2')}</span>
           </li>
-          <li className="flex items-start gap-2">
-            <span className="text-green-300 font-black text-lg">✓</span>
-            <span>{t('jlpt.answersPage.loginPrompt.benefit3')}</span>
+          <li className="flex items-start gap-3">
+            <span className="text-[#FFB800] font-black text-xl flex-shrink-0 mt-0.5">✓</span>
+            <span className="font-bold text-gray-800">{t('jlpt.answersPage.loginPrompt.benefit3')}</span>
           </li>
         </ul>
       </div>
       
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+      {/* Action Buttons - NEO BRUTALISM */}
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center">
+        {/* Login Button - White with Black Border */}
         <button
           type="button"
           onClick={(e) => {
@@ -185,10 +191,11 @@ const LoginPrompt = ({ onLoginClick, onRegisterClick }) => {
             e.stopPropagation();
             onLoginClick();
           }}
-          className="bg-white text-blue-600 font-black px-6 sm:px-8 py-3 sm:py-4 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 uppercase tracking-wide text-sm sm:text-base hover:translate-x-[-2px] hover:translate-y-[-2px]"
+          className="bg-white text-black font-black px-7 sm:px-10 py-3 sm:py-4 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 uppercase tracking-wide text-sm sm:text-base hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
         >
           {t('jlpt.answersPage.loginPrompt.loginButton')}
         </button>
+        {/* Register Button - Yellow with Black Border */}
         <button
           type="button"
           onClick={(e) => {
@@ -196,7 +203,7 @@ const LoginPrompt = ({ onLoginClick, onRegisterClick }) => {
             e.stopPropagation();
             onRegisterClick();
           }}
-          className="bg-[#FFB800] text-black font-black px-6 sm:px-8 py-3 sm:py-4 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 uppercase tracking-wide text-sm sm:text-base hover:translate-x-[-2px] hover:translate-y-[-2px]"
+          className="bg-[#FFB800] text-black font-black px-7 sm:px-10 py-3 sm:py-4 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 uppercase tracking-wide text-sm sm:text-base hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
         >
           {t('jlpt.answersPage.loginPrompt.registerButton')}
         </button>
@@ -957,22 +964,26 @@ function ExamAnswersPage() {
                   </>
                 )}
 
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-4 sm:mt-6 md:mt-8 pb-2 sm:pb-4 flex-shrink-0">
+                {/* ✅ NEO BRUTALISM: Navigation Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 mt-4 sm:mt-6 md:mt-8 pb-2 sm:pb-4 flex-shrink-0">
+                  {/* Back to Results Button - Blue */}
                   <button
                     onClick={() => navigate(`/jlpt/${levelId}/${examId}/result`)}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base min-h-[48px]"
+                    className="flex-1 bg-blue-500 text-white font-black px-4 sm:px-6 py-3 sm:py-4 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FF5722] transition-all duration-200 uppercase tracking-wide text-sm sm:text-base min-h-[48px] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                   >
                     {t('jlpt.answersPage.buttons.backToResults')}
                   </button>
+                  {/* Retake Exam Button - Yellow/Orange */}
                   <button
                     onClick={() => setShowConfirmModal(true)}
-                    className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base min-h-[48px]"
+                    className="flex-1 bg-[#FFB800] text-black font-black px-4 sm:px-6 py-3 sm:py-4 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FF5722] hover:text-white transition-all duration-200 uppercase tracking-wide text-sm sm:text-base min-h-[48px] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                   >
                     {t('jlpt.answersPage.buttons.retake')}
                   </button>
+                  {/* Exam List Button - Gray */}
                   <button
                     onClick={() => handleNavigateWithConfirm(`/jlpt/${levelId}`)}
-                    className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base min-h-[48px]"
+                    className="flex-1 bg-gray-600 text-white font-black px-4 sm:px-6 py-3 sm:py-4 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-700 transition-all duration-200 uppercase tracking-wide text-sm sm:text-base min-h-[48px] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                   >
                     {t('jlpt.answersPage.buttons.examList')}
                   </button>
