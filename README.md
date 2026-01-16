@@ -148,10 +148,18 @@ src/
 
 See the [docs/](./docs/) folder for detailed documentation:
 
-- [Architecture Overview](./docs/ARCHITECTURE.md)
-- [Features Guide](./docs/FEATURES.md)
-- [Setup Guide](./docs/SETUP.md)
-- [API & Services](./docs/API_SERVICES.md)
+### Core Documentation
+- [Architecture Overview](./docs/ARCHITECTURE.md) - System architecture, data flow, security
+- [Features Guide](./docs/FEATURES.md) - Learning modules, SRS, admin features
+- [Setup Guide](./docs/SETUP.md) - Installation, Supabase setup, deployment
+- [API & Services](./docs/API_SERVICES.md) - Services reference, contexts, hooks
+
+### Additional Guides
+- [Database Documentation](./docs/DATABASE.md) - Schema, relationships, migrations
+- [Deployment Guide](./docs/DEPLOYMENT.md) - Vercel setup, CI/CD, environment
+- [Development Guide](./docs/DEVELOPMENT.md) - Development workflow, conventions
+- [Security Guide](./docs/SECURITY.md) - Security best practices
+- [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ## Security
 
