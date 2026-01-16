@@ -436,4 +436,3 @@ ORDER BY e.created_at DESC;
 -- - Các query này sử dụng JSONB functions của PostgreSQL
 -- - Có thể chạy trực tiếp trong Supabase SQL Editor
 -- ============================================
-

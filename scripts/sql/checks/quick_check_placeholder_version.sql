@@ -65,4 +65,3 @@ SELECT
     updated_at
 FROM books
 ORDER BY level, id;
-

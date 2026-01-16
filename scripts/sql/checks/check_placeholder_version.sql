@@ -56,4 +56,3 @@ BEGIN
         RAISE NOTICE '❌ Column placeholder_version DOES NOT EXIST - Run migration: add_placeholder_version_to_books.sql';
     END IF;
 END $$;
-

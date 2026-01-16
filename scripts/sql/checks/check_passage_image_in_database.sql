@@ -283,4 +283,3 @@ WHERE e.deleted_at IS NULL
       WHERE section->'passageImage' IS NOT NULL
     )
   );
-

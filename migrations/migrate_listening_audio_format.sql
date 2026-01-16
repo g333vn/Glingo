@@ -181,4 +181,3 @@ WHERE level = 'n1'  -- ⚠️ THAY ĐỔI level
 -- COMMIT;
 -- Nếu có vấn đề, rollback:
 -- ROLLBACK;
-

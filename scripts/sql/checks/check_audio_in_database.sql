@@ -178,4 +178,3 @@ SELECT 'Audio Name (part level)', COALESCE(listening_sections->>'audioName', '(e
 UNION ALL
 SELECT 'Audio Path (part level)', COALESCE(listening_sections->>'audioPath', '(empty)') 
   FROM exams WHERE level = 'n1' AND exam_id = '2025-12' AND deleted_at IS NULL;
-

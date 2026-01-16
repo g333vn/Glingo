@@ -132,4 +132,3 @@ SELECT
      AND q.level = c.level
    WHERE c.title LIKE '%第1部%' OR c.title LIKE '%第１部%'
   ) as total_questions;
-
