@@ -1,13 +1,13 @@
 // src/services/contentService.js
-// Service để lưu và đọc content (books, chapters, lessons, quizzes) từ Supabase
+// Service (Dịch vụ) để lưu và đọc content (books, chapters, lessons, quizzes) từ Supabase
 
 import { supabase } from './supabaseClient.js';
 import { safeSaveCollection } from '../utils/safeSaveHelper.js';
 
 /**
- * Save book to Supabase
- * @param {Object} book - Book data
- * @param {string} userId - UUID of admin user
+ * Save book (Lưu sách) to Supabase
+ * @param {Object} book - Book data (Dữ liệu sách)
+ * @param {string} userId - UUID of admin user (UUID của người dùng admin)
  * @returns {Promise<{success: boolean, data?: Object, error?: Object}>}
  */
 export async function saveBook(book, userId) {
@@ -24,8 +24,8 @@ export async function saveBook(book, userId) {
         image_url: book.imageUrl || null,
         series_id: book.seriesId || null,
         // ❗ Không ghi field `category` lên Supabase vì bảng `books` hiện chưa có cột này.
-        //    Category chỉ dùng phía client, dựa trên seriesId/series.name.
-        placeholder_version: book.placeholderVersion || 1, // ✅ NEW: Placeholder design version (1-10)
+        //    Category (Danh mục) chỉ dùng phía client, dựa trên seriesId/series.name.
+        placeholder_version: book.placeholderVersion || 1, // ✅ NEW: Placeholder design version (Phiên bản thiết kế placeholder) (1-10)
         order_index: book.orderIndex || 0,
         created_by: userId,
         updated_at: new Date().toISOString()
@@ -49,8 +49,8 @@ export async function saveBook(book, userId) {
 }
 
 /**
- * Get books by level
- * @param {string} level - Level (n1, n2, ...)
+ * Get books by level (Lấy sách theo cấp độ)
+ * @param {string} level - Level (Cấp độ) (n1, n2, ...)
  * @returns {Promise<{success: boolean, data?: Array, error?: Object}>}
  */
 export async function getBooks(level) {
@@ -67,7 +67,7 @@ export async function getBooks(level) {
       return { success: false, error };
     }
 
-    // Transform to app format
+    // Transform to app format (Chuyển đổi sang định dạng ứng dụng)
     const books = (data || []).map(book => ({
       id: book.id,
       level: book.level,
@@ -75,8 +75,8 @@ export async function getBooks(level) {
       description: book.description,
       imageUrl: book.image_url,
       seriesId: book.series_id,
-      category: book.category || null, // ✅ Include category field from Supabase
-      placeholderVersion: book.placeholder_version || 1, // ✅ NEW: Placeholder design version (1-10, default 1)
+      category: book.category || null, // ✅ Include category field (Bao gồm trường category) from Supabase
+      placeholderVersion: book.placeholder_version || 1, // ✅ NEW: Placeholder design version (Phiên bản thiết kế placeholder) (1-10, default 1)
       orderIndex: book.order_index
     }));
 
@@ -89,16 +89,16 @@ export async function getBooks(level) {
 }
 
 /**
- * Delete book and all related content (chapters, lessons, quizzes) from Supabase
- * @param {string} bookId - Book ID
- * @param {string} level - Level (n1, n2, ...)
+ * Delete book (Xóa sách) and all related content (chapters, lessons, quizzes) from Supabase
+ * @param {string} bookId - Book ID (ID sách)
+ * @param {string} level - Level (Cấp độ) (n1, n2, ...)
  * @returns {Promise<{success: boolean, error?: Object}>}
  */
 export async function deleteBookCascade(bookId, level) {
   try {
     console.log('[ContentService.deleteBookCascade] 🗑️ Deleting book and related content:', { bookId, level });
 
-    // 1. Delete quizzes for this book (any chapter / lesson)
+    // 1. Delete quizzes (Xóa quiz) for this book (any chapter / lesson)
     const { error: quizError } = await supabase
       .from('quizzes')
       .delete()
@@ -108,7 +108,7 @@ export async function deleteBookCascade(bookId, level) {
       console.warn('[ContentService.deleteBookCascade] ⚠️ Error deleting quizzes:', quizError);
     }
 
-    // 2. Delete lessons for this book
+    // 2. Delete lessons (Xóa bài học) for this book
     const { error: lessonError } = await supabase
       .from('lessons')
       .delete()
@@ -118,7 +118,7 @@ export async function deleteBookCascade(bookId, level) {
       console.warn('[ContentService.deleteBookCascade] ⚠️ Error deleting lessons:', lessonError);
     }
 
-    // 3. Delete chapters for this book
+    // 3. Delete chapters (Xóa chương) for this book
     const { error: chapterError } = await supabase
       .from('chapters')
       .delete()
@@ -128,7 +128,7 @@ export async function deleteBookCascade(bookId, level) {
       console.warn('[ContentService.deleteBookCascade] ⚠️ Error deleting chapters:', chapterError);
     }
 
-    // 4. Finally delete the book itself
+    // 4. Finally delete (Cuối cùng xóa) the book itself
     const { error: bookError } = await supabase
       .from('books')
       .delete()
@@ -148,12 +148,12 @@ export async function deleteBookCascade(bookId, level) {
 }
 
 /**
- * Save chapters to Supabase
- * ✅ FIXED: Sử dụng safe save với merge thông minh để tránh mất dữ liệu
- * @param {string} bookId - Book ID
- * @param {string} level - Level
- * @param {Array} chapters - Array of chapters
- * @param {string} userId - UUID of admin user
+ * Save chapters (Lưu chương) to Supabase
+ * ✅ FIXED: Sử dụng safe save (Lưu an toàn) với merge (Gộp) thông minh để tránh mất dữ liệu
+ * @param {string} bookId - Book ID (ID sách)
+ * @param {string} level - Level (Cấp độ)
+ * @param {Array} chapters - Array of chapters (Mảng các chương)
+ * @param {string} userId - UUID of admin user (UUID của người dùng admin)
  * @returns {Promise<{success: boolean, data?: Array, error?: Object}>}
  */
 export async function saveChapters(bookId, level, chapters, userId) {
@@ -164,13 +164,13 @@ export async function saveChapters(bookId, level, chapters, userId) {
       chaptersCount: chapters?.length || 0
     });
 
-    // ✅ FIXED: Load từ Supabase trước (source of truth)
+    // ✅ FIXED: Load từ Supabase trước (source of truth - Nguồn dữ liệu chính xác)
     const getExisting = async () => {
       return await getChapters(bookId, level);
     };
 
-    // ✅ FIXED: Dùng safeSaveCollection để merge thông minh
-    // Tạo map index để preserve order
+    // ✅ FIXED: Dùng safeSaveCollection (Sử dụng safeSaveCollection) để merge (Gộp) thông minh
+    // Tạo map index (Bản đồ chỉ mục) để preserve order (Giữ nguyên thứ tự)
     const indexMap = new Map(chapters.map((ch, idx) => [ch.id, idx]));
     
     const result = await safeSaveCollection({
@@ -193,7 +193,7 @@ export async function saveChapters(bookId, level, chapters, userId) {
       },
       userId,
       context: { bookId, level, userId },
-      onConflict: null, // ✅ FIXED: Không dùng onConflict cho composite key - Supabase tự detect
+      onConflict: null, // ✅ FIXED: Không dùng onConflict (Xung đột) cho composite key (Khóa tổng hợp) - Supabase tự detect (Phát hiện)
       deleteWhere: { book_id: bookId, level: level } // Chỉ xóa chapters của book này
     });
 
@@ -202,7 +202,7 @@ export async function saveChapters(bookId, level, chapters, userId) {
       return { success: false, error: result.error };
     }
 
-    // Load lại để return data đầy đủ (backward compatible)
+    // Load lại để return data đầy đủ (backward compatible - Tương thích ngược)
     const { success: loadSuccess, data: savedChapters } = await getChapters(bookId, level);
     
     if (!loadSuccess) {
@@ -226,9 +226,9 @@ export async function saveChapters(bookId, level, chapters, userId) {
 }
 
 /**
- * Get chapters by book
- * @param {string} bookId - Book ID
- * @param {string} level - Level
+ * Get chapters by book (Lấy chương theo sách)
+ * @param {string} bookId - Book ID (ID sách)
+ * @param {string} level - Level (Cấp độ)
  * @returns {Promise<{success: boolean, data?: Array, error?: Object}>}
  */
 export async function getChapters(bookId, level) {
@@ -245,7 +245,7 @@ export async function getChapters(bookId, level) {
       return { success: false, error };
     }
 
-    // Transform to app format
+    // Transform to app format (Chuyển đổi sang định dạng ứng dụng)
     const chapters = (data || []).map(chapter => ({
       id: chapter.id,
       bookId: chapter.book_id,
@@ -263,13 +263,13 @@ export async function getChapters(bookId, level) {
 }
 
 /**
- * Save lessons to Supabase
- * ✅ FIXED: Sử dụng safe save với merge thông minh để tránh mất dữ liệu
- * @param {string} bookId - Book ID
- * @param {string} chapterId - Chapter ID
- * @param {string} level - Level
- * @param {Array} lessons - Array of lessons
- * @param {string} userId - UUID of admin user
+ * Save lessons (Lưu bài học) to Supabase
+ * ✅ FIXED: Sử dụng safe save (Lưu an toàn) với merge (Gộp) thông minh để tránh mất dữ liệu
+ * @param {string} bookId - Book ID (ID sách)
+ * @param {string} chapterId - Chapter ID (ID chương)
+ * @param {string} level - Level (Cấp độ)
+ * @param {Array} lessons - Array of lessons (Mảng các bài học)
+ * @param {string} userId - UUID of admin user (UUID của người dùng admin)
  * @returns {Promise<{success: boolean, data?: Array, error?: Object}>}
  */
 export async function saveLessons(bookId, chapterId, level, lessons, userId) {
@@ -281,13 +281,13 @@ export async function saveLessons(bookId, chapterId, level, lessons, userId) {
       lessonsCount: lessons?.length || 0
     });
 
-    // ✅ FIXED: Load từ Supabase trước (source of truth)
+    // ✅ FIXED: Load từ Supabase trước (source of truth - Nguồn dữ liệu chính xác)
     const getExisting = async () => {
       return await getLessons(bookId, chapterId, level);
     };
 
-    // ✅ FIXED: Dùng safeSaveCollection để merge thông minh
-    // Tạo map index để preserve order
+    // ✅ FIXED: Dùng safeSaveCollection (Sử dụng safeSaveCollection) để merge (Gộp) thông minh
+    // Tạo map index (Bản đồ chỉ mục) để preserve order (Giữ nguyên thứ tự)
     const indexMap = new Map(lessons.map((lesson, idx) => [lesson.id, idx]));
     
     const result = await safeSaveCollection({
@@ -297,7 +297,7 @@ export async function saveLessons(bookId, chapterId, level, lessons, userId) {
       compareKey: 'id',
       transformFn: (lesson, context) => {
         const index = indexMap.get(lesson.id) || 0;
-        // ✅ FIXED: Priority: orderIndex > order > index
+        // ✅ FIXED: Priority (Ưu tiên): orderIndex > order > index
         let orderIndex = lesson.orderIndex;
         if (orderIndex === undefined || orderIndex === null) {
           orderIndex = lesson.order !== undefined && lesson.order !== null ? lesson.order : index;
@@ -322,7 +322,7 @@ export async function saveLessons(bookId, chapterId, level, lessons, userId) {
       },
       userId,
       context: { bookId, chapterId, level, userId },
-      onConflict: null, // ✅ FIXED: Không dùng onConflict cho composite key - Supabase tự detect
+      onConflict: null, // ✅ FIXED: Không dùng onConflict (Xung đột) cho composite key (Khóa tổng hợp) - Supabase tự detect (Phát hiện)
       deleteWhere: { book_id: bookId, chapter_id: chapterId, level: level } // Chỉ xóa lessons của chapter này
     });
 
@@ -331,7 +331,7 @@ export async function saveLessons(bookId, chapterId, level, lessons, userId) {
       return { success: false, error: result.error };
     }
 
-    // Load lại để return data đầy đủ (backward compatible)
+    // Load lại để return data đầy đủ (backward compatible - Tương thích ngược)
     const { success: loadSuccess, data: savedLessons } = await getLessons(bookId, chapterId, level);
     
     if (!loadSuccess) {
@@ -355,10 +355,10 @@ export async function saveLessons(bookId, chapterId, level, lessons, userId) {
 }
 
 /**
- * Get lessons by chapter
- * @param {string} bookId - Book ID
- * @param {string} chapterId - Chapter ID
- * @param {string} level - Level
+ * Get lessons by chapter (Lấy bài học theo chương)
+ * @param {string} bookId - Book ID (ID sách)
+ * @param {string} chapterId - Chapter ID (ID chương)
+ * @param {string} level - Level (Cấp độ)
  * @returns {Promise<{success: boolean, data?: Array, error?: Object}>}
  */
 export async function getLessons(bookId, chapterId, level) {
@@ -376,7 +376,7 @@ export async function getLessons(bookId, chapterId, level) {
       return { success: false, error };
     }
 
-    // Transform to app format
+    // Transform to app format (Chuyển đổi sang định dạng ứng dụng)
     const lessons = (data || []).map(lesson => ({
       id: lesson.id,
       bookId: lesson.book_id,
@@ -400,9 +400,9 @@ export async function getLessons(bookId, chapterId, level) {
 }
 
 /**
- * Save quiz to Supabase
- * @param {Object} quiz - Quiz data
- * @param {string} userId - UUID of admin user
+ * Save quiz (Lưu quiz) to Supabase
+ * @param {Object} quiz - Quiz data (Dữ liệu quiz)
+ * @param {string} userId - UUID of admin user (UUID của người dùng admin)
  * @returns {Promise<{success: boolean, data?: Object, error?: Object}>}
  */
 export async function saveQuiz(quiz, userId) {
@@ -420,8 +420,8 @@ export async function saveQuiz(quiz, userId) {
       userId: userId ? `${userId.substring(0, 8)}...` : 'NULL'
     });
     
-    // ✅ NEW: Tự động tạo book/chapter/lesson nếu chưa có (để tránh foreign key error)
-    // Thứ tự: Book → Chapter → Lesson (vì foreign key constraints)
+    // ✅ NEW: Tự động tạo book/chapter/lesson nếu chưa có (để tránh foreign key error - Lỗi khóa ngoại)
+    // Thứ tự: Book → Chapter → Lesson (vì foreign key constraints - Ràng buộc khóa ngoại)
     
     // 1. Kiểm tra và tạo book nếu chưa có
     console.log('[ContentService.saveQuiz] 🔍 Checking if book exists...');
@@ -501,7 +501,7 @@ export async function saveQuiz(quiz, userId) {
           book_id: quiz.bookId,
           chapter_id: quiz.chapterId,
           level: quiz.level,
-          title: `Lesson ${quiz.lessonId}`, // Default title, can be updated later
+          title: `Lesson ${quiz.lessonId}`, // Default title (Tiêu đề mặc định), can be updated later
           description: null,
           content_type: 'pdf',
           order_index: 0,
@@ -535,10 +535,10 @@ export async function saveQuiz(quiz, userId) {
     
     console.log('[ContentService.saveQuiz] 📤 Upsert data:', JSON.stringify(upsertData, null, 2));
     
-    // ✅ FIXED: Bảng quizzes có composite primary key (id, book_id, chapter_id, lesson_id, level)
+    // ✅ FIXED: Bảng quizzes có composite primary key (Khóa chính tổng hợp) (id, book_id, chapter_id, lesson_id, level)
     // Lỗi 42P10: "there is no unique or exclusion constraint matching the ON CONFLICT specification"
-    // Nguyên nhân: Code đang dùng onConflict: 'id' nhưng id không phải unique constraint đơn lẻ
-    // Giải pháp: Không dùng onConflict, Supabase sẽ tự detect composite primary key
+    // Nguyên nhân: Code đang dùng onConflict (Xung đột): 'id' nhưng id không phải unique constraint (Ràng buộc duy nhất) đơn lẻ
+    // Giải pháp: Không dùng onConflict, Supabase sẽ tự detect (Phát hiện) composite primary key
     const { data, error } = await supabase
       .from('quizzes')
       .upsert(upsertData)
@@ -552,10 +552,10 @@ export async function saveQuiz(quiz, userId) {
       console.error('[ContentService.saveQuiz] ❌ Error details:', error.details);
       console.error('[ContentService.saveQuiz] ❌ Error hint:', error.hint);
       
-      // ✅ NEW: Hiển thị thông tin chi tiết cho foreign key error
+      // ✅ NEW: Hiển thị thông tin chi tiết cho foreign key error (Lỗi khóa ngoại)
       if (error.code === '23503') {
-        console.error('[ContentService.saveQuiz] ❌ Foreign Key Constraint Error!');
-        console.error('[ContentService.saveQuiz] ❌ Quiz đang cố reference đến book/chapter/lesson không tồn tại');
+        console.error('[ContentService.saveQuiz] ❌ Foreign Key Constraint Error (Lỗi ràng buộc khóa ngoại)!');
+        console.error('[ContentService.saveQuiz] ❌ Quiz đang cố reference (Tham chiếu) đến book/chapter/lesson không tồn tại');
         console.error('[ContentService.saveQuiz] ❌ Kiểm tra:');
         console.error('[ContentService.saveQuiz]   - book_id:', upsertData.book_id, 'level:', upsertData.level);
         console.error('[ContentService.saveQuiz]   - chapter_id:', upsertData.chapter_id);
@@ -578,11 +578,11 @@ export async function saveQuiz(quiz, userId) {
 }
 
 /**
- * Get quiz by lesson
- * @param {string} bookId - Book ID
- * @param {string} chapterId - Chapter ID
- * @param {string} lessonId - Lesson ID
- * @param {string} level - Level
+ * Get quiz by lesson (Lấy quiz theo bài học)
+ * @param {string} bookId - Book ID (ID sách)
+ * @param {string} chapterId - Chapter ID (ID chương)
+ * @param {string} lessonId - Lesson ID (ID bài học)
+ * @param {string} level - Level (Cấp độ)
  * @returns {Promise<{success: boolean, data?: Object, error?: Object}>}
  */
 export async function getQuiz(bookId, chapterId, lessonId, level) {
@@ -597,14 +597,14 @@ export async function getQuiz(bookId, chapterId, lessonId, level) {
       .maybeSingle();
 
     if (error) {
-      // Not found is OK
+      // Not found is OK (Không tìm thấy là OK)
       if (error.code === 'PGRST116') {
         return { success: true, data: null };
       }
-      // ✅ FIXED: Handle RLS/permission errors gracefully for anonymous users
+      // ✅ FIXED: Handle RLS/permission errors (Xử lý lỗi RLS/quyền) gracefully for anonymous users (Người dùng ẩn danh)
       if (error.code === '42501' || error.message?.includes('row-level security') || error.message?.includes('permission denied')) {
-        console.warn('[ContentService] RLS/permission error (may be anonymous user):', error.message);
-        // Return success with null data so caller can fallback to local storage
+        console.warn('[ContentService] RLS/permission error (may be anonymous user - Có thể là người dùng ẩn danh):', error.message);
+        // Return success with null data so caller can fallback to local storage (Trả về thành công với dữ liệu null để người gọi có thể fallback về local storage)
         return { success: true, data: null };
       }
       console.error('[ContentService] Error fetching quiz:', error);
@@ -615,7 +615,7 @@ export async function getQuiz(bookId, chapterId, lessonId, level) {
       return { success: true, data: null };
     }
 
-    // Transform to app format
+    // Transform to app format (Chuyển đổi sang định dạng ứng dụng)
     const quiz = {
       id: data.id,
       bookId: data.book_id,
@@ -632,14 +632,14 @@ export async function getQuiz(bookId, chapterId, lessonId, level) {
     return { success: true, data: quiz };
   } catch (err) {
     console.error('[ContentService] Unexpected error:', err);
-    // ✅ FIXED: Return success with null on error so caller can fallback
+    // ✅ FIXED: Return success with null on error so caller can fallback (Trả về thành công với null khi lỗi để người gọi có thể fallback)
     return { success: true, data: null, error: err.message };
   }
 }
 
 /**
- * Get all quizzes by level from Supabase
- * @param {string} level - Level (n1, n2, ...)
+ * Get all quizzes by level (Lấy tất cả quiz theo cấp độ) from Supabase
+ * @param {string} level - Level (Cấp độ) (n1, n2, ...)
  * @returns {Promise<{success: boolean, data?: Array, error?: Object}>}
  */
 export async function getAllQuizzesByLevel(level) {
@@ -652,17 +652,17 @@ export async function getAllQuizzesByLevel(level) {
       .order('updated_at', { ascending: false });
 
     if (error) {
-      // ✅ FIXED: Handle RLS/permission errors gracefully for anonymous users
+      // ✅ FIXED: Handle RLS/permission errors (Xử lý lỗi RLS/quyền) gracefully for anonymous users (Người dùng ẩn danh)
       if (error.code === '42501' || error.message?.includes('row-level security') || error.message?.includes('permission denied')) {
-        console.warn('[ContentService] RLS/permission error (may be anonymous user):', error.message);
-        // Return success with empty array so caller can fallback to local storage
+        console.warn('[ContentService] RLS/permission error (may be anonymous user - Có thể là người dùng ẩn danh):', error.message);
+        // Return success with empty array so caller can fallback to local storage (Trả về thành công với mảng rỗng để người gọi có thể fallback về local storage)
         return { success: true, data: [] };
       }
       console.error('[ContentService] Error fetching quizzes:', error);
       return { success: false, error };
     }
 
-    // Transform to app format
+    // Transform to app format (Chuyển đổi sang định dạng ứng dụng)
     const quizzes = (data || []).map(quiz => ({
       id: quiz.id,
       bookId: quiz.book_id,
@@ -680,17 +680,17 @@ export async function getAllQuizzesByLevel(level) {
     return { success: true, data: quizzes };
   } catch (err) {
     console.error('[ContentService] Unexpected error:', err);
-    // ✅ FIXED: Return success with empty array on error so caller can fallback
+    // ✅ FIXED: Return success with empty array on error so caller can fallback (Trả về thành công với mảng rỗng khi lỗi để người gọi có thể fallback)
     return { success: true, data: [], error: err.message };
   }
 }
 
 /**
- * Save series to Supabase
- * ✅ FIXED: Sử dụng safe save với merge thông minh để tránh mất dữ liệu
- * @param {string} level - Level
- * @param {Array} series - Array of series
- * @param {string} userId - UUID of admin user
+ * Save series (Lưu series) to Supabase
+ * ✅ FIXED: Sử dụng safe save (Lưu an toàn) với merge (Gộp) thông minh để tránh mất dữ liệu
+ * @param {string} level - Level (Cấp độ)
+ * @param {Array} series - Array of series (Mảng các series)
+ * @param {string} userId - UUID of admin user (UUID của người dùng admin)
  * @returns {Promise<{success: boolean, data?: Array, error?: Object}>}
  */
 export async function saveSeries(level, series, userId) {
@@ -700,13 +700,13 @@ export async function saveSeries(level, series, userId) {
       seriesCount: series?.length || 0
     });
 
-    // ✅ FIXED: Load từ Supabase trước (source of truth)
+    // ✅ FIXED: Load từ Supabase trước (source of truth - Nguồn dữ liệu chính xác)
     const getExisting = async () => {
       return await getSeries(level);
     };
 
-    // ✅ FIXED: Dùng safeSaveCollection để merge thông minh
-    // Tạo map index để preserve order
+    // ✅ FIXED: Dùng safeSaveCollection (Sử dụng safeSaveCollection) để merge (Gộp) thông minh
+    // Tạo map index (Bản đồ chỉ mục) để preserve order (Giữ nguyên thứ tự)
     const indexMap = new Map(series.map((s, idx) => [s.id, idx]));
     
     const result = await safeSaveCollection({
@@ -729,7 +729,7 @@ export async function saveSeries(level, series, userId) {
       },
       userId,
       context: { level, userId },
-      onConflict: null, // ✅ FIXED: Không dùng onConflict cho composite key - Supabase tự detect
+      onConflict: null, // ✅ FIXED: Không dùng onConflict (Xung đột) cho composite key (Khóa tổng hợp) - Supabase tự detect (Phát hiện)
       deleteWhere: { level: level } // Chỉ xóa series của level này
     });
 
@@ -738,7 +738,7 @@ export async function saveSeries(level, series, userId) {
       return { success: false, error: result.error };
     }
 
-    // Load lại để return data đầy đủ (backward compatible)
+    // Load lại để return data đầy đủ (backward compatible - Tương thích ngược)
     const { success: loadSuccess, data: savedSeries } = await getSeries(level);
     
     if (!loadSuccess) {
@@ -762,8 +762,8 @@ export async function saveSeries(level, series, userId) {
 }
 
 /**
- * Get series by level
- * @param {string} level - Level (n1, n2, ...)
+ * Get series by level (Lấy series theo cấp độ)
+ * @param {string} level - Level (Cấp độ) (n1, n2, ...)
  * @returns {Promise<{success: boolean, data?: Array, error?: Object}>}
  */
 export async function getSeries(level) {
@@ -779,7 +779,7 @@ export async function getSeries(level) {
       return { success: false, error };
     }
 
-    // Transform to app format
+    // Transform to app format (Chuyển đổi sang định dạng ứng dụng)
     const series = (data || []).map(s => ({
       id: s.id,
       level: s.level,
@@ -797,9 +797,9 @@ export async function getSeries(level) {
 }
 
 /**
- * Delete series and all related content (books, chapters, lessons, quizzes) from Supabase
- * @param {string} seriesId - Series ID
- * @param {string} level - Level (n1, n2, ...)
+ * Delete series (Xóa series) and all related content (books, chapters, lessons, quizzes) from Supabase
+ * @param {string} seriesId - Series ID (ID series)
+ * @param {string} level - Level (Cấp độ) (n1, n2, ...)
  * @returns {Promise<{success: boolean, error?: Object}>}
  */
 export async function deleteSeriesCascade(seriesId, level) {

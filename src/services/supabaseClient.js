@@ -1,12 +1,12 @@
 // src/services/supabaseClient.js
-// 🔌 Supabase Client Configuration
-// Single point of Supabase client creation and configuration
+// 🔌 Cấu hình Supabase Client (Client Supabase)
+// Điểm tạo và cấu hình Supabase client duy nhất
 
 import { createClient } from '@supabase/supabase-js';
 
 /**
  * ========================================
- * ENVIRONMENT VARIABLES
+ * ENVIRONMENT VARIABLES (Biến môi trường)
  * ========================================
  */
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -14,50 +14,50 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /**
  * ========================================
- * VALIDATION
+ * VALIDATION (Kiểm tra)
  * ========================================
  */
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn(
-    '[Supabase] ⚠️  Missing configuration:',
+    '[Supabase] ⚠️  Thiếu cấu hình:',
     !supabaseUrl ? 'VITE_SUPABASE_URL' : '',
     !supabaseAnonKey ? 'VITE_SUPABASE_ANON_KEY' : ''
   );
-  console.warn('[Supabase] ℹ️  Set these in .env.local to enable Supabase features');
+  console.warn('[Supabase] ℹ️  Đặt các biến này trong .env.local để bật tính năng Supabase');
 }
 
 /**
  * ========================================
- * CREATE CLIENT
+ * CREATE CLIENT (Tạo Client)
  * ========================================
  */
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
-    // ✅ Session persistence - automatically restore session on page reload
+    // ✅ Session persistence (Duy trì phiên) - tự động khôi phục session khi tải lại trang
     persistSession: true,
 
-    // ✅ Auto-refresh token before expiry
+    // ✅ Auto-refresh token (Tự động làm mới token) trước khi hết hạn
     autoRefreshToken: true,
 
-    // ✅ Use localStorage for session storage
+    // ✅ Sử dụng localStorage để lưu trữ session
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
 
-    // ✅ Custom storage key for debugging
+    // ✅ Custom storage key (Khóa lưu trữ tùy chỉnh) để debug
     storageKey: 'sb-glingo-auth-token',
 
-    // ✅ Detect OAuth redirects (for social login)
+    // ✅ Detect OAuth redirects (Phát hiện chuyển hướng OAuth) cho social login
     detectSessionInUrl: true,
 
-    // ✅ Use PKCE flow (recommended for web apps)
+    // ✅ Use PKCE flow (Sử dụng luồng PKCE) - khuyến nghị cho web apps
     flowType: 'pkce',
   },
 
-  // ✅ Global configuration
+  // ✅ Global configuration (Cấu hình toàn cục)
   db: {
     schema: 'public',
   },
 
-  // ✅ Realtime configuration (for subscriptions)
+  // ✅ Realtime configuration (Cấu hình Realtime) cho subscriptions
   realtime: {
     params: {
       eventsPerSecond: 10,
@@ -67,20 +67,20 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
 
 /**
  * ========================================
- * UTILITY FUNCTIONS
+ * UTILITY FUNCTIONS (Hàm tiện ích)
  * ========================================
  */
 
 /**
- * Test if Supabase is configured
- * @returns {boolean} True if both URL and key are set
+ * Test if Supabase is configured (Kiểm tra xem Supabase đã được cấu hình chưa)
+ * @returns {boolean} True nếu cả URL và key đều được đặt
  */
 export function isSupabaseConfigured() {
   return !!(supabaseUrl && supabaseAnonKey);
 }
 
 /**
- * Get current Supabase URL
+ * Get current Supabase URL (Lấy URL Supabase hiện tại)
  * @returns {string|null}
  */
 export function getSupabaseUrl() {
@@ -88,7 +88,7 @@ export function getSupabaseUrl() {
 }
 
 /**
- * Get current Supabase project name
+ * Get current Supabase project name (Lấy tên dự án Supabase hiện tại)
  * @returns {string|null}
  */
 export function getSupabaseProjectName() {
@@ -99,7 +99,7 @@ export function getSupabaseProjectName() {
 
 /**
  * ========================================
- * EXPORTS
+ * EXPORTS (Xuất)
  * ========================================
  */
 
@@ -107,10 +107,10 @@ export default supabase;
 
 /**
  * ========================================
- * TYPES (for TypeScript/JSDoc)
+ * TYPES (Kiểu dữ liệu) - for TypeScript/JSDoc
  * ========================================
  * 
- * Supabase client methods:
+ * Supabase client methods (Các phương thức của Supabase client):
  * 
  * - supabase.auth.signUp({ email, password, options })
  * - supabase.auth.signInWithPassword({ email, password })

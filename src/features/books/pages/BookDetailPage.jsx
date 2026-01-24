@@ -12,7 +12,7 @@ import { useLanguage } from '../../../contexts/LanguageContext.jsx';
 
 const contentsPerPage = 10; // ✅ Reduced from 15 to 10 for better spacing
 
-// Component LessonCard - ✨ NEO BRUTALISM - Consistent Design with Fixed Height + Progress
+// Component LessonCard -  NEO BRUTALISM - Consistent Design with Fixed Height + Progress
 const LessonCard = ({ title, lessonId, levelId, isLesson = false, bookId, chapterId, lessons = [], t }) => {
   const colorClass = levelId === 'n1' ? 'from-red-100 to-red-300 text-red-800' : 
                      levelId === 'n2' ? 'from-orange-100 to-orange-300 text-orange-800' :
