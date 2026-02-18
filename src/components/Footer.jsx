@@ -64,7 +64,7 @@ function Footer() {
 
   return (
     <footer className="relative overflow-hidden mt-0">
-      {/* ✨ NEO BRUTALISM FOOTER */}
+      {/* NEO BRUTALISM FOOTER */}
       <div className="bg-[#2D2D2D] border-t-[4px] border-black relative">
         
         <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 relative z-10">
@@ -107,7 +107,7 @@ function Footer() {
             {/* Quick Links - NEO BRUTALISM */}
             <div className="text-center">
               <h3 className="text-white font-black text-lg mb-4 flex items-center justify-center gap-2 uppercase tracking-wide">
-                <span className="text-xl">📚</span>
+                <span className="text-xl"></span>
                 <span>{t('footer.quickLinks')}</span>
               </h3>
               <ul className="space-y-2">
@@ -153,7 +153,7 @@ function Footer() {
             {/* Contact & Social - NEO BRUTALISM */}
             <div className="text-center md:text-right">
               <h3 className="text-white font-black text-lg mb-4 flex items-center justify-center md:justify-end gap-2 uppercase tracking-wide">
-                <span className="text-xl">📧</span>
+                <span className="text-xl"></span>
                 <span>{t('footer.contact')}</span>
               </h3>
               <div className="space-y-3">
@@ -168,12 +168,12 @@ function Footer() {
                 <div className="flex items-center justify-center md:justify-end gap-2 text-sm">
                   <span className="text-gray-300 text-base">🌐</span>
                   <a 
-                    href="https://hocJLPTonline.com" 
+                    href="https://glingo.vercel.app/" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-gray-300 hover:text-black hover:bg-yellow-400 px-3 py-1.5 rounded-md border-[2px] border-transparent hover:border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 font-black"
                   >
-                    hocJLPTonline.com
+                    glingo.vercel.app
                   </a>
                 </div>
 

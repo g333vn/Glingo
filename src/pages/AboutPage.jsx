@@ -9,21 +9,21 @@ const STORY_TRANSLATIONS = {
     paragraph1: 'Chào bạn, mình là một du học sinh ở Tokyo. Qua các trải nghiệm cũng như khó khăn trong quá trình học tiếng Nhật, cắm cúi tìm từng giáo trình một, từng đề thi, mua ở nhà sách, thư viện... lượng kiến thức cũng như tài liệu là khá nhiều.',
     paragraph2: 'Trong khi trải nghiệm học tập trên tài liệu truyền thống như sách giấy chưa tối ưu cũng như linh hoạt với cuộc sống bận rộn hiện tại của du học sinh như chúng mình hay là người đi làm có nhu cầu học tiếng Nhật để phục vụ công việc.',
     quote: 'Phải chi có cái app nào để học trên tàu, không cần mang sách...',
-    paragraph3: 'Đêm đó, mình bắt đầu những dòng code đầu tiên của hocJLPTonline.com.'
+    paragraph3: 'Đêm đó, mình bắt đầu những dòng code đầu tiên của https://glingo.vercel.app/.'
   },
   en: {
     title: 'My Story',
     paragraph1: "Hi there! I'm an international student in Tokyo. Learning Japanese was a real challenge—spending hours hunting for textbooks, practice tests, and visiting bookstores and libraries. There was so much to learn and countless materials to go through.",
     paragraph2: "Studying with traditional paper books just wasn't practical or flexible for the busy lifestyle of students like me—or for working professionals who need Japanese for their careers.",
     quote: 'I wish there was an app to study on the train, without carrying books...',
-    paragraph3: 'That night, I started writing the very first lines of code for hocJLPTonline.com.'
+    paragraph3: 'That night, I started writing the very first lines of code for https://glingo.vercel.app/.'
   },
   ja: {
     title: '私のストーリー',
     paragraph1: 'こんにちは、私は東京の留学生です。日本語を学ぶのは本当に大変で、教科書や模擬試験を探して本屋や図書館を何度も回りました。学ぶべきことも、こなすべき資料も山のようにありました。',
     paragraph2: '紙の教材での学習は、私たち留学生の忙しい生活や仕事で日本語が必要な社会人にとって、柔軟でも実用的でもありませんでした。',
     quote: '電車の中で本を持たずに勉強できるアプリがあればいいのに…',
-    paragraph3: 'その夜、私は hocJLPTonline.com の最初のコードを書き始めました。'
+    paragraph3: 'その夜、私は https://glingo.vercel.app/ の最初のコードを書き始めました。'
   }
 };
 
