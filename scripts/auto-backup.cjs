@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * 🤖 Auto Backup Script
+ *  Auto Backup Script
  * 
  * Script tự động chạy backup organizer mỗi ngày/tuần
  * Dùng với Windows Task Scheduler để tự động hóa hoàn toàn
