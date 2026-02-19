@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import {
   lookupWord,
   formatDictionaryResult,
+  enrichWithEnglish,
   saveWord,
   getSavedWords,
   removeSavedWord,
@@ -58,37 +59,83 @@ export function DictionaryProvider({ children }) {
       if (cached) {
         try {
           const rawData = JSON.parse(cached);
-          console.log(`[Dictionary] Using cached data for: ${word}`);
           
-          // Format cached data
-          const formattedData = await formatDictionaryResult(rawData);
-          setResult(formattedData);
-          
-          // Lưu vào lịch sử
-          if (formattedData.success) {
-            addToHistory(word);
-            setHistory(getHistory());
+          // Kiem tra cache cu cua JLPT (format cu khong co vietnamese_definitions)
+          // Neu la cache cu thi xoa di de tra lai tu dau voi format moi
+          if (rawData.source === 'JLPT' && rawData.senses && rawData.senses[0] 
+              && !rawData.senses[0].vietnamese_definitions) {
+            localStorage.removeItem(cacheKey);
+            console.log(`[Dictionary] Xoa cache JLPT format cu cho: ${word}`);
+            // Khong return, de tiep tuc goi lookupWord ben duoi
+          } else {
+            console.log(`[Dictionary] Using cached data for: ${word}`);
+            
+            // Format cached data
+            const formattedData = await formatDictionaryResult(rawData);
+            setResult(formattedData);
+            
+            // Luu vao lich su
+            if (formattedData.success) {
+              addToHistory(word);
+              setHistory(getHistory());
+            }
+            setIsLoading(false);
+            return;
           }
-          setIsLoading(false);
-          return;
         } catch (e) {
-          // Cache corrupted, remove it
+          // Cache bi loi, xoa di
           localStorage.removeItem(cacheKey);
         }
       }
       
-      // Gọi API nếu không có cache
+      // Goi API neu khong co cache
       const rawData = await lookupWord(word);
       
-      // UPDATED: formatDictionaryResult giờ là async (auto-translate)
+      // Format ket qua (voi JLPT se co Vietnamese ngay, English rong)
       const formattedData = await formatDictionaryResult(rawData);
 
       setResult(formattedData);
+      setIsLoading(false);
 
-      // Lưu vào lịch sử
+      // Luu vao lich su
       if (formattedData.success) {
         addToHistory(word);
         setHistory(getHistory());
+      }
+      
+      // Neu la tu JLPT (chua co English), tai nghia Anh async o background
+      // Popup da hien voi nghia Viet, English se cap nhat khi san sang
+      if (rawData.source === 'JLPT' && formattedData.success) {
+        const vietnameseMeaning = rawData.senses?.[0]?.vietnamese_definitions?.[0] || '';
+        
+        // Chay background - khong block UI
+        enrichWithEnglish(word, vietnameseMeaning).then(enriched => {
+          if (enriched.englishDefinitions.length > 0) {
+            // Cap nhat result voi nghia tieng Anh moi
+            setResult(prev => {
+              if (!prev || !prev.success || !prev.meanings) return prev;
+              return {
+                ...prev,
+                meanings: prev.meanings.map((m, idx) => {
+                  if (idx === 0) {
+                    return {
+                      ...m,
+                      english: enriched.englishDefinitions.slice(0, 5),
+                      // Neu co parts of speech tu Jisho, bo sung luon
+                      ...(enriched.partsOfSpeech.length > 0 && m.partOfSpeech.length === 0
+                        ? { partOfSpeech: enriched.partsOfSpeech }
+                        : {})
+                    };
+                  }
+                  return m;
+                })
+              };
+            });
+            console.log(`[Dictionary] Da cap nhat English cho: ${word}`);
+          }
+        }).catch(err => {
+          console.warn(`[Dictionary] Enrichment that bai cho ${word}:`, err.message);
+        });
       }
     } catch (error) {
       console.error('Lookup error:', error);
@@ -96,7 +143,6 @@ export function DictionaryProvider({ children }) {
         success: false,
         message: 'Có lỗi xảy ra khi tra từ'
       });
-    } finally {
       setIsLoading(false);
     }
   }, []);

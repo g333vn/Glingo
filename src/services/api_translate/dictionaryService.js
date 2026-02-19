@@ -138,6 +138,61 @@ async function callGoogleTranslate(text, timeout = 3000) {
 }
 
 /**
+ * Dich nghia tieng Viet sang tieng Anh (Google Translate vi -> en)
+ * Dung lam fallback khi Jisho API khong tra duoc nghia Anh
+ * @param {string} text - Text tieng Viet can dich
+ * @param {number} timeout - Timeout tinh bang milliseconds (mac dinh: 3000ms)
+ * @returns {Promise<string>} - Text tieng Anh
+ */
+async function translateViToEn(text, timeout = 3000) {
+  if (!text || typeof text !== 'string') return text;
+  
+  // Kiem tra cache truoc
+  const cacheKey = `translate_vi_en_${text.toLowerCase()}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    console.log(`[Cache Hit vi->en] ${text} -> ${cached}`);
+    return cached;
+  }
+  
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    // Goi Google Translate voi source=vi, target=en
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=en&dt=t&q=${encodeURIComponent(text)}`;
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Translation vi->en failed: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (data && data[0] && data[0][0] && data[0][0][0]) {
+      const result = data[0][0][0];
+      // Luu cache de lan sau khong can goi lai
+      localStorage.setItem(cacheKey, result);
+      console.log(`[Google vi->en] ${text} -> ${result}`);
+      return result;
+    }
+    
+    return text;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.warn('[Google Translate vi->en] Timeout after', timeout, 'ms');
+    } else {
+      console.warn('[Google Translate vi->en] Error:', error);
+    }
+    return text;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
  * Dịch sử dụng dictionary mapping (fallback)
  * @param {string} englishWord - Từ tiếng Anh
  * @returns {string} - Từ tiếng Việt hoặc giữ nguyên
@@ -238,6 +293,57 @@ const CORS_PROXIES = [
 ];
 
 /**
+ * Lay nghia tieng Anh tu Jisho API cho mot tu tieng Nhat
+ * Dung de bo sung nghia Anh cho tu JLPT Dictionary (chi co tieng Viet)
+ * @param {string} word - Tu tieng Nhat can tra
+ * @returns {Promise<Array>} - Mang cac senses tu Jisho hoac mang rong neu that bai
+ */
+async function fetchJishoEnglish(word) {
+  const apiUrl = `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(word)}`;
+  
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
+    const proxy = CORS_PROXIES[i];
+    const requestUrl = `${proxy}${encodeURIComponent(apiUrl)}`;
+    const controller = new AbortController();
+    // Timeout ngan hon (5s) vi day chi la bo sung, khong phai lookup chinh
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    try {
+      console.log(`[Jisho English] Trying proxy ${i + 1}/${CORS_PROXIES.length}...`);
+      
+      const response = await fetch(requestUrl, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const data = await response.json();
+      // Tra ve senses cua ket qua dau tien tu Jisho
+      if (data.data && data.data.length > 0) {
+        console.log(`[Jisho English] Got ${data.data[0].senses.length} senses for: ${word}`);
+        return data.data[0].senses || [];
+      }
+      return [];
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.warn(`[Jisho English] Proxy ${i + 1} timeout`);
+      } else {
+        console.warn(`[Jisho English] Proxy ${i + 1} failed:`, error.message);
+      }
+      continue;
+    }
+  }
+  
+  // Tat ca proxy deu that bai
+  console.warn('[Jisho English] All proxies failed');
+  return [];
+}
+
+/**
  * Tra cứu từ tiếng Nhật (Jisho.org API with JLPT fallback)
  * @param {string} word 
  * @returns {Promise<Object>}
@@ -249,33 +355,45 @@ export async function lookupWord(word) {
       throw new Error('Từ không hợp lệ');
     }
 
-    // OPTIMIZED: Cache kết quả tra từ hoàn chỉnh (giảm 99% thời gian cho từ đã tra)
+    // Cache ket qua tra tu hoan chinh (giam 99% thoi gian cho tu da tra)
     const cacheKey = `lookup_complete_${trimmedWord}`;
     const cached = localStorage.getItem(cacheKey);
     
     if (cached) {
       try {
         const result = JSON.parse(cached);
-        console.log(`[Lookup Cache Hit] ${trimmedWord} - Instant load!`);
-        return result;
+        
+        // Xoa cache cu cua JLPT (format cu khong co vietnamese_definitions)
+        // Cache cu gan nham tieng Viet vao english_definitions
+        if (result.source === 'JLPT' && result.senses && result.senses[0] 
+            && !result.senses[0].vietnamese_definitions) {
+          localStorage.removeItem(cacheKey);
+          console.log(`[Lookup] Xoa cache JLPT format cu cho: ${trimmedWord}`);
+        } else {
+          console.log(`[Lookup Cache Hit] ${trimmedWord} - Instant load!`);
+          return result;
+        }
       } catch (e) {
-        // Cache corrupted, remove it
+        // Cache bi loi, xoa di
         localStorage.removeItem(cacheKey);
       }
     }
 
-    // NEW: Try JLPT Dictionary first (no CORS issues, instant lookup)
+    // Uu tien JLPT Dictionary (offline, nhanh, khong CORS)
+    // Tra ve ngay lap tuc voi nghia tieng Viet, English se duoc tai async sau
     if (JLPT_DICT && Object.keys(JLPT_DICT).length > 0) {
       const jlptEntry = JLPT_DICT[trimmedWord];
       if (jlptEntry) {
-        console.log(`[Dictionary] Found in JLPT Dictionary: ${trimmedWord}`);
+        console.log(`[Dictionary] Tim thay trong JLPT Dictionary: ${trimmedWord} (tra ve ngay)`);
+        
         const result = {
           success: true,
           word: trimmedWord,
           japanese: [{ word: trimmedWord, reading: jlptEntry.hiragana || jlptEntry.kanji || '' }],
           senses: [{
             parts_of_speech: [],
-            english_definitions: [jlptEntry.vietnamese],
+            english_definitions: [], // Rong - se duoc enrichWithEnglish() bo sung async
+            vietnamese_definitions: [jlptEntry.vietnamese],
             tags: [],
             info: []
           }],
@@ -284,7 +402,8 @@ export async function lookupWord(word) {
           tags: [],
           source: 'JLPT'
         };
-        localStorage.setItem(cacheKey, JSON.stringify(result));
+        // Khong cache ket qua chua co English
+        // Cache se duoc cap nhat sau khi enrichWithEnglish() hoan thanh
         return result;
       }
     }
@@ -375,6 +494,94 @@ export async function lookupWord(word) {
 }
 
 /**
+ * Tai nghia tieng Anh cho tu JLPT (async, chay background sau khi popup da hien)
+ * Uu tien Jisho API, fallback Google Translate vi->en
+ * Sau khi co ket qua se cache lai de lan sau load ngay
+ * @param {string} word - Tu tieng Nhat
+ * @param {string} vietnameseMeaning - Nghia tieng Viet tu JLPT (dung cho Google fallback)
+ * @returns {Promise<Object>} - { englishDefinitions: string[], jishoSenses: Array, partsOfSpeech: string[] }
+ */
+export async function enrichWithEnglish(word, vietnameseMeaning) {
+  const trimmedWord = word.trim();
+  let englishDefinitions = [];
+  let jishoSenses = [];
+  let partsOfSpeech = [];
+  
+  // Buoc 1: Thu Jisho API de lay nghia Anh chinh xac
+  try {
+    jishoSenses = await fetchJishoEnglish(trimmedWord);
+    if (jishoSenses.length > 0) {
+      englishDefinitions = jishoSenses[0].english_definitions || [];
+      partsOfSpeech = jishoSenses[0].parts_of_speech || [];
+      console.log(`[Enrich] Jisho English cho ${trimmedWord}:`, englishDefinitions);
+    }
+  } catch (e) {
+    console.warn(`[Enrich] Jisho API that bai cho ${trimmedWord}:`, e.message);
+  }
+  
+  // Buoc 2: Neu Jisho khong co, dung Google Translate vi->en lam fallback
+  if (englishDefinitions.length === 0 && vietnameseMeaning) {
+    try {
+      const englishFromGoogle = await translateViToEn(vietnameseMeaning);
+      if (englishFromGoogle && englishFromGoogle.toLowerCase() !== vietnameseMeaning.toLowerCase()) {
+        englishDefinitions = [englishFromGoogle];
+        console.log(`[Enrich] Google EN cho ${trimmedWord}: ${englishFromGoogle}`);
+      }
+    } catch (e) {
+      console.warn(`[Enrich] Google vi->en that bai cho ${trimmedWord}`);
+    }
+  }
+  
+  // Buoc 3: Cache ket qua hoan chinh (co ca English) de lan sau load nhanh
+  if (englishDefinitions.length > 0) {
+    const cacheKey = `lookup_complete_${trimmedWord}`;
+    try {
+      // Doc lai JLPT entry de tao ket qua hoan chinh
+      const jlptEntry = JLPT_DICT ? JLPT_DICT[trimmedWord] : null;
+      if (jlptEntry) {
+        let senses;
+        if (jishoSenses.length > 0) {
+          // Ket hop Jisho senses + Vietnamese tu JLPT
+          senses = jishoSenses.map((sense, idx) => ({
+            parts_of_speech: sense.parts_of_speech || [],
+            english_definitions: sense.english_definitions || [],
+            vietnamese_definitions: idx === 0 ? [vietnameseMeaning] : [],
+            tags: sense.tags || [],
+            info: sense.info || []
+          }));
+        } else {
+          // Chi co English tu Google + Vietnamese tu JLPT
+          senses = [{
+            parts_of_speech: partsOfSpeech,
+            english_definitions: englishDefinitions,
+            vietnamese_definitions: [vietnameseMeaning],
+            tags: [],
+            info: []
+          }];
+        }
+        
+        const enrichedResult = {
+          success: true,
+          word: trimmedWord,
+          japanese: [{ word: trimmedWord, reading: jlptEntry.hiragana || jlptEntry.kanji || '' }],
+          senses: senses,
+          isCommon: true,
+          jlpt: jlptEntry.level ? [jlptEntry.level] : [],
+          tags: [],
+          source: 'JLPT'
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(enrichedResult));
+        console.log(`[Enrich] Da cache ket qua hoan chinh cho: ${trimmedWord}`);
+      }
+    } catch (e) {
+      console.warn(`[Enrich] Loi khi cache cho ${trimmedWord}:`, e.message);
+    }
+  }
+  
+  return { englishDefinitions, jishoSenses, partsOfSpeech };
+}
+
+/**
  * Format kết quả tra từ với auto-translation
  * @param {Object} data 
  * @returns {Promise<Object>}
@@ -395,30 +602,40 @@ export async function formatDictionaryResult(data) {
   const meanings = data.senses.map(sense => ({
     partOfSpeech: sense.parts_of_speech || [],
     english: sense.english_definitions || [],
+    // Nghia tieng Viet truc tiep tu JLPT Dictionary (neu co)
+    vietnameseDirect: sense.vietnamese_definitions || [],
     tags: sense.tags || [],
     info: sense.info || []
   }));
 
-  // OPTIMIZED: Chỉ dịch 3 nghĩa đầu tiên (giảm 60-70% thời gian)
+  // Chi xu ly 3 nghia dau tien (giam 60-70% thoi gian)
   const limitedMeanings = meanings.slice(0, 3);
   
-  // Auto-translate to Vietnamese (với rate limiting)
+  // Dich va xu ly nghia tieng Viet + tieng Anh
   const vietnameseMeanings = await Promise.all(
     limitedMeanings.map(async (meaning) => {
-      // Giới hạn số definitions dịch (tối đa 5)
+      // Gioi han so definitions (toi da 5)
       const limitedEnglish = meaning.english.slice(0, 5);
       
-      const vietnamese = await Promise.all(
-        limitedEnglish.map(eng => translateToVietnamese(eng))
-      );
+      let vietnamese;
+      // Neu da co nghia tieng Viet truc tiep (tu JLPT Dictionary), dung luon khong can dich
+      if (meaning.vietnameseDirect && meaning.vietnameseDirect.length > 0) {
+        vietnamese = meaning.vietnameseDirect;
+      } else {
+        // Khong co nghia Viet truc tiep -> dich tu tieng Anh sang tieng Viet
+        vietnamese = await Promise.all(
+          limitedEnglish.map(eng => translateToVietnamese(eng))
+        );
+      }
       
+      // Dich tu loai sang tieng Viet
       const vietnamesePartOfSpeech = await Promise.all(
         meaning.partOfSpeech.map(pos => translatePartOfSpeech(pos))
       );
       
       return {
         ...meaning,
-        english: limitedEnglish, // Update với limited list
+        english: limitedEnglish,
         vietnamese,
         vietnamesePartOfSpeech
       };
