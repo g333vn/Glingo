@@ -403,11 +403,13 @@ function FlashcardReviewPage() {
     return (
       <div className="w-full pr-0 md:pr-4">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
+          {/* Responsive: chi ap dung sticky va chieu cao co dinh tu md tro len */}
+          <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col
+                          md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
             <div className="flex-1 flex items-center justify-center overflow-y-auto">
-              <div className="text-center bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-8 m-6">
-                <div className="text-6xl mb-4">❌</div>
-                <p className="text-xl font-black text-gray-900 mb-4">Không tìm thấy deck!</p>
+              <div className="text-center bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 m-4 sm:m-6">
+                <div className="text-5xl sm:text-6xl mb-4">❌</div>
+                <p className="text-lg sm:text-xl font-black text-gray-900 mb-4">Không tìm thấy deck!</p>
                 <button
                   onClick={() => navigate(-1)}
                   className="px-6 py-3 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
@@ -430,11 +432,13 @@ function FlashcardReviewPage() {
     return (
       <div className="w-full pr-0 md:pr-4">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-          <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
+          {/* Responsive: chi ap dung sticky va chieu cao co dinh tu md tro len */}
+          <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col
+                          md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
             <div className="flex-1 flex items-center justify-center overflow-y-auto">
-              <div className="text-center bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-8 m-6">
-                <div className="text-6xl mb-4">❌</div>
-                <p className="text-xl font-black text-gray-900 mb-4">Không tìm thấy thẻ!</p>
+              <div className="text-center bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8 m-4 sm:m-6">
+                <div className="text-5xl sm:text-6xl mb-4">❌</div>
+                <p className="text-lg sm:text-xl font-black text-gray-900 mb-4">Không tìm thấy thẻ!</p>
                 <button
                   onClick={() => navigate(-1)}
                   className="px-6 py-3 bg-blue-500 text-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
@@ -458,12 +462,14 @@ function FlashcardReviewPage() {
   return (
     <div className="w-full pr-0 md:pr-4">
       <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-        <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-6">
+        {/* Responsive: chi ap dung sticky va chieu cao co dinh tu md tro len */}
+        <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col
+                        md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
+          <div className="flex-1 md:overflow-y-auto overflow-x-hidden px-3 sm:px-4 md:px-6 py-4 sm:py-6">
             {/* Header */}
-            <div className="mb-6 flex-shrink-0">
+            <div className="mb-4 sm:mb-6 flex-shrink-0">
               <div className="flex items-center justify-between mb-3">
-                <h1 className="text-2xl font-black text-gray-900">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-black text-gray-900 break-words min-w-0 mr-2">
                   📚 {session.deckName}
                 </h1>
                 <button
@@ -512,28 +518,28 @@ function FlashcardReviewPage() {
               />
             )}
 
-            {/* Footer Stats */}
-            <div className="mt-6 flex items-center justify-center gap-6 text-sm text-gray-700">
-          <div className="flex items-center gap-2">
-            <span>⏱️</span>
-            <span>{timeElapsed}s</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>✅</span>
-            <span>{sessionStats.correctCards}/{sessionStats.reviewedCards}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>⭐</span>
-            <span>
-              {sessionStats.reviewedCards > 0
-                ? Math.round((sessionStats.correctCards / sessionStats.reviewedCards) * 100)
-                : 0}%
-            </span>
-          </div>
+            {/* Thong ke phien hoc */}
+            <div className="mt-4 sm:mt-6 flex items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-700">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <span>⏱️</span>
+                <span>{timeElapsed}s</span>
+              </div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <span>✅</span>
+                <span>{sessionStats.correctCards}/{sessionStats.reviewedCards}</span>
+              </div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <span>⭐</span>
+                <span>
+                  {sessionStats.reviewedCards > 0
+                    ? Math.round((sessionStats.correctCards / sessionStats.reviewedCards) * 100)
+                    : 0}%
+                </span>
+              </div>
             </div>
 
-            {/* Keyboard Shortcuts Hint */}
-            <div className="mt-4 text-center text-xs text-gray-700 font-medium">
+            {/* Goi y phim tat - an tren mobile vi khong co ban phim */}
+            <div className="mt-3 sm:mt-4 text-center text-xs text-gray-700 font-medium hidden sm:block">
               💡 {t('srs.keyboardHints') || 'Space to flip • 1-4 to grade • Esc to exit'}
             </div>
           </div>
@@ -550,9 +556,10 @@ function FlashcardDisplay({ card, isFlipped, onFlip, progress, t }) {
       className="perspective-1000 cursor-pointer"
       onClick={onFlip}
     >
+      {/* Responsive: chieu cao the nho hon tren mobile */}
       <div
         className={`
-          relative w-full h-96 transition-transform duration-500 transform-style-3d
+          relative w-full h-56 sm:h-72 md:h-96 transition-transform duration-500 transform-style-3d
           ${isFlipped ? 'rotate-y-180' : ''}
         `}
         style={{
@@ -560,57 +567,57 @@ function FlashcardDisplay({ card, isFlipped, onFlip, progress, t }) {
           transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
         }}
       >
-        {/* Front */}
+        {/* Mat truoc */}
         <div
-          className="absolute inset-0 p-8 rounded-lg border-[4px] border-black
+          className="absolute inset-0 p-4 sm:p-6 md:p-8 rounded-lg border-[3px] sm:border-[4px] border-black
                    bg-gradient-to-br from-blue-400 to-blue-600
-                   shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]
+                   shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]
                    flex flex-col items-center justify-center text-center
                    backface-hidden"
           style={{ backfaceVisibility: 'hidden' }}
         >
-          <p className="text-6xl font-black text-white mb-6">
+          <p className="text-3xl sm:text-4xl md:text-6xl font-black text-white mb-3 sm:mb-4 md:mb-6 break-words max-w-full">
             {card.front}
           </p>
           {card.reading && (
-            <p className="text-2xl font-mono text-blue-100">
+            <p className="text-lg sm:text-xl md:text-2xl font-mono text-blue-100">
               {card.reading}
             </p>
           )}
-          <p className="text-sm text-blue-200 mt-8">
+          <p className="text-xs sm:text-sm text-blue-200 mt-4 sm:mt-6 md:mt-8">
             👆 {t('srs.clickToReveal') || 'Click to reveal answer'}
           </p>
         </div>
 
-        {/* Back */}
+        {/* Mat sau */}
         <div
-          className="absolute inset-0 p-8 rounded-lg border-[4px] border-black
+          className="absolute inset-0 p-4 sm:p-6 md:p-8 rounded-lg border-[3px] sm:border-[4px] border-black
                    bg-gradient-to-br from-green-400 to-green-600
-                   shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]
+                   shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]
                    flex flex-col items-center justify-center text-center
-                   backface-hidden"
+                   backface-hidden overflow-y-auto"
           style={{
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)'
           }}
         >
-          <p className="text-5xl font-black text-white mb-4">
+          <p className="text-2xl sm:text-3xl md:text-5xl font-black text-white mb-2 sm:mb-3 md:mb-4 break-words max-w-full">
             {card.back}
           </p>
           {card.example && (
-            <div className="mt-6 p-4 bg-white/20 rounded-lg backdrop-blur-sm max-w-md">
-              <p className="text-lg text-white font-semibold">
+            <div className="mt-3 sm:mt-4 md:mt-6 p-2 sm:p-3 md:p-4 bg-white/20 rounded-lg backdrop-blur-sm max-w-md w-full">
+              <p className="text-sm sm:text-base md:text-lg text-white font-semibold break-words">
                 {card.example}
               </p>
               {card.exampleTranslation && (
-                <p className="text-sm text-green-100 mt-2">
+                <p className="text-xs sm:text-sm text-green-100 mt-1 sm:mt-2 break-words">
                   {card.exampleTranslation}
                 </p>
               )}
             </div>
           )}
           {card.notes && (
-            <p className="text-sm text-green-100 mt-4 italic">
+            <p className="text-xs sm:text-sm text-green-100 mt-2 sm:mt-4 italic break-words max-w-full">
               💡 {card.notes}
             </p>
           )}
@@ -630,7 +637,8 @@ function GradeButtons({ progress, onGrade }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    // Responsive: 2 cot tren mobile, 4 cot tu md tro len
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
       {grades.map(({ value, key }) => {
         const info = getGradeInfo(value);
         const interval = getIntervalPreview(progress, value);
@@ -640,10 +648,10 @@ function GradeButtons({ progress, onGrade }) {
             key={value}
             onClick={() => onGrade(value)}
             className={`
-              relative p-4 rounded-lg border-[3px] border-black
-              font-black text-lg transition-all
-              shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
-              hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]
+              relative p-2 sm:p-3 md:p-4 rounded-lg border-[2px] sm:border-[3px] border-black
+              font-black text-base sm:text-lg transition-all
+              shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] sm:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
+              hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] sm:hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]
               hover:translate-x-[-2px] hover:translate-y-[-2px]
               ${info.color === 'red' ? 'bg-red-400 hover:bg-red-500' : ''}
               ${info.color === 'orange' ? 'bg-orange-400 hover:bg-orange-500' : ''}
@@ -652,10 +660,11 @@ function GradeButtons({ progress, onGrade }) {
               text-white
             `}
           >
-            <div className="text-3xl mb-1">{info.emoji}</div>
-            <div className="text-sm">{info.label}</div>
-            <div className="text-xs opacity-80 mt-1">{interval}</div>
-            <kbd className="absolute top-2 right-2 px-2 py-1 bg-black/20 rounded text-xs">
+            <div className="text-2xl sm:text-3xl mb-1">{info.emoji}</div>
+            <div className="text-xs sm:text-sm">{info.label}</div>
+            <div className="text-[10px] sm:text-xs opacity-80 mt-1">{interval}</div>
+            {/* An phim tat tren mobile vi khong co ban phim */}
+            <kbd className="absolute top-1 right-1 sm:top-2 sm:right-2 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/20 rounded text-[10px] sm:text-xs hidden sm:block">
               {key}
             </kbd>
           </button>
@@ -665,42 +674,44 @@ function GradeButtons({ progress, onGrade }) {
   );
 }
 
-// ========== ALL CAUGHT UP SCREEN ==========
+// ========== MAN HINH DA HOAN THANH TAT CA THE ==========
 function AllCaughtUpScreen({ session, navigate }) {
   const { t } = useLanguage();
   
   return (
     <div className="w-full pr-0 md:pr-4">
       <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-        <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
-          <div className="flex-1 overflow-y-auto flex items-center justify-center px-6 py-8">
+        {/* Responsive: chi ap dung sticky va chieu cao co dinh tu md tro len */}
+        <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col
+                        md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
+          <div className="flex-1 md:overflow-y-auto overflow-x-hidden flex items-center justify-center px-3 sm:px-4 md:px-6 py-6 sm:py-8">
             <div className="max-w-2xl w-full">
-              {/* Header */}
-              <div className="bg-white border-b-[4px] border-black p-8 text-center mb-6">
-                <div className="text-8xl mb-4 animate-bounce">🎉</div>
-                <h1 className="text-4xl font-black text-gray-900 mb-2">
+              {/* Phan dau */}
+              <div className="bg-white border-b-[4px] border-black p-4 sm:p-6 md:p-8 text-center mb-4 sm:mb-6">
+                <div className="text-6xl sm:text-7xl md:text-8xl mb-4 animate-bounce">🎉</div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mb-2">
                   {t('srs.excellent') || 'Excellent!'}
                 </h1>
-                <p className="text-xl text-gray-700 font-semibold">
+                <p className="text-base sm:text-lg md:text-xl text-gray-700 font-semibold">
                   {t('srs.allDoneToday') || 'You completed all cards today!'}
                 </p>
               </div>
 
-              {/* Content */}
-              <div className="p-8">
-                {/* Stats - Neo Brutalism Style */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="p-5 bg-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-center">
-                    <div className="text-5xl font-black text-purple-600 mb-1">
+              {/* Noi dung */}
+              <div className="p-3 sm:p-5 md:p-8">
+                {/* Thong ke */}
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <div className="p-3 sm:p-5 bg-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-center">
+                    <div className="text-3xl sm:text-4xl md:text-5xl font-black text-purple-600 mb-1">
                       {session.allCardsCount || 0}
                     </div>
-                    <p className="text-sm font-bold text-gray-900">Tổng số thẻ</p>
+                    <p className="text-xs sm:text-sm font-bold text-gray-900">Tổng số thẻ</p>
                   </div>
-                  <div className="p-5 bg-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-center">
-                    <div className="text-5xl font-black text-green-600 mb-1">
+                  <div className="p-3 sm:p-5 bg-white rounded-lg border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-center">
+                    <div className="text-3xl sm:text-4xl md:text-5xl font-black text-green-600 mb-1">
                       {session.masteredCount || 0}
                     </div>
-                    <p className="text-sm font-bold text-gray-900">Đã thành thạo</p>
+                    <p className="text-xs sm:text-sm font-bold text-gray-900">Đã thành thạo</p>
                   </div>
                 </div>
 
@@ -755,7 +766,7 @@ function AllCaughtUpScreen({ session, navigate }) {
   );
 }
 
-// ========== SESSION SUMMARY COMPONENT ==========
+// ========== MAN HINH TONG KET PHIEN HOC ==========
 function SessionSummary({ stats, session }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -770,37 +781,39 @@ function SessionSummary({ stats, session }) {
   return (
     <div className="w-full pr-0 md:pr-4">
       <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-        <div className="flex-1 min-w-0 bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col sticky top-24 h-[calc(100vh-96px)] max-h-[calc(100vh-96px)] overflow-hidden">
-          <div className="flex-1 overflow-y-auto flex items-center justify-center px-6 py-8">
+        {/* Responsive: chi ap dung sticky va chieu cao co dinh tu md tro len */}
+        <div className="flex-1 min-w-0 w-full bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col
+                        md:sticky md:top-24 md:h-[calc(100vh-96px)] md:max-h-[calc(100vh-96px)] md:overflow-hidden">
+          <div className="flex-1 md:overflow-y-auto overflow-x-hidden flex items-center justify-center px-3 sm:px-4 md:px-6 py-6 sm:py-8">
             <div className="max-w-2xl w-full">
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="text-7xl mb-4">🎉</div>
-                <h1 className="text-3xl font-black text-gray-900 mb-2">
+              {/* Phan dau */}
+              <div className="text-center mb-5 sm:mb-6 md:mb-8">
+                <div className="text-5xl sm:text-6xl md:text-7xl mb-4">🎉</div>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 mb-2">
                   {t('srs.sessionComplete') || 'Session Complete!'}
                 </h1>
-                <p className="text-gray-700 font-medium">
+                <p className="text-sm sm:text-base text-gray-700 font-medium">
                   {t('srs.greatWork') || 'Great work! Keep it up!'} 💪
                 </p>
               </div>
 
-              {/* Stats Grid - Neo Brutalism Style */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="p-4 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rounded-lg text-center">
-                  <p className="text-3xl font-black text-blue-600">{stats.totalCards}</p>
-                  <p className="text-sm font-bold text-gray-900">{t('srs.cards') || 'Cards'}</p>
+              {/* Luoi thong ke */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-5 sm:mb-6 md:mb-8">
+                <div className="p-2 sm:p-3 md:p-4 bg-white border-[2px] sm:border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rounded-lg text-center">
+                  <p className="text-xl sm:text-2xl md:text-3xl font-black text-blue-600">{stats.totalCards}</p>
+                  <p className="text-xs sm:text-sm font-bold text-gray-900">{t('srs.cards') || 'Cards'}</p>
                 </div>
-                <div className="p-4 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rounded-lg text-center">
-                  <p className="text-3xl font-black text-green-600">{stats.correctCards}</p>
-                  <p className="text-sm font-bold text-gray-900">{t('srs.correct') || 'Correct'}</p>
+                <div className="p-2 sm:p-3 md:p-4 bg-white border-[2px] sm:border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rounded-lg text-center">
+                  <p className="text-xl sm:text-2xl md:text-3xl font-black text-green-600">{stats.correctCards}</p>
+                  <p className="text-xs sm:text-sm font-bold text-gray-900">{t('srs.correct') || 'Correct'}</p>
                 </div>
-                <div className="p-4 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rounded-lg text-center">
-                  <p className="text-3xl font-black text-purple-600">{accuracy}%</p>
-                  <p className="text-sm font-bold text-gray-900">{t('srs.accuracy') || 'Accuracy'}</p>
+                <div className="p-2 sm:p-3 md:p-4 bg-white border-[2px] sm:border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rounded-lg text-center">
+                  <p className="text-xl sm:text-2xl md:text-3xl font-black text-purple-600">{accuracy}%</p>
+                  <p className="text-xs sm:text-sm font-bold text-gray-900">{t('srs.accuracy') || 'Accuracy'}</p>
                 </div>
-                <div className="p-4 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rounded-lg text-center">
-                  <p className="text-3xl font-black text-orange-600">{minutes}m {seconds}s</p>
-                  <p className="text-sm font-bold text-gray-900">{t('srs.time') || 'Time'}</p>
+                <div className="p-2 sm:p-3 md:p-4 bg-white border-[2px] sm:border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] rounded-lg text-center">
+                  <p className="text-xl sm:text-2xl md:text-3xl font-black text-orange-600">{minutes}m {seconds}s</p>
+                  <p className="text-xs sm:text-sm font-bold text-gray-900">{t('srs.time') || 'Time'}</p>
                 </div>
               </div>
 
