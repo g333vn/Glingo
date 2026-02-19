@@ -1,5 +1,5 @@
 // src/utils/uiErrorHandler.js
-// 🔒 UI Error Handler - Hiển thị lỗi user-friendly, không lộ chi tiết kỹ thuật
+// UI Error Handler - Hiển thị lỗi user-friendly, không lộ chi tiết kỹ thuật
 
 import { sanitizeError } from './sanitizeError.js';
 import { logger } from './logger.js';
@@ -22,7 +22,7 @@ export function getErrorMessage(error, context = '') {
  * Hiển thị alert với message user-friendly
  * @param {Error|string|object} error 
  * @param {string} context 
- * @param {string} prefix - Prefix cho message (vd: '❌ Lỗi:')
+ * @param {string} prefix - Prefix cho message (vd: ' Lỗi:')
  */
 export function showErrorAlert(error, context = '', prefix = '❌ Lỗi') {
   const message = getErrorMessage(error, context);

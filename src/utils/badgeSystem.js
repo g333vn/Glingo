@@ -1,5 +1,5 @@
 // src/utils/badgeSystem.js
-// 🏆 Badge System - Award badges for achievements
+// Badge System - Award badges for achievements
 
 import { getStudyStreak, getAllLessonStats } from './lessonProgressTracker.js';
 

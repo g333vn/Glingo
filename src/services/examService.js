@@ -39,7 +39,7 @@ export async function saveExam(exam, userId) {
     }
 
     // Transform data structure
-    // ✅ NEW: For listening, save as object with sections + audio fields (not just sections array)
+    // NEW: For listening, save as object with sections + audio fields (not just sections array)
     const listeningData = exam.listening || {};
     const listeningSectionsData = Array.isArray(listeningData.sections) 
       ? listeningData.sections 
@@ -48,7 +48,7 @@ export async function saveExam(exam, userId) {
     // Build listening_sections as object (not array) to include audio at part level
     const listeningSectionsPayload = {
       sections: listeningSectionsData,
-      // ✅ NEW: Include audio fields at listening part level
+      // NEW: Include audio fields at listening part level
       ...(listeningData.audioUrl && { audioUrl: listeningData.audioUrl }),
       ...(listeningData.audioPath && { audioPath: listeningData.audioPath }),
       ...(listeningData.audioName && { audioName: listeningData.audioName })
@@ -63,7 +63,7 @@ export async function saveExam(exam, userId) {
       image_url: exam.imageUrl || null,
       knowledge_sections: exam.knowledge?.sections || [],
       reading_sections: exam.reading?.sections || [],
-      listening_sections: listeningSectionsPayload, // ✅ UPDATED: Object with sections + audio
+      listening_sections: listeningSectionsPayload, // UPDATED: Object with sections + audio
       config: exam.config || {},
       created_by: userId,
       updated_at: new Date().toISOString()
@@ -76,7 +76,7 @@ export async function saveExam(exam, userId) {
       listening: Array.isArray(examData.listening_sections) 
         ? examData.listening_sections.length 
         : (examData.listening_sections?.sections?.length || 0),
-      // ✅ NEW: Log audio info
+      // NEW: Log audio info
       listeningHasAudio: !!(examData.listening_sections?.audioUrl),
       listeningAudioUrl: examData.listening_sections?.audioUrl || '(none)'
     });
@@ -131,7 +131,7 @@ export async function getExam(level, examId) {
     }
 
     // Transform to app format
-    // ✅ UPDATED: Handle listening_sections as object (with sections + audio) or array (backward compatibility)
+    // UPDATED: Handle listening_sections as object (with sections + audio) or array (backward compatibility)
     const listeningSectionsRaw = data.listening_sections || [];
     let listeningSections = [];
     let listeningAudioUrl = null;
@@ -164,7 +164,7 @@ export async function getExam(level, examId) {
       },
       listening: {
         sections: listeningSections,
-        // ✅ NEW: Include audio fields at listening part level
+        // NEW: Include audio fields at listening part level
         ...(listeningAudioUrl && { audioUrl: listeningAudioUrl }),
         ...(listeningAudioPath && { audioPath: listeningAudioPath }),
         ...(listeningAudioName && { audioName: listeningAudioName })
@@ -177,7 +177,7 @@ export async function getExam(level, examId) {
       knowledgeSections: exam.knowledge.sections.length,
       readingSections: exam.reading.sections.length,
       listeningSections: exam.listening.sections.length,
-      // ✅ NEW: Log audio info
+      // NEW: Log audio info
       listeningHasAudio: !!exam.listening.audioUrl,
       listeningAudioUrl: exam.listening.audioUrl || '(none)'
     });

@@ -87,7 +87,7 @@ function AllLevelsOverview({ onLevelClick, refreshTrigger }) {
     };
     
     loadAllLevelsStats();
-  }, [refreshTrigger]); // ✅ Reload khi refreshTrigger thay đổi
+  }, [refreshTrigger]); // Reload khi refreshTrigger thay đổi
 
   const levelInfo = {
     n5: { name: 'JLPT N5', description: t('contentManagement.levels.n5'), color: 'from-green-50 to-emerald-50', borderColor: 'border-green-300' },

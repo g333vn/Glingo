@@ -1,7 +1,7 @@
 // src/utils/localStorageManager.js
-// 💾 Unified Storage Manager - Supabase (cloud) + IndexedDB (cache) + localStorage (fallback)
-// ✅ Supports unlimited storage via IndexedDB (>100 MB)
-// ✅ Cloud sync via Supabase
+// Unified Storage Manager - Supabase (cloud) + IndexedDB (cache) + localStorage (fallback)
+// Supports unlimited storage via IndexedDB (>100 MB)
+// Cloud sync via Supabase
 
 import indexedDBManager from './indexedDBManager.js';
 import * as contentService from '../services/contentService.js';
@@ -19,18 +19,18 @@ class LocalStorageManager {
   constructor() {
     this.storageAvailable = this.checkStorageAvailable();
     this.useIndexedDB = false;
-    this.initPromise = null; // ✅ Lưu promise để có thể await
+    this.initPromise = null; // Lưu promise để có thể await
     this.init();
   }
 
   // Initialize IndexedDB
   async init() {
-    // ✅ Nếu đang init thì return promise hiện tại
+    // Nếu đang init thì return promise hiện tại
     if (this.initPromise) {
       return this.initPromise;
     }
 
-    // ✅ Tạo promise mới
+    // Tạo promise mới
     this.initPromise = (async () => {
       try {
         this.useIndexedDB = await indexedDBManager.init();
@@ -50,7 +50,7 @@ class LocalStorageManager {
     return this.initPromise;
   }
 
-  // ✅ Đảm bảo init() hoàn thành trước khi sử dụng
+  // Đảm bảo init() hoàn thành trước khi sử dụng
   async ensureInitialized() {
     if (this.initPromise) {
       await this.initPromise;
@@ -59,7 +59,7 @@ class LocalStorageManager {
     }
   }
 
-  // ✅ Check if localStorage is available
+  // Check if localStorage is available
   checkStorageAvailable() {
     try {
       const test = '__storage_test__';
@@ -72,7 +72,7 @@ class LocalStorageManager {
     }
   }
 
-  // ✅ Get storage info
+  // Get storage info
   async getStorageInfo() {
     // Ensure IndexedDB is initialized
     await this.ensureInitialized();
@@ -85,7 +85,7 @@ class LocalStorageManager {
         const localInfo = this.getLocalStorageInfo();
         return {
           ...indexedInfo,
-          indexedDB: true, // ✅ Explicitly mark IndexedDB as available
+          indexedDB: true, // Explicitly mark IndexedDB as available
           localStorage: localInfo,
           storageType: 'IndexedDB (primary) + localStorage (fallback)'
         };
@@ -96,7 +96,7 @@ class LocalStorageManager {
     const localInfo = this.getLocalStorageInfo();
     return {
       ...localInfo,
-      indexedDB: false, // ✅ Explicitly mark IndexedDB as unavailable
+      indexedDB: false, // Explicitly mark IndexedDB as unavailable
       localStorage: localInfo
     };
   }
@@ -153,7 +153,7 @@ class LocalStorageManager {
   // ==================== BOOKS ====================
   
   async getBooks(level) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
     console.log('[StorageManager.getBooks] 🔍 Loading books for level:', level);
@@ -166,10 +166,10 @@ class LocalStorageManager {
         const supaBooks = Array.isArray(data) ? data : [];
 
         if (supaBooks.length > 0) {
-          // ✅ Có dữ liệu trên server → dùng server làm nguồn chính
+          // Có dữ liệu trên server → dùng server làm nguồn chính
           console.log('[StorageManager.getBooks] ✅ Loaded', supaBooks.length, 'books from Supabase');
 
-          // ✅ FIXED: Filter out ghost books (books in local cache but not in Supabase)
+          // FIXED: Filter out ghost books (books in local cache but not in Supabase)
           // Get current local cache to compare
           let localBooks = [];
           try {
@@ -214,7 +214,7 @@ class LocalStorageManager {
           return supaBooks;
         }
 
-        // ✅ Supabase trả về RỖNG (server hiện không có sách nào)
+        // Supabase trả về RỖNG (server hiện không có sách nào)
         //    → Xoá cache local/IndexedDB để client đồng bộ với server
         console.log('[StorageManager.getBooks] ℹ️ Supabase has 0 books for level', level, '- clearing local caches');
 
@@ -265,10 +265,10 @@ class LocalStorageManager {
   }
 
   async saveBooks(level, books, userId = null) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
-    // 🔍 DEBUG: Log userId check
+    // DEBUG: Log userId check
     console.log('[StorageManager.saveBooks] userId:', userId, 'isValid:', userId && typeof userId === 'string' && userId.length > 0);
     
     // 1. Save to Supabase if userId provided (admin)
@@ -316,7 +316,7 @@ class LocalStorageManager {
     return false;
   }
 
-  // ✅ NEW: Clear books data for a level (force refresh)
+  // NEW: Clear books data for a level (force refresh)
   async clearBooks(level) {
     await this.ensureInitialized();
     
@@ -352,7 +352,7 @@ class LocalStorageManager {
   // ==================== SERIES ====================
   
   async getSeries(level) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
 
     // 1. Try Supabase trước (nếu có level)
@@ -400,7 +400,7 @@ class LocalStorageManager {
   }
 
   async saveSeries(level, series, userId = null) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
 
     // 1. Save to Supabase nếu có level + userId (admin)
@@ -458,7 +458,7 @@ class LocalStorageManager {
   // ==================== CHAPTERS ====================
   
   async getChapters(bookId, level = null) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
     // 1. Try Supabase first if level provided
@@ -466,7 +466,7 @@ class LocalStorageManager {
       try {
         const { success, data } = await contentService.getChapters(bookId, level);
         if (success) {
-          // ✅ FIXED: Nếu Supabase trả về data (có thể là empty array), dùng data đó
+          // FIXED: Nếu Supabase trả về data (có thể là empty array), dùng data đó
           if (data && data.length > 0) {
             // Cache to IndexedDB
             if (this.useIndexedDB) {
@@ -480,7 +480,7 @@ class LocalStorageManager {
             return data;
           }
           
-          // ✅ FIXED: Nếu Supabase trả về empty array (data = []), clear cache cũ và return []
+          // FIXED: Nếu Supabase trả về empty array (data = []), clear cache cũ và return []
           // Điều này đảm bảo không hiển thị chapters cũ từ cache khi Supabase đã confirm là không có
           if (Array.isArray(data) && data.length === 0) {
             console.log('[StorageManager.getChapters] ℹ️ Supabase returned empty array - clearing old cache');
@@ -496,7 +496,7 @@ class LocalStorageManager {
             return [];
           }
           
-          // ✅ Supabase trả về success nhưng data = null (có thể là error hoặc không tồn tại)
+          // Supabase trả về success nhưng data = null (có thể là error hoặc không tồn tại)
           //    → Không clear cache, fallback về local cache
           console.log('[StorageManager.getChapters] ℹ️ Supabase returned null, will try local cache');
         } else {
@@ -536,7 +536,7 @@ class LocalStorageManager {
   }
 
   async saveChapters(bookId, chapters, level = null, userId = null) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
     // 1. Save to Supabase if level and userId provided
@@ -605,12 +605,12 @@ class LocalStorageManager {
   // ==================== LESSONS ====================
   
   async getLessons(bookId, chapterId, level = null) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
     console.log(`[StorageManager.getLessons] 🔍 Loading lessons: ${level}/${bookId}/${chapterId}`);
 
-    // ✅ FIXED: Ưu tiên Supabase trước (giống getBooks và getChapters) để tránh dùng cache cũ
+    // FIXED: Ưu tiên Supabase trước (giống getBooks và getChapters) để tránh dùng cache cũ
     // 1. Try Supabase first (cloud) - nguồn dữ liệu "chuẩn"
     if (level) {
       try {
@@ -620,7 +620,7 @@ class LocalStorageManager {
           const supaLessons = Array.isArray(data) ? data : [];
 
           if (supaLessons.length > 0) {
-            // ✅ Có dữ liệu trên server → dùng server làm nguồn chính
+            // Có dữ liệu trên server → dùng server làm nguồn chính
             console.log(`[StorageManager.getLessons] ✅ Loaded ${supaLessons.length} lessons from Supabase: ${level}/${bookId}/${chapterId}`);
 
             // Cache to IndexedDB for offline support
@@ -637,7 +637,7 @@ class LocalStorageManager {
             return supaLessons;
           }
 
-          // ✅ Supabase trả về RỖNG (server hiện không có lessons nào)
+          // Supabase trả về RỖNG (server hiện không có lessons nào)
           //    → Xoá cache local/IndexedDB để client đồng bộ với server
           console.log(`[StorageManager.getLessons] ℹ️ Supabase has 0 lessons for ${level}/${bookId}/${chapterId} - clearing local caches`);
 
@@ -691,25 +691,40 @@ class LocalStorageManager {
   }
 
   async saveLessons(bookId, chapterId, lessons, level = null, userId = null) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Dam bao init() hoan thanh truoc
     await this.ensureInitialized();
+    
+    // Theo doi trang thai luu Supabase de bao loi ro rang
+    let supabaseError = null;
+    let supabaseSuccess = false;
     
     // 1. Save to Supabase if level and userId provided
     if (level && userId) {
       try {
+        console.log(`[StorageManager] Dang luu ${lessons.length} lessons len Supabase: ${level}/${bookId}/${chapterId}`);
         const result = await contentService.saveLessons(bookId, chapterId, level, lessons, userId);
         if (!result.success) {
-          console.warn('[StorageManager] Failed to save lessons to Supabase:', result.error);
+          // Ghi nhan loi Supabase de bao cho caller biet
+          supabaseError = result.error;
+          console.error('[StorageManager] Luu lessons len Supabase that bai:', JSON.stringify(result.error, null, 2));
+        } else {
+          supabaseSuccess = true;
+          console.log(`[StorageManager] Luu Supabase thanh cong!`);
         }
       } catch (err) {
-        console.warn('[StorageManager] Supabase saveLessons failed, continuing with local save:', err);
+        supabaseError = err;
+        console.error('[StorageManager] Loi bat thuong khi luu Supabase:', err?.message || err);
       }
+    } else {
+      console.warn(`[StorageManager] Bo qua Supabase save: level=${level}, userId=${userId ? 'co' : 'khong co'}`);
     }
     
     // 2. Save to IndexedDB (local cache)
+    let localSuccess = false;
     if (this.useIndexedDB) {
       const success = await indexedDBManager.saveLessons(bookId, chapterId, lessons, level);
       if (success) {
+        localSuccess = true;
         // Also save to localStorage for backward compatibility
         if (this.storageAvailable) {
           try {
@@ -719,26 +734,33 @@ class LocalStorageManager {
             console.warn('localStorage full, but data saved to IndexedDB');
           }
         }
-        return true;
       }
     }
 
     // 3. Fallback to localStorage only
-    if (this.storageAvailable && level) {
+    if (!localSuccess && this.storageAvailable && level) {
       try {
         const key = `adminLessons_${level}_${bookId}_${chapterId}`;
         localStorage.setItem(key, JSON.stringify(lessons));
-        console.log(`✅ Saved ${lessons.length} lessons to localStorage (${key})`);
-        return true;
+        console.log(`[StorageManager] Saved ${lessons.length} lessons to localStorage (${key})`);
+        localSuccess = true;
       } catch (e) {
         if (e.name === 'QuotaExceededError') {
-          console.error('❌ localStorage quota exceeded! Consider using IndexedDB.');
+          console.error('[StorageManager] localStorage quota exceeded!');
         }
-        return false;
+        localSuccess = false;
       }
     }
 
-    return false;
+    // Tra ve ket qua chi tiet de caller co the xu ly loi Supabase
+    // Tuong thich nguoc: tra ve true/false cho code cu, va object chi tiet cho code moi
+    if (supabaseError && localSuccess) {
+      // Supabase loi nhung local thanh cong - tra ve object co canh bao
+      console.warn('[StorageManager] Supabase that bai nhung local thanh cong. Du lieu co the bi mat khi tai lai trang.');
+      return { localSuccess: true, supabaseSuccess: false, supabaseError };
+    }
+    
+    return localSuccess;
   }
 
   async deleteLessons(bookId, chapterId, level = null) {
@@ -758,7 +780,7 @@ class LocalStorageManager {
   // ==================== QUIZZES ====================
   
   async getQuiz(bookId, chapterId, lessonId = null, level = null) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
     // Nếu không có lessonId, dùng chapterId làm lessonId (backward compatibility)
@@ -766,14 +788,14 @@ class LocalStorageManager {
     
     console.log(`[StorageManager.getQuiz] 🔍 Loading quiz for:`, { bookId, chapterId, lessonId: finalLessonId, level });
 
-    // ✅ FIXED: Bắt chước logic getBooks/getChapters/getLessons - luôn load từ Supabase trước nếu có level
+    // FIXED: Bắt chước logic getBooks/getChapters/getLessons - luôn load từ Supabase trước nếu có level
     // 1. Try Supabase first if level provided (giống như getBooks/getChapters/getLessons)
     if (level) {
       try {
         const { success, data } = await contentService.getQuiz(bookId, chapterId, finalLessonId, level);
 
         if (success) {
-          // ✅ FIXED: Giống getBooks - nếu Supabase trả về data thì dùng, nếu không thì fallback
+          // FIXED: Giống getBooks - nếu Supabase trả về data thì dùng, nếu không thì fallback
           if (data) {
             console.log('[StorageManager.getQuiz] ✅ Loaded quiz from Supabase:', { id: data.id, title: data.title, questionsCount: data.questions?.length });
 
@@ -794,7 +816,7 @@ class LocalStorageManager {
             return data;
           }
 
-          // ✅ FIXED: Supabase trả về success nhưng data = null (quiz không tồn tại)
+          // FIXED: Supabase trả về success nhưng data = null (quiz không tồn tại)
           //    → Clear local caches để sync với server (giống getLessons)
           console.log(`[StorageManager.getQuiz] ℹ️ Supabase has no quiz for ${level}/${bookId}/${chapterId}/${finalLessonId} - clearing local caches`);
           
@@ -852,7 +874,7 @@ class LocalStorageManager {
   }
 
   async saveQuiz(bookId, chapterId, lessonId, quiz, level = null, userId = null) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
     // Nếu lessonId không được cung cấp, dùng chapterId (backward compatibility)
@@ -888,7 +910,7 @@ class LocalStorageManager {
           console.error('[StorageManager.saveQuiz] ❌ Error message:', result.error?.message);
           console.error('[StorageManager.saveQuiz] ❌ Error details:', JSON.stringify(result.error, null, 2));
           
-          // ✅ NEW: Hiển thị alert cho user biết lỗi cụ thể
+          // NEW: Hiển thị alert cho user biết lỗi cụ thể
           if (result.error?.code === '42501') {
             console.error('[StorageManager.saveQuiz] ❌ RLS Policy Error - User không có quyền INSERT');
             alert(
@@ -1003,12 +1025,12 @@ class LocalStorageManager {
   }
 
   async getAllQuizzes(level = null) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
 
     console.log(`[StorageManager.getAllQuizzes] 🔍 Loading quizzes for level:`, level);
 
-    // ✅ FIXED: Bắt chước logic getBooks - luôn load từ Supabase trước nếu có level
+    // FIXED: Bắt chước logic getBooks - luôn load từ Supabase trước nếu có level
     // 1. Try Supabase first if level provided (giống như getBooks)
     if (level) {
       try {
@@ -1018,7 +1040,7 @@ class LocalStorageManager {
           const supaQuizzes = Array.isArray(data) ? data : [];
 
           if (supaQuizzes.length > 0) {
-            // ✅ Có dữ liệu trên server → dùng server làm nguồn chính (giống getBooks)
+            // Có dữ liệu trên server → dùng server làm nguồn chính (giống getBooks)
             console.log('[StorageManager.getAllQuizzes] ✅ Loaded', supaQuizzes.length, 'quizzes from Supabase');
 
             // Cache to IndexedDB for offline support
@@ -1043,7 +1065,7 @@ class LocalStorageManager {
             return supaQuizzes;
           }
 
-          // ✅ Supabase trả về RỖNG (server hiện không có quiz nào)
+          // Supabase trả về RỖNG (server hiện không có quiz nào)
           //    → Xoá cache local/IndexedDB để client đồng bộ với server (giống getBooks)
           console.log('[StorageManager.getAllQuizzes] ℹ️ Supabase has 0 quizzes for level', level, '- clearing local caches');
 
@@ -1132,7 +1154,7 @@ class LocalStorageManager {
     
     console.log(`🗑️ storageManager.deleteQuiz(${bookId}, ${chapterId}, ${finalLessonId}, level=${level})`);
     
-    // ✅ FIXED: Xóa từ Supabase trước (nếu có level)
+    // FIXED: Xóa từ Supabase trước (nếu có level)
     if (level) {
       try {
         // Xóa quiz từ Supabase bằng cách gọi contentService
@@ -1156,11 +1178,11 @@ class LocalStorageManager {
       }
     }
     
-    // ✅ FIXED: Xóa tất cả quiz liên quan từ local storage (cả quiz cũ không có lessonId)
+    // FIXED: Xóa tất cả quiz liên quan từ local storage (cả quiz cũ không có lessonId)
     // Delete from IndexedDB
     if (this.useIndexedDB) {
       await indexedDBManager.deleteQuiz(bookId, chapterId, finalLessonId, level);
-      // ✅ FIXED: Chỉ xóa quiz cũ (backward compatibility) nếu lessonId === chapterId
+      // FIXED: Chỉ xóa quiz cũ (backward compatibility) nếu lessonId === chapterId
       // KHÔNG xóa tất cả quizzes của chapter vì mỗi lesson có thể có quiz riêng
       if (finalLessonId === chapterId) {
         try {
@@ -1186,7 +1208,7 @@ class LocalStorageManager {
       const newKey = `adminQuiz_${level}_${bookId}_${chapterId}_${finalLessonId}`;
       localStorage.removeItem(newKey);
       
-      // ✅ FIXED: Chỉ xóa quiz cũ (backward compatibility) nếu lessonId === chapterId
+      // FIXED: Chỉ xóa quiz cũ (backward compatibility) nếu lessonId === chapterId
       // KHÔNG xóa tất cả quizzes của chapter vì mỗi lesson có thể có quiz riêng
       if (finalLessonId === chapterId) {
         // Quiz cũ có thể được lưu với key không có lessonId
@@ -1202,7 +1224,7 @@ class LocalStorageManager {
   // ==================== JLPT EXAMS ====================
   
   async getExams(level) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
     // 1. Try Supabase first (nguồn dữ liệu chuẩn, dùng chung cho mọi user)
@@ -1273,7 +1295,7 @@ class LocalStorageManager {
   }
 
   async saveExams(level, exams) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
     // Save to IndexedDB (primary)
@@ -1312,7 +1334,7 @@ class LocalStorageManager {
   }
 
   async getLevelConfig(level) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
     // Try IndexedDB first
@@ -1339,7 +1361,7 @@ class LocalStorageManager {
   }
 
   async saveLevelConfig(level, config) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
     // Save to IndexedDB (primary)
@@ -1378,7 +1400,7 @@ class LocalStorageManager {
   }
   
   async getExam(level, examId) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
     // 1. Try Supabase first (nguồn chuẩn)
@@ -1424,7 +1446,7 @@ class LocalStorageManager {
   }
 
   async saveExam(level, examId, examData) {
-    // ✅ Đảm bảo init() hoàn thành trước
+    // Đảm bảo init() hoàn thành trước
     await this.ensureInitialized();
     
     // Save to IndexedDB (primary)
@@ -1495,7 +1517,7 @@ class LocalStorageManager {
     return this.exportAllFromLocalStorage();
   }
 
-  // ✅ NEW: Export data for a specific level
+  // NEW: Export data for a specific level
   async exportLevel(level) {
     // Try IndexedDB first
     if (this.useIndexedDB) {
@@ -1509,7 +1531,7 @@ class LocalStorageManager {
     return this.exportLevelFromLocalStorage(level);
   }
 
-  // ✅ NEW: Export data by date range
+  // NEW: Export data by date range
   async exportByDateRange(startDate, endDate, dataTypes = ['all'], includeRelated = false, includeUsers = false, includeUserPasswords = false) {
     // Try IndexedDB first (has metadata)
     if (this.useIndexedDB) {
@@ -1524,7 +1546,7 @@ class LocalStorageManager {
     return null;
   }
 
-  // ✅ NEW: Export users
+  // NEW: Export users
   exportUsers(includePassword = false) {
     return indexedDBManager.exportUsers(includePassword);
   }
@@ -1860,7 +1882,7 @@ class LocalStorageManager {
     return count;
   }
 
-  // ✅ NEW: Export a specific Series
+  // NEW: Export a specific Series
   async exportSeries(level, seriesId) {
     if (this.useIndexedDB) {
       return await indexedDBManager.exportSeries(level, seriesId);
@@ -1869,7 +1891,7 @@ class LocalStorageManager {
     return null;
   }
 
-  // ✅ NEW: Export a specific Book
+  // NEW: Export a specific Book
   async exportBook(level, bookId) {
     if (this.useIndexedDB) {
       return await indexedDBManager.exportBook(level, bookId);
@@ -1878,7 +1900,7 @@ class LocalStorageManager {
     return null;
   }
 
-  // ✅ NEW: Export a specific Chapter
+  // NEW: Export a specific Chapter
   async exportChapter(bookId, chapterId) {
     if (this.useIndexedDB) {
       return await indexedDBManager.exportChapter(bookId, chapterId);
@@ -1887,7 +1909,7 @@ class LocalStorageManager {
     return null;
   }
 
-  // ✅ NEW: Export a specific Lesson
+  // NEW: Export a specific Lesson
   async exportLesson(bookId, chapterId, lessonId) {
     if (this.useIndexedDB) {
       return await indexedDBManager.exportLesson(bookId, chapterId, lessonId);
@@ -1896,7 +1918,7 @@ class LocalStorageManager {
     return null;
   }
 
-  // ✅ NEW: Export a specific Quiz
+  // NEW: Export a specific Quiz
   async exportQuiz(bookId, chapterId, lessonId) {
     if (this.useIndexedDB) {
       return await indexedDBManager.exportQuiz(bookId, chapterId, lessonId);
@@ -1905,7 +1927,7 @@ class LocalStorageManager {
     return null;
   }
 
-  // ✅ NEW: Export exam functions
+  // NEW: Export exam functions
   async exportExam(level, examId) {
     if (this.useIndexedDB) {
       return await indexedDBManager.exportExam(level, examId);
@@ -1930,7 +1952,7 @@ class LocalStorageManager {
     return null;
   }
 
-  // ✅ NEW: Import a specific item
+  // NEW: Import a specific item
   async importItem(data) {
     if (this.useIndexedDB) {
       return await indexedDBManager.importItem(data);

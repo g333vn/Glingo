@@ -39,7 +39,7 @@ function HierarchyView({
   onDeleteChapter,
   onDeleteLesson,
   onDeleteQuiz,
-  onReorderLessons, // ✅ NEW: Reorder lessons handler
+  onReorderLessons, // NEW: Reorder lessons handler
 }) {
   const { t } = useLanguage();
   // Group books by series (use seriesId as key để ổn định theo Supabase)
@@ -85,7 +85,7 @@ function HierarchyView({
     );
   }
 
-  // ✅ NEW: Show Series List with search, filter, pagination, expandable cards
+  // NEW: Show Series List with search, filter, pagination, expandable cards
   if (!hierarchyPath.series) {
     return (
       <SeriesListView
@@ -277,7 +277,7 @@ function HierarchyView({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        onEditLesson(lesson);
+                        onEditLesson(currentBook, currentChapter, lesson);
                       }}
                       className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
                     >

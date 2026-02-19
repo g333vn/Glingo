@@ -13,7 +13,7 @@ import { getExam as getExamFromSupabase } from '../../../services/examService.js
 import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
 import Modal from '../../../components/Modal.jsx';
 
-// ✅ Helper: Lock/unlock body scroll
+// Helper: Lock/unlock body scroll
 const useBodyScrollLock = (isLocked) => {
   useEffect(() => {
     if (isLocked) {
@@ -78,7 +78,7 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer, t }) => {
         style={{
           wordWrap: 'break-word',
           overflowWrap: 'break-word',
-          whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
+          whiteSpace: 'pre-wrap' // FIX: Preserve line breaks from <br/> tags
         }}
       />
       
@@ -89,7 +89,7 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer, t }) => {
           style={{
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
-            whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
+            whiteSpace: 'pre-wrap' // FIX: Preserve line breaks from <br/> tags
           }}
         />
       )}
@@ -110,7 +110,7 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer, t }) => {
               style={{
                 wordWrap: 'break-word',
                 overflowWrap: 'break-word',
-                whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
+                whiteSpace: 'pre-wrap' // FIX: Preserve line breaks from <br/> tags
               }}
             />
           )}
@@ -147,12 +147,12 @@ const QuestionDisplay = ({ question, selectedAnswer, onSelectAnswer, t }) => {
 
 // Component navigation panel
 const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect, t, totalTime, knowledgeSections, readingSections, allQuestions }) => {
-  // ✅ FIX: Dùng composite key (sectionId + testType) để phân biệt sections trùng ID
+  // FIX: Dùng composite key (sectionId + testType) để phân biệt sections trùng ID
   const getSectionKey = (section, testType) => `${testType}:${section.id}`;
   
   const [expandedSections, setExpandedSections] = useState(() => {
     // Auto-expand section chứa câu hỏi hiện tại khi mount lần đầu
-    // ✅ FIX: Tìm section dựa trên vị trí của câu hỏi trong allQuestions
+    // FIX: Tìm section dựa trên vị trí của câu hỏi trong allQuestions
     // để xác định nó thuộc knowledge hay reading (tránh duplicate IDs)
     const questionIndex = allQuestions?.findIndex(q => String(q.id) === String(currentQuestion)) ?? -1;
     const knowledgeQuestionsCount = knowledgeSections?.reduce((sum, s) => sum + (s.questions?.length || 0), 0) || 0;
@@ -203,7 +203,7 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect,
 
     // Chỉ auto-expand nếu câu hỏi thực sự thay đổi (không phải cùng một câu)
     if (prevQuestionRef.current !== currentQuestion) {
-      // ✅ FIX: Tìm section dựa trên vị trí của câu hỏi trong allQuestions
+      // FIX: Tìm section dựa trên vị trí của câu hỏi trong allQuestions
       // để xác định nó thuộc knowledge hay reading (tránh duplicate IDs)
       const questionIndex = allQuestionsRef.current?.findIndex(q => String(q.id) === String(currentQuestion)) ?? -1;
       const knowledgeQuestionsCount = knowledgeSectionsRef.current?.reduce((sum, s) => sum + (s.questions?.length || 0), 0) || 0;
@@ -236,10 +236,10 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect,
       }
       prevQuestionRef.current = currentQuestion;
     }
-  }, [currentQuestion]); // ✅ FIX: Chỉ depend on currentQuestion, không depend on sections
+  }, [currentQuestion]); // FIX: Chỉ depend on currentQuestion, không depend on sections
 
   const toggleSection = (sectionKey, event) => {
-    // ✅ FIX: Ngăn chặn mọi side effect khi toggle section
+    // FIX: Ngăn chặn mọi side effect khi toggle section
     event?.stopPropagation();
     event?.preventDefault();
     
@@ -256,7 +256,7 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect,
       return newSet;
     });
     
-    // ✅ FIX: Reset flag sau một khoảng thời gian ngắn để đảm bảo useEffect không chạy
+    // FIX: Reset flag sau một khoảng thời gian ngắn để đảm bảo useEffect không chạy
     setTimeout(() => {
       isUserTogglingRef.current = false;
     }, 100);
@@ -280,7 +280,7 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect,
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto p-4">
         {(() => {
-          // ✅ FIX: Loại bỏ duplicate sections - ưu tiên knowledge nếu trùng ID
+          // FIX: Loại bỏ duplicate sections - ưu tiên knowledge nếu trùng ID
           const seenSectionIds = new Set();
           const uniqueSections = [];
           
@@ -303,7 +303,7 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect,
           return uniqueSections;
         })().map((section) => {
           const sectionId = section.id;
-          // ✅ FIX: Dùng _testType đã được gán khi filter
+          // FIX: Dùng _testType đã được gán khi filter
           const sectionTestType = section._testType || (knowledgeSections?.some(s => s.id === sectionId) 
             ? 'knowledge' 
             : readingSections?.some(s => s.id === sectionId) 
@@ -408,18 +408,18 @@ function ExamKnowledgePage() {
   const [currentQuestionId, setCurrentQuestionId] = useState('1');
   const [answers, setAnswers] = useState({});
   const [showSubmitModal, setShowSubmitModal] = useState(false);
-  const [showIncompleteWarning, setShowIncompleteWarning] = useState(false); // ✅ Modal cảnh báo thiếu câu
+  const [showIncompleteWarning, setShowIncompleteWarning] = useState(false); // Modal cảnh báo thiếu câu
   const [unansweredCount, setUnansweredCount] = useState(0);
-  const [levelConfig, setLevelConfig] = useState(null); // ✅ NEW: Store levelConfig for time limit
+  const [levelConfig, setLevelConfig] = useState(null); // NEW: Store levelConfig for time limit
   
-  // ✅ REMOVED: Don't lock body scroll - allow scrolling in modal and outside modal
+  // REMOVED: Don't lock body scroll - allow scrolling in modal and outside modal
   // useBodyScrollLock(showSubmitModal || showIncompleteWarning);
 
-  // ✅ Load exam metadata + questions (Supabase → storage → static)
+  // Load exam metadata + questions (Supabase → storage → static)
   useEffect(() => {
     let isMounted = true;
 
-    // ✅ FIX: Clean HTML artifacts from section title and instruction
+    // FIX: Clean HTML artifacts from section title and instruction
     const cleanHTML = (html) => {
       if (!html || typeof html !== 'string') return html || '';
       // Remove HTML comment tags (StartFragment, EndFragment, etc.)
@@ -430,7 +430,7 @@ function ExamKnowledgePage() {
         .trim();
     };
     
-    // ✅ FIX: Normalize section title and instruction
+    // FIX: Normalize section title and instruction
     const normalizeSection = (section) => {
       // Clean HTML artifacts from title and instruction
       let cleanTitle = cleanHTML(section.title || '');
@@ -446,8 +446,8 @@ function ExamKnowledgePage() {
             ...section,
             title: firstLine,
             instruction: rest,
-            passageImages: section.passageImages, // ✅ NEW: Preserve passageImages array
-            passageImage: section.passageImage // ✅ Backward compatibility: preserve old format
+            passageImages: section.passageImages, // NEW: Preserve passageImages array
+            passageImage: section.passageImage // Backward compatibility: preserve old format
           };
         }
       }
@@ -461,8 +461,8 @@ function ExamKnowledgePage() {
             ...section,
             title: firstLine,
             instruction: rest,
-            passageImages: section.passageImages, // ✅ NEW: Preserve passageImages array
-            passageImage: section.passageImage // ✅ Backward compatibility: preserve old format
+            passageImages: section.passageImages, // NEW: Preserve passageImages array
+            passageImage: section.passageImage // Backward compatibility: preserve old format
           };
         }
       }
@@ -471,8 +471,8 @@ function ExamKnowledgePage() {
         ...section,
         title: cleanTitle || section.title,
         instruction: cleanInstruction || section.instruction,
-        passageImages: section.passageImages, // ✅ NEW: Preserve passageImages array
-        passageImage: section.passageImage // ✅ Backward compatibility: preserve old format
+        passageImages: section.passageImages, // NEW: Preserve passageImages array
+        passageImage: section.passageImage // Backward compatibility: preserve old format
       };
     };
     
@@ -498,13 +498,13 @@ function ExamKnowledgePage() {
     const loadExamData = async () => {
       setIsLoading(true);
       try {
-        // ✅ NEW: Load levelConfig để lấy timeLimit
+        // NEW: Load levelConfig để lấy timeLimit
         const config = await storageManager.getLevelConfig(levelId);
         if (config) {
           setLevelConfig(config);
         }
         
-        // 1️⃣ Ưu tiên load đề thi từ Supabase
+        // 1 Ưu tiên load đề thi từ Supabase
         const { success, data: supabaseExam } = await getExamFromSupabase(levelId, examId);
         let sourceExam = supabaseExam;
 
@@ -513,7 +513,7 @@ function ExamKnowledgePage() {
         }
 
         if (!sourceExam) {
-          // 2️⃣ Fallback: storage (exam do admin tạo, cache)
+          // 2 Fallback: storage (exam do admin tạo, cache)
           const savedExam = await storageManager.getExam(levelId, examId);
           if (savedExam) {
             sourceExam = {
@@ -549,7 +549,7 @@ function ExamKnowledgePage() {
           setCurrentExam(examMetadata);
           setExamData(normalizeExamData(sourceExam));
         } else {
-          // 3️⃣ Cuối cùng: static file
+          // 3 Cuối cùng: static file
           const staticExam = getExamById(levelId, examId);
           const staticData = getExamQuestions(levelId, examId);
           setCurrentExam(staticExam || null);
@@ -646,14 +646,14 @@ function ExamKnowledgePage() {
 
   const knowledgeSections = examData.knowledge?.sections || [];
   const readingSections = examData.reading?.sections || [];
-  // ✅ Tổng thời gian bài Ngôn ngữ (Chữ + Từ vựng + Ngữ pháp + Đọc hiểu)
+  // Tổng thời gian bài Ngôn ngữ (Chữ + Từ vựng + Ngữ pháp + Đọc hiểu)
   // chỉ dựa trên phần "knowledge" theo levelConfig (reading không có thời gian riêng)
   const sections = [...knowledgeSections, ...readingSections];
   const allQuestions = sections.flatMap(s => s.questions || []);
   const normalizedCurrentId = String(currentQuestionId);
   const currentQuestion = allQuestions.find(q => String(q.id) === normalizedCurrentId);
   const currentIndex = allQuestions.findIndex(q => String(q.id) === normalizedCurrentId);
-  // ✅ FIX: Lấy tổng thời gian từ levelConfig (không cộng dồn từ sections)
+  // FIX: Lấy tổng thời gian từ levelConfig (không cộng dồn từ sections)
   // Knowledge + Reading = 110 phút (từ levelConfig.knowledge.timeLimit)
   // Không cộng dồn timeLimit từ sections vì sẽ bị nhân đôi (110 + 110 = 220)
   const totalTime = levelConfig?.knowledge?.timeLimit || 110; // Default 110 phút nếu không có config
@@ -675,7 +675,7 @@ function ExamKnowledgePage() {
     );
   }
 
-  // ✅ Breadcrumb paths với navigate có cảnh báo (tất cả các link đều hoạt động)
+  // Breadcrumb paths với navigate có cảnh báo (tất cả các link đều hoạt động)
   const breadcrumbPaths = [
     { name: t('common.home'), onClick: () => navigate('/') },
     { name: t('common.jlpt'), onClick: () => navigate('/jlpt') },
@@ -713,7 +713,7 @@ function ExamKnowledgePage() {
     let knowledgeCorrect = 0, knowledgeTotal = 0;
     let readingCorrect = 0, readingTotal = 0;
 
-    // ✅ DEBUG: Log exam data structure
+    // DEBUG: Log exam data structure
     console.log('[ExamKnowledge] Exam data structure:', {
       knowledgeSectionsCount: knowledgeSections.length,
       readingSectionsCount: readingSections.length,
@@ -723,7 +723,7 @@ function ExamKnowledgePage() {
       answersCount: Object.keys(answers).length
     });
 
-    // ✅ FIX: Xác định category dựa vào section chứa câu hỏi, không dựa vào q.category
+    // FIX: Xác định category dựa vào section chứa câu hỏi, không dựa vào q.category
     // Tạo map để tra cứu nhanh: question ID -> category
     const questionCategoryMap = new Map();
     
@@ -752,7 +752,7 @@ function ExamKnowledgePage() {
       const questionKey = String(q.id);
       const userAnswer = answers[questionKey];
       const correctAnswer = q.correctAnswer;
-      // ✅ FIX: Normalize về cùng type để so sánh (string hoặc number)
+      // FIX: Normalize về cùng type để so sánh (string hoặc number)
       const normalizedUserAnswer = userAnswer !== undefined ? Number(userAnswer) : undefined;
       const normalizedCorrectAnswer = Number(correctAnswer);
       const isCorrect = normalizedUserAnswer !== undefined && normalizedUserAnswer === normalizedCorrectAnswer;
@@ -761,10 +761,10 @@ function ExamKnowledgePage() {
         correctCount++;
       }
 
-      // ✅ FIX: Xác định category từ map (dựa vào section), fallback về q.category nếu không có
+      // FIX: Xác định category từ map (dựa vào section), fallback về q.category nếu không có
       const category = questionCategoryMap.get(questionKey) || q.category;
       
-      // ✅ DEBUG: Log first 5 questions để kiểm tra
+      // DEBUG: Log first 5 questions để kiểm tra
       if (idx < 5) {
         console.log(`[ExamKnowledge] Question ${idx}: ID=${questionKey}, category=${category}, userAnswer=${userAnswer}, correct=${correctAnswer}, isCorrect=${isCorrect}`);
       }
@@ -780,7 +780,7 @@ function ExamKnowledgePage() {
       }
     });
 
-    // ✅ DEBUG: Log breakdown để kiểm tra
+    // DEBUG: Log breakdown để kiểm tra
     console.log('[ExamKnowledge] Breakdown calculated:', {
       knowledgeCorrect,
       knowledgeTotal,
@@ -795,7 +795,7 @@ function ExamKnowledgePage() {
     const totalQuestions = knowledgeTotal + readingTotal;
     const score = Math.round((totalCorrect / totalQuestions) * 100); // Existing % score
     
-    // ✅ FIX: Đảm bảo breakdown được lưu đúng format
+    // FIX: Đảm bảo breakdown được lưu đúng format
     const breakdown = {
       knowledge: knowledgeCorrect,
       reading: readingCorrect,
@@ -811,7 +811,7 @@ function ExamKnowledgePage() {
     localStorage.setItem(`exam-${levelId}-${examId}-knowledge-score`, score);
     localStorage.setItem(`exam-${levelId}-${examId}-knowledge-completed`, 'true');
     
-    // ✅ NEW: Lưu progress vào Supabase nếu user đã đăng nhập
+    // NEW: Lưu progress vào Supabase nếu user đã đăng nhập
     if (user && typeof user.id === 'string') {
       saveLearningProgress({
         userId: user.id,
@@ -834,11 +834,11 @@ function ExamKnowledgePage() {
       });
     }
     
-    // ✅ Không cần clearExamData vì đã hoàn thành
+    // Không cần clearExamData vì đã hoàn thành
     window.location.href = `/jlpt/${levelId}/${examId}`;
   };
 
-  // ✅ FIX: Kiểm tra câu chưa làm trước khi submit
+  // FIX: Kiểm tra câu chưa làm trước khi submit
   const handleSubmitClick = () => {
     const unanswered = allQuestions.length - Object.keys(answers).length;
     
@@ -850,7 +850,7 @@ function ExamKnowledgePage() {
     }
   };
 
-  // ✅ Xử lý khi user đồng ý submit dù thiếu câu
+  // Xử lý khi user đồng ý submit dù thiếu câu
   const handleConfirmIncompleteSubmit = () => {
     setShowIncompleteWarning(false);
     setShowSubmitModal(true);
@@ -860,7 +860,7 @@ function ExamKnowledgePage() {
     <>
       <div className="w-full pr-0 md:pr-4 overflow-x-hidden">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-          {/* ✅ FIX: Container câu hỏi - Fixed height giống sidebar (giống admin panel) */}
+          {/* FIX: Container câu hỏi - Fixed height giống sidebar (giống admin panel) */}
           <div className="w-full md:flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)]">
             <div className="p-3 sm:p-4 md:p-6 border-b border-gray-300 flex-shrink-0">
               <Breadcrumbs paths={breadcrumbPaths} />
@@ -870,10 +870,10 @@ function ExamKnowledgePage() {
               </div>
             </div>
 
-            {/* ✅ FIX: Scrollable content với fixed height */}
+            {/* FIX: Scrollable content với fixed height */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6">
               <div className="max-w-4xl mx-auto w-full">
-                {/* ✅ NEW: Display passage images if section has any */}
+                {/* NEW: Display passage images if section has any */}
                 {(() => {
                   // Find the section that contains the current question
                   const currentSection = sections.find(section => 
@@ -882,7 +882,7 @@ function ExamKnowledgePage() {
                   
                   if (!currentSection) return null;
                   
-                  // ✅ NEW: Support both passageImages (array) and passageImage (single) for backward compatibility
+                  // NEW: Support both passageImages (array) and passageImage (single) for backward compatibility
                   let imagesToDisplay = [];
                   
                   if (currentSection.passageImages && Array.isArray(currentSection.passageImages) && currentSection.passageImages.length > 0) {
@@ -967,7 +967,7 @@ function ExamKnowledgePage() {
           </div>
         </div>
 
-        {/* ✅ Modal cảnh báo thiếu câu - Thiết kế mới */}
+        {/* Modal cảnh báo thiếu câu - Thiết kế mới */}
         <Modal
           isOpen={showIncompleteWarning}
           onClose={() => setShowIncompleteWarning(false)}
@@ -1036,7 +1036,7 @@ function ExamKnowledgePage() {
         </Modal>
       </div>
 
-      {/* ✅ Hiển thị Modal cảnh báo từ useExamGuard */}
+      {/* Hiển thị Modal cảnh báo từ useExamGuard */}
       {WarningModal}
     </>
   );

@@ -1,6 +1,6 @@
 // src/pages/admin/SettingsPage.jsx
-// ⚙️ SYSTEM SETTINGS PAGE - PHASE 1
-// ✨ NEO BRUTALISM DESIGN
+// SYSTEM SETTINGS PAGE - PHASE 1
+// NEO BRUTALISM DESIGN
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
@@ -12,7 +12,7 @@ import { clearDeletedUsers } from '../../data/users.js';
 import { SEED_CONFIG } from '../../data/seedData.js';
 import ToggleSwitch from '../../components/settings/ToggleSwitch.jsx';
 import SettingsSection from '../../components/settings/SettingsSection.jsx';
-// 🔒 SECURITY: Import error handler
+// SECURITY: Import error handler
 import { getErrorMessage } from '../../utils/uiErrorHandler.js';
 
 function SettingsPage() {
@@ -24,11 +24,11 @@ function SettingsPage() {
   const [saveMessage, setSaveMessage] = useState(null);
   const [platformDescriptionInput, setPlatformDescriptionInput] = useState('');
 
-  // Load settings on mount - ✅ Load from Supabase first
+  // Load settings on mount - Load from Supabase first
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        // ✅ Load from Supabase first to get latest data
+        // Load from Supabase first to get latest data
         const loadedSettings = await loadSettingsFromSupabase();
         setSettings(loadedSettings);
         
@@ -68,7 +68,7 @@ function SettingsPage() {
     }));
     setHasChanges(true);
 
-    // ✅ FIXED: If updating maintenanceMode, also update Supabase immediately
+    // FIXED: If updating maintenanceMode, also update Supabase immediately
     if (category === 'system' && key === 'maintenanceMode') {
       try {
         const { success, error } = await setGlobalMaintenanceMode(value);
@@ -170,7 +170,7 @@ function SettingsPage() {
       const success = saveSettings(finalSettings);
       
       if (success) {
-        // ✅ Save system settings to Supabase for real-time sync
+        // Save system settings to Supabase for real-time sync
         const systemSettingsToSave = {
           platformName: finalSettings.system.platformName,
           platformTagline: finalSettings.system.platformTagline,
@@ -178,7 +178,7 @@ function SettingsPage() {
           contactEmail: finalSettings.system.contactEmail
         };
 
-        // ✅ Save user settings to Supabase for real-time sync
+        // Save user settings to Supabase for real-time sync
         const userSettingsToSave = {
           defaultRole: finalSettings.users.defaultRole,
           passwordMinLength: finalSettings.users.passwordMinLength,

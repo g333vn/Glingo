@@ -1,5 +1,5 @@
 // src/components/admin/lessons/BulkImportCSV.jsx
-// 📊 Bulk Import CSV - Import nhiều flashcard từ CSV file
+// Bulk Import CSV - Import nhiều flashcard từ CSV file
 
 import React, { useState, useRef } from 'react';
 

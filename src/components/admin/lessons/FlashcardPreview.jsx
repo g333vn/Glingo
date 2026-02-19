@@ -1,5 +1,5 @@
 // src/components/admin/lessons/FlashcardPreview.jsx
-// 🎴 Flashcard Preview Component - Interactive flip card preview
+// Flashcard Preview Component - Interactive flip card preview
 
 import React, { useState } from 'react';
 

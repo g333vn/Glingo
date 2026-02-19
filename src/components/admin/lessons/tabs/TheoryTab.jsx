@@ -1,5 +1,5 @@
 // src/components/admin/lessons/tabs/TheoryTab.jsx
-// 📖 Theory Tab - Quản lý nội dung lý thuyết (PDF/HTML/Audio)
+// Theory Tab - Quản lý nội dung lý thuyết (PDF/HTML/Audio)
 
 import React, { useState } from 'react';
 import TheoryFileUpload from '../TheoryFileUpload.jsx';

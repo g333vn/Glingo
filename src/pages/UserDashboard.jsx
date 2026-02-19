@@ -1,5 +1,5 @@
 // src/pages/UserDashboard.jsx
-// 🎯 User Dashboard - Tổng quan tiến độ học tập toàn bộ
+// User Dashboard - Tổng quan tiến độ học tập toàn bộ
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -36,7 +36,7 @@ function UserDashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [isStreakExpanded, setIsStreakExpanded] = useState(true);
   
-  // ✅ NEW: Supabase progress data
+  // NEW: Supabase progress data
   const [supabaseProgress, setSupabaseProgress] = useState({
     lessons: [],
     quizzes: [],
@@ -200,7 +200,7 @@ function UserDashboard() {
         }
       }
 
-      // ✅ NEW: Load Supabase progress if user is authenticated
+      // NEW: Load Supabase progress if user is authenticated
       if (user && typeof user.id === 'string') {
         try {
           const [progressResult, examResultsResult] = await Promise.all([
@@ -458,7 +458,7 @@ function UserDashboard() {
           </div>
         </div>
 
-        {/* ✅ NEW: Supabase Learning Progress Section */}
+        {/* NEW: Supabase Learning Progress Section */}
         {user && typeof user.id === 'string' && (
           <div className="bg-white rounded-xl border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden mb-4 sm:mb-6 md:mb-8">
             <div className="bg-green-400 border-b-[4px] border-black p-3 sm:p-4 md:p-6">

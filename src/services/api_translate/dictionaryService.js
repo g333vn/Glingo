@@ -53,7 +53,7 @@ export async function initJLPTDictionary() {
 export async function translateToVietnamese(text) {
   if (!text || typeof text !== 'string') return text;
   
-  // ✅ OPTIMIZED: Chuyển sang localStorage (cache persistent)
+  // OPTIMIZED: Chuyển sang localStorage (cache persistent)
   const cacheKey = `translate_${text.toLowerCase()}`;
   const cached = localStorage.getItem(cacheKey);
   if (cached) {
@@ -62,7 +62,7 @@ export async function translateToVietnamese(text) {
   }
 
   try {
-    // ✅ Wait for JLPT Dictionary to load if still loading
+    // Wait for JLPT Dictionary to load if still loading
     if (JLPT_DICT_LOADING && JLPT_DICT_PROMISE) {
       await JLPT_DICT_PROMISE;
     }
@@ -99,7 +99,7 @@ export async function translateToVietnamese(text) {
 }
 
 /**
- * ✅ OPTIMIZED: Call Google Translate API with timeout
+ * OPTIMIZED: Call Google Translate API with timeout
  * @param {string} text 
  * @param {number} timeout - Timeout in milliseconds (default: 3000ms)
  * @returns {Promise<string>}
@@ -228,7 +228,7 @@ export async function translateMultipleWords(words) {
 
 /**
  * CORS Proxy alternatives - Better working proxies
- * ✅ UPDATED: Added more reliable and working proxies
+ * UPDATED: Added more reliable and working proxies
  */
 const CORS_PROXIES = [
   'https://api.allorigins.win/raw?url=',      // Most reliable
@@ -249,7 +249,7 @@ export async function lookupWord(word) {
       throw new Error('Từ không hợp lệ');
     }
 
-    // ✅ OPTIMIZED: Cache kết quả tra từ hoàn chỉnh (giảm 99% thời gian cho từ đã tra)
+    // OPTIMIZED: Cache kết quả tra từ hoàn chỉnh (giảm 99% thời gian cho từ đã tra)
     const cacheKey = `lookup_complete_${trimmedWord}`;
     const cached = localStorage.getItem(cacheKey);
     
@@ -264,7 +264,7 @@ export async function lookupWord(word) {
       }
     }
 
-    // ✅ NEW: Try JLPT Dictionary first (no CORS issues, instant lookup)
+    // NEW: Try JLPT Dictionary first (no CORS issues, instant lookup)
     if (JLPT_DICT && Object.keys(JLPT_DICT).length > 0) {
       const jlptEntry = JLPT_DICT[trimmedWord];
       if (jlptEntry) {
@@ -292,7 +292,7 @@ export async function lookupWord(word) {
     const apiUrl = `https://jisho.org/api/v1/search/words?keyword=${encodeURIComponent(trimmedWord)}`;
     
     let lastError;
-    // ✅ FIXED: Try proxies with better error handling
+    // FIXED: Try proxies with better error handling
     for (let i = 0; i < CORS_PROXIES.length; i++) {
       const proxy = CORS_PROXIES[i];
       const requestUrl = `${proxy}${encodeURIComponent(apiUrl)}`;
@@ -341,7 +341,7 @@ export async function lookupWord(word) {
           raw: firstResult
         };
         
-        // ✅ Cache successful results
+        // Cache successful results
         localStorage.setItem(cacheKey, JSON.stringify(result));
         console.log(`[Lookup] ${trimmedWord} - Cached for next time (via proxy ${i + 1})`);
         
@@ -399,7 +399,7 @@ export async function formatDictionaryResult(data) {
     info: sense.info || []
   }));
 
-  // ✅ OPTIMIZED: Chỉ dịch 3 nghĩa đầu tiên (giảm 60-70% thời gian)
+  // OPTIMIZED: Chỉ dịch 3 nghĩa đầu tiên (giảm 60-70% thời gian)
   const limitedMeanings = meanings.slice(0, 3);
   
   // Auto-translate to Vietnamese (với rate limiting)

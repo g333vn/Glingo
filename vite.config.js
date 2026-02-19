@@ -90,36 +90,36 @@ export default defineConfig({
     }
   },
   server: {
-    // ✅ Cấu hình để xử lý SPA routing - redirect tất cả routes về index.html
+    // Cấu hình để xử lý SPA routing - redirect tất cả routes về index.html
     historyApiFallback: true
   },
   build: {
     // ========================================
-    // 🔒 PRODUCTION SECURITY CONFIG
+    // PRODUCTION SECURITY CONFIG
     // ========================================
     
-    // ✅ Minify JS/CSS
+    // Minify JS/CSS
     minify: 'esbuild',
     
-    // ✅ Tắt source map trên production (F12 Sources không xem được code gốc)
+    // Tắt source map trên production (F12 Sources không xem được code gốc)
     // Đổi thành 'hidden-source-map' nếu muốn debug production qua error tracking (Sentry)
     sourcemap: false,
     
-    // ✅ Esbuild options cho production
+    // Esbuild options cho production
     esbuild: {
-      // 🔒 SECURITY: Drop debugger statements
+      // SECURITY: Drop debugger statements
       drop: ['debugger'],
       
-      // 🔒 SECURITY: Drop ALL console methods (log, warn, error, info, debug)
+      // SECURITY: Drop ALL console methods (log, warn, error, info, debug)
       pure: ['console.log', 'console.warn', 'console.info', 'console.debug', 'console.trace'],
       
-      // ✅ Xoá comment khỏi bundle
+      // Xoá comment khỏi bundle
       legalComments: 'none',
     },
     
     rollupOptions: {
       output: {
-        // ✅ CODE SPLITTING: Tách vendor libraries thành chunks riêng
+        // CODE SPLITTING: Tách vendor libraries thành chunks riêng
         manualChunks: {
           // React core
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],

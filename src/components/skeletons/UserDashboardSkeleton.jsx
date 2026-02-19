@@ -1,5 +1,5 @@
 // src/components/skeletons/UserDashboardSkeleton.jsx
-// 📊 Skeleton screen cho UserDashboard theo Neo-Brutalism
+// Skeleton screen cho UserDashboard theo Neo-Brutalism
 
 import React from 'react';
 

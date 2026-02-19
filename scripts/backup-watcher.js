@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * 👀 Backup Watcher Script
+ * Backup Watcher Script
  * 
  * Tự động theo dõi thư mục Downloads và tự động tổ chức file backup
  * khi có file mới được download.

@@ -1,5 +1,5 @@
 // src/translations/vi.js
-// 🇻🇳 Vietnamese Translations
+// Vietnamese Translations
 const vi = {
     // Common shared labels (breadcrumbs, buttons...)
     common: {

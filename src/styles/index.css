@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ✅ FIX CLS: Ensure fonts don't cause layout shift */
+/* FIX CLS: Ensure fonts don't cause layout shift */
 @font-face {
   font-family: 'Kaisei Decol';
   font-display: swap;
@@ -18,7 +18,7 @@
   font-display: swap;
 }
 
-/* ✅ FIX: Prevent horizontal overflow + Optimize performance */
+/* FIX: Prevent horizontal overflow + Optimize performance */
 @layer base {
 
   *,
@@ -41,7 +41,7 @@
     box-sizing: border-box;
   }
 
-  /* ✅ Performance: Optimize UI transitions (NOT animations) */
+  /* Performance: Optimize UI transitions (NOT animations) */
   @media (max-width: 1024px) {
     html {
       scroll-behavior: auto;
@@ -58,7 +58,7 @@
     }
   }
 
-  /* ✅ Performance: Optimize backdrop-filter */
+  /* Performance: Optimize backdrop-filter */
   @media (max-width: 768px) {
 
     .backdrop-blur,
@@ -71,7 +71,7 @@
     }
   }
 
-  /* ✅ Hardware acceleration for smooth scrolling */
+  /* Hardware acceleration for smooth scrolling */
   @media (min-width: 1025px) {
     html {
       scroll-behavior: smooth;
@@ -96,7 +96,7 @@
   animation: slide-in-right 0.3s ease-out;
 }
 
-/* ✅ Modal animations */
+/* Modal animations */
 @keyframes modalFadeIn {
   from {
     opacity: 0;
@@ -1131,7 +1131,7 @@ header[lang="en"] div {
 /* ============================================
    EXPLANATION PREVIEW - Preserve line breaks
    ============================================ */
-/* ✅ FIX: Ensure <br/> tags are always visible in preview panels */
+/* FIX: Ensure <br/> tags are always visible in preview panels */
 .prose br {
   display: block !important;
   content: "" !important;
@@ -1139,13 +1139,13 @@ header[lang="en"] div {
   line-height: 1.75 !important;
 }
 
-/* ✅ FIX: Override prose white-space to preserve line breaks */
+/* FIX: Override prose white-space to preserve line breaks */
 .prose[style*="white-space: pre-wrap"],
 .prose.preserve-line-breaks {
   white-space: pre-wrap !important;
 }
 
-/* ✅ FIX: Ensure images display properly in preview panels */
+/* FIX: Ensure images display properly in preview panels */
 .prose img {
   display: block !important;
   max-width: 100% !important;
@@ -1564,7 +1564,7 @@ header[lang="en"] div {
 /* ============================================
    EXPLANATION PREVIEW - Preserve line breaks
    ============================================ */
-/* ✅ FIX: Ensure <br/> tags are always visible in preview panels */
+/* FIX: Ensure <br/> tags are always visible in preview panels */
 .prose br {
   display: block !important;
   content: "" !important;
@@ -1572,7 +1572,7 @@ header[lang="en"] div {
   line-height: 1.75 !important;
 }
 
-/* ✅ FIX: Override prose white-space to preserve line breaks */
+/* FIX: Override prose white-space to preserve line breaks */
 .prose[style*="white-space: pre-wrap"],
 .prose.preserve-line-breaks {
   white-space: pre-wrap !important;

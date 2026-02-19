@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * 🧹 Backup Cleanup Script
+ * Backup Cleanup Script
  * 
  * Dọn dẹp file backup cũ, chỉ giữ lại các bản gần nhất.
  * 

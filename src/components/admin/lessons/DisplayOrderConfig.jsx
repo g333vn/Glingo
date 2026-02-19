@@ -1,5 +1,5 @@
 // src/components/admin/lessons/DisplayOrderConfig.jsx
-// ⚡ Display Order Configuration - Drag & drop để sắp xếp thứ tự hiển thị content
+// Display Order Configuration - Drag & drop để sắp xếp thứ tự hiển thị content
 
 import React, { useState } from 'react';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';

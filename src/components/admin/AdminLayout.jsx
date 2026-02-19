@@ -83,7 +83,7 @@ function AdminLayout() {
 
   return (
     <div className="min-h-screen">
-      {/* 🔘 Mobile/Tablet Toggle Button - ✨ NEO BRUTALISM */}
+      {/* Mobile/Tablet Toggle Button - NEO BRUTALISM */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         className="md:hidden fixed top-20 left-4 z-[10000] bg-[#2D2D2D] hover:bg-yellow-400 text-white hover:text-black p-3 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 font-black"
@@ -94,7 +94,7 @@ function AdminLayout() {
         </svg>
       </button>
 
-      {/* 🌑 Mobile/Tablet Backdrop - Giống Level/JLPT */}
+      {/* Mobile/Tablet Backdrop - Giống Level/JLPT */}
       {isMobileMenuOpen && (
         <div
           id="mobile-backdrop"
@@ -107,7 +107,7 @@ function AdminLayout() {
       <div className="w-full">
         <div className="w-full flex flex-col md:flex-row items-start gap-0 md:gap-3 mt-0 relative">
           
-          {/* 📌 SIDEBAR - STICKY ON DESKTOP, FIXED OVERLAY ON MOBILE - ✨ NEO BRUTALISM */}
+          {/* SIDEBAR - STICKY ON DESKTOP, FIXED OVERLAY ON MOBILE - NEO BRUTALISM */}
           <div className={`
             fixed md:sticky
             top-20 md:top-24
@@ -123,7 +123,7 @@ function AdminLayout() {
             z-[9999] md:z-10
             transition-all duration-300 ease-in-out
           `}>
-            {/* Sidebar Header - ✨ NEO BRUTALISM */}
+            {/* Sidebar Header - NEO BRUTALISM */}
             <div className="h-20 flex items-center justify-between px-4 border-b-[3px] border-black bg-yellow-400 flex-shrink-0">
               {isSidebarOpen && (
                 <div className="transition-opacity duration-300 min-w-0 flex-1">
@@ -149,7 +149,7 @@ function AdminLayout() {
               </button>
             </div>
 
-            {/* User Info - ✨ NEO BRUTALISM */}
+            {/* User Info - NEO BRUTALISM */}
             <div className="px-4 py-4 border-b-[2px] border-gray-300 flex-shrink-0">
               {isSidebarOpen ? (
                 <div className="transition-opacity duration-300">
@@ -182,7 +182,7 @@ function AdminLayout() {
               )}
             </div>
 
-            {/* Navigation Menu - Scrollable - ✨ NEO BRUTALISM */}
+            {/* Navigation Menu - Scrollable - NEO BRUTALISM */}
             <nav className="flex-1 overflow-y-auto py-4">
               <ul className="space-y-2 px-2">
                 {menuItems.map((item) => (
@@ -224,7 +224,7 @@ function AdminLayout() {
               </ul>
             </nav>
 
-            {/* Logout Button - Fixed at Bottom - ✨ NEO BRUTALISM */}
+            {/* Logout Button - Fixed at Bottom - NEO BRUTALISM */}
             <div className="p-4 border-t-[2px] border-gray-300 flex-shrink-0">
               <button
                 onClick={() => {

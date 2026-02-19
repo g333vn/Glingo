@@ -1,5 +1,5 @@
 // src/components/GlobalSearch.jsx
-// 🔍 Smart Global Search - Search everything (pages, features, content, settings)
+// Smart Global Search - Search everything (pages, features, content, settings)
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -197,7 +197,7 @@ function GlobalSearch() {
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
         
-        // ✅ OPTIMIZED: Use raw data if available to avoid CORS issues
+        // OPTIMIZED: Use raw data if available to avoid CORS issues
         if (result.rawData && typeof dictionaryContext.showDictionaryResult === 'function') {
           console.log('[GlobalSearch] Using raw data to show popup', {
             word: wordToLookup,
@@ -335,7 +335,7 @@ function GlobalSearch() {
         
         if (isJapanese || (isSingleWord && query.length >= 1)) {
           try {
-            // ✅ OPTIMIZED: Only search JLPT dictionary (local, no CORS) during search
+            // OPTIMIZED: Only search JLPT dictionary (local, no CORS) during search
             // Jisho API will be called when user clicks on result (if needed)
             let jlptResult = null;
             let foundKey = null;
@@ -404,7 +404,7 @@ function GlobalSearch() {
                 source: 'JLPT',
                 isCommon: true,
                 priority: isJapanese ? 1000 : 500, // Higher priority if Japanese
-                rawData: jlptRawData // ✅ Save raw data format for JLPT
+                rawData: jlptRawData // Save raw data format for JLPT
               });
               console.log('[GlobalSearch] Added JLPT result:', {
                 word: wordKey,
@@ -413,7 +413,7 @@ function GlobalSearch() {
                 meaning: jlptResult.vietnamese
               });
             } else {
-              // ✅ OPTIMIZED: Check cache first before calling Jisho API
+              // OPTIMIZED: Check cache first before calling Jisho API
               // Only call Jisho if query is Japanese and not in JLPT
               if (isJapanese && query.length >= 1) {
                 const cacheKey = `lookup_complete_${query.trim()}`;
@@ -442,7 +442,7 @@ function GlobalSearch() {
                         isCommon: jishoResult.isCommon || false,
                         jlpt: jishoResult.jlpt || [],
                         priority: isJapanese ? 900 : 400,
-                        rawData: jishoResult // ✅ Use cached data
+                        rawData: jishoResult // Use cached data
                       });
                       console.log('[GlobalSearch] Using cached Jisho result');
                     }
@@ -452,7 +452,7 @@ function GlobalSearch() {
                   }
                 }
                 
-                // ✅ If no JLPT and no cache, show a placeholder result
+                // If no JLPT and no cache, show a placeholder result
                 // User can click to lookup the word (will call API when clicked)
                 if (!jlptResult && !cached && isJapanese) {
                   searchResults.dictionary.push({
@@ -471,7 +471,7 @@ function GlobalSearch() {
                 } else {
                   console.log('[GlobalSearch] No JLPT result and no cache for:', query);
                 }
-                // ✅ Don't call Jisho API during search to avoid CORS
+                // Don't call Jisho API during search to avoid CORS
                 // Will be called when user clicks on result if needed
               }
             }

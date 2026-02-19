@@ -1,5 +1,5 @@
 // scripts/import-sample-book.js
-// 📥 Import Sample Book Script - Run in browser console
+// Import Sample Book Script - Run in browser console
 
 /**
  * HOW TO USE:
@@ -249,7 +249,7 @@
  *    - ID: sample-book-001
  *    - Title: Complete Sample Textbook N1
  *    - Category: Sample JLPT Series
- *    - Is Coming Soon: ✓
+ *    - Is Coming Soon: 
  * 
  * 5. Add Chapter 1:
  *    - ID: chapter-1

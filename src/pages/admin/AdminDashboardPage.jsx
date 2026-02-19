@@ -1,6 +1,6 @@
 // src/pages/admin/AdminDashboardPage.jsx
-// 📊 ENTERPRISE ANALYTICS & TRACKING DASHBOARD
-// ✨ NEO BRUTALISM DESIGN
+// ENTERPRISE ANALYTICS & TRACKING DASHBOARD
+// NEO BRUTALISM DESIGN
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';

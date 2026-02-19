@@ -1,5 +1,5 @@
 // src/components/ToastNotification.jsx
-// 🍞 Toast Notification System - Neo Brutalism Style
+// Toast Notification System - Neo Brutalism Style
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 

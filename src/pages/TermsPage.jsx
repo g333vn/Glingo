@@ -1,5 +1,5 @@
 // src/pages/TermsPage.jsx
-// 📜 Terms of Service Page
+// Terms of Service Page
 
 import React from 'react';
 import { useLanguage } from '../contexts/LanguageContext.jsx';

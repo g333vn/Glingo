@@ -1,5 +1,5 @@
 // src/features/books/pages/LessonPage.jsx
-// 📚 Lesson Page với PDF Viewer & Quiz Tabs - Mobile Responsive
+// Lesson Page với PDF Viewer & Quiz Tabs - Mobile Responsive
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -14,10 +14,10 @@ import { useLanguage } from '../../../contexts/LanguageContext.jsx';
 import { useAuth } from '../../../contexts/AuthContext.jsx';
 import { saveLearningProgress, getLessonProgress } from '../../../services/learningProgressService.js';
 
-// ✅ Import dictionary components
+// Import dictionary components
 import { DictionaryButton, DictionaryPopup, useDictionaryDoubleClick } from '../../../components/api_translate/index.js';
 
-// ✅ PHASE 3: Import SRS Widget
+// PHASE 3: Import SRS Widget
 import SRSWidget from '../../../components/SRSWidget.jsx';
 import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
 import LessonPageSkeleton from '../../../components/skeletons/LessonPageSkeleton.jsx';
@@ -43,14 +43,14 @@ function LessonPage() {
   const [currentLesson, setCurrentLesson] = useState(null);
   const [currentChapter, setCurrentChapter] = useState(null);
   const [currentQuiz, setCurrentQuiz] = useState(null);
-  const [allQuizzes, setAllQuizzes] = useState([]); // ✅ All quizzes for this lesson
+  const [allQuizzes, setAllQuizzes] = useState([]); // All quizzes for this lesson
   const [isLoading, setIsLoading] = useState(true);
   const [booksMetadata, setBooksMetadata] = useState([]);
   const [isLessonCompleted, setIsLessonCompleted] = useState(false);
   
   // PDF Viewer state
   const [pdfUrl, setPdfUrl] = useState(null);
-  const [htmlContent, setHtmlContent] = useState(null); // ✅ NEW: HTML content
+  const [htmlContent, setHtmlContent] = useState(null); // NEW: HTML content
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [zoomLevel, setZoomLevel] = useState(100);
@@ -109,37 +109,61 @@ function LessonPage() {
     const loadLesson = async () => {
       setIsLoading(true);
       try {
-        console.log(`🔍 Loading lesson: bookId=${bookId}, chapterId=${finalChapterId}, lessonId=${finalLessonId}`);
+        console.log(`[LessonPage] Loading: levelId=${levelId}, bookId=${bookId}, chapterId=${finalChapterId}, lessonId=${finalLessonId}`);
         
         // Load lesson data from Supabase + storage
         const savedLessons = await storageManager.getLessons(bookId, finalChapterId, levelId);
+        
+        // DEBUG: Log tat ca lessons da load de kiem tra
+        console.log(`[LessonPage] Loaded ${savedLessons?.length || 0} lessons:`, 
+          savedLessons?.map(l => ({ 
+            id: l.id, 
+            title: l.title, 
+            pdfUrl: l.pdfUrl ? l.pdfUrl.substring(0, 50) + '...' : 'NULL',
+            'theory.pdfUrl': l.theory?.pdfUrl ? l.theory.pdfUrl.substring(0, 50) + '...' : 'NULL'
+          }))
+        );
+        
         let lesson = savedLessons?.find(l => l.id === finalLessonId);
         
         if (lesson) {
           setCurrentLesson(lesson);
-          console.log(`✅ Loaded lesson:`, lesson);
+          console.log(`[LessonPage] Tim thay lesson:`, { 
+            id: lesson.id, 
+            pdfUrl: lesson.pdfUrl,
+            'theory.pdfUrl': lesson.theory?.pdfUrl,
+            'theory.type': lesson.theory?.type,
+            theory: lesson.theory
+          });
           
-          // Check lesson content (new format + legacy fallback)
+          // Kiem tra noi dung bai hoc (format moi + fallback format cu)
           const theoryData = lesson.theory || {};
           
+          // Giai quyet PDF URL: uu tien theory.pdfUrl > lesson.pdfUrl
+          // Loc bo chuoi rong va khoang trang (createLessonStructure khoi tao voi '')
           const resolvedPdf =
-            theoryData.pdfUrl ||
-            lesson.pdfUrl ||
+            (theoryData.pdfUrl && theoryData.pdfUrl.trim()) ||
+            (lesson.pdfUrl && lesson.pdfUrl.trim()) ||
             null;
           if (resolvedPdf) {
             setPdfUrl(resolvedPdf);
+            console.log('[LessonPage] PDF URL resolved:', resolvedPdf);
+          } else {
+            console.warn('[LessonPage] KHONG TIM THAY PDF URL! theory.pdfUrl=', theoryData.pdfUrl, ', lesson.pdfUrl=', lesson.pdfUrl);
           }
           
+          // Giai quyet HTML content: uu tien theory.htmlContent > lesson.content
           const resolvedHtml =
-            theoryData.htmlContent ||
-            lesson.content ||
+            (theoryData.htmlContent && theoryData.htmlContent.trim()) ||
+            (lesson.content && lesson.content.trim()) ||
             null;
           if (resolvedHtml) {
             setHtmlContent(resolvedHtml);
+            console.log('[LessonPage] HTML content found');
           }
           
           // Load lesson completion status
-          // ✅ NEW: Ưu tiên đọc từ Supabase nếu user đã đăng nhập
+          // NEW: Ưu tiên đọc từ Supabase nếu user đã đăng nhập
           let completed = false;
           if (user && typeof user.id === 'string') {
             const { success, data: progress } = await getLessonProgress(user.id, bookId, finalChapterId, finalLessonId);
@@ -170,7 +194,7 @@ function LessonPage() {
           setCurrentChapter(chapter);
         }
         
-        // ✅ Load all quizzes for this lesson
+        // Load all quizzes for this lesson
         const allQuizzesList = [];
         
         // Load from Supabase + storage
@@ -179,8 +203,8 @@ function LessonPage() {
           allQuizzesList.push(savedQuiz);
         }
         
-        // ✅ Try to load all quizzes that might match this lesson
-        // ✅ FIXED: Chỉ load quiz có lessonId chính xác (không load quiz cũ không có lessonId)
+        // Try to load all quizzes that might match this lesson
+        // FIXED: Chỉ load quiz có lessonId chính xác (không load quiz cũ không có lessonId)
         try {
           const allQuizzesFromStorage = await storageManager.getAllQuizzes(levelId);
           const filteredQuizzes = allQuizzesFromStorage.filter(q => {
@@ -204,7 +228,7 @@ function LessonPage() {
           console.warn('Error loading all quizzes:', e);
         }
         
-        // ✅ FALLBACK: Try demo quizzes if not found in storage
+        // FALLBACK: Try demo quizzes if not found in storage
         if (allQuizzesList.length === 0 && bookId === 'demo-complete-001') {
           const quizKey = `${bookId}_${finalChapterId}_${finalLessonId}`;
           const demoQuiz = demoQuizzes[quizKey];
@@ -215,7 +239,7 @@ function LessonPage() {
         }
         
         // Transform and set quizzes
-        // ✅ FIXED: Filter và validate quiz trước khi hiển thị
+        // FIXED: Filter và validate quiz trước khi hiển thị
         const transformedQuizzes = allQuizzesList
           .map(savedQuiz => {
             let quizToSet = savedQuiz;
@@ -236,7 +260,7 @@ function LessonPage() {
             }
             return quizToSet;
           })
-          // ✅ FIXED: Chỉ giữ lại quiz hợp lệ (có questions và ít nhất 1 câu hỏi có nội dung)
+          // FIXED: Chỉ giữ lại quiz hợp lệ (có questions và ít nhất 1 câu hỏi có nội dung)
           .filter(quiz => {
             if (!quiz || !quiz.questions || !Array.isArray(quiz.questions)) {
               console.warn(`⚠️ Filtered out invalid quiz (no questions):`, quiz);
@@ -303,7 +327,7 @@ function LessonPage() {
       return;
     }
 
-    // ✅ Navigate về level page và filter theo category (hiển thị danh sách sách trong bộ đó)
+    // Navigate về level page và filter theo category (hiển thị danh sách sách trong bộ đó)
     // Sử dụng URL query parameter để truyền category
     navigate(`/level/${levelId}?category=${encodeURIComponent(categoryName)}`);
   };
@@ -318,7 +342,7 @@ function LessonPage() {
     if (newStatus) {
       updateStudyStreak(user);
       
-      // ✅ NEW: Lưu progress vào Supabase nếu user đã đăng nhập
+      // NEW: Lưu progress vào Supabase nếu user đã đăng nhập
       if (user && typeof user.id === 'string') {
         saveLearningProgress({
           userId: user.id,
@@ -693,7 +717,7 @@ function LessonPage() {
                     </div>
                   </div>
 
-                  {/* ✅ PHASE 3: SRS Widget */}
+                  {/* PHASE 3: SRS Widget */}
                   {currentLesson && <SRSWidget lesson={currentLesson} />}
                 </div>
               ) : (

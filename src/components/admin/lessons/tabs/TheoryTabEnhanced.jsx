@@ -1,5 +1,5 @@
 // src/components/admin/lessons/tabs/TheoryTabEnhanced.jsx
-// 📖 Enhanced Theory Tab - File upload + HTML editor + Multi-format
+// Enhanced Theory Tab - File upload + HTML editor + Multi-format
 
 import React, { useState, useRef } from 'react';
 import { useLanguage } from '../../../../contexts/LanguageContext.jsx';
@@ -7,15 +7,15 @@ import DisplayOrderConfig from '../DisplayOrderConfig.jsx';
 
 /**
  * TheoryTabEnhanced Component
- * ✅ File upload từ thiết bị (drag & drop)
- * ✅ HTML Editor để tạo content trực tiếp
- * ✅ Multi-format: PDF, DOCX, Images, Audio, Video
+ * File upload từ thiết bị (drag & drop)
+ * HTML Editor để tạo content trực tiếp
+ * Multi-format: PDF, DOCX, Images, Audio, Video
  * 
  * @param {object} theoryData - Theory data from lesson
  * @param {function} onChange - Callback khi thay đổi
  * @param {object} lessonContext - Thông tin định danh (levelId, bookId, chapterId, lessonId)
  */
-function TheoryTabEnhanced({ theoryData, onChange, lessonContext = {} }) {
+function TheoryTabEnhanced({ theoryData, onChange, lessonContext = {}, onAutoSave }) {
   const { t } = useLanguage();
   const [uploadMode, setUploadMode] = useState('url'); // 'url' | 'upload' | 'editor'
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -105,11 +105,11 @@ function TheoryTabEnhanced({ theoryData, onChange, lessonContext = {} }) {
         const result = e.target.result;
         const updatedTheory = { ...theoryData };
         
-        // ✅ PDF: upload lên Supabase Storage và lưu public URL
+        // PDF: upload lên Supabase Storage và lưu public URL
         if (fileExt === 'pdf' || file.type === 'application/pdf') {
           try {
             const { uploadPDF, generateFilePath } = await import('@services/fileUploadService');
-            // 📁 Tạo folder theo cấu trúc: level-n1/book-xxx/chapter-yyy/lesson-zzz
+            // Tạo folder theo cấu trúc: level-n1/book-xxx/chapter-yyy/lesson-zzz
             const safeLevel = levelId || 'unknown-level';
             const safeBook = bookId || 'unknown-book';
             const safeChapter = chapterId || 'unknown-chapter';
@@ -158,10 +158,27 @@ function TheoryTabEnhanced({ theoryData, onChange, lessonContext = {} }) {
         onChange(updatedTheory);
         
         setUploadProgress(100);
-        setTimeout(() => {
+        setTimeout(async () => {
           setIsUploading(false);
           setUploadProgress(0);
-          alert(`✅ ${t('contentManagement.lessonModal.theoryTab.uploadSuccess')}\n\n${t('contentManagement.lessonModal.theoryTab.file')} ${fileName}\n${t('contentManagement.lessonModal.theoryTab.size')} ${(file.size / 1024).toFixed(2)}KB`);
+          
+          // Tu dong luu bai hoc sau khi upload thanh cong (khong can click Luu thu cong)
+          if (onAutoSave) {
+            try {
+              const saved = await onAutoSave(updatedTheory);
+              if (saved) {
+                alert(`${t('contentManagement.lessonModal.theoryTab.uploadSuccess')}\n\n${t('contentManagement.lessonModal.theoryTab.file')} ${fileName}\n${t('contentManagement.lessonModal.theoryTab.size')} ${(file.size / 1024).toFixed(2)}KB\n\n${t('contentManagement.lessonModal.theoryTab.autoSaved') || 'Bai hoc da duoc tu dong luu vao he thong.'}`);
+              } else {
+                alert(`${t('contentManagement.lessonModal.theoryTab.uploadSuccess')}\n\n${t('contentManagement.lessonModal.theoryTab.file')} ${fileName}\n${t('contentManagement.lessonModal.theoryTab.size')} ${(file.size / 1024).toFixed(2)}KB\n\n${t('contentManagement.lessonModal.theoryTab.autoSaveFailed') || 'Luu tu dong that bai. Vui long nhan nut Luu o cuoi form.'}`);
+              }
+            } catch (autoSaveErr) {
+              console.error('[TheoryTabEnhanced] Auto-save error:', autoSaveErr);
+              alert(`${t('contentManagement.lessonModal.theoryTab.uploadSuccess')}\n\n${t('contentManagement.lessonModal.theoryTab.file')} ${fileName}\n${t('contentManagement.lessonModal.theoryTab.size')} ${(file.size / 1024).toFixed(2)}KB\n\n${t('contentManagement.lessonModal.theoryTab.autoSaveFailed') || 'Luu tu dong that bai. Vui long nhan nut Luu o cuoi form.'}`);
+            }
+          } else {
+            // Khong co onAutoSave, hien thi thong bao upload binh thuong
+            alert(`${t('contentManagement.lessonModal.theoryTab.uploadSuccess')}\n\n${t('contentManagement.lessonModal.theoryTab.file')} ${fileName}\n${t('contentManagement.lessonModal.theoryTab.size')} ${(file.size / 1024).toFixed(2)}KB`);
+          }
         }, 400);
       };
       

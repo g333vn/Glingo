@@ -1,5 +1,5 @@
 // src/components/WarningModal.jsx
-// ✨ NEO BRUTALISM MODAL - Ongoing Exam Warning
+// NEO BRUTALISM MODAL - Ongoing Exam Warning
 
 import React from 'react';
 import Modal from './Modal.jsx';
@@ -31,7 +31,7 @@ function WarningModal({ isOpen, onConfirm, onCancel }) {
           {t('jlpt.modals.ongoingExamQuestion')}
         </p>
 
-        {/* ✅ NEO BRUTALISM BUTTONS */}
+        {/* NEO BRUTALISM BUTTONS */}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={onCancel}

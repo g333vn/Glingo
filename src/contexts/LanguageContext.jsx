@@ -1,5 +1,5 @@
 // src/contexts/LanguageContext.jsx
-// 🌐 Language Context - SIMPLE & WORKING i18n System
+// Language Context - SIMPLE & WORKING i18n System
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import translations from '../translations/index.js';

@@ -1,5 +1,5 @@
 // src/pages/PrivacyPage.jsx
-// 🔒 Privacy Policy Page
+// Privacy Policy Page
 
 import React from 'react';
 import { useLanguage } from '../contexts/LanguageContext.jsx';

@@ -1,5 +1,5 @@
 // src/hooks/useUserManagement.jsx
-// 👥 Custom hook for user management operations (admin)
+// Custom hook for user management operations (admin)
 // Handles: listing, searching, updating, deleting users
 
 import { useCallback, useState, useEffect } from 'react';

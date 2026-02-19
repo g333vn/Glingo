@@ -1,5 +1,5 @@
 // src/services/accessControlService.js
-// 🔒 ACCESS CONTROL SERVICE - Quản lý quyền truy cập từ Supabase
+// ACCESS CONTROL SERVICE - Quản lý quyền truy cập từ Supabase
 // Đảm bảo đồng bộ thời gian thực cho toàn hệ thống
 
 import { supabase } from './supabaseClient.js';

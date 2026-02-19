@@ -1,7 +1,7 @@
 // src/components/admin/lessons/EnhancedLessonModal.jsx
-// 🎯 Enhanced Lesson Modal - Modal với tabs system (Theory/Flashcard/Quiz)
+// Enhanced Lesson Modal - Modal với tabs system (Theory/Flashcard/Quiz)
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
 import Modal from '../../Modal.jsx';
 import ContentTypeSelector from './ContentTypeSelector.jsx';
@@ -39,32 +39,56 @@ function EnhancedLessonModal({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
   
+  // Ref de luon lay duoc lessonData moi nhat, tranh stale closure trong setTimeout cua auto-save
+  const lessonDataRef = useRef(lessonData);
+  useEffect(() => {
+    lessonDataRef.current = lessonData;
+  }, [lessonData]);
+  
+  // FIXED: Ref de dam bao chi khoi tao state 1 lan khi modal mo
+  // Tranh loi: chapterInfo la object moi moi lan render -> useEffect chay lai -> RESET state
+  // -> mat du lieu theory/pdfUrl da upload -> khi user nhan "Luu" se ghi de data dung!
+  const initializedRef = useRef(false);
+  
   // ========== INITIALIZE ==========
   useEffect(() => {
+    // Khi modal dong: reset co khoi tao de lan mo tiep theo se khoi tao lai
+    if (!isOpen) {
+      initializedRef.current = false;
+      return;
+    }
+    
+    // Khi modal dang mo: chi khoi tao 1 lan duy nhat
+    // Tranh truong hop re-render (vi du: auto-save thanh cong -> parent re-render -> 
+    // chapterInfo tao moi -> useEffect chay lai -> RESET lessonData -> mat pdfUrl)
+    if (initializedRef.current) {
+      return;
+    }
+    initializedRef.current = true;
+    
     if (initialLesson) {
-      // Edit mode: Load existing lesson
+      // Che do chinh sua: khoi tao tu du lieu bai hoc co san
       setLessonData(createLessonStructure(initialLesson));
     } else {
-      // Create mode: Fresh lesson with auto-ID
-      // ✅ ENHANCED: Auto-generate ID based on existing lessons to avoid duplicates
+      // Che do tao moi: tu dong sinh ID dua tren cac bai hoc da co
       let autoId = 'lesson-1';
       const existingLessons = chapterInfo?.existingLessons || [];
       
       if (chapterInfo && chapterInfo.bookId && chapterInfo.chapterId) {
         const chapterNum = chapterInfo.chapterId.match(/\d+/)?.[0] || '1';
         
-        // ✅ Find the highest lesson number in this chapter
+        // Tim so bai hoc lon nhat trong chapter nay
         const lessonNumbers = existingLessons
           .map(lesson => {
-            // Support formats: lesson-1-1, lesson-1-2, etc.
+            // Ho tro dinh dang: lesson-1-1, lesson-1-2, etc.
             const match = lesson.id?.match(/lesson-(\d+)-(\d+)/);
             if (match && match[1] === chapterNum) {
               return parseInt(match[2], 10);
             }
-            // Fallback: check for simple format lesson-1, lesson-2
+            // Fallback: dinh dang don gian lesson-1, lesson-2
             const simpleMatch = lesson.id?.match(/lesson-(\d+)/);
             if (simpleMatch && simpleMatch[1] === chapterNum) {
-              return 1; // Assume first lesson
+              return 1;
             }
             return 0;
           })
@@ -74,7 +98,7 @@ function EnhancedLessonModal({
         const nextNum = maxNum + 1;
         autoId = `lesson-${chapterNum}-${nextNum}`;
       } else if (existingLessons.length > 0) {
-        // Fallback: if no chapter info, just find max number
+        // Fallback: neu khong co thong tin chapter, tim so lon nhat
         const numbers = existingLessons
           .map(lesson => {
             const match = lesson.id?.match(/lesson-(\d+)/);
@@ -96,7 +120,7 @@ function EnhancedLessonModal({
   
   /**
    * Handle content type change
-   * ✅ ENHANCED: Auto-switch tab và highlight relevant tabs
+   * ENHANCED: Auto-switch tab và highlight relevant tabs
    */
   const handleContentTypeChange = (newType) => {
     setLessonData(prev => ({
@@ -104,7 +128,7 @@ function EnhancedLessonModal({
       contentType: newType
     }));
     
-    // ✅ Auto-enable SRS if vocabulary/kanji và switch to flashcard tab
+    // Auto-enable SRS if vocabulary/kanji và switch to flashcard tab
     if (newType === CONTENT_TYPES.VOCABULARY || newType === CONTENT_TYPES.KANJI) {
       setLessonData(prev => ({
         ...prev,
@@ -123,7 +147,7 @@ function EnhancedLessonModal({
   
   /**
    * Handle theory data change
-   * ✅ Track unsaved changes
+   * Track unsaved changes
    */
   const handleTheoryChange = (newTheoryData) => {
     setLessonData(prev => ({
@@ -135,7 +159,7 @@ function EnhancedLessonModal({
   
   /**
    * Handle SRS data change
-   * ✅ Track unsaved changes
+   * Track unsaved changes
    */
   const handleSRSChange = (newSRSData) => {
     setLessonData(prev => ({
@@ -146,7 +170,7 @@ function EnhancedLessonModal({
   };
   
   /**
-   * ✅ NEW: Validate entire lesson data
+   * NEW: Validate entire lesson data
    */
   const validateLesson = () => {
     const errors = [];
@@ -155,7 +179,7 @@ function EnhancedLessonModal({
     if (!lessonData.id) errors.push(t('contentManagement.lessonModal.validation.idRequired'));
     if (!lessonData.title) errors.push(t('contentManagement.lessonModal.validation.titleRequired'));
     
-    // ✅ Check duplicate ID (only for new lessons)
+    // Check duplicate ID (only for new lessons)
     if (!initialLesson && chapterInfo?.existingLessons) {
       const isDuplicate = chapterInfo.existingLessons.some(
         lesson => lesson.id === lessonData.id
@@ -165,7 +189,7 @@ function EnhancedLessonModal({
       }
     }
     
-    // ✅ Content can be empty (allow creating shell lesson and add quiz later)
+    // Content can be empty (allow creating shell lesson and add quiz later)
     
     // SRS validation (if enabled)
     if (lessonData.srs?.enabled) {
@@ -182,7 +206,7 @@ function EnhancedLessonModal({
   };
   
   /**
-   * ✅ NEW: Save as draft
+   * NEW: Save as draft
    */
   const handleSaveDraft = async () => {
     // Validate first
@@ -215,12 +239,12 @@ function EnhancedLessonModal({
   };
   
   /**
-   * ✅ ENHANCED: Handle form submit with full validation
+   * ENHANCED: Handle form submit with full validation
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // ✅ Full validation
+    // Full validation
     if (!validateLesson()) {
       alert(t('contentManagement.lessonModal.validation.validationError', { errors: validationErrors.join('\n') }));
       return;
@@ -263,7 +287,43 @@ function EnhancedLessonModal({
   };
   
   /**
-   * ✅ NEW: Handle close with confirmation
+   * Tu dong luu bai hoc sau khi upload file thanh cong
+   * Duoc goi tu TheoryTabEnhanced sau khi file duoc upload len Storage
+   * Dung ref de lay lessonData moi nhat, tranh stale closure trong setTimeout
+   * Tra ve true neu luu thanh cong, false neu that bai
+   */
+  const handleAutoSaveAfterUpload = useCallback(async (updatedTheoryData) => {
+    // Dung ref de lay lessonData moi nhat (tranh stale closure)
+    const currentLessonData = lessonDataRef.current;
+    
+    // Xay dung du lieu bai hoc day du voi theory da cap nhat
+    const fullLessonData = {
+      ...currentLessonData,
+      theory: updatedTheoryData,
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Chi tu dong luu khi co du thong tin co ban (id va title)
+    if (!fullLessonData.id || !fullLessonData.title) {
+      console.warn('[EnhancedLessonModal] Khong the tu dong luu: thieu id hoac title');
+      return false;
+    }
+    
+    try {
+      console.log('[EnhancedLessonModal] Bat dau tu dong luu, theory.pdfUrl:', updatedTheoryData?.pdfUrl || '(khong co)');
+      // Goi onSave voi option silent de khong hien alert va khong dong modal
+      await onSave(fullLessonData, { silent: true });
+      setHasUnsavedChanges(false);
+      console.log('[EnhancedLessonModal] Tu dong luu thanh cong sau khi upload file');
+      return true;
+    } catch (err) {
+      console.error('[EnhancedLessonModal] Tu dong luu that bai:', err);
+      return false;
+    }
+  }, [onSave]); // Khong phu thuoc vao lessonData vi da dung ref
+
+  /**
+   * NEW: Handle close with confirmation
    */
   const handleClose = () => {
     if (hasUnsavedChanges) {
@@ -276,7 +336,7 @@ function EnhancedLessonModal({
   // ========== COMPUTE TAB CONFIG ==========
   const enabledTabIds = getEnabledTabs(lessonData.contentType);
   
-  // ✅ ENHANCED: Tabs with dynamic highlighting
+  // ENHANCED: Tabs with dynamic highlighting
   const tabs = [
     {
       id: 'theory',
@@ -343,7 +403,7 @@ function EnhancedLessonModal({
         
         {/* ========== SECTION 2: Basic Info ========== */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* ✅ ENHANCED: ID with Auto-fill and Stepper */}
+          {/* ENHANCED: ID with Auto-fill and Stepper */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">
               {t('contentManagement.lessonModal.lessonId')} {!initialLesson && t('contentManagement.lessonModal.autoId')}
@@ -493,7 +553,7 @@ function EnhancedLessonModal({
           </label>
         </div>
         
-        {/* ✅ NEW: Existing Lessons List - Check for duplicates */}
+        {/* NEW: Existing Lessons List - Check for duplicates */}
         {!initialLesson && chapterInfo?.existingLessons && chapterInfo.existingLessons.length > 0 && (
           <div className="p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
             <div className="flex items-center gap-2 mb-3">
@@ -559,6 +619,7 @@ function EnhancedLessonModal({
             <TheoryTabEnhanced
               theoryData={lessonData.theory}
               onChange={handleTheoryChange}
+              onAutoSave={handleAutoSaveAfterUpload}
               lessonContext={{
                 levelId: chapterInfo.levelId,
                 bookId: chapterInfo.bookId,

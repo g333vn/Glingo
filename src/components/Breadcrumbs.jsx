@@ -3,7 +3,7 @@ import React from 'react';
 import { useExamGuard } from '../hooks/useExamGuard.jsx';
 
 /**
- * ✅ Component Breadcrumbs - HỖ TRỢ ĐẦY ĐỦ useExamGuard
+ * Component Breadcrumbs - HỖ TRỢ ĐẦY ĐỦ useExamGuard
  * 
  * CÁCH SỬ DỤNG:
  * 1. Truyền onClick (function) → Tự động có cảnh báo nếu đang làm bài
@@ -11,8 +11,8 @@ import { useExamGuard } from '../hooks/useExamGuard.jsx';
  * 
  * VÍ DỤ:
  * const breadcrumbPaths = [
- *   { name: 'ホーム', onClick: () => navigate('/') }, // ✅ Có cảnh báo
- *   { name: 'JLPT', link: '/jlpt' },                 // ❌ Không cảnh báo
+ *   { name: 'ホーム', onClick: () => navigate('/') }, // Có cảnh báo
+ *   { name: 'JLPT', link: '/jlpt' },                 // Không cảnh báo
  *   { name: 'N1' }                                    // Trang hiện tại
  * ];
  */
@@ -27,7 +27,7 @@ function Breadcrumbs({ paths }) {
             {index > 0 && <span className="mx-1 sm:mx-2 text-gray-400 text-xs">&gt;</span>}
 
             {index < paths.length - 1 ? (
-              // ✅ CÓ onClick hoặc handleNavigate → Dùng navigate có cảnh báo
+              // CÓ onClick hoặc handleNavigate → Dùng navigate có cảnh báo
               path.onClick ? (
                 <button
                   onClick={path.onClick}
@@ -43,7 +43,7 @@ function Breadcrumbs({ paths }) {
                   {path.name}
                 </button>
               ) : path.link ? (
-                // ✅ CÓ link → Dùng <a> thông thường (không cảnh báo)
+                // CÓ link → Dùng <a> thông thường (không cảnh báo)
                 <a
                   href={path.link}
                   className="text-black hover:text-[#FF5722] font-black uppercase tracking-wide transition-colors hover:bg-yellow-400 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md border-[2px] border-transparent hover:border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs sm:text-sm"
@@ -51,7 +51,7 @@ function Breadcrumbs({ paths }) {
                   {path.name}
                 </a>
               ) : (
-                // ❌ Không có gì → Chỉ hiển thị text
+                // Không có gì → Chỉ hiển thị text
                 <span className="text-gray-600 text-xs sm:text-sm">{path.name}</span>
               )
             ) : (

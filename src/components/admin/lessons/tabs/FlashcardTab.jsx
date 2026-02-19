@@ -1,5 +1,5 @@
 // src/components/admin/lessons/tabs/FlashcardTab.jsx
-// 🎴 Flashcard Tab - Quản lý SRS flashcard deck
+// Flashcard Tab - Quản lý SRS flashcard deck
 
 import React, { useState } from 'react';
 import FlashcardPreview from '../FlashcardPreview.jsx';
@@ -9,9 +9,9 @@ import PDFAutoExtract from '../PDFAutoExtract.jsx';
 
 /**
  * FlashcardTab Component
- * Phase 1: Skeleton với basic settings ✅
- * Phase 2: Card editor + Bulk import ✅
- * Phase 2: Auto-extract từ PDF ✅
+ * Phase 1: Skeleton với basic settings 
+ * Phase 2: Card editor + Bulk import 
+ * Phase 2: Auto-extract từ PDF 
  * 
  * @param {object} srsData - SRS data from lesson
  * @param {function} onChange - Callback khi thay đổi

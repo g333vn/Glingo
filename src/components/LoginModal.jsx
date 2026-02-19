@@ -1,5 +1,5 @@
 // src/components/LoginModal.jsx
-// ✨ NEO BRUTALISM + JAPANESE AESTHETIC LOGIN MODAL
+// NEO BRUTALISM + JAPANESE AESTHETIC LOGIN MODAL
 
 import React, { useState, useEffect } from 'react';
 import { FaApple } from 'react-icons/fa'; 
@@ -9,7 +9,7 @@ import * as authService from '../services/authService.js';
 import Modal from './Modal.jsx';
 
 function LoginModal({ onClose, initialView = 'register' }) { 
-  // ✅ UPDATED: Nhận initialView prop để set view ban đầu ('login' hoặc 'register')
+  // UPDATED: Nhận initialView prop để set view ban đầu ('login' hoặc 'register')
   const [isRegisterView, setIsRegisterView] = useState(initialView === 'register');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -21,7 +21,7 @@ function LoginModal({ onClose, initialView = 'register' }) {
     password: '',
   });
   
-  // ✅ UPDATED: Sync state khi initialView thay đổi
+  // UPDATED: Sync state khi initialView thay đổi
   useEffect(() => {
     setIsRegisterView(initialView === 'register');
     setError(null);
@@ -31,7 +31,7 @@ function LoginModal({ onClose, initialView = 'register' }) {
     setIsRegisterView(!isRegisterView);
   };
 
-  // ✅ NEW: Handle input change
+  // NEW: Handle input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -41,7 +41,7 @@ function LoginModal({ onClose, initialView = 'register' }) {
     setError(null);
   };
 
-  // ✅ FIX: Actual login/register logic
+  // FIX: Actual login/register logic
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -95,7 +95,7 @@ function LoginModal({ onClose, initialView = 'register' }) {
     }
   };
 
-  // ✅ NEW: Social login handlers (placeholder)
+  // NEW: Social login handlers (placeholder)
   const handleSocialLogin = (provider) => {
     console.log('Social login with:', provider);
     alert(`${provider} login functionality coming soon!`);
@@ -174,7 +174,7 @@ function LoginModal({ onClose, initialView = 'register' }) {
                   <p className="text-red-700 text-sm font-bold">{error}</p>
                 </div>
               )}
-              {/* ✨ NEO BRUTALISM Button: Create Account */}
+              {/* NEO BRUTALISM Button: Create Account */}
               <div className="mb-4">
                 <button 
                   className="bg-[#FFB800] hover:bg-[#FF5722] text-black hover:text-white text-base font-black py-2.5 px-4 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] focus:outline-none w-full transition-all duration-200 uppercase tracking-wide hover:translate-x-[-2px] hover:translate-y-[-2px] disabled:opacity-50 disabled:cursor-not-allowed" 
@@ -241,7 +241,7 @@ function LoginModal({ onClose, initialView = 'register' }) {
                   <p className="text-red-700 text-sm font-bold">{error}</p>
                 </div>
               )}
-              {/* ✨ NEO BRUTALISM Button: Login */}
+              {/* NEO BRUTALISM Button: Login */}
               <div className="mb-4">
                 <button 
                   className="bg-[#FFB800] hover:bg-[#FF5722] text-black hover:text-white text-base font-black py-2.5 px-4 rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] focus:outline-none w-full transition-all duration-200 uppercase tracking-wide hover:translate-x-[-2px] hover:translate-y-[-2px] disabled:opacity-50 disabled:cursor-not-allowed" 

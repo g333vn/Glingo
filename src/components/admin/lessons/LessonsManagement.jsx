@@ -1,5 +1,5 @@
 // src/components/admin/lessons/LessonsManagement.jsx
-// 📚 Lessons Management Component - Admin UI with Analytics Toggle
+// Lessons Management Component - Admin UI with Analytics Toggle
 
 import React, { useState, useEffect } from 'react';
 import storageManager from '../../../utils/localStorageManager.js';

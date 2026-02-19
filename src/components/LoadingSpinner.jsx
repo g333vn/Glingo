@@ -1,5 +1,5 @@
 // src/components/LoadingSpinner.jsx
-// 🎡 Generic Neo-Brutalism Loading Spinner + Text
+// Generic Neo-Brutalism Loading Spinner + Text
 
 import React from 'react';
 

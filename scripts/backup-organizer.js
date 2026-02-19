@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * 📦 Backup Organizer Script
+ * Backup Organizer Script
  * 
  * Tự động tổ chức file backup vào 3 nơi:
  * 1. data/backups/ (trong project)

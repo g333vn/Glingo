@@ -22,7 +22,7 @@ const ContentEditable = ({
   style = {},
   minHeight = 100,
   field = 'explanation',
-  questionIndex = null // ✅ NEW: For toolbar functions to find this element
+  questionIndex = null // NEW: For toolbar functions to find this element
 }) => {
   const contentRef = useRef(null);
   const isComposingRef = useRef(false);
@@ -71,7 +71,7 @@ const ContentEditable = ({
       const html = e.clipboardData.getData('text/html');
       const text = e.clipboardData.getData('text/plain');
       
-      // ✅ FIX: Nếu có custom paste handler, dùng nó
+      // FIX: Nếu có custom paste handler, dùng nó
       if (onPaste) {
         try {
           const result = await onPaste(e, imageFile, html, text);
@@ -98,7 +98,7 @@ const ContentEditable = ({
         }
       }
       
-      // ✅ FIX: Default paste behavior - luôn có fallback
+      // FIX: Default paste behavior - luôn có fallback
       if (hasImage && imageFile) {
         // Image paste - nếu không có handler, insert img tag
         const reader = new FileReader();
@@ -157,12 +157,12 @@ const ContentEditable = ({
           }
         }, 0);
       } else {
-        // ✅ FIX: Nếu không có gì cả, vẫn cho phép browser paste mặc định
+        // FIX: Nếu không có gì cả, vẫn cho phép browser paste mặc định
         console.warn('[ContentEditable] No content to paste from clipboard');
       }
     } catch (error) {
       console.error('[ContentEditable] Error handling paste:', error);
-      // ✅ FIX: Nếu có lỗi, vẫn cố gắng paste text nếu có
+      // FIX: Nếu có lỗi, vẫn cố gắng paste text nếu có
       try {
         const text = e.clipboardData.getData('text/plain');
         if (text) {
@@ -189,13 +189,13 @@ const ContentEditable = ({
     if (selection.rangeCount > 0) {
       range = selection.getRangeAt(0);
     } else {
-      // ✅ FIX: Nếu không có selection, tạo range ở cuối content
+      // FIX: Nếu không có selection, tạo range ở cuối content
       range = document.createRange();
       range.selectNodeContents(contentRef.current);
       range.collapse(false); // Collapse to end
     }
     
-    // ✅ FIX: Đảm bảo range nằm trong contentRef
+    // FIX: Đảm bảo range nằm trong contentRef
     if (!contentRef.current.contains(range.commonAncestorContainer)) {
       range = document.createRange();
       range.selectNodeContents(contentRef.current);
@@ -220,7 +220,7 @@ const ContentEditable = ({
     selection.removeAllRanges();
     selection.addRange(range);
     
-    // ✅ FIX: Focus vào contentEditable để đảm bảo cursor visible
+    // FIX: Focus vào contentEditable để đảm bảo cursor visible
     contentRef.current.focus();
   };
 
@@ -234,13 +234,13 @@ const ContentEditable = ({
     if (selection.rangeCount > 0) {
       range = selection.getRangeAt(0);
     } else {
-      // ✅ FIX: Nếu không có selection, tạo range ở cuối content
+      // FIX: Nếu không có selection, tạo range ở cuối content
       range = document.createRange();
       range.selectNodeContents(contentRef.current);
       range.collapse(false); // Collapse to end
     }
     
-    // ✅ FIX: Đảm bảo range nằm trong contentRef
+    // FIX: Đảm bảo range nằm trong contentRef
     if (!contentRef.current.contains(range.commonAncestorContainer)) {
       range = document.createRange();
       range.selectNodeContents(contentRef.current);
@@ -253,7 +253,7 @@ const ContentEditable = ({
     selection.removeAllRanges();
     selection.addRange(range);
     
-    // ✅ FIX: Focus vào contentEditable để đảm bảo cursor visible
+    // FIX: Focus vào contentEditable để đảm bảo cursor visible
     contentRef.current.focus();
   };
 
@@ -273,7 +273,7 @@ const ContentEditable = ({
   // Show placeholder when empty
   const isEmpty = !value || value.trim() === '' || value === '<br>' || value === '<br/>';
 
-  // ✅ FIX: Ensure ContentEditable is focusable and can receive paste events
+  // FIX: Ensure ContentEditable is focusable and can receive paste events
   useEffect(() => {
     if (contentRef.current) {
       // Ensure contentEditable is enabled
@@ -295,7 +295,7 @@ const ContentEditable = ({
         onCompositionStart={handleCompositionStart}
         onCompositionEnd={handleCompositionEnd}
         onFocus={(e) => {
-          // ✅ FIX: Ensure cursor is visible when focused
+          // FIX: Ensure cursor is visible when focused
           if (contentRef.current && !contentRef.current.textContent.trim()) {
             // If empty, set cursor position
             const range = document.createRange();
@@ -313,7 +313,7 @@ const ContentEditable = ({
         tabIndex={0}
         style={{
           minHeight: `${minHeight}px`,
-          whiteSpace: 'pre-wrap', // ✅ FIX: Preserve whitespace and line breaks
+          whiteSpace: 'pre-wrap', // FIX: Preserve whitespace and line breaks
           wordWrap: 'break-word',
           overflowWrap: 'break-word',
           ...style,

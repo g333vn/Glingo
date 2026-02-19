@@ -1,5 +1,5 @@
 // src/pages/admin/DashboardAccessPage.jsx
-// 🔒 DASHBOARD ACCESS CONTROL MANAGEMENT PAGE
+// DASHBOARD ACCESS CONTROL MANAGEMENT PAGE
 // Quản lý quyền truy cập dashboard cho người dùng
 
 import React, { useState, useEffect } from 'react';

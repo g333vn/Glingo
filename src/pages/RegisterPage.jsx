@@ -1,5 +1,5 @@
 // src/pages/RegisterPage.jsx
-// 📝 Registration Page - Clean, modern design with validation
+// Registration Page - Clean, modern design with validation
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';

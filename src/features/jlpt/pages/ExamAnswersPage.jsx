@@ -1,5 +1,5 @@
 // src/features/jlpt/pages/ExamAnswersPage.jsx
-// ✅ UPDATED: Thêm tính năng tra từ điển
+// UPDATED: Thêm tính năng tra từ điển
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -15,7 +15,7 @@ import { useAuth } from '../../../contexts/AuthContext.jsx';
 import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
 import LoginModal from '../../../components/LoginModal.jsx';
 
-// ✅ NEW: Import dictionary components
+// NEW: Import dictionary components
 import { DictionaryButton, DictionaryPopup, useDictionaryDoubleClick } from '../../../components/api_translate/index.js';
 
 ReactModal.setAppElement('#root');
@@ -144,7 +144,7 @@ const QuickAnswerKey = ({ knowledgeQuestions, listeningQuestions, knowledgeAnswe
   );
 };
 
-// ✅ NEW: Component kêu gọi đăng nhập - NEO BRUTALISM STYLE
+// NEW: Component kêu gọi đăng nhập - NEO BRUTALISM STYLE
 const LoginPrompt = ({ onLoginClick, onRegisterClick }) => {
   const { t } = useLanguage();
   
@@ -214,7 +214,7 @@ const LoginPrompt = ({ onLoginClick, onRegisterClick }) => {
 
 // Component hiển thị một câu hỏi với đáp án
 const AnswerCard = ({ question, userAnswer, index, section }) => {
-  // ✅ UPDATED: Ref cho TOÀN BỘ card để tra từ mọi nơi (sau khi xem đáp án)
+  // UPDATED: Ref cho TOÀN BỘ card để tra từ mọi nơi (sau khi xem đáp án)
   const cardRef = useRef(null);
   useDictionaryDoubleClick(cardRef);
   const { t } = useLanguage();
@@ -222,7 +222,7 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
   const isCorrect = userAnswer === question.correctAnswer;
   const isListening = section === 'listening';
   
-  // ✅ NEW: Check xem có explanation không (kể cả khi chỉ có HTML trống)
+  // NEW: Check xem có explanation không (kể cả khi chỉ có HTML trống)
   const rawExplanation = question.explanation || '';
   const cleanedExplanation = rawExplanation
     .replace(/<[^>]*>/g, '') // remove HTML tags
@@ -232,7 +232,7 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
   const hasExplanation = cleanedExplanation.length > 0;
   
   return (
-    // ✅ UPDATED: Wrap toàn bộ card với ref và select-text
+    // UPDATED: Wrap toàn bộ card với ref và select-text
     <div 
       ref={cardRef}
       className={`bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-4 sm:p-5 md:p-6 mb-3 sm:mb-4 select-text flex-shrink-0 ${
@@ -273,7 +273,7 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
           style={{
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
-            whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
+            whiteSpace: 'pre-wrap' // FIX: Preserve line breaks from <br/> tags
           }}
         />
         {question.text && (
@@ -292,7 +292,7 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
                 style={{
                   wordWrap: 'break-word',
                   overflowWrap: 'break-word',
-                  whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
+                  whiteSpace: 'pre-wrap' // FIX: Preserve line breaks from <br/> tags
                 }}
               />
             )}
@@ -344,7 +344,7 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
         })}
       </div>
 
-      {/* ✅ UPDATED: Giải thích - hiển thị message nếu chưa có explanation */}
+      {/* UPDATED: Giải thích - hiển thị message nếu chưa có explanation */}
       {hasExplanation ? (
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
           <div className="flex items-center gap-2 mb-2">
@@ -359,7 +359,7 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
             style={{
               wordWrap: 'break-word',
               overflowWrap: 'break-word',
-              whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
+              whiteSpace: 'pre-wrap' // FIX: Preserve line breaks from <br/> tags
             }}
           />
         </div>
@@ -381,12 +381,12 @@ const AnswerCard = ({ question, userAnswer, index, section }) => {
 };
 
 // Component thống kê tổng quan
-// ✅ UPDATED: Nhận knowledgeScore + readingScore riêng để hiển thị đúng
+// UPDATED: Nhận knowledgeScore + readingScore riêng để hiển thị đúng
 const ScoreSummary = ({ knowledgeScore, readingScore, listeningScore, totalQuestions, correctAnswers }) => {
   const percentage = Math.round((correctAnswers / totalQuestions) * 100);
   const { t } = useLanguage();
   
-  // ✅ Tính tổng điểm "Ngôn ngữ & Đọc hiểu" = Knowledge + Reading
+  // Tính tổng điểm "Ngôn ngữ & Đọc hiểu" = Knowledge + Reading
   const languageReadingScore = knowledgeScore + readingScore;
   
   return (
@@ -424,7 +424,7 @@ function ExamAnswersPage() {
   const { t } = useLanguage();
   const { user } = useAuth();
   
-  // ✅ UPDATED: Load exam data từ storage trước, fallback về static file
+  // UPDATED: Load exam data từ storage trước, fallback về static file
   const [currentExam, setCurrentExam] = useState(null);
   const [knowledgeData, setKnowledgeData] = useState(null);
   const [listeningData, setListeningData] = useState(null);
@@ -432,18 +432,18 @@ function ExamAnswersPage() {
   
   const [knowledgeAnswers, setKnowledgeAnswers] = useState({});
   const [listeningAnswers, setListeningAnswers] = useState({});
-  // ✅ UPDATED: Tách knowledgeScore và readingScore riêng
+  // UPDATED: Tách knowledgeScore và readingScore riêng
   const [knowledgeScore, setKnowledgeScore] = useState(0);
   const [readingScore, setReadingScore] = useState(0);
   const [listeningScore, setListeningScore] = useState(0);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [pendingPath, setPendingPath] = useState('');
-  // ✅ NEW: State cho LoginModal
+  // NEW: State cho LoginModal
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState('login'); // 'login' or 'register'
 
-  // ✅ UPDATED: Load exam data từ storage hoặc static file
+  // UPDATED: Load exam data từ storage hoặc static file
   useEffect(() => {
     const loadExamData = async () => {
       setIsLoading(true);
@@ -467,13 +467,13 @@ function ExamAnswersPage() {
           
           setCurrentExam(examMetadata);
           
-          // ✅ FIX: Transform knowledge data (bao gồm cả reading sections)
+          // FIX: Transform knowledge data (bao gồm cả reading sections)
           if (savedExam.knowledge && savedExam.knowledge.sections) {
-            // ✅ Kết hợp knowledge và reading sections (theo format JLPT: 言語知識・読解)
+            // Kết hợp knowledge và reading sections (theo format JLPT: 言語知識・読解)
             const knowledgeSections = savedExam.knowledge.sections || [];
             const readingSections = savedExam.reading?.sections || [];
             
-            // ✅ FIX: Ensure sections have proper title and instruction format + Clean HTML artifacts
+            // FIX: Ensure sections have proper title and instruction format + Clean HTML artifacts
             const cleanHTML = (html) => {
               if (!html || typeof html !== 'string') return html || '';
               // Remove HTML comment tags (StartFragment, EndFragment, etc.)
@@ -538,14 +538,14 @@ function ExamAnswersPage() {
             
             setKnowledgeData({
               knowledge: {
-                sections: combinedSections // ✅ Kết hợp cả 2 loại sections
+                sections: combinedSections // Kết hợp cả 2 loại sections
               }
             });
           }
           
           // Transform listening data
           if (savedExam.listening && savedExam.listening.sections) {
-            // ✅ FIX: Normalize section title and instruction + Clean HTML artifacts
+            // FIX: Normalize section title and instruction + Clean HTML artifacts
             const cleanHTML = (html) => {
               if (!html || typeof html !== 'string') return html || '';
               // Remove HTML comment tags (StartFragment, EndFragment, etc.)
@@ -651,7 +651,7 @@ function ExamAnswersPage() {
     loadExamData();
   }, [levelId, examId]);
 
-  // ✅ UPDATED: Load breakdown và tính điểm theo công thức (correct/total) × 60
+  // UPDATED: Load breakdown và tính điểm theo công thức (correct/total) × 60
   // Xem chi tiết: archive/data/JLPT_SCORING_LOGIC_VI.md
   useEffect(() => {
     const savedKnowledgeAnswers = localStorage.getItem(`exam-${levelId}-${examId}-knowledge`);
@@ -660,11 +660,11 @@ function ExamAnswersPage() {
     if (savedKnowledgeAnswers) setKnowledgeAnswers(JSON.parse(savedKnowledgeAnswers));
     if (savedListeningAnswers) setListeningAnswers(JSON.parse(savedListeningAnswers));
     
-    // ✅ Đọc breakdown từ localStorage (giống JLPTExamResultPage)
+    // Đọc breakdown từ localStorage (giống JLPTExamResultPage)
     const knowledgeBreakdownStr = localStorage.getItem(`exam-${levelId}-${examId}-knowledge-breakdown`);
     const listeningBreakdownStr = localStorage.getItem(`exam-${levelId}-${examId}-listening-breakdown`);
     
-    // ✅ PHƯƠNG ÁN 3 (HYBRID): Tính điểm theo công thức (correct/total) × maxScore
+    // PHƯƠNG ÁN 3 (HYBRID): Tính điểm theo công thức (correct/total) × maxScore
     const SCORING_CONFIG = {
       knowledge: { max: 60 },
       reading: { max: 60 },
@@ -734,7 +734,7 @@ function ExamAnswersPage() {
     );
   }
 
-  // ✅ UPDATED: Keep sections structure instead of flattening
+  // UPDATED: Keep sections structure instead of flattening
   const knowledgeSections = knowledgeData.knowledge.sections || [];
   const listeningSections = listeningData.sections || [];
   
@@ -797,7 +797,7 @@ function ExamAnswersPage() {
 
   return (
     <>
-      {/* ✅ NEW: Dictionary components */}
+      {/* NEW: Dictionary components */}
       <DictionaryButton />
       <DictionaryPopup />
 
@@ -830,7 +830,7 @@ function ExamAnswersPage() {
                   listeningAnswers={listeningAnswers}
                 />
 
-                {/* ✅ NEW: Hiển thị LoginPrompt nếu chưa đăng nhập */}
+                {/* NEW: Hiển thị LoginPrompt nếu chưa đăng nhập */}
                 {!user && (
                   <LoginPrompt
                     onLoginClick={() => {
@@ -844,7 +844,7 @@ function ExamAnswersPage() {
                   />
                 )}
 
-                {/* ✅ UPDATED: Chỉ hiển thị chi tiết từng câu nếu đã đăng nhập */}
+                {/* UPDATED: Chỉ hiển thị chi tiết từng câu nếu đã đăng nhập */}
                 {user && (
                   <>
                 <div className="mb-4 sm:mb-6 md:mb-8 flex-shrink-0">
@@ -855,7 +855,7 @@ function ExamAnswersPage() {
                     <span className="text-sm sm:text-base md:text-lg lg:text-xl">{t('jlpt.answersPage.part1Title')}</span>
                   </h2>
                   
-                  {/* ✅ NEW: Group questions by section - Display section header once, then all questions */}
+                  {/* NEW: Group questions by section - Display section header once, then all questions */}
                   {knowledgeSections.map((section, sectionIdx) => {
                     const sectionQuestions = section.questions || [];
                     let questionIndexOffset = 0;
@@ -911,7 +911,7 @@ function ExamAnswersPage() {
                     <span className="text-sm sm:text-base md:text-lg lg:text-xl">{t('jlpt.answersPage.part2Title')}</span>
                   </h2>
                   
-                  {/* ✅ NEW: Group questions by section - Display section header once, then all questions */}
+                  {/* NEW: Group questions by section - Display section header once, then all questions */}
                   {listeningSections.map((section, sectionIdx) => {
                     const sectionQuestions = section.questions || [];
                     let questionIndexOffset = knowledgeQuestions.length;
@@ -964,7 +964,7 @@ function ExamAnswersPage() {
                   </>
                 )}
 
-                {/* ✅ NEO BRUTALISM: Navigation Buttons */}
+                {/* NEO BRUTALISM: Navigation Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 mt-4 sm:mt-6 md:mt-8 pb-2 sm:pb-4 flex-shrink-0">
                   {/* Back to Results Button - Blue */}
                   <button
@@ -1060,7 +1060,7 @@ function ExamAnswersPage() {
         </div>
       </ReactModal>
 
-      {/* ✅ NEW: LoginModal */}
+      {/* NEW: LoginModal */}
       {showLoginModal && (
         <LoginModal
           onClose={() => {

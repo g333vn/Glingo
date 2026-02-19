@@ -1,5 +1,5 @@
 // src/services/supabaseClient.js
-// 🔌 Cấu hình Supabase Client (Client Supabase)
+// Cấu hình Supabase Client (Client Supabase)
 // Điểm tạo và cấu hình Supabase client duy nhất
 
 import { createClient } from '@supabase/supabase-js';
@@ -33,31 +33,31 @@ if (!supabaseUrl || !supabaseAnonKey) {
  */
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
-    // ✅ Session persistence (Duy trì phiên) - tự động khôi phục session khi tải lại trang
+    // Session persistence (Duy trì phiên) - tự động khôi phục session khi tải lại trang
     persistSession: true,
 
-    // ✅ Auto-refresh token (Tự động làm mới token) trước khi hết hạn
+    // Auto-refresh token (Tự động làm mới token) trước khi hết hạn
     autoRefreshToken: true,
 
-    // ✅ Sử dụng localStorage để lưu trữ session
+    // Sử dụng localStorage để lưu trữ session
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
 
-    // ✅ Custom storage key (Khóa lưu trữ tùy chỉnh) để debug
+    // Custom storage key (Khóa lưu trữ tùy chỉnh) để debug
     storageKey: 'sb-glingo-auth-token',
 
-    // ✅ Detect OAuth redirects (Phát hiện chuyển hướng OAuth) cho social login
+    // Detect OAuth redirects (Phát hiện chuyển hướng OAuth) cho social login
     detectSessionInUrl: true,
 
-    // ✅ Use PKCE flow (Sử dụng luồng PKCE) - khuyến nghị cho web apps
+    // Use PKCE flow (Sử dụng luồng PKCE) - khuyến nghị cho web apps
     flowType: 'pkce',
   },
 
-  // ✅ Global configuration (Cấu hình toàn cục)
+  // Global configuration (Cấu hình toàn cục)
   db: {
     schema: 'public',
   },
 
-  // ✅ Realtime configuration (Cấu hình Realtime) cho subscriptions
+  // Realtime configuration (Cấu hình Realtime) cho subscriptions
   realtime: {
     params: {
       eventsPerSecond: 10,

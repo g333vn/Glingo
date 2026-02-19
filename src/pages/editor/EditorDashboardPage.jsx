@@ -27,7 +27,7 @@ function EditorDashboardPage() {
 
       // Load statistics
       try {
-        // ✅ IMPROVED: Get all quizzes directly from storage (more efficient and accurate)
+        // IMPROVED: Get all quizzes directly from storage (more efficient and accurate)
         const allQuizzes = await storageManager.getAllQuizzes();
         const totalQuizzes = allQuizzes ? allQuizzes.length : 0;
 

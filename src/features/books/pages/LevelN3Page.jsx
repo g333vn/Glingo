@@ -16,7 +16,7 @@ function LevelN3Page() {
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isTransitioning, setIsTransitioning] = useState(false);
-    // ✅ Extract unique categories from books for Sidebar - Sort by number of books (most first)
+    // Extract unique categories from books for Sidebar - Sort by number of books (most first)
     const [n3Books, setN3Books] = useState([]);
 
     useEffect(() => {
@@ -75,7 +75,7 @@ function LevelN3Page() {
         loadBooks();
     }, []);
 
-    // ✅ Đọc category từ URL query parameter khi component mount hoặc URL thay đổi
+    // Đọc category từ URL query parameter khi component mount hoặc URL thay đổi
     useEffect(() => {
         const categoryFromUrl = searchParams.get('category');
         if (categoryFromUrl) {
@@ -100,7 +100,7 @@ function LevelN3Page() {
             count: categoryCounts[cat]
         }));
 
-        // ✅ Sort theo số lượng books (nhiều nhất trước)
+        // Sort theo số lượng books (nhiều nhất trước)
         return categoriesWithCount.sort((a, b) => b.count - a.count);
     }, [n3Books]);
 

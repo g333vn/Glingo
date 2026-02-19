@@ -1,5 +1,5 @@
 // src/components/NotificationBell.jsx
-// 🔔 Notification Bell Component - Display notifications in header
+// Notification Bell Component - Display notifications in header
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';

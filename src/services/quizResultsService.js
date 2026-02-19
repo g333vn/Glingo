@@ -1,7 +1,7 @@
 // src/services/quizResultsService.js
 // Service để lưu và đọc chi tiết kết quả quiz từ Supabase
 // 
-// ⚠️ LƯU Ý: 
+// LƯU Ý: 
 // - Service này được tạo sẵn nhưng CHƯA ĐƯỢC SỬ DỤNG
 // - Code hiện tại vẫn dùng learning_progress (không thay đổi)
 // - Tính năng mới sẽ được phát triển sau khi có đủ user
@@ -31,21 +31,21 @@ import { saveLearningProgress } from './learningProgressService.js';
  */
 export async function saveQuizResult(quizResult) {
   try {
-    // ✅ VALIDATION: Kiểm tra required fields
+    // VALIDATION: Kiểm tra required fields
     if (!quizResult.userId || !quizResult.bookId || !quizResult.chapterId || 
         !quizResult.lessonId || !quizResult.level) {
       console.error('[QuizResults] ❌ Missing required fields');
       return { success: false, error: 'Missing required fields' };
     }
 
-    // ✅ VALIDATION: Kiểm tra score/total hợp lệ
+    // VALIDATION: Kiểm tra score/total hợp lệ
     if (quizResult.score === undefined || quizResult.total === undefined || 
         quizResult.score < 0 || quizResult.total <= 0 || quizResult.score > quizResult.total) {
       console.error('[QuizResults] ❌ Invalid score/total values');
       return { success: false, error: 'Invalid score or total values' };
     }
 
-    // ✅ AUTO-CALCULATE: Tự động tính attempt_number nếu không có
+    // AUTO-CALCULATE: Tự động tính attempt_number nếu không có
     let attemptNumber = quizResult.attemptNumber;
     if (!attemptNumber || attemptNumber < 1) {
       const countResult = await getQuizAttemptCount(
@@ -58,13 +58,13 @@ export async function saveQuizResult(quizResult) {
       attemptNumber = (countResult.success ? countResult.count : 0) + 1;
     }
 
-    // ✅ AUTO-CALCULATE: Tự động tính percentage nếu không có
+    // AUTO-CALCULATE: Tự động tính percentage nếu không có
     let percentage = quizResult.percentage;
     if (percentage === undefined || percentage < 0 || percentage > 100) {
       percentage = Math.round((quizResult.score / quizResult.total) * 100);
     }
 
-    // ✅ FALLBACK: Quiz ID = Lesson ID nếu không có quizId riêng
+    // FALLBACK: Quiz ID = Lesson ID nếu không có quizId riêng
     const quizId = quizResult.quizId || quizResult.lessonId;
 
     console.log('[QuizResults] 💾 Saving quiz result:', {
@@ -101,7 +101,7 @@ export async function saveQuizResult(quizResult) {
       return { success: false, error };
     }
 
-    // ✅ DUAL-WRITE: Cập nhật learning_progress (summary) để đảm bảo data consistency
+    // DUAL-WRITE: Cập nhật learning_progress (summary) để đảm bảo data consistency
     try {
       await saveLearningProgress({
         userId: quizResult.userId,
@@ -122,7 +122,7 @@ export async function saveQuizResult(quizResult) {
       });
       console.log('[QuizResults] ✅ Also updated learning_progress (summary)');
     } catch (progressError) {
-      // ⚠️ Warning: Nếu update learning_progress fail, vẫn trả về success vì đã lưu chi tiết
+      // Warning: Nếu update learning_progress fail, vẫn trả về success vì đã lưu chi tiết
       console.warn('[QuizResults] ⚠️ Failed to update learning_progress (non-critical):', progressError);
     }
 

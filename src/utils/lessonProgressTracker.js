@@ -1,5 +1,5 @@
 // src/utils/lessonProgressTracker.js
-// 📊 Lesson Progress Tracker - Track completion, scores, weak lessons
+// Lesson Progress Tracker - Track completion, scores, weak lessons
 
 import {
   sendWarningNotification,
@@ -179,7 +179,7 @@ export function getWeakLessons(bookId, allLessons, threshold = 70) {
 
 /**
  * Get study streak (consecutive days with at least one lesson completed OR flashcard reviewed)
- * ✅ ENHANCED: Tính cả SRS reviews từ IndexedDB
+ * ENHANCED: Tính cả SRS reviews từ IndexedDB
  * @returns {{streak: number, lastStudyDate: string}}
  */
 /**
@@ -287,11 +287,11 @@ export function getStudyStreak(user = null) {
 
 /**
  * Update study streak (call this when a lesson is completed OR flashcard session finished)
- * ✅ RULE: Học ít nhất 1 trong các hoạt động sau mỗi ngày:
+ * RULE: Học ít nhất 1 trong các hoạt động sau mỗi ngày:
  *    - Hoàn thành lesson (tick "Đã học xong")
  *    - Ôn ít nhất 1 flashcard
  *    - Làm quiz (future)
- * ✅ RESET: Nếu bỏ lỡ 1 ngày (không học gì) → Streak về 0
+ * RESET: Nếu bỏ lỡ 1 ngày (không học gì) → Streak về 0
  * @param {Object} user - User object (optional, for notifications)
  * @returns {Object} { newStreak: number, wasIncremented: boolean, wasReset: boolean }
  */

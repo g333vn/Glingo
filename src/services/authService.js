@@ -1,5 +1,5 @@
 // src/services/authService.js
-// 🔐 Core Authentication Service - Supabase Integration
+// Core Authentication Service - Supabase Integration
 // Handles: Sign up, Sign in, Sign out, Session management, Profile management
 
 import { supabase } from './supabaseClient.js';
@@ -45,11 +45,11 @@ export async function signUp({ email, password, displayName }) {
 
     logger.info('[AuthService] Sign up successful', { email: data.user?.email });
 
-    // ✅ AUTO: Create profile in profiles table (with automatic retry and trigger handling)
+    // AUTO: Create profile in profiles table (with automatic retry and trigger handling)
     // Note: Profile might be created automatically by database trigger
     // If not, we'll create it here, but don't fail if it already exists
     if (data.user?.id) {
-      // ✅ AUTO: Wait a bit for trigger to potentially create profile
+      // AUTO: Wait a bit for trigger to potentially create profile
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const profileResult = await createUserProfile(data.user.id, {
@@ -58,7 +58,7 @@ export async function signUp({ email, password, displayName }) {
         role: 'user',
       });
       
-      // ✅ AUTO: If profile creation failed, try to fetch it (might have been created by trigger)
+      // AUTO: If profile creation failed, try to fetch it (might have been created by trigger)
       if (!profileResult.success) {
         logger.warn('[AuthService] Profile creation failed, checking if profile exists...', {
           error: profileResult.error,
@@ -262,11 +262,11 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
       return { success: false, error: 'User ID is required', profile: null };
     }
 
-    // ✅ AUTO: Check if profile already exists first (with retry)
+    // AUTO: Check if profile already exists first (with retry)
     let existing = await getUserProfile(userId);
     if (existing.success && existing.profile) {
       logger.info('[AuthService] ✅ Profile already exists for user', { userId });
-      // ✅ FIXED: Don't auto-update role if profile exists - preserve existing role (especially admin)
+      // FIXED: Don't auto-update role if profile exists - preserve existing role (especially admin)
       // Only update if explicitly requested via updateUserProfile
       // This prevents accidentally resetting admin role to 'user' when profile load fails
       logger.info('[AuthService] Preserving existing profile role', {
@@ -275,7 +275,7 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
       return { success: true, profile: existing.profile };
     }
 
-    // ✅ AUTO: Wait a bit if retrying (profile might be created by trigger)
+    // AUTO: Wait a bit if retrying (profile might be created by trigger)
     if (retryCount > 0) {
       logger.debug('[AuthService] ⏳ Waiting before retry...', { retryCount });
       await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
@@ -306,7 +306,7 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
         hint: error.hint,
       });
       
-      // ✅ AUTO: If error is about duplicate key, profile might already exist - fetch it
+      // AUTO: If error is about duplicate key, profile might already exist - fetch it
       if (error.code === '23505' || error.message.includes('duplicate') || error.message.includes('unique')) {
         logger.info('[AuthService] 🔄 Profile already exists (duplicate key), fetching existing profile...', {
           userId,
@@ -318,7 +318,7 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
         }
       }
       
-      // ✅ AUTO: If RLS error, wait and retry (profile might be created by trigger)
+      // AUTO: If RLS error, wait and retry (profile might be created by trigger)
       if (error.code === '42501' || error.message.includes('row-level security') || error.message.includes('RLS')) {
         logger.warn('[AuthService] ⚠️ RLS error detected, checking if profile was created by trigger...', {
           code: error.code,
@@ -349,7 +349,7 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
         };
       }
       
-      // ✅ AUTO: For other errors, wait and check if profile exists (might be created by trigger)
+      // AUTO: For other errors, wait and check if profile exists (might be created by trigger)
         if (retryCount < 2) {
           logger.debug('[AuthService] ⏳ Waiting and checking if profile was created by trigger...', {
             retryCount,
@@ -379,7 +379,7 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
       };
     }
 
-    // ✅ AUTO: If no data returned but no error, profile might have been created by trigger
+    // AUTO: If no data returned but no error, profile might have been created by trigger
     if (!data) {
       logger.debug('[AuthService] ⏳ No data returned, checking if profile was created by trigger...', {
         userId,
@@ -407,7 +407,7 @@ export async function createUserProfile(userId, profileData, retryCount = 0) {
   } catch (err) {
     logger.error('[AuthService] Unexpected error creating user profile', { error: err });
     
-    // ✅ AUTO: Try to fetch profile one more time (might have been created)
+    // AUTO: Try to fetch profile one more time (might have been created)
     if (retryCount < 1) {
       logger.debug('[AuthService] 🔄 Exception occurred, checking if profile exists...', {
         userId,
@@ -618,7 +618,7 @@ export async function deleteUser(userId) {
     logger.info('[AuthService] ✅ Profile deleted', { userId });
     
     // Step 2: Note about auth.users deletion
-    // ⚠️ SECURITY: Service Role Key should NEVER be used in client-side code
+    // SECURITY: Service Role Key should NEVER be used in client-side code
     // To delete from auth.users, use one of these methods:
     // 1. Supabase Edge Function (recommended)
     // 2. Backend API with service role key (server-side only)
@@ -649,7 +649,7 @@ export async function deleteUser(userId) {
     return { 
       success: true, 
       deletedProfile: true,
-      deletedAuth: deletedAuth // ✅ Now attempts to delete from auth.users automatically
+      deletedAuth: deletedAuth // Now attempts to delete from auth.users automatically
     };
   } catch (err) {
     logger.error('[AuthService] Unexpected error deleting user', { error: err });
@@ -659,7 +659,7 @@ export async function deleteUser(userId) {
 
 /**
  * Confirm user email (Admin only)
- * ⚠️ SECURITY: Service Role Key should NEVER be used in client-side code
+ * SECURITY: Service Role Key should NEVER be used in client-side code
  * This function now returns a message indicating manual confirmation is needed
  * To auto-confirm users, use one of these methods:
  * 1. Supabase Edge Function (recommended)
@@ -675,7 +675,7 @@ export async function confirmUserEmail(userId) {
       return { success: false, error: 'User ID is required' };
     }
 
-    // ⚠️ SECURITY: Service Role Key removed from client-side code
+    // SECURITY: Service Role Key removed from client-side code
     // Use Supabase Edge Function or backend API instead
     logger.warn('[AuthService] ⚠️ Email confirmation requires service role key. Use Supabase Edge Function or backend API.');
     return { 
@@ -885,7 +885,7 @@ export async function checkEmailExists(email) {
     const emailLower = email.toLowerCase().trim();
     logger.debug('[AuthService] Checking email exists', { email: emailLower });
 
-    // ✅ Force fresh query (no cache) by using select with specific columns
+    // Force fresh query (no cache) by using select with specific columns
     const { data, error } = await supabase
       .from('profiles')
       .select('user_id, email, display_name, role, created_at')

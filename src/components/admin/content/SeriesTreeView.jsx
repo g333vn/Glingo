@@ -17,12 +17,12 @@ function SeriesTreeView({
   onDeleteBook,
   onDeleteChapter,
   onDeleteLesson,
-  onAddBook, // ✅ NEW: Add book handler
-  onAddChapter, // ✅ NEW: Add chapter handler
-  onAddLesson, // ✅ NEW: Add lesson handler
-  onAddQuiz, // ✅ NEW: Add quiz handler
-  onDeleteQuiz, // ✅ NEW: Delete quiz handler
-  onReorderLessons // ✅ NEW: Reorder lessons handler
+  onAddBook, // NEW: Add book handler
+  onAddChapter, // NEW: Add chapter handler
+  onAddLesson, // NEW: Add lesson handler
+  onAddQuiz, // NEW: Add quiz handler
+  onDeleteQuiz, // NEW: Delete quiz handler
+  onReorderLessons // NEW: Reorder lessons handler
 }) {
   const [expandedNodes, setExpandedNodes] = useState({});
   const [draggedLesson, setDraggedLesson] = useState(null);
@@ -350,10 +350,10 @@ function SeriesTreeView({
                                           {lessons.length === 0 ? (
                                             <div className="text-xs text-gray-400 italic pl-6">No lessons</div>
                                           ) : (
-                                            // ✅ Sort lessons by order or extract number from id/title for proper natural ordering
+                                            // Sort lessons by order or extract number from id/title for proper natural ordering
                                             [...lessons].sort((a, b) => {
                                               // First try to sort by order field (if both have it)
-                                              // ✅ FIXED: Check both 'order' and 'orderIndex' (from Supabase)
+                                              // FIXED: Check both 'order' and 'orderIndex' (from Supabase)
                                               const orderA = a.order !== undefined ? a.order : (a.orderIndex !== undefined ? a.orderIndex : undefined);
                                               const orderB = b.order !== undefined ? b.order : (b.orderIndex !== undefined ? b.orderIndex : undefined);
                                               
@@ -421,7 +421,7 @@ function SeriesTreeView({
                                               return numA - numB;
                                             }).map(lesson => {
                                               const hasQuiz = !!quizzesData[`${book.id}_${chapter.id}_${lesson.id}`];
-                                              // ✅ Fix title display: if title is just a number, use id or format properly
+                                              // Fix title display: if title is just a number, use id or format properly
                                               const displayTitle = (() => {
                                                 const title = lesson.title || '';
                                                 const id = lesson.id || '';
@@ -439,7 +439,7 @@ function SeriesTreeView({
                                               })();
                                               
                                               const sortedLessons = [...lessons].sort((a, b) => {
-                                                // ✅ FIXED: Check both 'order' and 'orderIndex' (from Supabase)
+                                                // FIXED: Check both 'order' and 'orderIndex' (from Supabase)
                                                 const orderA = a.order !== undefined ? a.order : (a.orderIndex !== undefined ? a.orderIndex : undefined);
                                                 const orderB = b.order !== undefined ? b.order : (b.orderIndex !== undefined ? b.orderIndex : undefined);
                                                 

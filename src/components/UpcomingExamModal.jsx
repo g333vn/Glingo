@@ -1,5 +1,5 @@
 // src/components/UpcomingExamModal.jsx
-// ✨ NEO BRUTALISM MODAL - "Đề thi đang chuẩn bị"
+// NEO BRUTALISM MODAL - "Đề thi đang chuẩn bị"
 
 import React from 'react';
 import Modal from './Modal.jsx';
@@ -22,7 +22,7 @@ function UpcomingExamModal({ isOpen, onClose }) {
           {t('jlpt.upcomingModal.message')}
         </p>
         
-        {/* ✅ NEO BRUTALISM BUTTON */}
+        {/* NEO BRUTALISM BUTTON */}
         <div className="flex justify-end mt-6">
           <button
             onClick={onClose}

@@ -63,7 +63,7 @@ function AboutPage() {
 
       {/* Japanese Quote removed on About page as requested */}
 
-      {/* ✨ NEO BRUTALISM MAIN CONTAINER */}
+      {/* NEO BRUTALISM MAIN CONTAINER */}
       <div className="mx-auto bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden max-w-6xl relative z-0">
         {/* Hero Section */}
         <section className={`relative overflow-hidden transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -193,7 +193,7 @@ function AboutPage() {
           </div>
         </section>
 
-        {/* ✨ Key Features Section - 6 Cards */}
+        {/* Key Features Section - 6 Cards */}
         <section className={`py-16 transition-all duration-1000 delay-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="container mx-auto px-4 sm:px-8 md:px-12 max-w-7xl">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-center mb-8 sm:mb-12 text-black uppercase tracking-wide">

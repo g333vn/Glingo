@@ -1,5 +1,5 @@
 // src/services/userManagementService.js
-// 👥 User Management Service - Admin operations, user queries, bulk actions
+// User Management Service - Admin operations, user queries, bulk actions
 // For: User listing, filtering, searching, bulk operations, statistics
 
 import { supabase } from './supabaseClient.js';
@@ -7,7 +7,7 @@ import * as authService from './authService.js';
 import { logger } from '../utils/logger.js';
 import { sanitizeError } from '../utils/sanitizeError.js';
 
-// 🔒 SECURITY: Chỉ select các field cần thiết, không dùng SELECT *
+// SECURITY: Chỉ select các field cần thiết, không dùng SELECT *
 const PROFILE_FIELDS_PUBLIC = 'user_id, email, display_name, role, avatar_url, is_banned, created_at, updated_at';
 const PROFILE_FIELDS_MINIMAL = 'user_id, display_name, role, avatar_url';
 
@@ -35,7 +35,7 @@ export async function getAllUsers(options = {}) {
 
     const offset = (page - 1) * limit;
 
-    // 🔒 SECURITY: Chỉ select field cần thiết
+    // SECURITY: Chỉ select field cần thiết
     let query = supabase
       .from('profiles')
       .select(PROFILE_FIELDS_PUBLIC, { count: 'exact' });
@@ -84,7 +84,7 @@ export async function searchUsers(query) {
       return { success: false, users: [], error: 'Từ khóa tìm kiếm phải có ít nhất 2 ký tự' };
     }
 
-    // 🔒 SECURITY: Chỉ select field cần thiết
+    // SECURITY: Chỉ select field cần thiết
     const { data, error } = await supabase
       .from('profiles')
       .select(PROFILE_FIELDS_MINIMAL)
@@ -130,7 +130,7 @@ export async function getUserByEmail(email) {
       return { success: false, error: 'Email là bắt buộc' };
     }
 
-    // 🔒 SECURITY: Chỉ select field cần thiết
+    // SECURITY: Chỉ select field cần thiết
     const { data, error } = await supabase
       .from('profiles')
       .select(PROFILE_FIELDS_PUBLIC)

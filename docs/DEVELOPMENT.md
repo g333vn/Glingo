@@ -122,7 +122,7 @@ export default ComponentName;
 ### Example
 
 ```jsx
-// ✅ Good
+// Good
 const { user, profile } = useAuth();
 const [books, setBooks] = useState([]);
 
@@ -130,7 +130,7 @@ useEffect(() => {
   loadBooks();
 }, []);
 
-// ❌ Bad
+// Bad
 const auth = useAuth();
 const user = auth.user;
 const profile = auth.profile;
@@ -139,7 +139,7 @@ const profile = auth.profile;
 ### Error Handling
 
 ```javascript
-// ✅ Good - Consistent error format
+// Good - Consistent error format
 try {
   const result = await someService();
   if (!result.success) {
@@ -151,7 +151,7 @@ try {
   console.error('Unexpected error:', err);
 }
 
-// ❌ Bad - Inconsistent error handling
+// Bad - Inconsistent error handling
 try {
   const result = await someService();
   // No error checking
@@ -295,22 +295,22 @@ Use Prettier (if configured) or follow project style guide.
 ### Code Splitting
 
 ```javascript
-// ✅ Good - Lazy load heavy components
+// Good - Lazy load heavy components
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboardPage'));
 
-// ❌ Bad - Import everything upfront
+// Bad - Import everything upfront
 import AdminDashboard from './pages/admin/AdminDashboardPage';
 ```
 
 ### Memoization
 
 ```javascript
-// ✅ Good - Memoize expensive computations
+// Good - Memoize expensive computations
 const expensiveValue = useMemo(() => {
   return computeExpensiveValue(data);
 }, [data]);
 
-// ✅ Good - Memoize callbacks
+// Good - Memoize callbacks
 const handleClick = useCallback(() => {
   doSomething();
 }, [dependencies]);

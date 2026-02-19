@@ -1,5 +1,5 @@
 // src/utils/notificationManager.js
-// 🔔 NOTIFICATION MANAGEMENT SYSTEM - Đồng bộ Supabase + Local Cache
+// NOTIFICATION MANAGEMENT SYSTEM - Đồng bộ Supabase + Local Cache
 // Quản lý thông báo từ hệ thống với đồng bộ hóa giữa các thiết bị
 
 import { supabase } from '../services/supabaseClient.js';
@@ -21,7 +21,7 @@ const DEFAULT_NOTIFICATION = {
 };
 
 /**
- * 📥 Load thông báo từ Supabase (nguồn chính) + cache local
+ * Load thông báo từ Supabase (nguồn chính) + cache local
  */
 export async function getAllNotificationsFromServer(user) {
   if (!user || !user.id) return [];
@@ -69,7 +69,7 @@ export async function getAllNotificationsFromServer(user) {
 }
 
 /**
- * 📂 Load từ cache local (fallback)
+ * Load từ cache local (fallback)
  */
 export function getAllNotificationsLocal() {
   try {
@@ -89,7 +89,7 @@ export function getAllNotifications() {
 }
 
 /**
- * 📋 Get thông báo cho user cụ thể
+ * Get thông báo cho user cụ thể
  */
 export async function getUserNotifications(user) {
   const allNotifications = await getAllNotificationsFromServer(user);
@@ -112,7 +112,7 @@ export async function getUserNotifications(user) {
 }
 
 /**
- * 🔔 Đếm thông báo chưa đọc
+ * Đếm thông báo chưa đọc
  */
 export async function getUnreadCount(user) {
   const notifications = await getUserNotifications(user);
@@ -123,14 +123,14 @@ export async function getUnreadCount(user) {
 }
 
 /**
- * ✅ Đánh dấu thông báo là đã đọc
+ * Đánh dấu thông báo là đã đọc
  */
 export async function markAsRead(notificationId, user) {
   if (!user) return false;
 
   try {
     // Update Supabase via RPC (nếu cấu hình đầy đủ).
-    // ⚠️ QUAN TRỌNG: Kể cả RPC lỗi, vẫn tiếp tục cập nhật local cache để UI hoạt động bình thường.
+    // QUAN TRỌNG: Kể cả RPC lỗi, vẫn tiếp tục cập nhật local cache để UI hoạt động bình thường.
     const { error } = await supabase.rpc('mark_notification_read', {
       p_notification_id: notificationId,
       p_user_id: user.id
@@ -162,7 +162,7 @@ export async function markAsRead(notificationId, user) {
 }
 
 /**
- * ✅ Đánh dấu tất cả là đã đọc
+ * Đánh dấu tất cả là đã đọc
  */
 export async function markAllAsRead(user) {
   if (!user) return false;
@@ -239,7 +239,7 @@ export async function markAllAsRead(user) {
 }
 
 /**
- * 📤 Tạo thông báo mới (từ Admin)
+ * Tạo thông báo mới (từ Admin)
  */
 export async function createNotification(notificationData) {
   try {
@@ -294,7 +294,7 @@ export async function createNotification(notificationData) {
     
     window.dispatchEvent(new CustomEvent('notificationsUpdated'));
 
-    // ✅ Đẩy lên Supabase để các user khác thấy
+    // Đẩy lên Supabase để các user khác thấy
     console.log(`[NOTIFICATIONS] 📤 Pushing to Supabase:`, {
       title: newNotification.title,
       target_users: newNotification.target_users,
@@ -307,7 +307,7 @@ export async function createNotification(notificationData) {
         title: newNotification.title || '',
         message: newNotification.message || '',
         type: newNotification.type || 'info',
-        target_users: (newNotification.target_users || []).map(id => String(id)), // ✅ Convert to text[]
+        target_users: (newNotification.target_users || []).map(id => String(id)), // Convert to text[]
         target_roles: newNotification.target_roles || [],
         expires_at: newNotification.expires_at || null,
         created_at: newNotification.created_at
@@ -330,7 +330,7 @@ export async function createNotification(notificationData) {
 }
 
 /**
- * ✏️ Update thông báo
+ * Update thông báo
  */
 export function updateNotification(notificationId, updates) {
   try {
@@ -355,7 +355,7 @@ export function updateNotification(notificationId, updates) {
 }
 
 /**
- * 🗑️ Xoá thông báo
+ * Xoá thông báo
  */
 export function deleteNotification(notificationId) {
   try {
@@ -373,7 +373,7 @@ export function deleteNotification(notificationId) {
 }
 
 /**
- * 🧹 Xoá expired
+ * Xoá expired
  */
 export function cleanupExpiredNotifications() {
   try {
@@ -400,7 +400,7 @@ export function cleanupExpiredNotifications() {
 }
 
 /**
- * 🧹 Xoá cũ
+ * Xoá cũ
  */
 export function cleanupOldNotifications() {
   try {

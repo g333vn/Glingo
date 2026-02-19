@@ -24,10 +24,10 @@ function SeriesCard({
   onEditLesson,
   onDeleteLesson,
   onAddQuiz,
-  onDeleteQuiz, // ✅ NEW: Delete quiz handler
+  onDeleteQuiz, // NEW: Delete quiz handler
   onExportItem,
   onImportItem,
-  level // ✅ NEW: Need level for export
+  level // NEW: Need level for export
 }) {
   const { t } = useLanguage();
   const [expandedBooks, setExpandedBooks] = useState({});
@@ -174,7 +174,7 @@ function SeriesCard({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onAddBook(seriesItem.name); // ✅ Truyền series name vào
+                onAddBook(seriesItem.name); // Truyền series name vào
               }}
               className="px-3 py-1 bg-green-500 text-white rounded-md border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] text-xs font-black hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all duration-200 uppercase"
             >
@@ -444,7 +444,7 @@ function SeriesCard({
                                                       <button
                                                         onClick={(e) => {
                                                           e.stopPropagation();
-                                                          onEditLesson(lesson, book, chapter);
+                                                          onEditLesson(book, chapter, lesson);
                                                         }}
                                                         className="px-1.5 py-0.5 bg-blue-500 text-white rounded border-[1.5px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[9px] font-black hover:bg-blue-600 transition-colors"
                                                         title={t('contentManagement.series.editLesson')}

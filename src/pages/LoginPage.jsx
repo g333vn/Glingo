@@ -1,5 +1,5 @@
 // src/pages/LoginPage.jsx
-// 🔐 Login Page - Clean, modern design with proper error handling
+// Login Page - Clean, modern design with proper error handling
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';

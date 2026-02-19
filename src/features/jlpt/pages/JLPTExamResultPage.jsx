@@ -1,5 +1,5 @@
 // src/features/jlpt/pages/JLPTExamResultPage.jsx
-// ✅ ULTIMATE VERSION: Full animations + effects + FIXED NAVIGATION
+// ULTIMATE VERSION: Full animations + effects + FIXED NAVIGATION
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -22,7 +22,7 @@ const SCORING_CONFIG = {
   total: { max: 180, minPass: 100 }
 };
 
-// ✨ Confetti Component
+// Confetti Component
 const Confetti = () => {
   const [particles, setParticles] = useState([]);
 
@@ -55,7 +55,7 @@ const Confetti = () => {
   );
 };
 
-// ✨ Animated Number Counter
+// Animated Number Counter
 const AnimatedNumber = ({ value, duration = 2000 }) => {
   const [displayValue, setDisplayValue] = useState(0);
 
@@ -87,7 +87,7 @@ function JLPTExamResultPage() {
   const { t } = useLanguage();
   const { user } = useAuth();
   
-  // ✅ UPDATED: Load exam metadata từ storage trước, fallback về static file
+  // UPDATED: Load exam metadata từ storage trước, fallback về static file
   const [currentExam, setCurrentExam] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -97,14 +97,14 @@ function JLPTExamResultPage() {
   const [pendingPath, setPendingPath] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
   
-  // ✅ Breakdown state for displaying correct/total questions
+  // Breakdown state for displaying correct/total questions
   const [breakdown, setBreakdown] = useState({ 
     knowledgeCorrect: 0, knowledgeTotal: 0,
     readingCorrect: 0, readingTotal: 0,
     listeningCorrect: 0, listeningTotal: 0 
   });
 
-  // ✅ UPDATED: Load exam data từ storage hoặc static file
+  // UPDATED: Load exam data từ storage hoặc static file
   useEffect(() => {
     const loadExam = async () => {
       setIsLoading(true);
@@ -157,7 +157,7 @@ function JLPTExamResultPage() {
       let knowledgeBreakdown = { knowledge: 0, reading: 0, totals: { knowledge: 0, reading: 0 } };
       let listeningBreakdown = { listening: 0, total: 0 };
 
-      // ✅ NEW: Đọc từ Supabase nếu user đã đăng nhập
+      // NEW: Đọc từ Supabase nếu user đã đăng nhập
       if (user && typeof user.id === 'string') {
         const { success, data: supabaseResult } = await getExamResult(user.id, levelId, examId);
         
@@ -197,13 +197,13 @@ function JLPTExamResultPage() {
         listeningBreakdown = listeningBreakdownStr ? JSON.parse(listeningBreakdownStr) : listeningBreakdown;
       }
 
-      // ✅ DEBUG: Log breakdown đã đọc được
+      // DEBUG: Log breakdown đã đọc được
       console.log('[ExamResult] Breakdown loaded:', {
         knowledgeBreakdown,
         listeningBreakdown
       });
 
-      // ✅ PHƯƠNG ÁN 3 (HYBRID): Tính điểm theo công thức (correct/total) × maxScore
+      // PHƯƠNG ÁN 3 (HYBRID): Tính điểm theo công thức (correct/total) × maxScore
       // Xem chi tiết: archive/data/JLPT_SCORING_LOGIC_VI.md
       const calculateSectionScore = (correct, total, maxScore) => {
         if (total === 0) {
@@ -235,7 +235,7 @@ function JLPTExamResultPage() {
       const totalScore = knowledgePoints + readingPoints + listeningPoints;
       setScores({ knowledge: knowledgePoints, reading: readingPoints, listening: listeningPoints, total: totalScore });
 
-      // ✅ Set breakdown for display
+      // Set breakdown for display
       setBreakdown({
         knowledgeCorrect: knowledgeBreakdown.knowledge,
         knowledgeTotal: knowledgeBreakdown.totals.knowledge,
@@ -245,7 +245,7 @@ function JLPTExamResultPage() {
         listeningTotal: listeningBreakdown.total
       });
 
-      // ✅ NEW: Lưu exam result tổng hợp vào Supabase nếu user đã đăng nhập và có đủ dữ liệu
+      // NEW: Lưu exam result tổng hợp vào Supabase nếu user đã đăng nhập và có đủ dữ liệu
       if (user && typeof user.id === 'string' && 
           knowledgeBreakdown.totals.knowledge > 0 && 
           listeningBreakdown.total > 0) {
@@ -307,7 +307,7 @@ function JLPTExamResultPage() {
     setShowExitModal(true);
   };
 
-  // ✅ FIXED: Clear data and navigate
+  // FIXED: Clear data and navigate
   const handleExitConfirmed = () => {
     console.log('🗑️ Clearing data and navigating to:', pendingPath);
     Object.keys(localStorage).forEach(key => {
@@ -321,7 +321,7 @@ function JLPTExamResultPage() {
     navigate(pendingPath);
   };
 
-  // ✅ FIXED: Clear data and navigate to retake
+  // FIXED: Clear data and navigate to retake
   const handleRetakeConfirmed = () => {
     console.log('🗑️ Clearing data for retake');
     Object.keys(localStorage).forEach(key => {
@@ -369,7 +369,7 @@ function JLPTExamResultPage() {
     );
   }
 
-  // ✅ Đảm bảo currentExam đã có trước khi tạo breadcrumbPaths
+  // Đảm bảo currentExam đã có trước khi tạo breadcrumbPaths
   const breadcrumbPaths = currentExam ? [
     { name: t('common.home'), onClick: () => handleNavigateWithConfirm('/') },
     { name: t('common.jlpt'), onClick: () => handleNavigateWithConfirm('/jlpt') },
@@ -483,14 +483,14 @@ function JLPTExamResultPage() {
               <Breadcrumbs paths={breadcrumbPaths} />
             </div>
             <div className="flex-1 px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-4 flex flex-col items-center md:justify-center justify-start overflow-y-auto overflow-x-hidden">
-              {/* ✨ Animated Title */}
+              {/* Animated Title */}
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 sm:mb-6 md:mb-8 lg:mb-12 text-center animate-slideUp px-2 sm:px-4 flex-shrink-0 w-full">
                 {currentExam?.title || `JLPT ${examId}`} - {t('jlpt.resultPage.title')}
               </h1>
 
-              {/* ✨ Animated Layout - ✅ FIXED PERFECT ALIGNMENT */}
+              {/* Animated Layout - FIXED PERFECT ALIGNMENT */}
               <div className="flex flex-col md:flex-row gap-4 sm:gap-6 items-center md:items-stretch mb-4 sm:mb-6 md:mb-8 w-full max-w-4xl px-2 sm:px-4 flex-shrink-0">
-                {/* ✨ Pass/Fail Card */}
+                {/* Pass/Fail Card */}
                 <div 
                   className={`rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center justify-between w-full md:w-64 h-auto min-h-[240px] sm:min-h-[280px] md:h-80 bg-white hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 hover:translate-x-[-2px] hover:translate-y-[-2px] animate-slideUp ${!isPass ? 'animate-shake' : ''}`}
                   style={{ animationDelay: '0.1s', animationFillMode: 'both' }}
@@ -507,7 +507,7 @@ function JLPTExamResultPage() {
                   </div>
                 </div>
 
-                {/* ✨ Score Cards - ✅ PERFECTLY ALIGNED */}
+                {/* Score Cards - PERFECTLY ALIGNED */}
                 <div className="flex flex-col gap-4 w-full md:flex-1 justify-between">
                   {/* 語彙・知識 */}
                   <div 
@@ -553,7 +553,7 @@ function JLPTExamResultPage() {
                 </div>
               </div>
 
-              {/* ✨ Animated Action Buttons - ✅ FIXED */}
+              {/* Animated Action Buttons - FIXED */}
               <div className="flex flex-col gap-3 md:gap-4 w-full max-w-2xl animate-slideUp px-2 sm:px-4 flex-shrink-0 pb-2 sm:pb-4" style={{ animationDelay: '0.5s', animationFillMode: 'both' }}>
                 {/* View Answers Button */}
                 <button
@@ -654,7 +654,7 @@ export default JLPTExamResultPage;
 
 // ---
 
-// ## ✅ Key Changes:
+// ## Key Changes:
 
 // 1. **Import `useNavigate`** từ `react-router-dom` (dòng 2)
 // 2. **Removed `useExamGuard`** - không dùng nữa
@@ -663,12 +663,12 @@ export default JLPTExamResultPage;
 
 // ---
 
-// ## 🧪 Test & Debug:
+// ## Test & Debug:
 
 // 1. Click nút → Modal → 確認
 // 2. **Mở Console** (F12) → Xem logs:
 // ```
-//    🗑️ Clearing data and navigating to: /jlpt/n1
+//    Clearing data and navigating to: /jlpt/n1
 //    Removed: exam-n1-2024-12-knowledge
 //    Removed: exam-n1-2024-12-listening
-//    ✅ Navigating to: /jlpt/n1
+//    Navigating to: /jlpt/n1

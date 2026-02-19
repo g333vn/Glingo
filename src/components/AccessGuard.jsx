@@ -19,7 +19,7 @@ function AccessGuard({ children, module, levelId: propLevelId }) {
   const levelId = propLevelId || params.levelId?.toLowerCase();
   const moduleType = module || (params.levelId ? 'level' : 'jlpt');
 
-  // ✅ NEW: Wait for access control to be loaded from Supabase
+  // NEW: Wait for access control to be loaded from Supabase
   useEffect(() => {
     // Check if access control is already in localStorage (means it's been loaded)
     const hasLevelConfig = localStorage.getItem('levelAccessControl');
@@ -58,14 +58,14 @@ function AccessGuard({ children, module, levelId: propLevelId }) {
       return;
     }
 
-    // ✅ FIXED: Merge user and profile to get role
+    // FIXED: Merge user and profile to get role
     // Role is stored in profile, not user object
     const userWithRole = user ? {
       ...user,
       role: profile?.role || user.role || null
     } : null;
 
-    // ✅ DEBUG: Log current config from localStorage
+    // DEBUG: Log current config from localStorage
     const storageKey = moduleType === 'level' ? 'levelAccessControl' : 'jlptAccessControl';
     const stored = localStorage.getItem(storageKey);
     if (stored) {
@@ -114,7 +114,7 @@ function AccessGuard({ children, module, levelId: propLevelId }) {
   }
 
   // If no access, don't render children (will be redirected)
-  // ✅ FIXED: Merge user and profile to get role
+  // FIXED: Merge user and profile to get role
   const userWithRole = user ? {
     ...user,
     role: profile?.role || user.role || null

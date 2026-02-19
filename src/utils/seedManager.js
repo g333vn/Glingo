@@ -1,5 +1,5 @@
 // src/utils/seedManager.js
-// 🌱 SEED MANAGER - Professional seed data management
+// SEED MANAGER - Professional seed data management
 // Handles initialization, reset, and maintenance of demo data
 
 import { getDemoUsers, SEED_CONFIG } from '../data/seedData.js';

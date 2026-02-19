@@ -1,4 +1,4 @@
-// src/hooks/useExamGuard.jsx - ✅ FINAL V5: Chặn lùi trong cùng exam flow
+// src/hooks/useExamGuard.jsx - FINAL V5: Chặn lùi trong cùng exam flow
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import WarningModal from '../components/WarningModal.jsx';
@@ -16,7 +16,7 @@ import WarningModal from '../components/WarningModal.jsx';
  * 7. Result → Answers → KHÔNG cảnh báo (tiến, trong cùng exam)
  * 8. Answers → Back Result/Detail → CÓ cảnh báo (lùi, không được phép)
  * 
- * ⚠️ QUAN TRỌNG: 
+ * QUAN TRỌNG: 
  *    - CHỈ cho phép đi TIẾN trong cùng exam flow: Detail → Knowledge → Listening → Result → Answers
  *    - KHÔNG cho phép đi LÙI trong cùng exam flow: Knowledge → Detail, Listening → Knowledge, etc.
  *    - Cảnh báo khi LÙI trong cùng exam flow hoặc RỜI KHỎI exam flow
@@ -28,13 +28,13 @@ export function useExamGuard() {
   const [modalVisible, setModalVisible] = useState(false);
   const [pendingPath, setPendingPath] = useState(null);
   
-  // ✅ Memoize current warning status để tránh gọi lại quá nhiều
+  // Memoize current warning status để tránh gọi lại quá nhiều
   const [currentWarningStatus, setCurrentWarningStatus] = useState(false);
   
-  // ✅ Lưu path trước đó để kiểm tra khi back
+  // Lưu path trước đó để kiểm tra khi back
   const previousPathRef = useRef(location.pathname);
 
-  // ✅ NEW LOGIC: Kiểm tra trạng thái bài thi
+  // NEW LOGIC: Kiểm tra trạng thái bài thi
   const getExamStatus = useCallback(() => {
     if (!levelId || !examId) return { shouldWarn: false, reason: 'no-exam-route' };
 
@@ -47,32 +47,32 @@ export function useExamGuard() {
     const isResultPage = location.pathname.includes('/result');
     const isAnswersPage = location.pathname.includes('/answers');
 
-    // ✅ Case 1: Đang ở Knowledge page → LUÔN cảnh báo (đã vào = đang làm)
+    // Case 1: Đang ở Knowledge page → LUÔN cảnh báo (đã vào = đang làm)
     if (isKnowledgePage && !knowledgeCompleted) {
       return { shouldWarn: true, reason: 'knowledge-in-progress' };
     }
 
-    // ✅ Case 2: Đang ở Listening page → LUÔN cảnh báo (đã vào = đang làm)
+    // Case 2: Đang ở Listening page → LUÔN cảnh báo (đã vào = đang làm)
     if (isListeningPage && !listeningCompleted) {
       return { shouldWarn: true, reason: 'listening-in-progress' };
     }
 
-    // ✅ Case 3: Ở Detail page VÀ đã hoàn thành Knowledge (unlock Listening)
+    // Case 3: Ở Detail page VÀ đã hoàn thành Knowledge (unlock Listening)
     if (isDetailPage && knowledgeCompleted && !listeningCompleted) {
       return { shouldWarn: true, reason: 'detail-knowledge-done-listening-pending' };
     }
 
-    // ✅ Case 4: Ở Detail page VÀ đã hoàn thành CẢ 2 (có nút Result/Retry)
+    // Case 4: Ở Detail page VÀ đã hoàn thành CẢ 2 (có nút Result/Retry)
     if (isDetailPage && knowledgeCompleted && listeningCompleted) {
       return { shouldWarn: true, reason: 'detail-both-completed' };
     }
 
-    // ✅ Case 5: Ở Result page → LUÔN cảnh báo (trừ khi đi Answers)
+    // Case 5: Ở Result page → LUÔN cảnh báo (trừ khi đi Answers)
     if (isResultPage) {
       return { shouldWarn: true, reason: 'result-page' };
     }
 
-    // ✅ Case 6: Ở Answers page → LUÔN cảnh báo (vẫn trong phạm vi bài thi)
+    // Case 6: Ở Answers page → LUÔN cảnh báo (vẫn trong phạm vi bài thi)
     if (isAnswersPage) {
       return { shouldWarn: true, reason: 'answers-page' };
     }
@@ -81,7 +81,7 @@ export function useExamGuard() {
     return { shouldWarn: false, reason: 'safe-to-leave' };
   }, [levelId, examId, location.pathname]);
 
-  // ✅ Kiểm tra xem đích đến có phải là Knowledge của cùng đề không
+  // Kiểm tra xem đích đến có phải là Knowledge của cùng đề không
   const isNavigatingToSameExamKnowledge = useCallback((targetPath) => {
     if (!levelId || !examId || !targetPath) return false;
     
@@ -92,7 +92,7 @@ export function useExamGuard() {
     return normalizedPath === expectedKnowledgePath;
   }, [levelId, examId]);
 
-  // ✅ Kiểm tra xem đích đến có phải là Listening của cùng đề không
+  // Kiểm tra xem đích đến có phải là Listening của cùng đề không
   const isNavigatingToSameExamListening = useCallback((targetPath) => {
     if (!levelId || !examId || !targetPath) return false;
     
@@ -103,7 +103,7 @@ export function useExamGuard() {
     return normalizedPath === expectedListeningPath;
   }, [levelId, examId]);
 
-  // ✅ Kiểm tra xem đích đến có phải là Result của cùng đề không
+  // Kiểm tra xem đích đến có phải là Result của cùng đề không
   const isNavigatingToSameExamResult = useCallback((targetPath) => {
     if (!levelId || !examId || !targetPath) return false;
     
@@ -114,7 +114,7 @@ export function useExamGuard() {
     return normalizedPath === expectedResultPath;
   }, [levelId, examId]);
 
-  // ✅ NEW: Kiểm tra xem đích đến có phải là Answers của cùng đề không
+  // NEW: Kiểm tra xem đích đến có phải là Answers của cùng đề không
   const isNavigatingToSameExamAnswers = useCallback((targetPath) => {
     if (!levelId || !examId || !targetPath) return false;
     
@@ -125,7 +125,7 @@ export function useExamGuard() {
     return normalizedPath === expectedAnswersPath;
   }, [levelId, examId]);
 
-  // ✅ NEW: Kiểm tra xem đích đến có phải là Detail của cùng đề không
+  // NEW: Kiểm tra xem đích đến có phải là Detail của cùng đề không
   const isNavigatingToSameExamDetail = useCallback((targetPath) => {
     if (!levelId || !examId || !targetPath) return false;
     
@@ -136,7 +136,7 @@ export function useExamGuard() {
     return normalizedPath === expectedDetailPath;
   }, [levelId, examId]);
 
-  // ✅ NEW: Xác định thứ tự các trang trong exam flow
+  // NEW: Xác định thứ tự các trang trong exam flow
   const getExamPageOrder = useCallback((path) => {
     if (!levelId || !examId || !path) return -1;
     
@@ -153,7 +153,7 @@ export function useExamGuard() {
     return -1; // Không phải trang trong exam flow
   }, [levelId, examId]);
 
-  // ✅ NEW: Kiểm tra xem có đang điều hướng TRONG CÙNG exam flow không
+  // NEW: Kiểm tra xem có đang điều hướng TRONG CÙNG exam flow không
   const isNavigatingWithinSameExam = useCallback((targetPath) => {
     if (!levelId || !examId || !targetPath) return false;
     
@@ -164,7 +164,7 @@ export function useExamGuard() {
     return currentOrder >= 0 && targetOrder >= 0;
   }, [levelId, examId, location.pathname, getExamPageOrder]);
 
-  // ✅ NEW: Kiểm tra xem có đang đi LÙI trong cùng exam flow không
+  // NEW: Kiểm tra xem có đang đi LÙI trong cùng exam flow không
   const isNavigatingBackwardInSameExam = useCallback((targetPath) => {
     if (!levelId || !examId || !targetPath) return false;
     
@@ -175,60 +175,60 @@ export function useExamGuard() {
     return currentOrder >= 0 && targetOrder >= 0 && targetOrder < currentOrder;
   }, [levelId, examId, location.pathname, getExamPageOrder]);
 
-  // ✅ Kiểm tra có cần cảnh báo không (chặn lùi trong cùng exam flow)
+  // Kiểm tra có cần cảnh báo không (chặn lùi trong cùng exam flow)
   const shouldShowWarning = useCallback((targetPath = null) => {
     const status = getExamStatus();
     
-    // ✅ Chỉ log trong dev mode và khi có targetPath (để debug navigation)
+    // Chỉ log trong dev mode và khi có targetPath (để debug navigation)
     if (import.meta.env.DEV && targetPath) {
       console.log('shouldShowWarning check:', { reason: status.reason, targetPath, shouldWarn: status.shouldWarn });
     }
     
-    // ✅ QUAN TRỌNG: Nếu đang đi LÙI trong cùng exam flow → CẢNH BÁO
+    // QUAN TRỌNG: Nếu đang đi LÙI trong cùng exam flow → CẢNH BÁO
     if (targetPath && isNavigatingBackwardInSameExam(targetPath)) {
       if (import.meta.env.DEV) {
         console.log('⚠️ Blocking backward navigation within same exam flow:', targetPath);
       }
-      return true; // ⚠️ Chặn lùi trong cùng exam flow
+      return true; // Chặn lùi trong cùng exam flow
     }
     
-    // ✅ EXCEPTION 0: Ở Detail (lần đầu, chưa làm gì) → Đi Knowledge cùng đề → KHÔNG cảnh báo (tiến)
+    // EXCEPTION 0: Ở Detail (lần đầu, chưa làm gì) → Đi Knowledge cùng đề → KHÔNG cảnh báo (tiến)
     if (status.reason === 'safe-to-leave' && targetPath) {
       if (isNavigatingToSameExamKnowledge(targetPath)) {
-        return false; // ✅ Cho phép bắt đầu Knowledge (tiến)
+        return false; // Cho phép bắt đầu Knowledge (tiến)
       }
     }
     
-    // ✅ EXCEPTION 1: Ở Detail (Knowledge xong) → Đi Listening cùng đề → KHÔNG cảnh báo (tiến)
+    // EXCEPTION 1: Ở Detail (Knowledge xong) → Đi Listening cùng đề → KHÔNG cảnh báo (tiến)
     if (status.reason === 'detail-knowledge-done-listening-pending' && targetPath) {
       const isListening = isNavigatingToSameExamListening(targetPath);
       if (import.meta.env.DEV && isListening) {
         console.log('Exception 1: Allowing navigation to Listening (forward)');
       }
       if (isListening) {
-        return false; // ✅ Cho phép chuyển sang Listening (tiến)
+        return false; // Cho phép chuyển sang Listening (tiến)
       }
     }
     
-    // ✅ EXCEPTION 2: Ở Detail (cả 2 xong) → Đi Result cùng đề → KHÔNG cảnh báo (tiến)
+    // EXCEPTION 2: Ở Detail (cả 2 xong) → Đi Result cùng đề → KHÔNG cảnh báo (tiến)
     if (status.reason === 'detail-both-completed' && targetPath) {
       if (isNavigatingToSameExamResult(targetPath)) {
-        return false; // ✅ Cho phép xem kết quả (tiến)
+        return false; // Cho phép xem kết quả (tiến)
       }
     }
     
-    // ✅ EXCEPTION 3: Ở Result → Đi Answers cùng đề → KHÔNG cảnh báo (tiến)
+    // EXCEPTION 3: Ở Result → Đi Answers cùng đề → KHÔNG cảnh báo (tiến)
     if (status.reason === 'result-page' && targetPath) {
       if (isNavigatingToSameExamAnswers(targetPath)) {
-        return false; // ✅ Cho phép xem đáp án (tiến)
+        return false; // Cho phép xem đáp án (tiến)
       }
     }
 
-    // ✅ Nếu rời khỏi exam flow hoặc các trường hợp khác → CẢNH BÁO
+    // Nếu rời khỏi exam flow hoặc các trường hợp khác → CẢNH BÁO
     return status.shouldWarn;
   }, [getExamStatus, isNavigatingToSameExamKnowledge, isNavigatingToSameExamListening, isNavigatingToSameExamResult, isNavigatingToSameExamAnswers, isNavigatingBackwardInSameExam]);
 
-  // ✅ Xóa dữ liệu bài thi
+  // Xóa dữ liệu bài thi
   const clearExamData = useCallback(() => {
     if (!levelId || !examId) return;
     
@@ -247,13 +247,13 @@ export function useExamGuard() {
     keysToRemove.forEach(key => localStorage.removeItem(key));
   }, [levelId, examId]);
 
-  // ✅ Cập nhật currentWarningStatus khi location hoặc exam status thay đổi
+  // Cập nhật currentWarningStatus khi location hoặc exam status thay đổi
   useEffect(() => {
     const status = shouldShowWarning();
     setCurrentWarningStatus(status);
   }, [shouldShowWarning, location.pathname, levelId, examId]);
 
-  // ✅ Xử lý beforeunload (Reload/Close tab) - Browser alert bắt buộc
+  // Xử lý beforeunload (Reload/Close tab) - Browser alert bắt buộc
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (currentWarningStatus) {
@@ -267,12 +267,12 @@ export function useExamGuard() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [currentWarningStatus]);
 
-  // ✅ Cập nhật previousPathRef khi location thay đổi
+  // Cập nhật previousPathRef khi location thay đổi
   useEffect(() => {
     previousPathRef.current = location.pathname;
   }, [location.pathname]);
 
-  // ✅ Xử lý Browser Back/Forward - Modal Antd (luôn gắn listener, kiểm tra khi xảy ra)
+  // Xử lý Browser Back/Forward - Modal Antd (luôn gắn listener, kiểm tra khi xảy ra)
   useEffect(() => {
     // Lưu path hiện tại trước khi kiểm tra
     const currentPath = location.pathname;
@@ -284,14 +284,14 @@ export function useExamGuard() {
         return;
       }
       
-      // ✅ NEW: Kiểm tra xem có đang back trong cùng exam flow không
+      // NEW: Kiểm tra xem có đang back trong cùng exam flow không
       // Khi popstate xảy ra, window.location.pathname đã thay đổi (browser đã navigate)
       const newPath = window.location.pathname;
       const newOrder = getExamPageOrder(newPath);
       
       // Nếu cả hai đều trong exam flow VÀ đang lùi (newOrder < currentOrder) → chặn
       if (currentOrder >= 0 && newOrder >= 0 && newOrder < currentOrder) {
-        // ⚠️ Chặn back trong cùng exam flow
+        // Chặn back trong cùng exam flow
         if (import.meta.env.DEV) {
           console.log('⚠️ Blocking browser back within same exam flow:', { from: currentPath, to: newPath, fromOrder: currentOrder, toOrder: newOrder });
         }
@@ -303,7 +303,7 @@ export function useExamGuard() {
         return;
       }
       
-      // ✅ Nếu rời khỏi exam flow → chặn và cảnh báo
+      // Nếu rời khỏi exam flow → chặn và cảnh báo
       if (currentOrder >= 0 && newOrder < 0) {
         // Navigate về trang cũ bằng React Router
         navigateRouter(currentPath, { replace: true });
@@ -313,7 +313,7 @@ export function useExamGuard() {
         return;
       }
       
-      // ✅ Nếu đi tiến trong cùng exam flow hoặc không liên quan → cho phép
+      // Nếu đi tiến trong cùng exam flow hoặc không liên quan → cho phép
       if (import.meta.env.DEV) {
         console.log('✅ Allowing browser navigation:', { from: currentPath, to: newPath, fromOrder: currentOrder, toOrder: newOrder });
       }
@@ -340,7 +340,7 @@ export function useExamGuard() {
     };
   }, [location, currentWarningStatus, levelId, examId, getExamPageOrder, navigateRouter]);
 
-  // ✅ Khi quay lại từ bfcache (iOS) hoặc tab trở lại foreground, đảm bảo guard được tái thiết lập
+  // Khi quay lại từ bfcache (iOS) hoặc tab trở lại foreground, đảm bảo guard được tái thiết lập
   useEffect(() => {
     const rearmGuard = () => {
       if (!currentWarningStatus) return;
@@ -359,7 +359,7 @@ export function useExamGuard() {
     };
   }, [location, currentWarningStatus]);
 
-  // ✅ Intercept in-app link clicks globally (footer, breadcrumbs with <a>, etc.)
+  // Intercept in-app link clicks globally (footer, breadcrumbs with <a>, etc.)
   useEffect(() => {
     const handleDocumentClick = (e) => {
       // Only intercept left-clicks without modifier keys
@@ -388,7 +388,7 @@ export function useExamGuard() {
     };
   }, [shouldShowWarning]);
 
-  // ✅ Hàm điều hướng với cảnh báo (Header, Breadcrumbs, buttons)
+  // Hàm điều hướng với cảnh báo (Header, Breadcrumbs, buttons)
   const handleNavigateWithWarning = useCallback((path) => {
     if (shouldShowWarning(path)) {
       setPendingPath(path);
@@ -398,7 +398,7 @@ export function useExamGuard() {
     }
   }, [shouldShowWarning, navigateRouter]);
 
-  // ✅ Xử lý khi đồng ý rời đi
+  // Xử lý khi đồng ý rời đi
   const confirmLeave = () => {
     clearExamData();
     setModalVisible(false);
@@ -412,7 +412,7 @@ export function useExamGuard() {
     setPendingPath(null);
   };
 
-  // ✅ Xử lý khi hủy
+  // Xử lý khi hủy
   const cancelLeave = () => {
     setModalVisible(false);
     setPendingPath(null);
@@ -422,7 +422,7 @@ export function useExamGuard() {
     }
   };
 
-  // ✅ Modal cảnh báo - NEO BRUTALISM
+  // Modal cảnh báo - NEO BRUTALISM
   const WarningModalComponent = (
     <WarningModal
       isOpen={modalVisible}

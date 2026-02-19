@@ -1,5 +1,5 @@
 // src/components/settings/ToggleSwitch.jsx
-// ✨ NEO BRUTALISM Toggle Switch Component
+// NEO BRUTALISM Toggle Switch Component
 
 import React from 'react';
 

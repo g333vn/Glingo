@@ -1,5 +1,5 @@
 // src/utils/secureStorage.js
-// 🔒 Secure Storage Wrapper
+// Secure Storage Wrapper
 // Quản lý những gì được phép lưu vào localStorage, tự động redact thông tin nhạy cảm.
 
 /**
@@ -7,7 +7,7 @@
  * WHITELIST: Các key được phép lưu vào localStorage
  * ========================================
  * 
- * ✅ AN TOÀN (thuần UI, không nhạy cảm):
+ * AN TOÀN (thuần UI, không nhạy cảm):
  * - theme, language, locale
  * - levelAccessControl, jlptAccessControl (config quyền truy cập)
  * - levelModuleAccessControl, jlptModuleAccessControl
@@ -15,11 +15,11 @@
  * - adminBooks_* (cache sách)
  * - viewedNotifications, dismissedBanners
  * 
- * ⚠️ CẦN CẨN THẬN (chỉ lưu tối thiểu):
+ * CẦN CẨN THẬN (chỉ lưu tối thiểu):
  * - adminUsers (metadata user, KHÔNG có password)
  * - sb-*-auth-token (Supabase quản lý, httpOnly tốt hơn nhưng Supabase JS SDK cần)
  * 
- * ❌ KHÔNG BAO GIỜ LƯU:
+ * KHÔNG BAO GIỜ LƯU:
  * - password, plaintext password
  * - secret, apiKey, serviceKey
  * - full profile với thông tin nhạy cảm

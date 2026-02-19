@@ -1,5 +1,5 @@
 // src/components/skeletons/LessonPageSkeleton.jsx
-// 📚 Skeleton screen cho LessonPage (Sidebar + Lesson Content)
+// Skeleton screen cho LessonPage (Sidebar + Lesson Content)
 
 import React from 'react';
 import Sidebar from '../Sidebar.jsx';

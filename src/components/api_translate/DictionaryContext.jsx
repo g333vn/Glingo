@@ -51,7 +51,7 @@ export function DictionaryProvider({ children }) {
     setShowPopup(true);
 
     try {
-      // ✅ OPTIMIZED: Check cache first to avoid CORS issues
+      // OPTIMIZED: Check cache first to avoid CORS issues
       const cacheKey = `lookup_complete_${word.trim()}`;
       const cached = localStorage.getItem(cacheKey);
       
@@ -80,7 +80,7 @@ export function DictionaryProvider({ children }) {
       // Gọi API nếu không có cache
       const rawData = await lookupWord(word);
       
-      // ✅ UPDATED: formatDictionaryResult giờ là async (auto-translate)
+      // UPDATED: formatDictionaryResult giờ là async (auto-translate)
       const formattedData = await formatDictionaryResult(rawData);
 
       setResult(formattedData);

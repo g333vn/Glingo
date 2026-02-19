@@ -16,13 +16,13 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
   const [jlptExamList, setJlptExamList] = useState([]);
   const itemsPerPage = 14;
 
-  // ✅ State cho Modal "Sắp diễn ra"
+  // State cho Modal "Sắp diễn ra"
   const [showUpcomingModal, setShowUpcomingModal] = useState(false);
 
-  // ✅ Tích hợp useExamGuard
+  // Tích hợp useExamGuard
   const { navigate: guardedNavigate, WarningModal } = useExamGuard();
 
-  // ✅ Kiểm tra JLPT route
+  // Kiểm tra JLPT route
   const isJlptRoute = location.pathname.startsWith('/jlpt/');
   const isLevelRoute = location.pathname.startsWith('/level/');
 
@@ -53,10 +53,10 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
   const isLevelPage = location.pathname === '/level';
   const isJlptPage = location.pathname === '/jlpt';
 
-  // ✅ Lấy examId hiện tại để highlight
+  // Lấy examId hiện tại để highlight
   const currentExamId = params.examId;
 
-  // ✅ JLPT Exam Loader: Supabase → Storage → Static data
+  // JLPT Exam Loader: Supabase → Storage → Static data
   useEffect(() => {
     const levelId = params.levelId;
     const isJlptMode = location.pathname.startsWith('/jlpt/') && levelId;
@@ -71,7 +71,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
 
     const loadJlptExams = async () => {
       try {
-        // 1️⃣ Try Supabase (source of truth)
+        // 1 Try Supabase (source of truth)
         const { success, data } = await getExamsFromSupabase(levelId);
         if (!isCancelled && success && Array.isArray(data) && data.length > 0) {
           setJlptExamList(data);
@@ -85,14 +85,14 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
           return;
         }
 
-        // 2️⃣ Fallback: storage (admin-created exams)
+        // 2 Fallback: storage (admin-created exams)
         const savedExams = await storageManager.getExams(levelId);
         if (!isCancelled && Array.isArray(savedExams) && savedExams.length > 0) {
           setJlptExamList(savedExams);
           return;
         }
 
-        // 3️⃣ Final fallback: static config (jlptData)
+        // 3 Final fallback: static config (jlptData)
         const staticExams = jlptExams[levelId] || [];
         if (!isCancelled) {
           setJlptExamList(staticExams);
@@ -147,7 +147,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
   const currentItems = menuItems.slice(startIndex, endIndex);
   const totalPages = Math.ceil(menuItems.length / itemsPerPage);
 
-  // ✅ Pagination Controls với Ellipsis Logic & Neo Brutalism Style (Compact cho Sidebar)
+  // Pagination Controls với Ellipsis Logic & Neo Brutalism Style (Compact cho Sidebar)
   const PaginationControls = ({ total, current, onChange }) => {
     if (total <= 1) return null;
 
@@ -240,7 +240,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
     }
   };
 
-  // ✅ Handler cho Module LEVEL (filter logic)
+  // Handler cho Module LEVEL (filter logic)
   const handleLevelCategoryClick = (categoryName) => {
     const newCategory = activeItem === categoryName ? null : categoryName;
 
@@ -250,7 +250,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
     setActiveItem(newCategory);
   };
 
-  // ✅ Handler cho Module JLPT (navigate logic)
+  // Handler cho Module JLPT (navigate logic)
   const handleJlptExamClick = (item) => {
     const { id: examId, status } = item;
     const levelId = params.levelId;
@@ -261,7 +261,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
       status?.includes('Sắp');
 
     if (isUpcoming) {
-      // ✅ Hiện Modal ngay lập tức
+      // Hiện Modal ngay lập tức
       setShowUpcomingModal(true);
       return;
     }
@@ -284,7 +284,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
     }
   };
 
-  // ✅ Xác định handler dựa trên module
+  // Xác định handler dựa trên module
   const handleCategoryClick = (item) => {
     if (isJlptRoute && params.levelId) {
       // Module JLPT: Navigate logic
@@ -297,15 +297,15 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
     }
   };
 
-  // ✅ Dynamic NavLink cho title
+  // Dynamic NavLink cho title
   const TitleLink = isJlptRoute ? ProtectedLink : 'a';
 
   return (
     <>
-      {/* ✅ Render Warning Modal từ useExamGuard */}
+      {/* Render Warning Modal từ useExamGuard */}
       {WarningModal}
 
-      {/* ✅ Modal "Sắp diễn ra" - State-based */}
+      {/* Modal "Sắp diễn ra" - State-based */}
       <Modal
         title="📅 Đề thi đang chuẩn bị"
         open={showUpcomingModal}
@@ -321,7 +321,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
         </p>
       </Modal>
 
-      {/* 🔘 Mobile Toggle Button - Hidden when sidebar is open or on desktop */}
+      {/* Mobile Toggle Button - Hidden when sidebar is open or on desktop */}
       {!isMobileOpen && (
       <button
         onClick={toggleMobileSidebar}
@@ -335,7 +335,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
       </button>
       )}
 
-      {/* 🌑 Mobile Backdrop */}
+      {/* Mobile Backdrop */}
       {isMobileOpen && (
         <div
           id="mobile-backdrop"
@@ -344,7 +344,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
         />
       )}
 
-      {/* 📌 SIDEBAR CONTAINER - ✅ STICKY ON DESKTOP */}
+      {/* SIDEBAR CONTAINER - STICKY ON DESKTOP */}
       <div className={`
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} 
         fixed md:sticky 
@@ -360,7 +360,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
         transition-transform duration-300 ease-in-out
         md:translate-x-0
       `}>
-        {/* ✅ Title với bảo vệ - dùng dynamic TitleLink */}
+        {/* Title với bảo vệ - dùng dynamic TitleLink */}
         {isJlptRoute ? (
           <TitleLink
             to={currentTitle.link}
@@ -379,7 +379,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
           </a>
         )}
 
-        {/* 📜 Menu Items - Scrollable Area */}
+        {/* Menu Items - Scrollable Area */}
         {!isLevelPage && !isJlptPage && (
           <div className="px-2 pt-2 flex-1 overflow-y-auto">
             <ul className="space-y-0">
@@ -417,7 +417,7 @@ function Sidebar({ selectedCategory, onCategoryClick, categories = [] }) {
           <div className="flex-1"></div>
         )}
 
-        {/* 🔢 Pagination - Fixed at Bottom */}
+        {/* Pagination - Fixed at Bottom */}
         {!isLevelPage && !isJlptPage && (
           <div className="mt-auto px-4 pb-4 flex-shrink-0">
             <PaginationControls total={totalPages} current={currentPage} onChange={setCurrentPage} />

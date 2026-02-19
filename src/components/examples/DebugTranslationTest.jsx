@@ -1,5 +1,5 @@
 // src/components/examples/DebugTranslationTest.jsx
-// 🔍 Debug test để verify translation system hoạt động
+// Debug test để verify translation system hoạt động
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';

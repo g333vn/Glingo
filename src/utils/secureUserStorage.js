@@ -1,5 +1,5 @@
 // src/utils/secureUserStorage.js
-// 🔒 Secure User Storage - Quản lý an toàn thông tin user trong localStorage
+// Secure User Storage - Quản lý an toàn thông tin user trong localStorage
 // Thay thế các cách lưu trữ không an toàn
 
 import { hashPassword, verifyPassword, secureStorage as encryptedStorage } from './storageEncryption.js';

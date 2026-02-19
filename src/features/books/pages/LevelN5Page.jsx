@@ -16,7 +16,7 @@ function LevelN5Page() {
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isTransitioning, setIsTransitioning] = useState(false);
-    // ✅ Extract unique categories from books for Sidebar - Sort by number of books (most first)
+    // Extract unique categories from books for Sidebar - Sort by number of books (most first)
     const [n5Books, setN5Books] = useState([]);
 
     useEffect(() => {
@@ -84,7 +84,7 @@ function LevelN5Page() {
         loadBooks();
     }, []);
 
-    // ✅ Đọc category từ URL query parameter khi component mount hoặc URL thay đổi
+    // Đọc category từ URL query parameter khi component mount hoặc URL thay đổi
     useEffect(() => {
         const categoryFromUrl = searchParams.get('category');
         if (categoryFromUrl) {
@@ -111,7 +111,7 @@ function LevelN5Page() {
             count: categoryCounts[cat]
         }));
 
-        // ✅ Sort theo số lượng books (nhiều nhất trước)
+        // Sort theo số lượng books (nhiều nhất trước)
         const sorted = categoriesWithCount.sort((a, b) => b.count - a.count);
         console.log('[LevelN5Page] 📊 Final categories for sidebar:', sorted);
         return sorted;

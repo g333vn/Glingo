@@ -1,5 +1,5 @@
 // src/pages/admin/NotificationManagementPage.jsx
-// 🔔 NOTIFICATION MANAGEMENT PAGE (Unified)
+// NOTIFICATION MANAGEMENT PAGE (Unified)
 // Quản lý thông báo hệ thống và template tự động
 
 import React, { useState, useEffect, useMemo } from 'react';

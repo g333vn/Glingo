@@ -1,5 +1,5 @@
 // src/components/settings/SettingsSection.jsx
-// ✨ NEO BRUTALISM Settings Section Component
+// NEO BRUTALISM Settings Section Component
 
 import React, { useState } from 'react';
 

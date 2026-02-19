@@ -1,10 +1,10 @@
 import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
-// ✅ Import antd patch for React 19 compatibility
+// Import antd patch for React 19 compatibility
 import '@ant-design/v5-patch-for-react-19';
 import { createBrowserRouter, RouterProvider, useParams } from 'react-router-dom';
 
-// ✅ CRITICAL: Import all providers to wrap RouterProvider
+// CRITICAL: Import all providers to wrap RouterProvider
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { LanguageProvider } from './contexts/LanguageContext.jsx';
 import { ToastProvider } from './components/ToastNotification.jsx';
@@ -14,7 +14,7 @@ import App from './App.jsx';
 import './styles/index.css';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 
-// ✅ CODE SPLITTING: Lazy load pages
+// CODE SPLITTING: Lazy load pages
 // Critical pages (load immediately)
 import HomePage from './pages/HomePage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
@@ -74,7 +74,7 @@ const NotificationManagementPage = lazy(() => import('./pages/admin/Notification
 const EditorLayout = lazy(() => import('./components/editor/EditorLayout.jsx'));
 const EditorDashboardPage = lazy(() => import('./pages/editor/EditorDashboardPage.jsx'));
 
-// ✅ Loading Spinner Component
+// Loading Spinner Component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
     <div className="flex flex-col items-center gap-4">
@@ -84,7 +84,7 @@ const PageLoader = () => (
   </div>
 );
 
-// ✅ Suspense wrapper for lazy components
+// Suspense wrapper for lazy components
 const LazyPage = ({ children }) => (
   <Suspense fallback={<PageLoader />}>
     {children}
@@ -240,7 +240,7 @@ const router = createBrowserRouter([
         element: <LazyPage><StatisticsDashboard /></LazyPage>
       },
       // ========== JLPT ROUTES ==========
-      // ✅ Route cụ thể hơn phải được đặt TRƯỚC route tổng quát hơn
+      // Route cụ thể hơn phải được đặt TRƯỚC route tổng quát hơn
       {
         path: 'jlpt',
         element: <LazyPage><JLPTPage /></LazyPage>
@@ -260,7 +260,7 @@ const router = createBrowserRouter([
         path: 'jlpt/:levelId/:examId/result',
         element: <LazyPage><JLPTExamResultPage /></LazyPage>
       },
-      // ✅ NEW: Route cho trang xem đáp án và giải thích (cụ thể nhất)
+      // NEW: Route cho trang xem đáp án và giải thích (cụ thể nhất)
       {
         path: 'jlpt/:levelId/:examId/answers',
         element: <LazyPage><ExamAnswersPage /></LazyPage>
@@ -288,17 +288,17 @@ const router = createBrowserRouter([
         path: 'privacy',
         element: <LazyPage><PrivacyPage /></LazyPage>
       },
-      // ✅ NEW: Login Page
+      // NEW: Login Page
       {
         path: 'login',
         element: <LazyPage><LoginPage /></LazyPage>
       },
-      // ✅ NEW: Register Page
+      // NEW: Register Page
       {
         path: 'register',
         element: <LazyPage><RegisterPage /></LazyPage>
       },
-      // ✅ NEW: Profile Page (Protected - Requires login)
+      // NEW: Profile Page (Protected - Requires login)
       {
         path: 'profile',
         element: (
@@ -307,7 +307,7 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         )
       },
-      // ✅ NEW: Admin Routes (Protected - Admin only)
+      // NEW: Admin Routes (Protected - Admin only)
       {
         path: 'admin',
         element: (
@@ -354,7 +354,7 @@ const router = createBrowserRouter([
           }
         ]
       },
-      // ✅ NEW: Editor Routes (Protected - Editor only)
+      // NEW: Editor Routes (Protected - Editor only)
       {
         path: 'editor',
         element: (
@@ -407,7 +407,7 @@ const router = createBrowserRouter([
   }
 ]);
 
-// ✅ CRITICAL FIX: Wrap RouterProvider with all providers
+// CRITICAL FIX: Wrap RouterProvider with all providers
 // This ensures Router has access to AuthProvider and other contexts
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

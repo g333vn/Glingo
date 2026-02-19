@@ -1,5 +1,5 @@
 // src/translations/index.js
-// 🌐 Translations - 3 Main Languages
+// Translations - 3 Main Languages
 
 import vi from './vi.js';
 import en from './en.js';

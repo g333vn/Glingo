@@ -1,4 +1,4 @@
-// src/components/Header.jsx - ✨ NEO BRUTALISM + JAPANESE AESTHETIC
+// src/components/Header.jsx - NEO BRUTALISM + JAPANESE AESTHETIC
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useExamGuard } from '../hooks/useExamGuard.jsx';
@@ -43,7 +43,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
 
     window.addEventListener('settingsUpdated', handleSettingsUpdate);
 
-    // ✅ Load from Supabase on mount to get latest data
+    // Load from Supabase on mount to get latest data
     const loadInitialSettings = async () => {
       try {
         const loadedSettings = await loadSettingsFromSupabase();
@@ -57,7 +57,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
     
     loadInitialSettings();
 
-    // ✅ Subscribe to Supabase real-time changes
+    // Subscribe to Supabase real-time changes
     const unsubscribe = subscribeToAppSettings(async (updatedAppSettings) => {
       // When app_settings is updated (system_settings or user_settings), reload from Supabase
       if (updatedAppSettings?.system_settings || updatedAppSettings?.user_settings) {
@@ -80,14 +80,14 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
     };
   }, []);
 
-  // ✨ NEW: Scroll state
+  // NEW: Scroll state
   const [isScrolled, setIsScrolled] = useState(false);
 
   const mobileMenuRef = useRef(null);
   const burgerButtonRef = useRef(null);
 
   // Check access for all levels
-  // ✅ FIXED: Merge user and profile to get role
+  // FIXED: Merge user and profile to get role
   const userWithRole = useMemo(() => {
     return user ? {
       ...user,
@@ -111,10 +111,10 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
     return map;
   }, [userWithRole]);
 
-  // ✅ REMOVED: Module-level access check - Allow access to selection pages
+  // REMOVED: Module-level access check - Allow access to selection pages
   // Level-specific access will be checked in LevelPage and JLPTPage
 
-  // ✨ NEW: Scroll listener
+  // NEW: Scroll listener
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
@@ -125,7 +125,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // ✅ Helper function để check active state
+  // Helper function để check active state
   const isActive = (path) => {
     if (path === '/') {
       return location.pathname === '/';
@@ -152,7 +152,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMobileMenuOpen]);
 
-  // ✅ Function để get class cho link - NEO BRUTALISM STYLE
+  // Function để get class cho link - NEO BRUTALISM STYLE
   const getLinkClass = (path) => {
     const baseClass = 'transition-all duration-200 font-black uppercase tracking-wide';
     if (isActive(path)) {
@@ -161,7 +161,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
     return `text-white hover:text-black hover:bg-yellow-400 px-3 py-1.5 rounded-md border-[3px] border-transparent hover:border-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${baseClass}`;
   };
 
-  // ✅ Function để get class cho mobile link - NEO BRUTALISM STYLE
+  // Function để get class cho mobile link - NEO BRUTALISM STYLE
   const getMobileLinkClass = (path) => {
     const baseClass = 'text-left py-3 px-4 rounded-lg transition-all duration-200 font-bold uppercase';
     if (isActive(path)) {
@@ -177,7 +177,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
   };
 
   const handleNavigate = (path) => {
-    // ✅ TẤT CẢ navigation đều phải qua examNavigate để exam guard có thể check và cảnh báo
+    // TẤT CẢ navigation đều phải qua examNavigate để exam guard có thể check và cảnh báo
     examNavigate(path);
   };
 
@@ -211,7 +211,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
 
   return (
     <>
-      {/* ✨ REDESIGNED HEADER - Clean & Beautiful */}
+      {/* REDESIGNED HEADER - Clean & Beautiful */}
       <header
         lang="en"
         style={{
@@ -840,7 +840,7 @@ function Header({ onUserIconClick, isMaintenanceLock = false }) {
         )}
       </header>
 
-      {/* ✅ CRITICAL: Render WarningModal từ useExamGuard */}
+      {/* CRITICAL: Render WarningModal từ useExamGuard */}
       {WarningModal}
 
       {showLogoutConfirm && (

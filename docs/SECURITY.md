@@ -71,17 +71,17 @@ CREATE POLICY "Admins can manage books" ON books
 ### Input Validation
 
 ```javascript
-// ✅ Good - Validate input
+// Good - Validate input
 function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// ✅ Good - Sanitize user input
+// Good - Sanitize user input
 function sanitizeInput(input) {
   return input.trim().replace(/[<>]/g, '');
 }
 
-// ❌ Bad - No validation
+// Bad - No validation
 function saveData(userInput) {
   // Directly use userInput - vulnerable to injection
 }
@@ -144,10 +144,10 @@ Configured in `vercel.json`:
 ### Supabase Client
 
 ```javascript
-// ✅ Good - Use anon key (public, safe)
+// Good - Use anon key (public, safe)
 const supabase = createClient(url, anonKey);
 
-// ❌ Bad - Never use service role key in client
+// Bad - Never use service role key in client
 const supabase = createClient(url, serviceRoleKey);
 ```
 
@@ -199,10 +199,10 @@ All API calls go through Supabase:
 React automatically escapes content:
 
 ```jsx
-// ✅ Safe - React escapes automatically
+// Safe - React escapes automatically
 <div>{userInput}</div>
 
-// ⚠️ Dangerous - Only if you trust the content
+// Dangerous - Only if you trust the content
 <div dangerouslySetInnerHTML={{ __html: userInput }} />
 ```
 
@@ -216,7 +216,7 @@ For rich text (lessons, descriptions):
 ### URL Validation
 
 ```javascript
-// ✅ Good - Validate URLs
+// Good - Validate URLs
 function isValidUrl(url) {
   try {
     const parsed = new URL(url);
@@ -248,13 +248,13 @@ function isValidUrl(url) {
 Supabase client uses parameterized queries:
 
 ```javascript
-// ✅ Good - Parameterized (safe)
+// Good - Parameterized (safe)
 const { data } = await supabase
   .from('books')
   .select('*')
   .eq('id', bookId);  // bookId is parameterized
 
-// ❌ Bad - String concatenation (dangerous)
+// Bad - String concatenation (dangerous)
 const query = `SELECT * FROM books WHERE id = '${bookId}'`;
 ```
 

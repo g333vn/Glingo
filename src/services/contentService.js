@@ -23,9 +23,9 @@ export async function saveBook(book, userId) {
         description: book.description || null,
         image_url: book.imageUrl || null,
         series_id: book.seriesId || null,
-        // ❗ Không ghi field `category` lên Supabase vì bảng `books` hiện chưa có cột này.
+        // Không ghi field `category` lên Supabase vì bảng `books` hiện chưa có cột này.
         //    Category (Danh mục) chỉ dùng phía client, dựa trên seriesId/series.name.
-        placeholder_version: book.placeholderVersion || 1, // ✅ NEW: Placeholder design version (Phiên bản thiết kế placeholder) (1-10)
+        placeholder_version: book.placeholderVersion || 1, // NEW: Placeholder design version (Phiên bản thiết kế placeholder) (1-10)
         order_index: book.orderIndex || 0,
         created_by: userId,
         updated_at: new Date().toISOString()
@@ -75,8 +75,8 @@ export async function getBooks(level) {
       description: book.description,
       imageUrl: book.image_url,
       seriesId: book.series_id,
-      category: book.category || null, // ✅ Include category field (Bao gồm trường category) from Supabase
-      placeholderVersion: book.placeholder_version || 1, // ✅ NEW: Placeholder design version (Phiên bản thiết kế placeholder) (1-10, default 1)
+      category: book.category || null, // Include category field (Bao gồm trường category) from Supabase
+      placeholderVersion: book.placeholder_version || 1, // NEW: Placeholder design version (Phiên bản thiết kế placeholder) (1-10, default 1)
       orderIndex: book.order_index
     }));
 
@@ -149,7 +149,7 @@ export async function deleteBookCascade(bookId, level) {
 
 /**
  * Save chapters (Lưu chương) to Supabase
- * ✅ FIXED: Sử dụng safe save (Lưu an toàn) với merge (Gộp) thông minh để tránh mất dữ liệu
+ * FIXED: Sử dụng safe save (Lưu an toàn) với merge (Gộp) thông minh để tránh mất dữ liệu
  * @param {string} bookId - Book ID (ID sách)
  * @param {string} level - Level (Cấp độ)
  * @param {Array} chapters - Array of chapters (Mảng các chương)
@@ -164,12 +164,12 @@ export async function saveChapters(bookId, level, chapters, userId) {
       chaptersCount: chapters?.length || 0
     });
 
-    // ✅ FIXED: Load từ Supabase trước (source of truth - Nguồn dữ liệu chính xác)
+    // FIXED: Load từ Supabase trước (source of truth - Nguồn dữ liệu chính xác)
     const getExisting = async () => {
       return await getChapters(bookId, level);
     };
 
-    // ✅ FIXED: Dùng safeSaveCollection (Sử dụng safeSaveCollection) để merge (Gộp) thông minh
+    // FIXED: Dùng safeSaveCollection (Sử dụng safeSaveCollection) để merge (Gộp) thông minh
     // Tạo map index (Bản đồ chỉ mục) để preserve order (Giữ nguyên thứ tự)
     const indexMap = new Map(chapters.map((ch, idx) => [ch.id, idx]));
     
@@ -193,7 +193,7 @@ export async function saveChapters(bookId, level, chapters, userId) {
       },
       userId,
       context: { bookId, level, userId },
-      onConflict: null, // ✅ FIXED: Không dùng onConflict (Xung đột) cho composite key (Khóa tổng hợp) - Supabase tự detect (Phát hiện)
+      onConflict: null, // FIXED: Không dùng onConflict (Xung đột) cho composite key (Khóa tổng hợp) - Supabase tự detect (Phát hiện)
       deleteWhere: { book_id: bookId, level: level } // Chỉ xóa chapters của book này
     });
 
@@ -264,7 +264,7 @@ export async function getChapters(bookId, level) {
 
 /**
  * Save lessons (Lưu bài học) to Supabase
- * ✅ FIXED: Sử dụng safe save (Lưu an toàn) với merge (Gộp) thông minh để tránh mất dữ liệu
+ * FIXED: Sử dụng safe save (Lưu an toàn) với merge (Gộp) thông minh để tránh mất dữ liệu
  * @param {string} bookId - Book ID (ID sách)
  * @param {string} chapterId - Chapter ID (ID chương)
  * @param {string} level - Level (Cấp độ)
@@ -274,19 +274,79 @@ export async function getChapters(bookId, level) {
  */
 export async function saveLessons(bookId, chapterId, level, lessons, userId) {
   try {
-    console.log('[ContentService.saveLessons] 💾 Saving lessons with safe merge:', {
+    console.log('[ContentService.saveLessons] Saving lessons with safe merge:', {
       bookId,
       chapterId,
       level,
       lessonsCount: lessons?.length || 0
     });
 
-    // ✅ FIXED: Load từ Supabase trước (source of truth - Nguồn dữ liệu chính xác)
+    // BUOC 0: Dam bao book va chapter ton tai tren Supabase truoc khi luu lessons
+    // Tranh loi "violates foreign key constraint lessons_book_id_level_fkey"
+    // (Pattern giong saveQuiz)
+    
+    // 0a. Kiem tra va tao book neu chua co
+    const { data: existingBook } = await supabase
+      .from('books')
+      .select('id')
+      .eq('id', bookId)
+      .eq('level', level)
+      .maybeSingle();
+    
+    if (!existingBook) {
+      console.log('[ContentService.saveLessons] Book chua ton tai tren Supabase, tao placeholder:', { bookId, level });
+      const { error: createBookError } = await supabase
+        .from('books')
+        .upsert({
+          id: bookId,
+          level: level,
+          title: bookId,
+          created_by: userId,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (createBookError) {
+        console.warn('[ContentService.saveLessons] Khong the tao book:', createBookError);
+      } else {
+        console.log('[ContentService.saveLessons] Da tao book:', bookId);
+      }
+    }
+    
+    // 0b. Kiem tra va tao chapter neu chua co
+    const { data: existingChapter } = await supabase
+      .from('chapters')
+      .select('id')
+      .eq('id', chapterId)
+      .eq('book_id', bookId)
+      .eq('level', level)
+      .maybeSingle();
+    
+    if (!existingChapter) {
+      console.log('[ContentService.saveLessons] Chapter chua ton tai tren Supabase, tao placeholder:', { chapterId, bookId, level });
+      const { error: createChapterError } = await supabase
+        .from('chapters')
+        .upsert({
+          id: chapterId,
+          book_id: bookId,
+          level: level,
+          title: chapterId,
+          created_by: userId,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (createChapterError) {
+        console.warn('[ContentService.saveLessons] Khong the tao chapter:', createChapterError);
+      } else {
+        console.log('[ContentService.saveLessons] Da tao chapter:', chapterId);
+      }
+    }
+
+    // BUOC 1: Load tu Supabase truoc (source of truth)
     const getExisting = async () => {
       return await getLessons(bookId, chapterId, level);
     };
 
-    // ✅ FIXED: Dùng safeSaveCollection (Sử dụng safeSaveCollection) để merge (Gộp) thông minh
+    // FIXED: Dùng safeSaveCollection (Sử dụng safeSaveCollection) để merge (Gộp) thông minh
     // Tạo map index (Bản đồ chỉ mục) để preserve order (Giữ nguyên thứ tự)
     const indexMap = new Map(lessons.map((lesson, idx) => [lesson.id, idx]));
     
@@ -297,10 +357,32 @@ export async function saveLessons(bookId, chapterId, level, lessons, userId) {
       compareKey: 'id',
       transformFn: (lesson, context) => {
         const index = indexMap.get(lesson.id) || 0;
-        // ✅ FIXED: Priority (Ưu tiên): orderIndex > order > index
+        // FIXED: Uu tien: orderIndex > order > index
         let orderIndex = lesson.orderIndex;
         if (orderIndex === undefined || orderIndex === null) {
           orderIndex = lesson.order !== undefined && lesson.order !== null ? lesson.order : index;
+        }
+        
+        // Dong bo pdf_url va html_content tu theory object (format moi) sang cot top-level
+        // Dam bao du lieu khong bi mat khi chuyen doi giua format cu va moi
+        // Loc bo chuoi rong '' (truong hop createLessonStructure khoi tao voi gia tri mac dinh)
+        const rawPdfUrl = lesson.pdfUrl || lesson.theory?.pdfUrl || null;
+        const rawHtmlContent = lesson.htmlContent || lesson.theory?.htmlContent || null;
+        const resolvedPdfUrl = (rawPdfUrl && typeof rawPdfUrl === 'string' && rawPdfUrl.trim()) ? rawPdfUrl.trim() : null;
+        const resolvedHtmlContent = (rawHtmlContent && typeof rawHtmlContent === 'string' && rawHtmlContent.trim()) ? rawHtmlContent.trim() : null;
+        
+        // Log de debug khi co PDF URL
+        if (resolvedPdfUrl) {
+          console.log(`[ContentService.saveLessons] Lesson ${lesson.id}: pdf_url = ${resolvedPdfUrl.substring(0, 80)}...`);
+        }
+        
+        // Dam bao theory object cung chua pdfUrl moi nhat (dong bo 2 chieu)
+        const theoryToSave = lesson.theory ? { ...lesson.theory } : {};
+        if (resolvedPdfUrl && !theoryToSave.pdfUrl) {
+          theoryToSave.pdfUrl = resolvedPdfUrl;
+        }
+        if (resolvedHtmlContent && !theoryToSave.htmlContent) {
+          theoryToSave.htmlContent = resolvedHtmlContent;
         }
         
         return {
@@ -311,9 +393,9 @@ export async function saveLessons(bookId, chapterId, level, lessons, userId) {
           title: lesson.title,
           description: lesson.description || null,
           content_type: lesson.contentType || 'pdf',
-          pdf_url: lesson.pdfUrl || null,
-          html_content: lesson.htmlContent || null,
-          theory: lesson.theory || {},
+          pdf_url: resolvedPdfUrl,
+          html_content: resolvedHtmlContent,
+          theory: theoryToSave,
           srs: lesson.srs || {},
           order_index: orderIndex,
           created_by: context.userId,
@@ -322,24 +404,78 @@ export async function saveLessons(bookId, chapterId, level, lessons, userId) {
       },
       userId,
       context: { bookId, chapterId, level, userId },
-      onConflict: null, // ✅ FIXED: Không dùng onConflict (Xung đột) cho composite key (Khóa tổng hợp) - Supabase tự detect (Phát hiện)
+      onConflict: null, // FIXED: Không dùng onConflict (Xung đột) cho composite key (Khóa tổng hợp) - Supabase tự detect (Phát hiện)
       deleteWhere: { book_id: bookId, chapter_id: chapterId, level: level } // Chỉ xóa lessons của chapter này
     });
 
     if (!result.success) {
-      console.error('[ContentService.saveLessons] ❌ Error saving lessons:', result.error);
-      return { success: false, error: result.error };
+      console.error('[ContentService.saveLessons] safeSaveCollection that bai, thu direct upsert...', result.error);
+      
+      // FALLBACK: Thu upsert truc tiep khi safeSaveCollection that bai
+      // SafeSaveCollection co the that bai do loi getExistingFn hoac loi merge phuc tap
+      // Direct upsert don gian hon va co the thanh cong
+      try {
+        const dbRecords = lessons.map((lesson, idx) => {
+          let orderIndex = lesson.orderIndex;
+          if (orderIndex === undefined || orderIndex === null) {
+            orderIndex = lesson.order !== undefined && lesson.order !== null ? lesson.order : idx;
+          }
+          const rawPdfUrl = lesson.pdfUrl || lesson.theory?.pdfUrl || null;
+          const rawHtmlContent = lesson.htmlContent || lesson.theory?.htmlContent || null;
+          const resolvedPdfUrl = (rawPdfUrl && typeof rawPdfUrl === 'string' && rawPdfUrl.trim()) ? rawPdfUrl.trim() : null;
+          const resolvedHtmlContent = (rawHtmlContent && typeof rawHtmlContent === 'string' && rawHtmlContent.trim()) ? rawHtmlContent.trim() : null;
+          
+          // Dong bo theory object
+          const theoryToSave = lesson.theory ? { ...lesson.theory } : {};
+          if (resolvedPdfUrl && !theoryToSave.pdfUrl) theoryToSave.pdfUrl = resolvedPdfUrl;
+          if (resolvedHtmlContent && !theoryToSave.htmlContent) theoryToSave.htmlContent = resolvedHtmlContent;
+          
+          return {
+            id: lesson.id,
+            book_id: bookId,
+            chapter_id: chapterId,
+            level: level,
+            title: lesson.title,
+            description: lesson.description || null,
+            content_type: lesson.contentType || 'pdf',
+            pdf_url: resolvedPdfUrl,
+            html_content: resolvedHtmlContent,
+            theory: theoryToSave,
+            srs: lesson.srs || {},
+            order_index: orderIndex,
+            created_by: userId,
+            updated_at: new Date().toISOString()
+          };
+        });
+        
+        console.log('[ContentService.saveLessons] Direct upsert voi', dbRecords.length, 'records...');
+        const { data: upsertData, error: upsertError } = await supabase
+          .from('lessons')
+          .upsert(dbRecords)
+          .select();
+        
+        if (upsertError) {
+          console.error('[ContentService.saveLessons] Direct upsert cung that bai:', upsertError);
+          return { success: false, error: upsertError };
+        }
+        
+        console.log('[ContentService.saveLessons] Direct upsert thanh cong!', upsertData?.length, 'records');
+        return { success: true, data: upsertData || [] };
+      } catch (fallbackErr) {
+        console.error('[ContentService.saveLessons] Fallback direct upsert loi:', fallbackErr);
+        return { success: false, error: fallbackErr };
+      }
     }
 
-    // Load lại để return data đầy đủ (backward compatible - Tương thích ngược)
+    // Load lai de return data day du (backward compatible)
     const { success: loadSuccess, data: savedLessons } = await getLessons(bookId, chapterId, level);
     
     if (!loadSuccess) {
-      console.warn('[ContentService.saveLessons] ⚠️ Saved but failed to reload lessons');
+      console.warn('[ContentService.saveLessons] Saved but failed to reload lessons');
       return { success: true, data: [] };
     }
 
-    console.log('[ContentService.saveLessons] ✅ Saved lessons safely:', {
+    console.log('[ContentService.saveLessons] Saved lessons safely:', {
       total: savedLessons.length,
       inserted: result.data.inserted,
       updated: result.data.updated,
@@ -420,7 +556,7 @@ export async function saveQuiz(quiz, userId) {
       userId: userId ? `${userId.substring(0, 8)}...` : 'NULL'
     });
     
-    // ✅ NEW: Tự động tạo book/chapter/lesson nếu chưa có (để tránh foreign key error - Lỗi khóa ngoại)
+    // NEW: Tự động tạo book/chapter/lesson nếu chưa có (để tránh foreign key error - Lỗi khóa ngoại)
     // Thứ tự: Book → Chapter → Lesson (vì foreign key constraints - Ràng buộc khóa ngoại)
     
     // 1. Kiểm tra và tạo book nếu chưa có
@@ -535,7 +671,7 @@ export async function saveQuiz(quiz, userId) {
     
     console.log('[ContentService.saveQuiz] 📤 Upsert data:', JSON.stringify(upsertData, null, 2));
     
-    // ✅ FIXED: Bảng quizzes có composite primary key (Khóa chính tổng hợp) (id, book_id, chapter_id, lesson_id, level)
+    // FIXED: Bảng quizzes có composite primary key (Khóa chính tổng hợp) (id, book_id, chapter_id, lesson_id, level)
     // Lỗi 42P10: "there is no unique or exclusion constraint matching the ON CONFLICT specification"
     // Nguyên nhân: Code đang dùng onConflict (Xung đột): 'id' nhưng id không phải unique constraint (Ràng buộc duy nhất) đơn lẻ
     // Giải pháp: Không dùng onConflict, Supabase sẽ tự detect (Phát hiện) composite primary key
@@ -552,7 +688,7 @@ export async function saveQuiz(quiz, userId) {
       console.error('[ContentService.saveQuiz] ❌ Error details:', error.details);
       console.error('[ContentService.saveQuiz] ❌ Error hint:', error.hint);
       
-      // ✅ NEW: Hiển thị thông tin chi tiết cho foreign key error (Lỗi khóa ngoại)
+      // NEW: Hiển thị thông tin chi tiết cho foreign key error (Lỗi khóa ngoại)
       if (error.code === '23503') {
         console.error('[ContentService.saveQuiz] ❌ Foreign Key Constraint Error (Lỗi ràng buộc khóa ngoại)!');
         console.error('[ContentService.saveQuiz] ❌ Quiz đang cố reference (Tham chiếu) đến book/chapter/lesson không tồn tại');
@@ -601,7 +737,7 @@ export async function getQuiz(bookId, chapterId, lessonId, level) {
       if (error.code === 'PGRST116') {
         return { success: true, data: null };
       }
-      // ✅ FIXED: Handle RLS/permission errors (Xử lý lỗi RLS/quyền) gracefully for anonymous users (Người dùng ẩn danh)
+      // FIXED: Handle RLS/permission errors (Xử lý lỗi RLS/quyền) gracefully for anonymous users (Người dùng ẩn danh)
       if (error.code === '42501' || error.message?.includes('row-level security') || error.message?.includes('permission denied')) {
         console.warn('[ContentService] RLS/permission error (may be anonymous user - Có thể là người dùng ẩn danh):', error.message);
         // Return success with null data so caller can fallback to local storage (Trả về thành công với dữ liệu null để người gọi có thể fallback về local storage)
@@ -632,7 +768,7 @@ export async function getQuiz(bookId, chapterId, lessonId, level) {
     return { success: true, data: quiz };
   } catch (err) {
     console.error('[ContentService] Unexpected error:', err);
-    // ✅ FIXED: Return success with null on error so caller can fallback (Trả về thành công với null khi lỗi để người gọi có thể fallback)
+    // FIXED: Return success with null on error so caller can fallback (Trả về thành công với null khi lỗi để người gọi có thể fallback)
     return { success: true, data: null, error: err.message };
   }
 }
@@ -652,7 +788,7 @@ export async function getAllQuizzesByLevel(level) {
       .order('updated_at', { ascending: false });
 
     if (error) {
-      // ✅ FIXED: Handle RLS/permission errors (Xử lý lỗi RLS/quyền) gracefully for anonymous users (Người dùng ẩn danh)
+      // FIXED: Handle RLS/permission errors (Xử lý lỗi RLS/quyền) gracefully for anonymous users (Người dùng ẩn danh)
       if (error.code === '42501' || error.message?.includes('row-level security') || error.message?.includes('permission denied')) {
         console.warn('[ContentService] RLS/permission error (may be anonymous user - Có thể là người dùng ẩn danh):', error.message);
         // Return success with empty array so caller can fallback to local storage (Trả về thành công với mảng rỗng để người gọi có thể fallback về local storage)
@@ -680,14 +816,14 @@ export async function getAllQuizzesByLevel(level) {
     return { success: true, data: quizzes };
   } catch (err) {
     console.error('[ContentService] Unexpected error:', err);
-    // ✅ FIXED: Return success with empty array on error so caller can fallback (Trả về thành công với mảng rỗng khi lỗi để người gọi có thể fallback)
+    // FIXED: Return success with empty array on error so caller can fallback (Trả về thành công với mảng rỗng khi lỗi để người gọi có thể fallback)
     return { success: true, data: [], error: err.message };
   }
 }
 
 /**
  * Save series (Lưu series) to Supabase
- * ✅ FIXED: Sử dụng safe save (Lưu an toàn) với merge (Gộp) thông minh để tránh mất dữ liệu
+ * FIXED: Sử dụng safe save (Lưu an toàn) với merge (Gộp) thông minh để tránh mất dữ liệu
  * @param {string} level - Level (Cấp độ)
  * @param {Array} series - Array of series (Mảng các series)
  * @param {string} userId - UUID of admin user (UUID của người dùng admin)
@@ -700,12 +836,12 @@ export async function saveSeries(level, series, userId) {
       seriesCount: series?.length || 0
     });
 
-    // ✅ FIXED: Load từ Supabase trước (source of truth - Nguồn dữ liệu chính xác)
+    // FIXED: Load từ Supabase trước (source of truth - Nguồn dữ liệu chính xác)
     const getExisting = async () => {
       return await getSeries(level);
     };
 
-    // ✅ FIXED: Dùng safeSaveCollection (Sử dụng safeSaveCollection) để merge (Gộp) thông minh
+    // FIXED: Dùng safeSaveCollection (Sử dụng safeSaveCollection) để merge (Gộp) thông minh
     // Tạo map index (Bản đồ chỉ mục) để preserve order (Giữ nguyên thứ tự)
     const indexMap = new Map(series.map((s, idx) => [s.id, idx]));
     
@@ -729,7 +865,7 @@ export async function saveSeries(level, series, userId) {
       },
       userId,
       context: { level, userId },
-      onConflict: null, // ✅ FIXED: Không dùng onConflict (Xung đột) cho composite key (Khóa tổng hợp) - Supabase tự detect (Phát hiện)
+      onConflict: null, // FIXED: Không dùng onConflict (Xung đột) cho composite key (Khóa tổng hợp) - Supabase tự detect (Phát hiện)
       deleteWhere: { level: level } // Chỉ xóa series của level này
     });
 

@@ -17,7 +17,7 @@ function LevelN1Page() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // ✅ UPDATED: Load books from Supabase/IndexedDB/localStorage (admin added books) or default data
+  // UPDATED: Load books from Supabase/IndexedDB/localStorage (admin added books) or default data
   const [n1Books, setN1Books] = useState([]);
   useEffect(() => {
     const loadBooks = async () => {
@@ -80,7 +80,7 @@ function LevelN1Page() {
     loadBooks();
   }, []);
 
-  // ✅ Đọc category từ URL query parameter khi component mount hoặc URL thay đổi
+  // Đọc category từ URL query parameter khi component mount hoặc URL thay đổi
   useEffect(() => {
     const categoryFromUrl = searchParams.get('category');
     if (categoryFromUrl) {
@@ -89,7 +89,7 @@ function LevelN1Page() {
     }
   }, [searchParams]);
 
-  // ✅ Extract unique categories from books for Sidebar - Sort by number of books (most first)
+  // Extract unique categories from books for Sidebar - Sort by number of books (most first)
   const categories = React.useMemo(() => {
     // Đếm số lượng books trong mỗi category
     const categoryCounts = {};
@@ -106,7 +106,7 @@ function LevelN1Page() {
       count: categoryCounts[cat]
     }));
 
-    // ✅ Sort theo số lượng books (nhiều nhất trước)
+    // Sort theo số lượng books (nhiều nhất trước)
     return categoriesWithCount.sort((a, b) => b.count - a.count);
   }, [n1Books]);
 

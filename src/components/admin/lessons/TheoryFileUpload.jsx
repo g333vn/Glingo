@@ -1,5 +1,5 @@
 // src/components/admin/lessons/TheoryFileUpload.jsx
-// 📤 File Upload Component - Drag & drop với preview
+// File Upload Component - Drag & drop với preview
 
 import React, { useState, useCallback, useRef } from 'react';
 

@@ -1,5 +1,5 @@
 // src/config/searchableItems.js
-// 🔍 Searchable Items Registry - All searchable content in the app
+// Searchable Items Registry - All searchable content in the app
 
 /**
  * Định nghĩa tất cả các items có thể search trong app

@@ -1,5 +1,5 @@
 // src/components/admin/lessons/LessonVersionHistory.jsx
-// 🕐 Lesson Version History Component - Simple version tracking
+// Lesson Version History Component - Simple version tracking
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../../ToastNotification.jsx';

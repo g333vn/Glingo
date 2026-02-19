@@ -1,5 +1,5 @@
 // src/utils/indexedDBManager.js
-// 💾 IndexedDB Manager - Unlimited storage for large data
+// IndexedDB Manager - Unlimited storage for large data
 
 import { users as staticUsers } from '../data/users.js';
 
@@ -9,11 +9,11 @@ class IndexedDBManager {
   constructor() {
     this.db = null;
     this.dbName = 'elearning-db';
-    // ✅ Version 4: scope chapters/lessons/quizzes by level to prevent data leakage across levels/series
+    // Version 4: scope chapters/lessons/quizzes by level to prevent data leakage across levels/series
     this.dbVersion = 4;
   }
 
-  // ✅ Helper: scope keys by level to avoid cross-level data mixing
+  // Helper: scope keys by level to avoid cross-level data mixing
   getScopedId(level, id) {
     if (!level) return id;
     return `${level}::${id}`;
@@ -246,7 +246,7 @@ class IndexedDBManager {
     }
   }
 
-  // ✅ NEW: Get a single book by ID (search across all levels)
+  // NEW: Get a single book by ID (search across all levels)
   async getBook(bookId) {
     if (!(await this.isAvailable())) return null;
 
@@ -723,7 +723,7 @@ class IndexedDBManager {
       // Remove level and examId from result (they're metadata, not part of exam data)
       const { level: _, examId: __, ...examData } = result;
       
-      // ✅ FIX: Log để debug
+      // FIX: Log để debug
       const knowledgeSections = examData.knowledge?.sections || [];
       const totalQuestions = knowledgeSections.reduce((acc, s) => acc + (s.questions?.length || 0), 0);
       console.log(`✅ IndexedDB: Loaded exam (${level}/${examId}):`, {
@@ -751,7 +751,7 @@ class IndexedDBManager {
       const existing = await store.get([level, examId]);
       const isNew = !existing;
       
-      // ✅ FIX: Log trước khi save
+      // FIX: Log trước khi save
       const knowledgeSections = examData.knowledge?.sections || [];
       const totalQuestions = knowledgeSections.reduce((acc, s) => acc + (s.questions?.length || 0), 0);
       console.log(`💾 IndexedDB: Saving exam (${level}/${examId}):`, {
@@ -880,7 +880,7 @@ class IndexedDBManager {
     }
   }
 
-  // ✅ NEW: Export data for a specific level
+  // NEW: Export data for a specific level
   async exportLevel(level) {
     if (!(await this.isAvailable())) return null;
 
@@ -1030,7 +1030,7 @@ class IndexedDBManager {
     }
   }
 
-  // ✅ NEW: Export a specific Series with all its content
+  // NEW: Export a specific Series with all its content
   async exportSeries(level, seriesId) {
     if (!(await this.isAvailable())) return null;
 
@@ -1087,7 +1087,7 @@ class IndexedDBManager {
     }
   }
 
-  // ✅ NEW: Export a specific Book with all its content
+  // NEW: Export a specific Book with all its content
   async exportBook(level, bookId) {
     if (!(await this.isAvailable())) return null;
 
@@ -1137,7 +1137,7 @@ class IndexedDBManager {
     }
   }
 
-  // ✅ NEW: Export a specific Chapter with all its content
+  // NEW: Export a specific Chapter with all its content
   async exportChapter(bookId, chapterId) {
     if (!(await this.isAvailable())) return null;
 
@@ -1186,7 +1186,7 @@ class IndexedDBManager {
     }
   }
 
-  // ✅ NEW: Export a specific Lesson with its quiz
+  // NEW: Export a specific Lesson with its quiz
   async exportLesson(bookId, chapterId, lessonId) {
     if (!(await this.isAvailable())) return null;
 
@@ -1235,7 +1235,7 @@ class IndexedDBManager {
     }
   }
 
-  // ✅ NEW: Export a specific Quiz
+  // NEW: Export a specific Quiz
   async exportQuiz(bookId, chapterId, lessonId) {
     if (!(await this.isAvailable())) return null;
 
@@ -1278,7 +1278,7 @@ class IndexedDBManager {
     }
   }
 
-  // ✅ NEW: Export a specific Exam
+  // NEW: Export a specific Exam
   async exportExam(level, examId) {
     if (!(await this.isAvailable())) {
       console.error('❌ IndexedDB not available');
@@ -1356,7 +1356,7 @@ class IndexedDBManager {
     }
   }
 
-  // ✅ NEW: Export exams by year (e.g., all 2024 exams for a level)
+  // NEW: Export exams by year (e.g., all 2024 exams for a level)
   async exportExamByYear(level, year) {
     if (!(await this.isAvailable())) return null;
 
@@ -1399,7 +1399,7 @@ class IndexedDBManager {
     }
   }
 
-  // ✅ NEW: Export a specific exam section (knowledge or listening)
+  // NEW: Export a specific exam section (knowledge or listening)
   async exportExamSection(level, examId, sectionType) {
     if (!(await this.isAvailable())) return null;
 
@@ -1495,7 +1495,7 @@ class IndexedDBManager {
     }
   }
 
-  // ✅ NEW: Export data by date range
+  // NEW: Export data by date range
   async exportByDateRange(startDate, endDate, dataTypes = ['all'], includeRelated = false, includeUsers = false, includeUserPasswords = false) {
     if (!(await this.isAvailable())) return null;
 
@@ -1691,7 +1691,7 @@ class IndexedDBManager {
     }
   }
 
-  // ✅ NEW: Import a specific item (Series, Book, Chapter, Lesson, Quiz, or Exam)
+  // NEW: Import a specific item (Series, Book, Chapter, Lesson, Quiz, or Exam)
   async importItem(data) {
     if (!(await this.isAvailable())) return { success: false, error: 'IndexedDB not available' };
 

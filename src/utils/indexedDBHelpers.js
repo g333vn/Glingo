@@ -1,5 +1,5 @@
 // src/utils/indexedDBHelpers.js
-// 🛠️ IndexedDB Helper Functions - Utilities for better performance and migration
+// IndexedDB Helper Functions - Utilities for better performance and migration
 
 import indexedDBManager from './indexedDBManager.js';
 

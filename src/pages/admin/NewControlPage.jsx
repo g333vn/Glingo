@@ -1,7 +1,7 @@
 // src/pages/admin/NewControlPage.jsx
-// 🔒 ACCESS CONTROL MANAGEMENT PAGE
+// ACCESS CONTROL MANAGEMENT PAGE
 // Quản lý quyền truy cập cho các module LEVEL và JLPT
-// ✨ NEO BRUTALISM DESIGN
+// NEO BRUTALISM DESIGN
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';
@@ -50,12 +50,12 @@ function NewControlPage() {
     const allUsers = getUsers();
     setUsers(allUsers);
 
-    // ✅ FIXED: Initialize default configs (only for levels without config)
+    // FIXED: Initialize default configs (only for levels without config)
     // This will NOT overwrite existing configs
     await initializeDefaultConfigs('level');
     await initializeDefaultConfigs('jlpt');
     
-    // ✅ NEW: Try to load from Supabase first, then fallback to localStorage
+    // NEW: Try to load from Supabase first, then fallback to localStorage
     try {
       const { success, data } = await getAccessControlFromSupabase();
       if (success && data) {
@@ -175,7 +175,7 @@ function NewControlPage() {
       setDashboardConfig(getDashboardAccessConfig());
     } else if (levelId === null) {
       // Module-level config
-      // ✅ FIXED: Save to Supabase (async)
+      // FIXED: Save to Supabase (async)
       const success = await setModuleAccessConfig(module, config);
       if (success) {
         // Reload from Supabase to ensure sync
@@ -190,7 +190,7 @@ function NewControlPage() {
       }
     } else {
       // Level-specific config
-      // ✅ FIXED: Save to Supabase (async)
+      // FIXED: Save to Supabase (async)
       const success = await setAccessConfig(module, levelId, config);
       if (success) {
         // Reload from Supabase to ensure sync

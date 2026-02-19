@@ -28,7 +28,7 @@ function LevelPage() {
   // State to force re-render when access control updates
   const [accessControlVersion, setAccessControlVersion] = useState(0);
 
-  // ✅ NEW: Listen for access control updates
+  // NEW: Listen for access control updates
   useEffect(() => {
     const handleAccessControlUpdate = () => {
       console.log('[LevelPage] 🔄 Access control updated, re-checking access...');
@@ -43,7 +43,7 @@ function LevelPage() {
 
   // Check access for all levels
   const accessMap = useMemo(() => {
-    // ✅ FIXED: Merge user and profile to get role
+    // FIXED: Merge user and profile to get role
     const userWithRole = user ? {
       ...user,
       role: profile?.role || user.role || null

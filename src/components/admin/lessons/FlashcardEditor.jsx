@@ -1,5 +1,5 @@
 // src/components/admin/lessons/FlashcardEditor.jsx
-// ✏️ Flashcard Editor - CRUD operations cho flashcards
+// Flashcard Editor - CRUD operations cho flashcards
 
 import React, { useState, useRef, useEffect } from 'react';
 

@@ -1,7 +1,7 @@
 // src/utils/accessControlManager.js
-// 🔒 ACCESS CONTROL MANAGEMENT SYSTEM
+// ACCESS CONTROL MANAGEMENT SYSTEM
 // Quản lý quyền truy cập cho các module LEVEL và JLPT
-// ✅ UPDATED: Sync với Supabase để quản trị toàn hệ thống thời gian thực
+// UPDATED: Sync với Supabase để quản trị toàn hệ thống thời gian thực
 
 import {
   getAccessControlFromSupabase,
@@ -24,14 +24,14 @@ const DEFAULT_ACCESS_CONFIG = {
 
 /**
  * Get access control config for a module and level
- * ✅ UPDATED: Priority: Supabase > localStorage
+ * UPDATED: Priority: Supabase > localStorage
  * @param {string} module - 'level' or 'jlpt'
  * @param {string} levelId - 'n1', 'n2', 'n3', 'n4', 'n5'
  * @returns {Object} Access control config
  */
 export async function getAccessConfig(module, levelId) {
   try {
-    // ✅ NEW: Try Supabase first (real-time sync)
+    // NEW: Try Supabase first (real-time sync)
     try {
       const { success, data } = await getAccessControlFromSupabase();
       if (success && data) {
@@ -111,7 +111,7 @@ export function getAccessConfigSync(module, levelId) {
 
 /**
  * Set access control config for a module and level
- * ✅ UPDATED: Save to both Supabase (real-time) and localStorage (cache)
+ * UPDATED: Save to both Supabase (real-time) and localStorage (cache)
  * @param {string} module - 'level' or 'jlpt'
  * @param {string} levelId - 'n1', 'n2', 'n3', 'n4', 'n5'
  * @param {Object} config - Access control config
@@ -124,7 +124,7 @@ export async function setAccessConfig(module, levelId, config) {
       ...config
     };
 
-    // ✅ NEW: Save to Supabase first (real-time sync)
+    // NEW: Save to Supabase first (real-time sync)
     try {
       const { success, error } = await saveLevelAccessConfigToSupabase(module, levelId, finalConfig);
       if (success) {
@@ -183,13 +183,13 @@ export function getAllAccessConfigs(module) {
 
 /**
  * Get module-level access control config
- * ✅ UPDATED: Priority: Supabase > localStorage
+ * UPDATED: Priority: Supabase > localStorage
  * @param {string} module - 'level' or 'jlpt'
  * @returns {Object} Module-level access control config
  */
 export async function getModuleAccessConfig(module) {
   try {
-    // ✅ NEW: Try Supabase first (real-time sync)
+    // NEW: Try Supabase first (real-time sync)
     try {
       const { success, data } = await getAccessControlFromSupabase();
       if (success && data) {
@@ -262,7 +262,7 @@ export function getModuleAccessConfigSync(module) {
 
 /**
  * Set module-level access control config
- * ✅ UPDATED: Save to both Supabase (real-time) and localStorage (cache)
+ * UPDATED: Save to both Supabase (real-time) and localStorage (cache)
  * @param {string} module - 'level' or 'jlpt'
  * @param {Object} config - Access control config
  * @returns {Promise<boolean>} Success status
@@ -274,7 +274,7 @@ export async function setModuleAccessConfig(module, config) {
       ...config
     };
 
-    // ✅ NEW: Save to Supabase first (real-time sync)
+    // NEW: Save to Supabase first (real-time sync)
     try {
       const { success, error } = await saveModuleAccessConfigToSupabase(module, finalConfig);
       if (success) {
@@ -310,7 +310,7 @@ export async function setModuleAccessConfig(module, config) {
  * @returns {boolean} True if user has access
  */
 export function hasAccess(module, levelId, user) {
-  // ✅ DEBUG: Log access check
+  // DEBUG: Log access check
   console.log(`[ACCESS] Checking access for:`, {
     module,
     levelId,
@@ -326,7 +326,7 @@ export function hasAccess(module, levelId, user) {
   }
 
   // Check module-level access control first
-  // ✅ FIXED: Use sync version for hasAccess (called frequently, needs to be fast)
+  // FIXED: Use sync version for hasAccess (called frequently, needs to be fast)
   const moduleConfig = getModuleAccessConfigSync(module);
   console.log(`[ACCESS] Module config for ${module}:`, {
     accessType: moduleConfig.accessType,
@@ -381,7 +381,7 @@ export function hasAccess(module, levelId, user) {
   }
 
   // Now check level-specific access control
-  // ✅ FIXED: Use sync version for hasAccess (called frequently, needs to be fast)
+  // FIXED: Use sync version for hasAccess (called frequently, needs to be fast)
   const config = getAccessConfigSync(module, levelId);
   console.log(`[ACCESS] Level config for ${module}/${levelId}:`, {
     accessType: config.accessType,
@@ -443,7 +443,7 @@ export function hasAccess(module, levelId, user) {
 
 /**
  * Initialize default configs for all levels
- * ✅ UPDATED: Async to support Supabase sync
+ * UPDATED: Async to support Supabase sync
  * @param {string} module - 'level' or 'jlpt'
  * @returns {Promise<void>}
  */
@@ -465,7 +465,7 @@ export async function initializeDefaultConfigs(module) {
 
 /**
  * Reset all configs for a module to default (including module-level config)
- * ✅ UPDATED: Reset in both Supabase and localStorage
+ * UPDATED: Reset in both Supabase and localStorage
  * @param {string} module - 'level' or 'jlpt'
  * @returns {Promise<boolean>} Success status
  */

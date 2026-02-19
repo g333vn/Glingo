@@ -10,7 +10,7 @@ import { calculateChapterProgress, LESSON_STATUS } from '../../../data/lessonTyp
 import { getChapterProgress, getBookProgress } from '../../../utils/lessonProgressTracker.js';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
 
-const contentsPerPage = 10; // ✅ Reduced from 15 to 10 for better spacing
+const contentsPerPage = 10; // Reduced from 15 to 10 for better spacing
 
 // Component LessonCard -  NEO BRUTALISM - Consistent Design with Fixed Height + Progress
 const LessonCard = ({ title, lessonId, levelId, isLesson = false, bookId, chapterId, lessons = [], t }) => {
@@ -29,7 +29,7 @@ const LessonCard = ({ title, lessonId, levelId, isLesson = false, bookId, chapte
   
   return (
     <div className="bg-white rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 p-5 group hover:translate-x-[-2px] hover:translate-y-[-2px] cursor-pointer h-[240px] flex flex-col">
-      {/* Icon - ✨ NEO BRUTALISM - ALWAYS PERFECT CIRCLE */}
+      {/* Icon - NEO BRUTALISM - ALWAYS PERFECT CIRCLE */}
       <div 
         className="flex-shrink-0 bg-yellow-400 rounded-full flex items-center justify-center font-black border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 mx-auto mb-3"
         style={{
@@ -42,7 +42,7 @@ const LessonCard = ({ title, lessonId, levelId, isLesson = false, bookId, chapte
         <span className="text-3xl">📘</span>
       </div>
       
-      {/* Title - ✨ NEO BRUTALISM - Fixed height area with ellipsis */}
+      {/* Title - NEO BRUTALISM - Fixed height area with ellipsis */}
       <div className="flex-1 w-full px-2 mb-3 overflow-hidden flex items-center justify-center">
         <h3 
           className="font-black text-sm sm:text-base text-black uppercase tracking-wide text-center w-full"
@@ -77,7 +77,7 @@ const LessonCard = ({ title, lessonId, levelId, isLesson = false, bookId, chapte
         </div>
       )}
       
-      {/* Badge - ✨ NEO BRUTALISM - Always at bottom */}
+      {/* Badge - NEO BRUTALISM - Always at bottom */}
       <div className="flex-shrink-0 flex justify-center">
         <span className="text-xs px-3 py-1 rounded-md border-[2px] border-black bg-blue-500 text-white font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
           {isLesson ? t('lesson.lessonBadge') : t('lesson.chapterBadge')}
@@ -102,13 +102,13 @@ function BookDetailPage() {
   // Load books metadata for category navigation
   useEffect(() => {
     const loadBooksMetadata = async () => {
-      // ✅ Load from storage/Supabase first (admin data)
+      // Load from storage/Supabase first (admin data)
       const savedBooks = await storageManager.getBooks(levelId);
 
       if (savedBooks && savedBooks.length > 0) {
         let booksWithCategory = savedBooks;
 
-        // ✅ Đồng bộ lại category từ seriesId nếu thiếu
+        // Đồng bộ lại category từ seriesId nếu thiếu
         try {
           const seriesList = await storageManager.getSeries(levelId);
           if (Array.isArray(seriesList) && seriesList.length > 0) {
@@ -154,7 +154,7 @@ function BookDetailPage() {
       const arr = [...lessons];
       return arr.sort((a, b) => {
         const getNum = (item) => {
-          // ✅ FIXED: Check orderIndex first (from Supabase), then order (legacy)
+          // FIXED: Check orderIndex first (from Supabase), then order (legacy)
           if (item.orderIndex !== undefined) return item.orderIndex;
           if (item.order !== undefined) return item.order;
           
@@ -193,7 +193,7 @@ function BookDetailPage() {
     };
 
     const loadData = async () => {
-      // ✅ UPDATED: Get book info from booksMetadata (from storage) first
+      // UPDATED: Get book info from booksMetadata (from storage) first
       const bookFromStorage = booksMetadata.find(b => b.id === bookId);
       if (bookFromStorage) {
         setCurrentBook({
@@ -213,7 +213,7 @@ function BookDetailPage() {
       if (chapterId) {
         setIsShowingLessons(true);
         
-        // ✅ Load lessons for this chapter from storage + Supabase (multi-device)
+        // Load lessons for this chapter from storage + Supabase (multi-device)
         const savedLessons = await storageManager.getLessons(bookId, chapterId, levelId);
         
         if (savedLessons && savedLessons.length > 0) {
@@ -226,7 +226,7 @@ function BookDetailPage() {
           console.log(`📁 No lessons found, using chapter as lesson`);
         }
         
-        // ✅ Find and set current chapter info (Supabase + cache)
+        // Find and set current chapter info (Supabase + cache)
         const savedChapters = await storageManager.getChapters(bookId, levelId);
         let chapter = savedChapters?.find(ch => ch.id === chapterId);
         
@@ -242,7 +242,7 @@ function BookDetailPage() {
         setIsShowingLessons(false);
         setCurrentChapter(null);
         
-        // ✅ Load chapters from Supabase + cache
+        // Load chapters from Supabase + cache
         const savedChapters = await storageManager.getChapters(bookId, levelId);
         
         if (savedChapters && savedChapters.length > 0) {
@@ -269,7 +269,7 @@ function BookDetailPage() {
       }
     };
 
-    // ✅ Only load when booksMetadata is ready
+    // Only load when booksMetadata is ready
     if (booksMetadata.length > 0 || bookId) {
       loadData();
     }
@@ -290,10 +290,10 @@ function BookDetailPage() {
     ] : [])
   ];
 
-  // ✅ Tìm category của book hiện tại để highlight trong sidebar
+  // Tìm category của book hiện tại để highlight trong sidebar
   const currentBookCategory = booksMetadata.find(book => book.id === bookId)?.category || null;
 
-  // ✅ Tạo danh sách categories (bộ sách) từ booksMetadata để hiển thị ở Sidebar
+  // Tạo danh sách categories (bộ sách) từ booksMetadata để hiển thị ở Sidebar
   const categories = React.useMemo(() => {
     const categoryCounts = {};
     booksMetadata.forEach(book => {
@@ -309,7 +309,7 @@ function BookDetailPage() {
     }));
   }, [booksMetadata]);
 
-  // ✅ Handler cho category click trong sidebar
+  // Handler cho category click trong sidebar
   const handleCategoryClick = (categoryName) => {
     if (!categoryName) {
       // Nếu click lại category đang active (toggle off) → navigate về level page
@@ -317,7 +317,7 @@ function BookDetailPage() {
       return;
     }
 
-    // ✅ Navigate về level page và filter theo category (hiển thị danh sách sách trong bộ đó)
+    // Navigate về level page và filter theo category (hiển thị danh sách sách trong bộ đó)
     // Sử dụng URL query parameter để truyền category
     navigate(`/level/${levelId}?category=${encodeURIComponent(categoryName)}`);
   };

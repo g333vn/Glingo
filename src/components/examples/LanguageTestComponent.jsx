@@ -1,5 +1,5 @@
 // src/components/examples/LanguageTestComponent.jsx
-// 🧪 Test Component for i18n System
+// Test Component for i18n System
 
 import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';

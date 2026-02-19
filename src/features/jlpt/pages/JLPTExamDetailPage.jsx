@@ -199,7 +199,7 @@ function JLPTExamDetailPage() {
     const loadExam = async () => {
       setIsLoading(true);
       try {
-        // 1️⃣ Ưu tiên load từ Supabase (toàn hệ thống dùng chung)
+        // 1 Ưu tiên load từ Supabase (toàn hệ thống dùng chung)
         const { success, data: supabaseExam } = await getExamFromSupabase(levelId, examId);
         if (success && supabaseExam) {
           const examMetadata = {
@@ -225,7 +225,7 @@ function JLPTExamDetailPage() {
           return;
         }
 
-        // 2️⃣ Fallback: storage (exam do admin tạo trước đó)
+        // 2 Fallback: storage (exam do admin tạo trước đó)
         const savedExam = await storageManager.getExam(levelId, examId);
         if (savedExam) {
           console.log('✅ ExamDetailPage: Loaded exam from storage:', savedExam);
@@ -241,7 +241,7 @@ function JLPTExamDetailPage() {
           return;
         }
 
-        // 3️⃣ Cuối cùng: static file
+        // 3 Cuối cùng: static file
         console.log('📁 ExamDetailPage: Loading exam from static file...');
         const staticExam = getExamById(levelId, examId);
         setCurrentExam(staticExam || null);

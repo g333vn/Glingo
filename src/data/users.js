@@ -1,9 +1,9 @@
 // src/data/users.js
-// 👥 USER MANAGEMENT SYSTEM
+// USER MANAGEMENT SYSTEM
 // Professional user data management with seed data pattern
-// ⚠️ In production: Disable seed data and use proper database
+// In production: Disable seed data and use proper database
 
-// 🔒 SECURITY: Import secure storage utilities
+// SECURITY: Import secure storage utilities
 import { 
   savePasswordSecure, 
   verifyUserPassword, 
@@ -26,13 +26,13 @@ import { logger } from '../utils/logger.js';
  * 
  * 2. USER STORAGE (localStorage)
  *    - adminUsers: User metadata (NO passwords)
- *    - 🔒 Passwords: Hashed + obfuscated via secureUserStorage
+ *    - Passwords: Hashed + obfuscated via secureUserStorage
  *    - deletedUsers: Blacklist of deleted demo users
  * 
  * 3. DATA PRIORITY
  *    - adminUsers = highest priority (user-modified data)
  *    - Demo users = fallback (only if not in adminUsers & not deleted)
- *    - 🔒 Passwords: Hashed in secure storage
+ *    - Passwords: Hashed in secure storage
  * 
  * 4. DELETE BEHAVIOR
  *    - User-created users: Deleted from adminUsers
@@ -40,10 +40,10 @@ import { logger } from '../utils/logger.js';
  *    - Blacklist prevents demo users from reappearing on reload
  * 
  * 5. WHY DEMO USERS STAY IN CODE?
- *    - ✅ Fallback if localStorage is cleared
- *    - ✅ Can be restored via "Clear Blacklist"
- *    - ✅ Easy to see default users at a glance
- *    - ✅ Professional pattern (like database seeds)
+ *    - Fallback if localStorage is cleared
+ *    - Can be restored via "Clear Blacklist"
+ *    - Easy to see default users at a glance
+ *    - Professional pattern (like database seeds)
  * 
  * See: docs/USER_MANAGEMENT_ARCHITECTURE.md for full documentation
  */
@@ -225,7 +225,7 @@ export function clearDeletedUsers() {
  * @returns {Array} Array of user objects with passwords
  */
 export function getUsers() {
-  // ✅ DEBUG: Log call stack để trace nơi gọi
+  // DEBUG: Log call stack để trace nơi gọi
   const stack = new Error().stack;
   const caller = stack?.split('\n')[2]?.trim() || 'unknown';
   console.log('[GETUSERS] ========================================');
@@ -236,7 +236,7 @@ export function getUsers() {
     const savedUsers = localStorage.getItem('adminUsers');
     const savedPasswords = localStorage.getItem('userPasswords'); // Key riêng cho passwords
     
-    // ✅ DEBUG: Log initial state
+    // DEBUG: Log initial state
     console.log('[GETUSERS] Starting getUsers()...', {
       hasAdminUsers: !!savedUsers,
       savedUsersValue: savedUsers,
@@ -246,7 +246,7 @@ export function getUsers() {
       userPasswordsLength: savedPasswords ? savedPasswords.length : 0
     });
     
-    // ✅ CRITICAL: Check if adminUsers exists in localStorage
+    // CRITICAL: Check if adminUsers exists in localStorage
     if (!savedUsers) {
       console.error('[GETUSERS] ❌ ERROR: adminUsers is NULL or UNDEFINED in localStorage!');
       console.error('[GETUSERS] Checking localStorage directly...');
@@ -287,30 +287,30 @@ export function getUsers() {
         parsed = defaultUsersWithoutPassword;
       }
       
-      // ✅ DEBUG: Log để kiểm tra
+      // DEBUG: Log để kiểm tra
       console.log('[GETUSERS] Saved users from adminUsers:', parsed.map(u => ({ id: u.id, username: u.username, role: u.role })));
       console.log('[GETUSERS] Passwords map keys:', Object.keys(passwordsMap));
       
-      // ✅ CRITICAL: savedUsers từ adminUsers có priority cao nhất
+      // CRITICAL: savedUsers từ adminUsers có priority cao nhất
       // Không merge với users mặc định để tránh override role/password đã thay đổi
       const mergedUsers = parsed.map(savedUser => {
-        // ✅ DEBUG: Log savedUser trước khi merge
+        // DEBUG: Log savedUser trước khi merge
         console.log(`[GETUSERS] Processing savedUser ${savedUser.username}:`, {
           id: savedUser.id,
-          role: savedUser.role, // ✅ CRITICAL: Role từ adminUsers
+          role: savedUser.role, // CRITICAL: Role từ adminUsers
           name: savedUser.name
         });
         
         // Ưu tiên password từ userPasswords (đã được lưu khi đổi password)
         // Nếu không có trong userPasswords, mới dùng từ users mặc định
-        // ✅ CRITICAL: Tìm password bằng cả ID (number và string) và username
+        // CRITICAL: Tìm password bằng cả ID (number và string) và username
         const passwordFromStorage = 
           passwordsMap[savedUser.id] || 
           passwordsMap[String(savedUser.id)] || 
           passwordsMap[savedUser.username];
         const originalUser = users.find(u => u.id === savedUser.id || u.username === savedUser.username);
         
-        // ✅ DEBUG: Log password lookup details
+        // DEBUG: Log password lookup details
         if (!passwordFromStorage && !originalUser) {
           console.log(`[GETUSERS] Password lookup for ${savedUser.username}:`, {
             userId: savedUser.id,
@@ -323,15 +323,15 @@ export function getUsers() {
           });
         }
         
-        // ✅ CRITICAL: Ưu tiên password từ userPasswords (đã được admin/user đổi)
+        // CRITICAL: Ưu tiên password từ userPasswords (đã được admin/user đổi)
         // Chỉ dùng password mặc định nếu chưa bao giờ đổi password
-        // ✅ FIX: Nếu là user mới (không có trong default users), password phải từ userPasswords
-        // ✅ CRITICAL: Supabase users không có password trong localStorage (Supabase quản lý)
+        // FIX: Nếu là user mới (không có trong default users), password phải từ userPasswords
+        // CRITICAL: Supabase users không có password trong localStorage (Supabase quản lý)
         const isSupabaseUser = savedUser.isSupabaseUser || savedUser.supabaseId || (typeof savedUser.id === 'string' && savedUser.id.startsWith('supabase_'));
         const password = passwordFromStorage || (originalUser ? originalUser.password : '');
         
-        // ✅ DEBUG: Log password source - CRITICAL for new users
-        // ✅ Không báo lỗi nếu là Supabase user (họ không có password trong localStorage)
+        // DEBUG: Log password source - CRITICAL for new users
+        // Không báo lỗi nếu là Supabase user (họ không có password trong localStorage)
         if (!password && !originalUser && !isSupabaseUser) {
           console.error(`[GETUSERS] ❌ ERROR: New user ${savedUser.username} (ID: ${savedUser.id}) has no password!`, {
             userId: savedUser.id,
@@ -347,10 +347,10 @@ export function getUsers() {
           console.log(`[GETUSERS] Supabase user ${savedUser.username} has no password in localStorage (managed by Supabase)`);
         }
         
-        // ✅ DEBUG: Log merge process - Enhanced for debugging
+        // DEBUG: Log merge process - Enhanced for debugging
         console.log(`[GETUSERS] Merging user ${savedUser.username}:`, {
           userId: savedUser.id,
-          savedUserRole: savedUser.role, // ✅ CRITICAL: Role từ adminUsers
+          savedUserRole: savedUser.role, // CRITICAL: Role từ adminUsers
           originalUserRole: originalUser ? originalUser.role : 'none',
           originalUserExists: !!originalUser,
           passwordFromStorage: passwordFromStorage ? '***' : 'none',
@@ -361,29 +361,29 @@ export function getUsers() {
           isNewUser: !originalUser
         });
         
-        // ✅ CRITICAL: Giữ nguyên tất cả thông tin từ savedUsers (bao gồm role mới)
+        // CRITICAL: Giữ nguyên tất cả thông tin từ savedUsers (bao gồm role mới)
         // KHÔNG merge với originalUser để tránh override role/password đã thay đổi
-        // ✅ Supabase users không cần password (Supabase quản lý)
+        // Supabase users không cần password (Supabase quản lý)
         const mergedUser = { 
-          ...savedUser, // ✅ CRITICAL: Giữ nguyên role, name, email từ adminUsers - KHÔNG override
+          ...savedUser, // CRITICAL: Giữ nguyên role, name, email từ adminUsers - KHÔNG override
           password: isSupabaseUser ? null : password // Supabase users: null, local users: password
         };
         
-        // ✅ DEBUG: Verify role is preserved
+        // DEBUG: Verify role is preserved
         if (mergedUser.role !== savedUser.role) {
           console.error(`[GETUSERS] ❌ ERROR: Role changed! savedUser.role=${savedUser.role}, mergedUser.role=${mergedUser.role}`);
         }
         
         console.log(`[GETUSERS] Final merged user ${mergedUser.username}:`, {
           id: mergedUser.id,
-          role: mergedUser.role, // ✅ Should be same as savedUser.role
+          role: mergedUser.role, // Should be same as savedUser.role
           name: mergedUser.name
         });
         
         return mergedUser;
       });
       
-      // ✅ DEBUG: Check for duplicates before adding default users
+      // DEBUG: Check for duplicates before adding default users
       console.log('[GETUSERS] Merged users before adding defaults:', mergedUsers.map(u => ({ id: u.id, username: u.username, role: u.role })));
       
       // ========================================
@@ -418,7 +418,7 @@ export function getUsers() {
         }
       });
       
-      // ✅ DEBUG: Check for duplicates after merge
+      // DEBUG: Check for duplicates after merge
       const duplicateCheck = mergedUsers.filter((u, index, self) => 
         index !== self.findIndex(usr => usr.id === u.id || usr.username === u.username)
       );
@@ -426,7 +426,7 @@ export function getUsers() {
         console.error('[GETUSERS] ❌ ERROR: Found duplicate users!', duplicateCheck);
       }
       
-      // ✅ DEBUG: Check user1 specifically
+      // DEBUG: Check user1 specifically
       const user1InMerged = mergedUsers.filter(u => u.username === 'user1');
       if (user1InMerged.length > 1) {
         console.error('[GETUSERS] ❌ ERROR: Found multiple user1 entries!', user1InMerged.map(u => ({ id: u.id, role: u.role })));
@@ -436,7 +436,7 @@ export function getUsers() {
       
       console.log('[GETUSERS] Final merged users list:', mergedUsers.map(u => ({ id: u.id, username: u.username, role: u.role })));
       
-      // ✅ CRITICAL: Check if testA exists in final list
+      // CRITICAL: Check if testA exists in final list
       const testAInList = mergedUsers.find(u => u.username === 'testA');
       if (testAInList) {
         console.log('[GETUSERS] ✅ testA found in final list:', {
@@ -455,14 +455,14 @@ export function getUsers() {
         });
       }
       
-      // ✅ CRITICAL: Return ngay lập tức, không fallback
+      // CRITICAL: Return ngay lập tức, không fallback
       console.log('[GETUSERS] ✅ Returning mergedUsers, count:', mergedUsers.length);
       return mergedUsers;
     } else {
-      // ✅ DEBUG: No savedUsers in localStorage - Initialize with default users
+      // DEBUG: No savedUsers in localStorage - Initialize with default users
       console.warn('[GETUSERS] ⚠️ No adminUsers found in localStorage, initializing with default users');
       
-      // ✅ CRITICAL: Initialize adminUsers with default users (without passwords)
+      // CRITICAL: Initialize adminUsers with default users (without passwords)
       const defaultUsersWithoutPassword = users.map(({ password, ...user }) => user);
       localStorage.setItem('adminUsers', JSON.stringify(defaultUsersWithoutPassword));
       console.log('[GETUSERS] ✅ Initialized adminUsers with', defaultUsersWithoutPassword.length, 'default users');
@@ -478,7 +478,7 @@ export function getUsers() {
       savedPasswords: localStorage.getItem('userPasswords') ? 'EXISTS' : 'NOT_FOUND'
     });
     
-    // ✅ CRITICAL: Nếu có adminUsers nhưng parse lỗi, KHÔNG fallback
+    // CRITICAL: Nếu có adminUsers nhưng parse lỗi, KHÔNG fallback
     // Vì sẽ mất hết users mới được tạo
     const savedUsers = localStorage.getItem('adminUsers');
     if (savedUsers) {
@@ -490,7 +490,7 @@ export function getUsers() {
   }
   
   // Fallback: CHỈ dùng khi KHÔNG có adminUsers trong localStorage
-  // ✅ CRITICAL: Nếu có adminUsers, không được fallback về đây
+  // CRITICAL: Nếu có adminUsers, không được fallback về đây
   console.warn('[GETUSERS] ⚠️ Using fallback: returning default users only (new users will be lost!)');
   console.warn('[GETUSERS] ⚠️ This should only happen if adminUsers does NOT exist in localStorage');
   
@@ -517,7 +517,7 @@ export function getUsers() {
   return fallbackUsers;
 }
 
-// 🔒 SECURITY: Helper function để lưu password (hashed + obfuscated)
+// SECURITY: Helper function để lưu password (hashed + obfuscated)
 export function saveUserPassword(userId, username, password) {
   // Sử dụng secure storage với hash
   savePasswordSecure(userId, username, password)
@@ -538,22 +538,22 @@ export function login(username, password) {
   // Lấy users từ localStorage nếu có, không thì dùng users mặc định
   const allUsers = getUsers();
   
-  // ✅ DEBUG: Log để kiểm tra - CRITICAL: Check user1 role
+  // DEBUG: Log để kiểm tra - CRITICAL: Check user1 role
   console.log('[LOGIN] All users from getUsers():', allUsers.map(u => ({ id: u.id, username: u.username, role: u.role })));
   console.log('[LOGIN] Looking for user:', username, 'with password:', password ? '***' : 'none');
   
-  // ✅ DEBUG: Log user1 specifically - CRITICAL
+  // DEBUG: Log user1 specifically - CRITICAL
   const user1FromGetUsers = allUsers.find(u => u.username === 'user1');
   if (user1FromGetUsers) {
     console.log('[LOGIN] user1 from getUsers():', { 
       id: user1FromGetUsers.id, 
       username: user1FromGetUsers.username, 
-      role: user1FromGetUsers.role, // ✅ CRITICAL: Should be 'editor'
+      role: user1FromGetUsers.role, // CRITICAL: Should be 'editor'
       name: user1FromGetUsers.name, 
       password: user1FromGetUsers.password ? '***' : 'none' 
     });
     
-    // ✅ CRITICAL: Check if role is wrong
+    // CRITICAL: Check if role is wrong
     if (user1FromGetUsers.role !== 'editor') {
       console.error('[LOGIN] ❌ ERROR: user1 role in allUsers is', user1FromGetUsers.role, 'but should be editor!');
       console.error('[LOGIN] Full user1 object:', user1FromGetUsers);
@@ -562,11 +562,11 @@ export function login(username, password) {
     console.warn('[LOGIN] user1 not found in allUsers!');
   }
   
-  // ✅ DEBUG: Log all users with user1
+  // DEBUG: Log all users with user1
   const allUser1s = allUsers.filter(u => u.username === 'user1');
   console.log('[LOGIN] All user1 entries in allUsers:', allUser1s.map(u => ({ id: u.id, username: u.username, role: u.role, password: u.password ? '***' : 'none' })));
   
-  // ✅ DEBUG: Check password matching for user1
+  // DEBUG: Check password matching for user1
   if (username === 'user1') {
     allUser1s.forEach(u => {
       const passwordMatch = u.password === password;
@@ -581,7 +581,7 @@ export function login(username, password) {
     });
   }
   
-  // ✅ DEBUG: Log all users with matching username (before password check)
+  // DEBUG: Log all users with matching username (before password check)
   const usersWithMatchingUsername = allUsers.filter(u => u.username === username);
   console.log('[LOGIN] All users with matching username:', usersWithMatchingUsername.map(u => ({ 
     id: u.id, 
@@ -594,8 +594,8 @@ export function login(username, password) {
     passwordMatch: u.password === password
   })));
   
-  // ✅ CRITICAL: Check if user exists but password is empty
-  // ✅ Skip Supabase users (họ login qua Supabase, không qua local login)
+  // CRITICAL: Check if user exists but password is empty
+  // Skip Supabase users (họ login qua Supabase, không qua local login)
   const userExists = usersWithMatchingUsername.length > 0;
   if (userExists) {
     usersWithMatchingUsername.forEach(u => {
@@ -622,7 +622,7 @@ export function login(username, password) {
     });
   }
   
-  // ✅ Skip Supabase users trong local login (họ login qua Supabase)
+  // Skip Supabase users trong local login (họ login qua Supabase)
   const user = allUsers.find(
     u => {
       const isSupabaseUser = u.isSupabaseUser || u.supabaseId || (typeof u.id === 'string' && u.id.startsWith('supabase_'));
@@ -632,7 +632,7 @@ export function login(username, password) {
   );
   
   if (user) {
-    // ✅ DEBUG: Log user found
+    // DEBUG: Log user found
     console.log('[LOGIN] ✅ User found and password matches:', { 
       id: user.id, 
       username: user.username, 
@@ -650,7 +650,7 @@ export function login(username, password) {
     };
   }
   
-  // ✅ DEBUG: Log why login failed
+  // DEBUG: Log why login failed
   if (userExists) {
     console.error('[LOGIN] ❌ Login failed: User exists but password does not match!', {
       username,
@@ -676,7 +676,7 @@ export function login(username, password) {
 }
 
 /**
- * 🔒 SECURE LOGIN: Async version với hashed password verification
+ * SECURE LOGIN: Async version với hashed password verification
  * Sử dụng hàm này thay cho login() khi passwords đã được migrate sang secure storage
  */
 export async function loginSecure(username, password) {
@@ -729,7 +729,7 @@ export async function loginSecure(username, password) {
 // Helper function để register user mới
 export function register(userData) {
   try {
-    // ✅ Check if registration is enabled
+    // Check if registration is enabled
     const registrationEnabled = getSetting('system', 'registrationEnabled');
     if (registrationEnabled === false) {
       return {
@@ -740,7 +740,7 @@ export function register(userData) {
     
     const { username, password, name, email } = userData;
     
-    // ✅ Validation
+    // Validation
     if (!username || !password || !name || !email) {
       return {
         success: false,
@@ -756,7 +756,7 @@ export function register(userData) {
       };
     }
     
-    // ✅ Check password length from settings
+    // Check password length from settings
     const passwordMinLength = getSetting('users', 'passwordMinLength') || 6;
     const passwordMaxLength = getSetting('users', 'passwordMaxLength') || 50;
     
@@ -809,7 +809,7 @@ export function register(userData) {
       ? Math.max(...allUsers.map(u => u.id || 0)) 
       : 0;
     
-    // ✅ Get default role from settings
+    // Get default role from settings
     const defaultRole = getSetting('users', 'defaultRole') || 'user';
     
     const newUser = {
@@ -818,7 +818,7 @@ export function register(userData) {
       password,
       name,
       email,
-      role: defaultRole // ✅ Use role from settings (configurable by admin)
+      role: defaultRole // Use role from settings (configurable by admin)
     };
     
     console.log('[REGISTER] Creating new user:', {

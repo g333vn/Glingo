@@ -1,5 +1,5 @@
 // src/utils/settingsManager.js
-// ⚙️ SYSTEM SETTINGS MANAGER
+// SYSTEM SETTINGS MANAGER
 // Professional settings management for the platform
 // Priority: Supabase (Cloud) → localStorage (Local Cache)
 
@@ -203,7 +203,7 @@ export async function loadSettingsFromSupabase() {
   }
 }
 
-// ✅ NEW: Flag to prevent concurrent syncs
+// NEW: Flag to prevent concurrent syncs
 let isSyncing = false;
 let syncTimeout = null;
 let lastSyncTime = 0;

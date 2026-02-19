@@ -1,10 +1,10 @@
 // src/utils/storageEncryption.js
-// 🔒 Storage Encryption Utility
+// Storage Encryption Utility
 // Mã hóa/obfuscate dữ liệu trước khi lưu vào localStorage để giảm thiểu thông tin hiển thị trong Application tab
 
 /**
  * Simple obfuscation using Base64 encoding
- * ⚠️ Lưu ý: Đây KHÔNG phải là mã hóa mạnh, chỉ để obfuscate dữ liệu
+ * Lưu ý: Đây KHÔNG phải là mã hóa mạnh, chỉ để obfuscate dữ liệu
  * Để bảo mật thực sự, nên sử dụng server-side storage hoặc Web Crypto API với keys phức tạp hơn
  */
 class StorageEncryption {
@@ -29,7 +29,7 @@ class StorageEncryption {
 
   /**
    * Obfuscate data (simple Base64 + XOR)
-   * ⚠️ Đây KHÔNG phải mã hóa mạnh, chỉ để làm khó đọc
+   * Đây KHÔNG phải mã hóa mạnh, chỉ để làm khó đọc
    */
   obfuscate(data) {
     try {
@@ -73,7 +73,7 @@ class StorageEncryption {
 
   /**
    * Hash password using Web Crypto API (SHA-256)
-   * ⚠️ Lưu ý: SHA-256 là one-way hash, không thể reverse
+   * Lưu ý: SHA-256 là one-way hash, không thể reverse
    * Chỉ dùng để so sánh, không thể lấy lại password gốc
    */
   async hashPassword(password) {
@@ -212,7 +212,7 @@ export const secureStorage = {
 
   /**
    * Clear all secure storage items
-   * ⚠️ Chỉ xóa các items được tạo bởi secureStorage
+   * Chỉ xóa các items được tạo bởi secureStorage
    */
   clear() {
     // Lưu ý: Khó xác định items nào là secure storage nếu keys đã obfuscated

@@ -1,5 +1,5 @@
 // src/components/admin/lessons/LessonTabs.jsx
-// 🎯 Lesson Tabs - Tab system cho modal lesson (Theory/Flashcard/Quiz)
+// Lesson Tabs - Tab system cho modal lesson (Theory/Flashcard/Quiz)
 
 import React from 'react';
 
@@ -7,7 +7,7 @@ import React from 'react';
  * LessonTabs Component
  * Neo-Brutalism style tabs
  * 
- * @param {array} tabs - Array of tab objects: [{ id: 'theory', label: 'Lý thuyết', icon: '📖' }, ...]
+ * @param {array} tabs - Array of tab objects: [{ id: 'theory', label: 'Lý thuyết', icon: '' }, ...]
  * @param {string} activeTab - Current active tab ID
  * @param {function} onTabChange - Callback khi đổi tab
  */

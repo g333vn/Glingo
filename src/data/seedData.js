@@ -1,14 +1,14 @@
 // src/data/seedData.js
-// 🌱 SEED DATA - Initial demo users for development and testing
-// ⚠️ In production, disable SEED_ENABLED or use proper database seeding
+// SEED DATA - Initial demo users for development and testing
+// In production, disable SEED_ENABLED or use proper database seeding
 
 /**
  * Configuration for seed data
  * CLEAN MODE: Disable all automatic demo users.
  */
 export const SEED_CONFIG = {
-  ENABLED: false,      // ❌ Không tự tạo user demo nữa
-  AUTO_SEED: false,    // ❌ Không auto seed khi không có user
+  ENABLED: false,      // Không tự tạo user demo nữa
+  AUTO_SEED: false,    // Không auto seed khi không có user
   KEEP_AFTER_DELETE: false // Nếu false, user demo đã xoá sẽ không xuất hiện lại
 };
 
@@ -24,7 +24,7 @@ export const DEMO_USERS = [
     role: 'admin',
     name: 'Administrator',
     email: 'admin@example.com',
-    isDemo: true // ✅ Flag to identify demo users
+    isDemo: true // Flag to identify demo users
   },
   {
     id: 2,

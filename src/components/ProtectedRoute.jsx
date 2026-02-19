@@ -37,7 +37,7 @@ function ProtectedRoute({ children, requiredPermission, requiredRole, adminOnly,
   };
 
   // Check editorOnly requirement
-  // ✅ FIX: Admin should also have access to editor routes
+  // FIX: Admin should also have access to editor routes
   if (editorOnly && userRole !== 'editor' && userRole !== 'admin') {
     return redirectWithMessage('Bạn đã đăng nhập nhưng không có quyền editor/admin để truy cập trang này.');
   }

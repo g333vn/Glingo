@@ -1,5 +1,5 @@
 // src/translations/en.js
-// 🇬🇧 English Translations
+// English Translations
 const en = {
 // Common shared labels (breadcrumbs, buttons...)
 common: {

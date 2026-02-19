@@ -7,7 +7,7 @@ import storageManager from '../../utils/localStorageManager.js';
 import { jlptExams } from '../../data/jlpt/jlptData.js';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';
 import DatePicker from '../../components/admin/DatePicker.jsx';
-// 🔒 SECURITY: Import error handler
+// SECURITY: Import error handler
 import { getErrorMessage } from '../../utils/uiErrorHandler.js';
 
 function ExportImportPage() {

@@ -13,7 +13,7 @@ import { saveLearningProgress } from '../../../services/learningProgressService.
 import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
 import Modal from '../../../components/Modal.jsx';
 
-// ✅ Helper: Lock/unlock body scroll
+// Helper: Lock/unlock body scroll
 const useBodyScrollLock = (isLocked) => {
   useEffect(() => {
     if (isLocked) {
@@ -28,23 +28,23 @@ const useBodyScrollLock = (isLocked) => {
 
 // Component đồng hồ đếm ngược
 const CountdownTimer = ({ initialTime, onTimeUp, t }) => {
-  // ✅ FIX: Chỉ khởi tạo timeLeft nếu initialTime hợp lệ (> 0)
+  // FIX: Chỉ khởi tạo timeLeft nếu initialTime hợp lệ (> 0)
   const [timeLeft, setTimeLeft] = useState(() => {
     const validTime = (initialTime && initialTime > 0) ? initialTime : 0;
     return validTime * 60;
   });
   const [isWarning, setIsWarning] = useState(false);
   
-  // ✅ FIX: Sử dụng useRef để tránh re-create interval khi giá trị thay đổi
+  // FIX: Sử dụng useRef để tránh re-create interval khi giá trị thay đổi
   const hasCalledTimeUpRef = useRef(false);
   const onTimeUpRef = useRef(onTimeUp);
   
-  // ✅ Update ref khi onTimeUp thay đổi
+  // Update ref khi onTimeUp thay đổi
   useEffect(() => {
     onTimeUpRef.current = onTimeUp;
   }, [onTimeUp]);
 
-  // ✅ FIX: Reset timeLeft khi initialTime thay đổi
+  // FIX: Reset timeLeft khi initialTime thay đổi
   useEffect(() => {
     if (initialTime && initialTime > 0) {
       setTimeLeft(initialTime * 60);
@@ -53,7 +53,7 @@ const CountdownTimer = ({ initialTime, onTimeUp, t }) => {
     }
   }, [initialTime]);
 
-  // ✅ FIX: Chỉ tạo interval một lần khi component mount
+  // FIX: Chỉ tạo interval một lần khi component mount
   useEffect(() => {
     // Nếu không có thời gian hoặc thời gian <= 0, không tạo timer
     if (!initialTime || initialTime <= 0) {
@@ -83,9 +83,9 @@ const CountdownTimer = ({ initialTime, onTimeUp, t }) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [initialTime]); // ✅ FIX: Chỉ depend on initialTime
+  }, [initialTime]); // FIX: Chỉ depend on initialTime
 
-  // ✅ FIX: Nếu không có thời gian, hiển thị "Không giới hạn"
+  // FIX: Nếu không có thời gian, hiển thị "Không giới hạn"
   if (!initialTime || initialTime <= 0) {
     return (
       <div className="text-lg font-semibold px-4 py-2 rounded-lg bg-gray-200 text-gray-600">
@@ -110,21 +110,21 @@ const CountdownTimer = ({ initialTime, onTimeUp, t }) => {
 };
 
 // Component Audio Player
-// ✅ UPDATED: Exam mode - chỉ play một lần, không pause/seek (giống thi thật)
-// ✅ FIX: Mobile audio playback support
+// UPDATED: Exam mode - chỉ play một lần, không pause/seek (giống thi thật)
+// FIX: Mobile audio playback support
 const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioStarted, t }) => {
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  // ✅ NEW: Track xem đã bấm play chưa (chỉ được bấm một lần)
+  // NEW: Track xem đã bấm play chưa (chỉ được bấm một lần)
   const [hasStarted, setHasStarted] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
-  // ✅ NEW: Error state for mobile debugging
+  // NEW: Error state for mobile debugging
   const [playError, setPlayError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ✅ NEW: Preload audio when component mounts or URL changes
+  // NEW: Preload audio when component mounts or URL changes
   useEffect(() => {
     if (!audioRef.current || !sectionAudioUrl) return;
 
@@ -154,7 +154,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
     audio.addEventListener('loadstart', handleLoadStart);
     audio.addEventListener('error', handleError);
 
-    // ✅ FIX: Set src và load metadata
+    // FIX: Set src và load metadata
     audio.src = sectionAudioUrl;
     audio.load(); // Force load metadata
 
@@ -165,10 +165,10 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
     };
   }, [sectionAudioUrl]);
 
-  // ✅ UPDATED: Logic thi thật - chỉ play một lần, không pause/seek
-  // ✅ FIX: Mobile-friendly play handler - Đợi audio ready trước khi play
+  // UPDATED: Logic thi thật - chỉ play một lần, không pause/seek
+  // FIX: Mobile-friendly play handler - Đợi audio ready trước khi play
   const handlePlay = async (e) => {
-    // ✅ CRITICAL: Prevent default to ensure user gesture is preserved
+    // CRITICAL: Prevent default to ensure user gesture is preserved
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -179,7 +179,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
     const audio = audioRef.current;
     setPlayError(null);
 
-    // ✅ FIX: Đợi audio ready trước khi play (readyState >= 2 = HAVE_CURRENT_DATA)
+    // FIX: Đợi audio ready trước khi play (readyState >= 2 = HAVE_CURRENT_DATA)
     // readyState values: 0=HAVE_NOTHING, 1=HAVE_METADATA, 2=HAVE_CURRENT_DATA, 3=HAVE_FUTURE_DATA, 4=HAVE_ENOUGH_DATA
     if (audio.readyState < 2) {
       console.warn('⚠️ Audio not fully ready (readyState:', audio.readyState, '), waiting for metadata...');
@@ -194,7 +194,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
             return;
           }
           
-          // ✅ Tăng timeout lên 30 giây cho network chậm
+          // Tăng timeout lên 30 giây cho network chậm
           const TIMEOUT_MS = 30000; // 30 seconds
           const timeout = setTimeout(() => {
             audio.removeEventListener('loadedmetadata', onMetadataLoaded);
@@ -229,7 +229,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
             resolve();
           };
           
-          // ✅ NEW: Track progress để debug network issues
+          // NEW: Track progress để debug network issues
           const onProgress = () => {
             if (audio.buffered.length > 0) {
               const bufferedPercent = Math.round((audio.buffered.end(0) / audio.duration) * 100);
@@ -261,20 +261,20 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
       }
     }
 
-    // ✅ CRITICAL: Call play() after audio is ready
+    // CRITICAL: Call play() after audio is ready
     // Note: Even though this is async, the user gesture context is preserved
     const playPromise = audio.play();
 
-    // ✅ Handle promise if returned (modern browsers)
+    // Handle promise if returned (modern browsers)
     if (playPromise !== undefined) {
       playPromise
         .then(() => {
-          // ✅ Success - update state
+          // Success - update state
           setHasStarted(true);
           setIsPlaying(true);
           setIsLoading(false);
           
-          // ✅ NEW: Notify parent component that audio has started
+          // NEW: Notify parent component that audio has started
           if (onAudioStarted) {
             onAudioStarted();
           }
@@ -286,7 +286,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
           console.error('❌ Error playing audio:', error);
           setIsLoading(false);
           
-          // ✅ Detailed error messages for debugging
+          // Detailed error messages for debugging
           let errorMessage = 'Không thể phát audio. ';
           
           if (error.name === 'NotAllowedError') {
@@ -303,7 +303,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
           
           setPlayError(errorMessage);
           
-          // ✅ For mobile: Try to provide helpful instructions
+          // For mobile: Try to provide helpful instructions
           if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
             console.warn('📱 Mobile device detected - Audio play failed');
             console.warn('💡 Tip: Make sure audio is triggered by direct user interaction');
@@ -316,7 +316,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
           }
         });
     } else {
-      // ✅ Legacy browser - play() doesn't return promise
+      // Legacy browser - play() doesn't return promise
       // Assume success and update state
       setHasStarted(true);
       setIsPlaying(true);
@@ -368,7 +368,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
     console.log('⏸️ Audio paused');
   };
 
-  // ❌ REMOVED: handleSeek - không cho phép tua trong thi thật
+  // REMOVED: handleSeek - không cho phép tua trong thi thật
 
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
@@ -376,8 +376,8 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // ✅ UPDATED: Validate sectionAudioUrl - không render nếu không hợp lệ
-  // ✅ DEBUG: Log để kiểm tra
+  // UPDATED: Validate sectionAudioUrl - không render nếu không hợp lệ
+  // DEBUG: Log để kiểm tra
   console.log('🔍 AudioPlayer - sectionAudioUrl:', sectionAudioUrl);
   
   if (!sectionAudioUrl || sectionAudioUrl.trim() === '' || sectionAudioUrl === '/audio/sample.mp3') {
@@ -390,7 +390,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
     );
   }
   
-  // ✅ FIX: Kiểm tra nếu là blob URL không hợp lệ (blob URL chỉ tồn tại trong session)
+  // FIX: Kiểm tra nếu là blob URL không hợp lệ (blob URL chỉ tồn tại trong session)
   // Nhưng cho phép data URL (base64) và URL thực tế
   if (sectionAudioUrl.startsWith('blob:') && !sectionAudioUrl.includes('http')) {
     console.warn('⚠️ Invalid blob URL (expired):', sectionAudioUrl);
@@ -401,7 +401,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
     );
   }
   
-  // ✅ FIX: Log audio URL type for debugging
+  // FIX: Log audio URL type for debugging
   if (sectionAudioUrl.startsWith('data:')) {
     console.log('✅ Using base64 audio data (data URL)');
   } else if (sectionAudioUrl.startsWith('blob:')) {
@@ -410,7 +410,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
     console.log('✅ Using regular audio URL:', sectionAudioUrl);
   }
   
-  // ❌ REMOVED: Question markers - audio chạy liên tục, không cần markers
+  // REMOVED: Question markers - audio chạy liên tục, không cần markers
 
   const progressPercentage = duration ? (currentTime / duration) * 100 : 0;
 
@@ -458,7 +458,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
         }}
       />
       
-      {/* ✅ NEW: Error message - Show if play failed */}
+      {/* NEW: Error message - Show if play failed */}
       {playError && (
         <div className="mb-4 p-3 bg-red-100/80 backdrop-blur-sm border border-red-300 rounded-lg">
           <p className="text-xs text-red-900 font-medium text-center">
@@ -470,7 +470,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
         </div>
       )}
 
-      {/* ✅ NEW: Loading message */}
+      {/* NEW: Loading message */}
       {isLoading && !hasStarted && (
         <div className="mb-4 p-3 bg-blue-100/80 backdrop-blur-sm border border-blue-300 rounded-lg">
           <p className="text-xs text-blue-900 font-medium text-center">
@@ -479,7 +479,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
         </div>
       )}
 
-      {/* ✅ NEW: Warning message - Compact design */}
+      {/* NEW: Warning message - Compact design */}
       {!hasStarted && !playError && !isLoading && (
         <div className="mb-4 p-3 bg-amber-100/80 backdrop-blur-sm border border-amber-300 rounded-lg">
           <p className="text-xs text-amber-900 font-medium text-center">
@@ -488,7 +488,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
         </div>
       )}
 
-      {/* ✅ NEW: Finished message - Compact design */}
+      {/* NEW: Finished message - Compact design */}
       {isFinished && (
         <div className="mb-4 p-3 bg-green-100/80 backdrop-blur-sm border border-green-300 rounded-lg">
           <p className="text-xs text-green-900 font-medium text-center">
@@ -497,7 +497,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
         </div>
       )}
       
-      {/* ✅ NEW: Audio Player - Minimalist Card Design */}
+      {/* NEW: Audio Player - Minimalist Card Design */}
       <div className="bg-white border-2 border-gray-300 rounded-2xl p-5 shadow-lg relative overflow-visible">
         {/* Header Section */}
         <div className="flex items-center justify-between mb-4">
@@ -532,7 +532,7 @@ const AudioPlayer = ({ sectionAudioUrl, currentQuestion, allQuestions, onAudioSt
                 <div 
                   className="text-gray-600 cursor-not-allowed"
                   onClick={() => {
-                    // ✅ NEW: Show alert when clicking pause button
+                    // NEW: Show alert when clicking pause button
                     alert(t('jlpt.listeningPage.audioPlayerCannotPause'));
                   }}
                   title={t('jlpt.listeningPage.audioPlayerCannotPauseTooltip')}
@@ -735,20 +735,20 @@ const NavigationPanel = ({ sections, currentQuestion, answers, onQuestionSelect,
 function ExamListeningPage() {
   const { levelId, examId } = useParams();
   
-  // ✅ Debug: Log params ngay đầu để kiểm tra
+  // Debug: Log params ngay đầu để kiểm tra
   console.log('🎧 ExamListeningPage render:', { levelId, examId, pathname: window.location.pathname });
   
   const { navigate, WarningModal, clearExamData } = useExamGuard();
-  const navigateRouter = useNavigateRouter(); // ✅ Thêm navigate trực tiếp từ React Router
-  const { t } = useLanguage(); // ✅ Added useLanguage for localization
+  const navigateRouter = useNavigateRouter(); // Thêm navigate trực tiếp từ React Router
+  const { t } = useLanguage(); // Added useLanguage for localization
   const { user } = useAuth();
 
-  // ✅ Debug: Log params để kiểm tra
+  // Debug: Log params để kiểm tra
   useEffect(() => {
     console.log('🎧 ExamListeningPage mounted:', { levelId, examId, pathname: window.location.pathname });
   }, [levelId, examId]);
 
-  // ✅ UPDATED: Load exam metadata từ storage trước, fallback về static file
+  // UPDATED: Load exam metadata từ storage trước, fallback về static file
   const [currentExam, setCurrentExam] = useState(null);
   const [examData, setExamData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -759,15 +759,15 @@ function ExamListeningPage() {
   const [showIncompleteWarning, setShowIncompleteWarning] = useState(false);
   const [unansweredCount, setUnansweredCount] = useState(0);
   
-  // ✅ REMOVED: Don't lock body scroll - allow scrolling in modal and outside modal
+  // REMOVED: Don't lock body scroll - allow scrolling in modal and outside modal
   // useBodyScrollLock(showSubmitModal || showIncompleteWarning);
 
-  // ✅ UPDATED: Load exam data từ Supabase → storage → static file
+  // UPDATED: Load exam data từ Supabase → storage → static file
   useEffect(() => {
     const loadExamData = async () => {
       setIsLoading(true);
       try {
-        // 1️⃣ Ưu tiên load đề thi từ Supabase
+        // 1 Ưu tiên load đề thi từ Supabase
         const { success, data: supabaseExam } = await getExamFromSupabase(levelId, examId);
         let sourceExam = supabaseExam;
 
@@ -776,7 +776,7 @@ function ExamListeningPage() {
         }
 
         if (!sourceExam) {
-          // 2️⃣ Fallback: storage (admin created exams, cached)
+          // 2 Fallback: storage (admin created exams, cached)
           const savedExam = await storageManager.getExam(levelId, examId);
           if (savedExam) {
             console.log('✅ ExamListeningPage: Loaded exam from storage');
@@ -810,14 +810,14 @@ function ExamListeningPage() {
             listeningType: typeof sourceExam.listening,
             sectionsType: typeof sourceExam.listening?.sections,
             sectionsIsArray: Array.isArray(sourceExam.listening?.sections),
-            // ✅ NEW: Log audio fields
+            // NEW: Log audio fields
             hasAudioUrl: !!sourceExam.listening?.audioUrl,
             audioUrl: sourceExam.listening?.audioUrl || '(empty)',
             audioPath: sourceExam.listening?.audioPath || '(empty)',
             audioName: sourceExam.listening?.audioName || '(empty)'
           });
 
-          // ✅ Đảm bảo exam data có structure đúng (knowledge, reading, listening)
+          // Đảm bảo exam data có structure đúng (knowledge, reading, listening)
           const normalizedExamData = {
             ...sourceExam,
             knowledge: sourceExam.knowledge || { sections: [] },
@@ -825,14 +825,14 @@ function ExamListeningPage() {
             listening: {
               ...(sourceExam.listening || {}),
               sections: sourceExam.listening?.sections || [],
-              // ✅ NEW: Preserve audio fields from listening part level
+              // NEW: Preserve audio fields from listening part level
               audioUrl: sourceExam.listening?.audioUrl || '',
               audioPath: sourceExam.listening?.audioPath || '',
               audioName: sourceExam.listening?.audioName || ''
             },
           };
           
-          // ✅ Đảm bảo listening.sections là array
+          // Đảm bảo listening.sections là array
           if (!Array.isArray(normalizedExamData.listening.sections)) {
             console.warn('⚠️ listening.sections is not an array, converting...');
             normalizedExamData.listening.sections = [];
@@ -856,9 +856,9 @@ function ExamListeningPage() {
           
           setCurrentExam(examMetadata);
           
-          // ✅ UPDATED: Transform listening data - audio is now at listening part level
+          // UPDATED: Transform listening data - audio is now at listening part level
           if (normalizedExamData.listening.sections && normalizedExamData.listening.sections.length > 0) {
-            // ✅ DEBUG: Log raw data để kiểm tra audioUrl
+            // DEBUG: Log raw data để kiểm tra audioUrl
             console.log('🔍 ExamListeningPage - Raw listening data:', {
               hasAudioUrl: !!normalizedExamData.listening.audioUrl,
               audioUrl: normalizedExamData.listening.audioUrl,
@@ -868,7 +868,7 @@ function ExamListeningPage() {
             });
             
             const transformedData = {
-              // ✅ NEW: Audio is at listening part level (not section level)
+              // NEW: Audio is at listening part level (not section level)
               audioUrl: normalizedExamData.listening.audioUrl || '',
               audioPath: normalizedExamData.listening.audioPath || '',
               audioName: normalizedExamData.listening.audioName || '',
@@ -877,12 +877,12 @@ function ExamListeningPage() {
                 title: section.title,
                 instruction: section.instruction || '',
                 timeLimit: section.timeLimit || 0,
-                // ❌ REMOVED: Audio fields - audio is now at listening part level
+                // REMOVED: Audio fields - audio is now at listening part level
                 questions: (section.questions || []).map(q => ({
                   number: q.number || String(q.id).padStart(2, '0'),
                   subNumber: q.subNumber || q.id,
                   category: q.category || 'listening',
-                  // ❌ REMOVED: Timing fields - audio chạy liên tục, thí sinh tự nghe và trả lời theo thứ tự
+                  // REMOVED: Timing fields - audio chạy liên tục, thí sinh tự nghe và trả lời theo thứ tự
                   options: q.options || [],
                   correctAnswer: q.correctAnswer,
                   explanation: q.explanation || ''
@@ -900,7 +900,7 @@ function ExamListeningPage() {
             setExamData(null);
           }
         } else {
-          // 3️⃣ Fallback: static file (exam cứng trong code)
+          // 3 Fallback: static file (exam cứng trong code)
           console.log('📁 ExamListeningPage: Loading exam from static file...');
           const staticExam = getExamById(levelId, examId);
           const staticData = getListeningQuestions(levelId, examId);
@@ -936,8 +936,8 @@ function ExamListeningPage() {
     }
   }, [levelId, examId]);
 
-  // ✅ Set default currentQuestionKey nếu chưa có hoặc không tìm thấy
-  // ⚠️ QUAN TRỌNG: useEffect này PHẢI được đặt trước các early return
+  // Set default currentQuestionKey nếu chưa có hoặc không tìm thấy
+  // QUAN TRỌNG: useEffect này PHẢI được đặt trước các early return
   useEffect(() => {
     if (!examData || !examData.sections) return;
     
@@ -958,7 +958,7 @@ function ExamListeningPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [examData, currentQuestionKey]);
 
-  // ✅ NEW: State để track xem audio đã bắt đầu chưa (để prevent navigation khi đang thi)
+  // NEW: State để track xem audio đã bắt đầu chưa (để prevent navigation khi đang thi)
   const [audioHasStarted, setAudioHasStarted] = useState(false);
 
   // Block browser back (popstate) while taking exam
@@ -981,7 +981,7 @@ function ExamListeningPage() {
     };
   }, [clearExamData]);
 
-  // ✅ NEW: Prevent navigation away (close tab/refresh) khi đang thi
+  // NEW: Prevent navigation away (close tab/refresh) khi đang thi
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       // Chỉ prevent khi đang thi (có exam data)
@@ -998,7 +998,7 @@ function ExamListeningPage() {
     };
   }, [examData, audioHasStarted, answers]);
 
-  // ✅ Early returns - PHẢI đặt SAU tất cả hooks
+  // Early returns - PHẢI đặt SAU tất cả hooks
   if (isLoading) {
     return (
       <LoadingSpinner
@@ -1024,19 +1024,19 @@ function ExamListeningPage() {
     );
   }
 
-  // ✅ UPDATED: Safe access với null check và đảm bảo structure đúng
+  // UPDATED: Safe access với null check và đảm bảo structure đúng
   const sections = examData?.sections || [];
   const allQuestions = sections.flatMap(s =>
     s.questions?.map(q => ({ ...q, sectionId: s.id, sectionTitle: s.title, instruction: s.instruction })) || []
   );
   
-  // ✅ DEBUG: Log audioUrl khi render
+  // DEBUG: Log audioUrl khi render
   console.log('🔍 ExamListeningPage - Current state:', {
     hasExamData: !!examData,
     hasSections: !!examData?.sections,
     sectionsCount: sections.length,
     totalQuestions: allQuestions.length,
-    // ✅ NEW: Log audioUrl
+    // NEW: Log audioUrl
     hasAudioUrl: !!examData?.audioUrl,
     audioUrl: examData?.audioUrl || '(empty)',
     sections: sections.map(s => ({
@@ -1046,7 +1046,7 @@ function ExamListeningPage() {
     }))
   });
   
-  // ✅ Nếu không có câu hỏi nào, hiển thị thông báo
+  // Nếu không có câu hỏi nào, hiển thị thông báo
   if (allQuestions.length === 0) {
     return (
       <div className="p-8 text-center">
@@ -1072,7 +1072,7 @@ function ExamListeningPage() {
 
   const currentQuestion = allQuestions.find(q => `${q.sectionId}-${q.number}` === currentQuestionKey);
   const currentIndex = allQuestions.findIndex(q => `${q.sectionId}-${q.number}` === currentQuestionKey);
-  // ✅ NEW: Get current section to access audio URL
+  // NEW: Get current section to access audio URL
   const currentSection = currentQuestion ? sections.find(s => s.id === currentQuestion.sectionId) : null;
   const totalTime = sections.reduce((acc, s) => acc + (s.timeLimit || 0), 0);
 
@@ -1118,7 +1118,7 @@ function ExamListeningPage() {
       const key = `${q.sectionId}-${q.number}`;
       const userAnswer = answers[key];
       const correctAnswer = q.correctAnswer;
-      // ✅ FIX: Normalize về cùng type để so sánh (string hoặc number)
+      // FIX: Normalize về cùng type để so sánh (string hoặc number)
       const normalizedUserAnswer = userAnswer !== undefined ? Number(userAnswer) : undefined;
       const normalizedCorrectAnswer = Number(correctAnswer);
       const isCorrect = normalizedUserAnswer !== undefined && normalizedUserAnswer === normalizedCorrectAnswer;
@@ -1132,7 +1132,7 @@ function ExamListeningPage() {
       if (isCorrect) listeningCorrect++;
     });
 
-    // ✅ DEBUG: Log breakdown để kiểm tra
+    // DEBUG: Log breakdown để kiểm tra
     console.log('[ExamListening] Breakdown calculated:', {
       listeningCorrect,
       listeningTotal,
@@ -1142,7 +1142,7 @@ function ExamListeningPage() {
 
     const score = Math.round((correctCount / allQuestions.length) * 100);
 
-    // ✅ FIX: Đảm bảo breakdown được lưu đúng format
+    // FIX: Đảm bảo breakdown được lưu đúng format
     const breakdown = {
       listening: listeningCorrect,
       total: listeningTotal
@@ -1154,7 +1154,7 @@ function ExamListeningPage() {
     localStorage.setItem(`exam-${levelId}-${examId}-listening-score`, score);
     localStorage.setItem(`exam-${levelId}-${examId}-listening-completed`, 'true');
 
-    // ✅ NEW: Lưu progress vào Supabase nếu user đã đăng nhập
+    // NEW: Lưu progress vào Supabase nếu user đã đăng nhập
     if (user && typeof user.id === 'string') {
       saveLearningProgress({
         userId: user.id,
@@ -1175,7 +1175,7 @@ function ExamListeningPage() {
       });
     }
 
-    // ✅ Sử dụng navigateRouter trực tiếp để đảm bảo navigation hoạt động đúng
+    // Sử dụng navigateRouter trực tiếp để đảm bảo navigation hoạt động đúng
     const detailPath = `/jlpt/${levelId}/${examId}`;
     console.log('Submitting listening exam, navigating to:', detailPath);
     navigateRouter(detailPath);
@@ -1201,7 +1201,7 @@ function ExamListeningPage() {
     <>
       <div className="w-full pr-0 md:pr-4">
         <div className="flex flex-col md:flex-row gap-0 md:gap-6 items-start mt-4">
-          {/* ✅ FIX: Container câu hỏi - Fixed height giống sidebar (giống admin panel) */}
+          {/* FIX: Container câu hỏi - Fixed height giống sidebar (giống admin panel) */}
           <div className="w-full md:flex-1 min-w-0 bg-gray-100/90 backdrop-blur-sm rounded-lg shadow-lg flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)]">
             <div className="p-4 sm:p-6 border-b border-gray-300 flex-shrink-0">
               <Breadcrumbs paths={breadcrumbPaths} />
@@ -1217,10 +1217,10 @@ function ExamListeningPage() {
               </div>
             </div>
 
-            {/* ✅ FIX: Scrollable content với fixed height */}
+            {/* FIX: Scrollable content với fixed height */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
               <div className="max-w-4xl mx-auto">
-                {/* ✅ DEBUG: Log audioUrl trước khi render AudioPlayer */}
+                {/* DEBUG: Log audioUrl trước khi render AudioPlayer */}
                 {(() => {
                   console.log('🔍 ExamListeningPage - Rendering AudioPlayer with audioUrl:', examData?.audioUrl || '(empty)');
                   return null;
@@ -1274,7 +1274,7 @@ function ExamListeningPage() {
             </div>
           </div>
 
-          {/* ✅ FIX: Sidebar - Fixed height giống container câu hỏi (giống admin panel) */}
+          {/* FIX: Sidebar - Fixed height giống container câu hỏi (giống admin panel) */}
           <div className="w-full md:w-72 md:sticky md:top-4 mt-4 md:mt-0 flex-shrink-0">
             <div className="h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)] flex flex-col">
               <NavigationPanel

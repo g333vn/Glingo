@@ -93,7 +93,7 @@ function DictionaryButton() {
 
   return (
     <>
-      {/* Main Button - ✨ NEO BRUTALISM DESIGN - HIGH CTA POSITION */}
+      {/* Main Button - NEO BRUTALISM DESIGN - HIGH CTA POSITION */}
       <button
         onClick={toggleDictionary}
         className={`fixed top-32 md:top-36 lg:top-40 right-2 sm:right-4 md:right-6 z-[60] group transition-all duration-200 max-w-[calc(100vw-1rem)] sm:max-w-none ${
@@ -103,7 +103,7 @@ function DictionaryButton() {
         } rounded-lg border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-2px] hover:translate-y-[-2px] animate-pulse`}
         title={isEnabled ? t('dictionary.turnOff') : t('dictionary.turnOn')}
       >
-        {/* Button Content - ✨ NEO BRUTALISM */}
+        {/* Button Content - NEO BRUTALISM */}
         <div className="relative px-3 sm:px-4 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-3">
           {/* Icon */}
           <div className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full border-[3px] border-black flex items-center justify-center ${
@@ -151,7 +151,7 @@ function DictionaryButton() {
         </div>
       </button>
 
-      {/* ✅ NEW: Saved Words Button */}
+      {/* NEW: Saved Words Button */}
       {savedWords.length > 0 && (
         <button
           onClick={(e) => {
@@ -181,7 +181,7 @@ function DictionaryButton() {
         </button>
       )}
 
-      {/* ✅ NEW: Saved Words Drawer */}
+      {/* NEW: Saved Words Drawer */}
       <SavedWordsDrawer
         isOpen={showSavedWordsDrawer}
         onClose={() => setShowSavedWordsDrawer(false)}

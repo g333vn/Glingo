@@ -1,5 +1,5 @@
 // src/hooks/useAuthActions.jsx
-// 🎣 Custom hook for common auth actions
+// Custom hook for common auth actions
 // Simplifies login, register, logout, password reset, etc.
 
 import { useCallback, useState } from 'react';

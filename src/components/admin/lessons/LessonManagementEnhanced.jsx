@@ -1,5 +1,5 @@
 // src/components/admin/lessons/LessonManagementEnhanced.jsx
-// 📚 Enhanced Lesson Management - Clear Structure with All Features
+// Enhanced Lesson Management - Clear Structure with All Features
 
 import React, { useState, useEffect, useMemo } from 'react';
 import storageManager from '../../../utils/localStorageManager.js';

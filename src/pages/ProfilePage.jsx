@@ -117,7 +117,7 @@ function ProfilePage() {
         updatedUser.password = formData.newPassword;
       }
 
-      // ✅ FIX: Lưu vào localStorage (adminUsers và userPasswords riêng)
+      // FIX: Lưu vào localStorage (adminUsers và userPasswords riêng)
       const updatedUsers = allUsers.map(u => 
         u.id === updatedUser.id || u.username === updatedUser.username 
           ? updatedUser 
@@ -130,12 +130,12 @@ function ProfilePage() {
       });
       localStorage.setItem('adminUsers', JSON.stringify(usersWithoutPassword));
       
-      // ✅ CRITICAL: Dispatch custom event để AuthContext trong CÙNG TAB nhận được
+      // CRITICAL: Dispatch custom event để AuthContext trong CÙNG TAB nhận được
       window.dispatchEvent(new CustomEvent('adminUsersUpdated', {
         detail: { updatedUsers: usersWithoutPassword }
       }));
       
-      // ✅ FIX: Lưu password vào key riêng nếu có thay đổi
+      // FIX: Lưu password vào key riêng nếu có thay đổi
       if (formData.newPassword) {
         saveUserPassword(updatedUser.id, updatedUser.username, formData.newPassword);
       }
@@ -144,7 +144,7 @@ function ProfilePage() {
       const { password: _, ...userWithoutPassword } = updatedUser;
       updateUser(userWithoutPassword);
 
-      // 📊 Track profile update activity
+      // Track profile update activity
       trackUserActivity(updatedUser.id, updatedUser.username, 'profile_update', {
         role: updatedUser.role,
         hasPasswordChange: !!formData.newPassword,

@@ -1,7 +1,7 @@
 // src/services/lessonCompletionsService.js
 // Service để lưu và đọc chi tiết quá trình học lesson từ Supabase
 // 
-// ⚠️ LƯU Ý: 
+// LƯU Ý: 
 // - Service này được tạo sẵn nhưng CHƯA ĐƯỢC SỬ DỤNG
 // - Code hiện tại vẫn dùng learning_progress (không thay đổi)
 // - Tính năng mới sẽ được phát triển sau khi có đủ user
@@ -25,7 +25,7 @@ import { saveLearningProgress } from './learningProgressService.js';
  */
 export async function saveLessonCompletion(completion) {
   try {
-    // ✅ VALIDATION: Kiểm tra required fields
+    // VALIDATION: Kiểm tra required fields
     if (!completion.userId || !completion.bookId || !completion.chapterId || 
         !completion.lessonId || !completion.level) {
       console.error('[LessonCompletions] ❌ Missing required fields');
@@ -145,7 +145,7 @@ export async function saveLessonCompletion(completion) {
       result = { success: true, data };
     }
 
-    // ✅ DUAL-WRITE: Cập nhật learning_progress (summary) để đảm bảo data consistency
+    // DUAL-WRITE: Cập nhật learning_progress (summary) để đảm bảo data consistency
     try {
       // Map status từ lesson_completions sang learning_progress
       let progressStatus = 'in_progress';
@@ -173,7 +173,7 @@ export async function saveLessonCompletion(completion) {
       });
       console.log('[LessonCompletions] ✅ Also updated learning_progress (summary)');
     } catch (progressError) {
-      // ⚠️ Warning: Nếu update learning_progress fail, vẫn trả về success vì đã lưu chi tiết
+      // Warning: Nếu update learning_progress fail, vẫn trả về success vì đã lưu chi tiết
       console.warn('[LessonCompletions] ⚠️ Failed to update learning_progress (non-critical):', progressError);
     }
 

@@ -1,5 +1,5 @@
 // src/components/examples/TranslationExample.jsx
-// 📝 Example of using translations in components
+// Example of using translations in components
 
 import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';

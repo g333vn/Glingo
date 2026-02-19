@@ -1,5 +1,5 @@
 // src/types/lessonTypes.js
-// 📚 Lesson Data Structure - Extended for SRS Integration
+// Lesson Data Structure - Extended for SRS Integration
 
 /**
  * Content Types - Quyết định modules nào được enable

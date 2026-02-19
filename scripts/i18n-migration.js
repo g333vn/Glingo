@@ -1,5 +1,5 @@
 // scripts/i18n-migration.js
-// 🔄 i18n Migration Script - Convert hardcoded text to translation keys
+// i18n Migration Script - Convert hardcoded text to translation keys
 
 const fs = require('fs');
 const path = require('path');

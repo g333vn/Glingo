@@ -38,7 +38,7 @@ const getStatusType = (status = '') => {
     return 'available';
 };
 
-// Component ExamCard - ✨ NEO BRUTALISM
+// Component ExamCard - NEO BRUTALISM
 const ExamCard = ({ title, date, statusLabel, statusType, memeImage }) => {
     const badgeClasses = STATUS_BADGE_STYLES[statusType] || STATUS_BADGE_STYLES.available;
 
@@ -82,10 +82,10 @@ function JLPTLevelN2Page() {
     // State cho Modal "Sắp diễn ra"
     const [showUpcomingModal, setShowUpcomingModal] = useState(false);
 
-    // ✅ UPDATED: Load exams from IndexedDB/localStorage (admin added exams) or default data
+    // UPDATED: Load exams from IndexedDB/localStorage (admin added exams) or default data
     const [jlptN2Exams, setJlptN2Exams] = useState([]);
 
-    // ✅ FIX: Helper function để extract năm từ exam ID hoặc date
+    // FIX: Helper function để extract năm từ exam ID hoặc date
     const extractYear = (exam) => {
         // Thử extract từ ID (format: YYYY-MM hoặc YYYY-MM-DD)
         const idMatch = exam.id?.match(/^(\d{4})/);
@@ -99,7 +99,7 @@ function JLPTLevelN2Page() {
         return 0;
     };
 
-    // ✅ FIX: Sort exams theo năm mới nhất trước
+    // FIX: Sort exams theo năm mới nhất trước
     const sortExamsByYear = (examsList) => {
         return [...examsList].sort((a, b) => {
             const yearA = extractYear(a);
@@ -117,12 +117,12 @@ function JLPTLevelN2Page() {
 
     useEffect(() => {
         const loadExams = async () => {
-            // ✅ Load from IndexedDB/localStorage first (via storageManager)
+            // Load from IndexedDB/localStorage first (via storageManager)
             const savedExams = await storageManager.getExams('n2');
-            // ✅ Load from static file as well
+            // Load from static file as well
             const defaultExams = jlptExams.n2 || [];
 
-            // ✅ FIX: Merge exams from storage and static file, remove duplicates by ID
+            // FIX: Merge exams from storage and static file, remove duplicates by ID
             const examMap = new Map();
 
             // Add static exams first (as base)
@@ -300,7 +300,7 @@ function JLPTLevelN2Page() {
 
     return (
         <div className="w-full pr-0 md:pr-4">
-            {/* ✅ Modal "Sắp diễn ra" - NEO BRUTALISM */}
+            {/* Modal "Sắp diễn ra" - NEO BRUTALISM */}
             <UpcomingExamModal
                 isOpen={showUpcomingModal}
                 onClose={() => setShowUpcomingModal(false)}

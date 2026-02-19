@@ -1,5 +1,5 @@
 // src/components/DashboardAccessGuard.jsx
-// 🔒 DASHBOARD ACCESS GUARD
+// DASHBOARD ACCESS GUARD
 // Bảo vệ route dashboard, chỉ cho phép users có quyền truy cập
 
 import React, { useEffect, useState } from 'react';

@@ -1,5 +1,5 @@
 // src/services/progressTracker.js
-// 📊 Progress Tracking Service - Track learning progress and statistics
+// Progress Tracking Service - Track learning progress and statistics
 
 import { openDB } from 'idb';
 import { calculateRetention, CARD_STATES } from './srsAlgorithm.js';

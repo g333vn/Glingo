@@ -1,5 +1,5 @@
 // src/data/samples/complete-book-sample.js
-// 📚 Complete Book Sample - Full hierarchy with all data levels
+// Complete Book Sample - Full hierarchy with all data levels
 
 /**
  * COMPLETE BOOK STRUCTURE:

@@ -33,17 +33,17 @@ function SeriesListView({
   onSeriesClick,
   onExportItem,
   onImportItem,
-  level, // ✅ NEW: Need level for export
+  level, // NEW: Need level for export
   onDeleteBook,
   onEditChapter,
   onDeleteChapter,
   onEditLesson,
   onDeleteLesson,
-  onDeleteQuiz, // ✅ NEW: Delete quiz handler
-  onReorderLessons, // ✅ NEW: Reorder lessons handler
+  onDeleteQuiz, // NEW: Delete quiz handler
+  onReorderLessons, // NEW: Reorder lessons handler
 }) {
   const { t } = useLanguage();
-  // ✅ Helper: Wrap onAddBook để truyền series name
+  // Helper: Wrap onAddBook để truyền series name
   const handleAddBookWithSeries = (seriesName) => {
     if (onAddBook) {
       onAddBook(seriesName);

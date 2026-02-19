@@ -1,6 +1,6 @@
 // src/features/books/pages/QuizPage.jsx
-// ✅ UPDATED: Tách dữ liệu quiz ra file riêng ở src/data/level, giữ nguyên UI/logic
-// ✅ BƯỚC 2: Lazy loading quiz data từ JSON files
+// UPDATED: Tách dữ liệu quiz ra file riêng ở src/data/level, giữ nguyên UI/logic
+// BƯỚC 2: Lazy loading quiz data từ JSON files
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -9,22 +9,22 @@ import Breadcrumbs from '../../../components/Breadcrumbs.jsx';
 import { bookData } from '../../../data/level/bookData.js';
 import { n1BooksMetadata } from '../../../data/level/n1/index.js';
 
-// ✅ NEW: Import dữ liệu từ thư mục data/level (đường dẫn tương tự bookData)
-// ✅ BƯỚC 2: Giữ backward compatibility với quizData cũ
+// NEW: Import dữ liệu từ thư mục data/level (đường dẫn tương tự bookData)
+// BƯỚC 2: Giữ backward compatibility với quizData cũ
 import storageManager from '../../../utils/localStorageManager.js';
 import { quizData } from '../../../data/level/quizData.js';
 import { demoQuizzes } from '../../../data/level/n1/demo-book/quizzes.js';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';
 
-// ✅ BƯỚC 2: Import helper để lazy load quiz từ JSON
+// BƯỚC 2: Import helper để lazy load quiz từ JSON
 import { loadQuizData } from '../../../data/level/n1/shinkanzen-n1-bunpou/quizzes/quiz-loader.js';
 
-// ✅ NEW: Import progress tracker
+// NEW: Import progress tracker
 import { addLessonQuizScore, getLessonQuizScores } from '../../../utils/lessonProgressTracker.js';
 import { useAuth } from '../../../contexts/AuthContext.jsx';
 import { saveLearningProgress } from '../../../services/learningProgressService.js';
 
-// ✅ NEW: Import dictionary components
+// NEW: Import dictionary components
 import { DictionaryButton, DictionaryPopup, useDictionaryDoubleClick } from '../../../components/api_translate/index.js';
 import { getSettings } from '../../../utils/settingsManager.js';
 import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
@@ -49,20 +49,20 @@ function QuizPage() {
   const [chapterTitle, setChapterTitle] = useState('');
   const [lessonTitle, setLessonTitle] = useState('');
 
-  // ✅ UPDATED: Ref cho TOÀN BỘ content container để tra từ bất cứ đâu
+  // UPDATED: Ref cho TOÀN BỘ content container để tra từ bất cứ đâu
   const quizContentRef = useRef(null);
   useDictionaryDoubleClick(quizContentRef);
 
-  // ✅ UPDATED: Load books metadata for category navigation (và đồng bộ category từ seriesId)
+  // UPDATED: Load books metadata for category navigation (và đồng bộ category từ seriesId)
   useEffect(() => {
     const loadBooksMetadata = async () => {
-      // ✅ Load from IndexedDB/localStorage first (via storageManager)
+      // Load from IndexedDB/localStorage first (via storageManager)
       const savedBooks = await storageManager.getBooks(levelId);
       
       if (savedBooks && savedBooks.length > 0) {
         let booksWithCategory = savedBooks;
 
-        // ✅ Đồng bộ lại category từ seriesId nếu thiếu
+        // Đồng bộ lại category từ seriesId nếu thiếu
         try {
           const seriesList = await storageManager.getSeries(levelId);
           if (Array.isArray(seriesList) && seriesList.length > 0) {
@@ -102,7 +102,7 @@ function QuizPage() {
     loadBooksMetadata();
   }, [levelId]);
 
-  // ✅ NEW: Load chapter & lesson titles for accurate breadcrumb
+  // NEW: Load chapter & lesson titles for accurate breadcrumb
   useEffect(() => {
     const loadTitles = async () => {
       try {
@@ -134,7 +134,7 @@ function QuizPage() {
     loadTitles();
   }, [bookId, finalChapterId, finalLessonId]);
 
-  // ✅ UPDATED: Load quiz with IndexedDB/localStorage priority
+  // UPDATED: Load quiz with IndexedDB/localStorage priority
   useEffect(() => {
     const loadQuiz = async () => {
       setIsLoading(true);
@@ -143,7 +143,7 @@ function QuizPage() {
         console.log(`🔍 Loading quiz: bookId=${bookId}, chapterId=${finalChapterId}, lessonId=${finalLessonId}`);
         let savedQuiz = await storageManager.getQuiz(bookId, finalChapterId, finalLessonId, levelId);
         
-        // ✅ FALLBACK: Try demo quizzes if not in storage
+        // FALLBACK: Try demo quizzes if not in storage
         if (!savedQuiz && bookId === 'demo-complete-001') {
           const quizKey = `${bookId}_${finalChapterId}_${finalLessonId}`;
           savedQuiz = demoQuizzes[quizKey];
@@ -154,7 +154,7 @@ function QuizPage() {
         
         console.log(`📦 Quiz result:`, savedQuiz);
         if (savedQuiz) {
-          // ✅ FIXED: Transform quiz format from QuizEditor to QuizPage format
+          // FIXED: Transform quiz format from QuizEditor to QuizPage format
           // QuizEditor saves: { question, correctAnswer, audioUrl, audioPath, audioName }
           // QuizPage expects: { text, correct, audioUrl, audioName }
           let quizToSet = savedQuiz;
@@ -177,7 +177,7 @@ function QuizPage() {
                   options: q.options || [],
                   correct: q.correctAnswer || q.correct,
                   explanation: q.explanation || '',
-                  audioUrl: q.audioUrl || '', // ✅ Preserve audio URL
+                  audioUrl: q.audioUrl || '', // Preserve audio URL
                   audioPath: q.audioPath || '',
                   audioName: q.audioName || ''
                 };
@@ -225,16 +225,16 @@ function QuizPage() {
     loadQuiz();
   }, [bookId, finalChapterId, finalLessonId]);
 
-  // ✅ Ưu tiên lấy thông tin sách từ booksMetadata (Supabase) thay vì static bookData
+  // Ưu tiên lấy thông tin sách từ booksMetadata (Supabase) thay vì static bookData
   const currentBookMeta = Array.isArray(booksMetadata)
     ? booksMetadata.find(book => book.id === bookId)
     : null;
   const currentBookTitle = currentBookMeta?.title || bookId;
   
-  // ✅ Tìm category của book hiện tại để highlight trong sidebar
+  // Tìm category của book hiện tại để highlight trong sidebar
   const currentBookCategory = currentBookMeta?.category || null;
 
-  // ✅ Tạo danh sách categories (bộ sách) từ booksMetadata để hiển thị ở Sidebar
+  // Tạo danh sách categories (bộ sách) từ booksMetadata để hiển thị ở Sidebar
   const categories = React.useMemo(() => {
     const categoryCounts = {};
     if (Array.isArray(booksMetadata)) {
@@ -252,7 +252,7 @@ function QuizPage() {
     }));
   }, [booksMetadata]);
 
-  // ✅ Handler cho category click trong sidebar (phải định nghĩa trước khi dùng)
+  // Handler cho category click trong sidebar (phải định nghĩa trước khi dùng)
   const handleCategoryClick = (categoryName) => {
     if (!categoryName) {
       // Nếu click lại category đang active (toggle off) → navigate về level page
@@ -260,7 +260,7 @@ function QuizPage() {
       return;
     }
 
-    // ✅ Navigate về level page và filter theo category (hiển thị danh sách sách trong bộ đó)
+    // Navigate về level page và filter theo category (hiển thị danh sách sách trong bộ đó)
     // Sử dụng URL query parameter để truyền category
     navigate(`/level/${levelId}?category=${encodeURIComponent(categoryName)}`);
   };
@@ -346,7 +346,7 @@ function QuizPage() {
       setIsQuizComplete(true);
       addLessonQuizScore(bookId, finalChapterId, finalLessonId, score.correct, score.total);
       
-      // ✅ NEW: Lưu progress vào Supabase nếu user đã đăng nhập
+      // NEW: Lưu progress vào Supabase nếu user đã đăng nhập
       if (user && typeof user.id === 'string') {
         const percentage = Math.round((score.correct / score.total) * 100);
         saveLearningProgress({
@@ -409,7 +409,7 @@ function QuizPage() {
 
     return (
       <>
-        {/* ✅ NEW: Dictionary components */}
+        {/* NEW: Dictionary components */}
         <DictionaryButton />
         <DictionaryPopup />
 
@@ -583,7 +583,7 @@ function QuizPage() {
 
   return (
     <>
-      {/* ✅ NEW: Dictionary components */}
+      {/* NEW: Dictionary components */}
       <DictionaryButton />
       <DictionaryPopup />
 
@@ -600,7 +600,7 @@ function QuizPage() {
               <Breadcrumbs paths={breadcrumbPaths} />
             </div>
             
-            {/* ✅ UPDATED: Wrap toàn bộ content với ref để tra từ mọi nơi */}
+            {/* UPDATED: Wrap toàn bộ content với ref để tra từ mọi nơi */}
             <div ref={quizContentRef} className="px-3 sm:px-4 md:px-6 pb-4 md:pb-6 flex-1 flex flex-col md:overflow-y-auto overflow-x-hidden select-text">
               <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 md:mb-4 text-gray-800 text-center md:text-left break-words">
                 {currentQuiz.title}
@@ -617,11 +617,11 @@ function QuizPage() {
                   style={{
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
-                    whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
+                    whiteSpace: 'pre-wrap' // FIX: Preserve line breaks from <br/> tags
                   }}
                 />
                 
-                {/* ✅ Audio Player - For listening questions */}
+                {/* Audio Player - For listening questions */}
                 {currentQuestion.audioUrl && (
                   <div className="mb-3 md:mb-4 p-3 sm:p-4 bg-purple-50 border-[3px] border-purple-300 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
@@ -659,7 +659,7 @@ function QuizPage() {
                 </div>
               </div>
 
-              {/* ✅ UPDATED: Explanation không cần ref riêng nữa */}
+              {/* UPDATED: Explanation không cần ref riêng nữa */}
               {showExplanation && (
                 <div 
                   className={`mb-3 md:mb-4 p-3 sm:p-4 rounded-lg border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${selectedAnswer === currentQuestion.correct ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}
@@ -694,7 +694,7 @@ function QuizPage() {
                           style={{
                             wordWrap: 'break-word',
                             overflowWrap: 'break-word',
-                            whiteSpace: 'pre-wrap' // ✅ FIX: Preserve line breaks from <br/> tags
+                            whiteSpace: 'pre-wrap' // FIX: Preserve line breaks from <br/> tags
                           }}
                         />
                       </p>

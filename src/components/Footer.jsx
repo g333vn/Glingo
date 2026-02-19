@@ -1,4 +1,4 @@
-// src/components/Footer.jsx - ✨ NEO BRUTALISM + JAPANESE AESTHETIC
+// src/components/Footer.jsx - NEO BRUTALISM + JAPANESE AESTHETIC
 import React, { useState, useEffect } from 'react';
 import { Facebook, Instagram, MessageCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
@@ -18,7 +18,7 @@ function Footer() {
     
     window.addEventListener('settingsUpdated', handleSettingsUpdate);
     
-    // ✅ Load from Supabase on mount to get latest data
+    // Load from Supabase on mount to get latest data
     const loadInitialSettings = async () => {
       try {
         const loadedSettings = await loadSettingsFromSupabase();
@@ -32,7 +32,7 @@ function Footer() {
     
     loadInitialSettings();
 
-    // ✅ Subscribe to Supabase real-time changes
+    // Subscribe to Supabase real-time changes
     const unsubscribe = subscribeToAppSettings(async (updatedAppSettings) => {
       // When app_settings is updated (system_settings or user_settings), reload from Supabase
       if (updatedAppSettings?.system_settings || updatedAppSettings?.user_settings) {

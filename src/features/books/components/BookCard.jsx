@@ -34,7 +34,7 @@ function BookCard({
   title, 
   isComingSoon = false, 
   status = null,
-  placeholderVersion = 1 // ✅ NEW: Placeholder design version (1-10, default 1)
+  placeholderVersion = 1 // NEW: Placeholder design version (1-10, default 1)
 }) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);

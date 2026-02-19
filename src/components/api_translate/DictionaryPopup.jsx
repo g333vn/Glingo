@@ -22,7 +22,7 @@ function DictionaryPopup() {
   const popupRef = useRef(null);
   const contentRef = useRef(null);
 
-  // ✅ IMPROVED: Quản lý scroll - chỉ prevent body scroll khi scroll trong popup
+  // IMPROVED: Quản lý scroll - chỉ prevent body scroll khi scroll trong popup
   useEffect(() => {
     function handleClickOutside(event) {
       if (popupRef.current && !popupRef.current.contains(event.target)) {
@@ -95,7 +95,7 @@ function DictionaryPopup() {
     if (result && result.success) {
       const saveResult = saveWord(result);
       if (saveResult.success) {
-        // ✅ Không cần alert nữa, UI đã tự update
+        // Không cần alert nữa, UI đã tự update
         // savedWords sẽ được update tự động qua DictionaryContext
       } else {
         alert(`⚠️ ${saveResult.message}`);
@@ -110,7 +110,7 @@ function DictionaryPopup() {
       style={{ ...position, overscrollBehavior: 'contain' }}
       onTouchMove={(e) => { e.stopPropagation(); }}
     >
-      {/* ✅ Header - NEO BRUTALISM DESIGN */}
+      {/* Header - NEO BRUTALISM DESIGN */}
       <div className="bg-yellow-400 text-black px-4 py-3 flex items-center justify-between border-b-[4px] border-black">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full bg-black border-[2px] border-black flex items-center justify-center">
@@ -137,7 +137,7 @@ function DictionaryPopup() {
         className="overflow-y-auto max-h-[420px] p-4"
         style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
         onWheel={(e) => {
-          // ✅ IMPROVED: Chỉ prevent body scroll khi scroll trong popup
+          // IMPROVED: Chỉ prevent body scroll khi scroll trong popup
           const content = contentRef.current;
           if (!content) return;
 
@@ -249,7 +249,7 @@ function DictionaryPopup() {
                         </div>
                       )}
 
-                      {/* ✅ UPDATED: Ưu tiên nghĩa tiếng Việt */}
+                      {/* UPDATED: Ưu tiên nghĩa tiếng Việt */}
                       {meaning.vietnamese && meaning.vietnamese.length > 0 && (
                         <div className="mb-2">
                           <span className="font-black text-lg text-black">
@@ -294,7 +294,7 @@ function DictionaryPopup() {
         )}
       </div>
 
-      {/* ✅ Footer - NEO BRUTALISM */}
+      {/* Footer - NEO BRUTALISM */}
       <div className="bg-yellow-400 text-black px-4 py-2 border-t-[4px] border-black flex items-center justify-center text-xs font-black uppercase">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded-full bg-black border-[1px] border-black flex items-center justify-center">

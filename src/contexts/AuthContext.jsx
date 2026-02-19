@@ -1,5 +1,5 @@
 // src/contexts/AuthContext.jsx
-// 🔐 Authentication Context - Global auth state management
+// Authentication Context - Global auth state management
 // Provides: user, login, register, logout, updateProfile, isLoading
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -137,7 +137,7 @@ export function AuthProvider({ children }) {
         profileResult = await Promise.race([profilePromise, timeoutPromise]);
       } catch (timeoutError) {
         console.error('[AuthContext] Profile load timeout or error:', timeoutError);
-        // ✅ FIXED: Don't reset profile on timeout - keep existing profile if available
+        // FIXED: Don't reset profile on timeout - keep existing profile if available
         // This prevents role reset when network is slow or database is temporarily unavailable
         // Profile will be reloaded on next successful connection
         console.warn('[AuthContext] Profile load failed, but preserving existing profile to prevent role reset');
@@ -149,7 +149,7 @@ export function AuthProvider({ children }) {
       if (success && profileData) {
         setProfile(profileData);
       } else {
-        // ✅ FIXED: Only create profile if it truly doesn't exist (not just load failure)
+        // FIXED: Only create profile if it truly doesn't exist (not just load failure)
         // Retry loading profile first before creating new one
         console.log('[AuthContext] Profile not loaded, retrying...');
         try {
@@ -186,7 +186,7 @@ export function AuthProvider({ children }) {
           }
         } catch (createError) {
           console.warn('[AuthContext] Could not create/load profile:', createError);
-          // ✅ FIXED: Don't reset profile on error - keep existing profile to prevent role reset
+          // FIXED: Don't reset profile on error - keep existing profile to prevent role reset
           // Continue without updating profile - user can still use the app
           // Profile will be reloaded on next successful connection
         }
@@ -239,7 +239,7 @@ export function AuthProvider({ children }) {
         return { success: false, error: signUpError };
       }
 
-      // ✅ NEW: Auto-confirm user email để có thể đăng nhập ngay
+      // NEW: Auto-confirm user email để có thể đăng nhập ngay
       if (data?.user?.id) {
         console.log('[AuthContext] Confirming user email...');
         const confirmResult = await authService.confirmUserEmail(data.user.id);

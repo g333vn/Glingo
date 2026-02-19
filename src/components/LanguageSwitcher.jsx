@@ -1,5 +1,5 @@
 // src/components/LanguageSwitcher.jsx
-// 🌐 Language Switcher Component - 3D Waving Flags
+// Language Switcher Component - 3D Waving Flags
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext.jsx';

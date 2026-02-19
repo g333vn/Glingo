@@ -1,5 +1,5 @@
 // src/components/analytics/ScoreTrendsGraph.jsx
-// 📊 Score Trends Graph - Display quiz score history with chart
+// Score Trends Graph - Display quiz score history with chart
 
 import React from 'react';
 import { getLessonQuizScores } from '../../utils/lessonProgressTracker.js';

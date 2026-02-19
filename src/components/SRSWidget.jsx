@@ -1,5 +1,5 @@
 // src/components/SRSWidget.jsx
-// 🎴 SRS Widget - Display SRS info and start review button
+// SRS Widget - Display SRS info and start review button
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';

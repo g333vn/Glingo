@@ -1,5 +1,5 @@
 // src/translations/ja.js
-// 🇯🇵 Japanese Translations
+// Japanese Translations
 const ja = {
 // Common shared labels (breadcrumbs, buttons...)
 common: {

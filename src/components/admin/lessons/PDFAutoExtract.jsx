@@ -1,5 +1,5 @@
 // src/components/admin/lessons/PDFAutoExtract.jsx
-// 🤖 Auto-Extract from PDF - Extract flashcards từ PDF (Phase 2 - Optional)
+// Auto-Extract from PDF - Extract flashcards từ PDF (Phase 2 - Optional)
 
 import React, { useState } from 'react';
 

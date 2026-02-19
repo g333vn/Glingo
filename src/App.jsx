@@ -5,25 +5,25 @@ import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 import LoginModal from './components/LoginModal.jsx';
 
-// ✅ NOTE: Providers are now in main.jsx, not here
+// NOTE: Providers are now in main.jsx, not here
 // Import useAuth hook (AuthProvider is in main.jsx)
 import { useAuth } from './contexts/AuthContext.jsx';
 
-// ✅ NEW: Import JLPT Dictionary initialization
+// NEW: Import JLPT Dictionary initialization
 import { initJLPTDictionary } from './services/api_translate/dictionaryService.js';
 // Global app settings (maintenance)
 import { getGlobalMaintenanceMode } from './services/appSettingsService.js';
 // Access control sync
 import { getAccessControlFromSupabase, subscribeToAccessControl } from './services/accessControlService.js';
 
-// ✅ NOTE: ToastProvider is now in main.jsx
+// NOTE: ToastProvider is now in main.jsx
 
-// ✅ NEW: Import GlobalSearch
+// NEW: Import GlobalSearch
 import GlobalSearch from './components/GlobalSearch.jsx';
 
-// ✅ NEW: Import Vercel Speed Insights
+// NEW: Import Vercel Speed Insights
 import { SpeedInsights } from '@vercel/speed-insights/react';
-// ✅ NEW: Import Vercel Web Analytics
+// NEW: Import Vercel Web Analytics
 import { Analytics } from '@vercel/analytics/react';
 
 // Maintenance
@@ -31,7 +31,7 @@ import MaintenancePage from './pages/MaintenancePage.jsx';
 import { getSettings } from './utils/settingsManager.js';
 import { initDebugConsoleFilter } from './utils/debugLogger.js';
 
-// 🔒 SECURITY: Secure storage initialization
+// SECURITY: Secure storage initialization
 import { initSecureStorage } from './utils/secureUserStorage.js';
 
 const backgroundImageUrl = '/background/main.webp';
@@ -44,15 +44,15 @@ function AppContent() {
   const [backgroundLoaded, setBackgroundLoaded] = useState(false);
   const [settings, setSettings] = useState(getSettings());
   const [globalMaintenance, setGlobalMaintenance] = useState(null);
-  const [maintenanceChecked, setMaintenanceChecked] = useState(false); // ✅ NEW: Track if maintenance check is complete
-  const [accessControlLoaded, setAccessControlLoaded] = useState(false); // ✅ NEW: Track if access control is loaded from Supabase
+  const [maintenanceChecked, setMaintenanceChecked] = useState(false); // NEW: Track if maintenance check is complete
+  const [accessControlLoaded, setAccessControlLoaded] = useState(false); // NEW: Track if access control is loaded from Supabase
 
   // Get role from profile (role is in profile, not user)
   const userRole = profile?.role || user?.role;
   const isAdmin = userRole === 'admin';
   const localMaintenance = settings?.system?.maintenanceMode;
   
-  // ✅ FIXED: Priority: globalMaintenance > localMaintenance
+  // FIXED: Priority: globalMaintenance > localMaintenance
   // If globalMaintenance is null (still loading), use localMaintenance as fallback
   // If globalMaintenance is false but localMaintenance is true, use localMaintenance (sync issue)
   const effectiveMaintenance =
@@ -60,13 +60,13 @@ function AppContent() {
   
   const isLoginRoute = location.pathname.startsWith('/login');
   
-  // ✅ FIXED: Show maintenance page only if:
+  // FIXED: Show maintenance page only if:
   // 1. Maintenance is enabled (either global or local)
   // 2. User is not admin
   // 3. Not on login route
   const showMaintenanceForUser = effectiveMaintenance && !isAdmin && !isLoginRoute;
 
-  // ✅ DEBUG: Log maintenance state
+  // DEBUG: Log maintenance state
   useEffect(() => {
     console.log('[App][Maintenance] State:', {
       globalMaintenance,
@@ -88,7 +88,7 @@ function AppContent() {
     // Initialize debug console filter once
     initDebugConsoleFilter();
     
-    // 🔒 SECURITY: Initialize secure storage (migrate passwords, etc.)
+    // SECURITY: Initialize secure storage (migrate passwords, etc.)
     initSecureStorage();
 
     const handler = (event) => {
@@ -102,7 +102,7 @@ function AppContent() {
     return () => window.removeEventListener('settingsUpdated', handler);
   }, []);
 
-  // ✅ Preload background image for better performance
+  // Preload background image for better performance
   useEffect(() => {
     const img = new Image();
     img.src = backgroundImageUrl;
@@ -116,7 +116,7 @@ function AppContent() {
     };
   }, []);
 
-  // ✅ NEW: Load JLPT Dictionary on app start (one-time)
+  // NEW: Load JLPT Dictionary on app start (one-time)
   useEffect(() => {
     console.log('🚀 [App] Loading JLPT Dictionary...');
 
@@ -129,30 +129,30 @@ function AppContent() {
       });
   }, []); // Empty deps array = run once on mount
 
-  // ✅ FIXED: Load global maintenance flag từ Supabase
+  // FIXED: Load global maintenance flag từ Supabase
   useEffect(() => {
     async function fetchMaintenance() {
       const { success, maintenance } = await getGlobalMaintenanceMode();
       if (success) {
         setGlobalMaintenance(maintenance);
-        setMaintenanceChecked(true); // ✅ Mark as checked
+        setMaintenanceChecked(true); // Mark as checked
         console.log('[App][Maintenance] Global maintenance_mode =', maintenance);
       } else {
-        // ✅ If fetch fails, still mark as checked to use local maintenance
+        // If fetch fails, still mark as checked to use local maintenance
         setMaintenanceChecked(true);
         console.warn('[App][Maintenance] Failed to fetch global maintenance, using local:', localMaintenance);
       }
     }
     
-    // ✅ Fetch immediately on mount
+    // Fetch immediately on mount
     fetchMaintenance();
 
-    // ✅ Poll lại mỗi 30s để bắt trạng thái mới từ Supabase (reduced from 60s for faster updates)
+    // Poll lại mỗi 30s để bắt trạng thái mới từ Supabase (reduced from 60s for faster updates)
     const interval = setInterval(fetchMaintenance, 30000);
     return () => clearInterval(interval);
   }, []); // Empty deps - only run on mount
 
-  // ✅ NEW: Load and sync access control from Supabase on app start
+  // NEW: Load and sync access control from Supabase on app start
   useEffect(() => {
     async function loadAccessControl() {
       try {
@@ -166,7 +166,7 @@ function AppContent() {
             jlptModule: data.jlptModuleConfig
           });
           
-          // ✅ CRITICAL: Sync to localStorage FIRST before marking as loaded
+          // CRITICAL: Sync to localStorage FIRST before marking as loaded
           if (data.levelConfigs) {
             localStorage.setItem('levelAccessControl', JSON.stringify(data.levelConfigs));
             console.log('[App] ✅ Synced levelConfigs to localStorage');
@@ -184,7 +184,7 @@ function AppContent() {
             console.log('[App] ✅ Synced jlptModuleConfig to localStorage:', data.jlptModuleConfig);
           }
           
-          // ✅ Mark as loaded AFTER syncing to localStorage
+          // Mark as loaded AFTER syncing to localStorage
           setAccessControlLoaded(true);
           
           // Dispatch event to notify components
@@ -206,7 +206,7 @@ function AppContent() {
     // Load immediately on mount
     loadAccessControl();
 
-    // ✅ Subscribe to real-time changes
+    // Subscribe to real-time changes
     const unsubscribe = subscribeToAccessControl((updatedData) => {
       console.log('[App] 🔄 Access control updated via real-time subscription');
       
@@ -235,7 +235,7 @@ function AppContent() {
     };
   }, []); // Empty deps - only run on mount
 
-  // ✅ NEW: Re-check maintenance when route changes (to catch route navigation)
+  // NEW: Re-check maintenance when route changes (to catch route navigation)
   useEffect(() => {
     if (maintenanceChecked) {
       async function recheckMaintenance() {
@@ -253,7 +253,7 @@ function AppContent() {
 
   return (
     <div className="flex flex-col min-h-screen relative overflow-x-hidden">
-      {/* ✅ OPTIMIZED: bg-scroll + conditional loading for performance - Cover screen, prioritize showing important parts */}
+      {/* OPTIMIZED: bg-scroll + conditional loading for performance - Cover screen, prioritize showing important parts */}
       <div
         className={`absolute inset-0 w-full h-full bg-scroll -z-10 transition-opacity duration-500 ${backgroundLoaded ? 'opacity-100' : 'opacity-0'
           }`}
@@ -279,7 +279,7 @@ function AppContent() {
       <Header onUserIconClick={handleOpenLoginModal} isMaintenanceLock={showMaintenanceForUser} />
 
       <main className="flex-1 relative pt-20 md:pt-24 pb-12 overflow-x-hidden">
-        {/* ✅ FIXED: Show loading while checking maintenance, then show maintenance page or content */}
+        {/* FIXED: Show loading while checking maintenance, then show maintenance page or content */}
         {!maintenanceChecked && !isLoginRoute ? (
           <div className="min-h-[60vh] flex items-center justify-center">
             <div className="text-center">
@@ -314,7 +314,7 @@ function AppContent() {
   );
 }
 
-// ✅ FIX: Providers are now in main.jsx wrapping RouterProvider
+// FIX: Providers are now in main.jsx wrapping RouterProvider
 // App component no longer needs to provide contexts
 function App() {
   return <AppContent />;

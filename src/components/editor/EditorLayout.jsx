@@ -45,7 +45,7 @@ function EditorLayout() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* 🔘 Mobile/Tablet Toggle Button - Giống Level/JLPT */}
+      {/* Mobile/Tablet Toggle Button - Giống Level/JLPT */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         className="md:hidden fixed top-20 left-4 z-50 bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-lg shadow-lg"
@@ -57,7 +57,7 @@ function EditorLayout() {
         </svg>
       </button>
 
-      {/* 🌑 Mobile/Tablet Backdrop - Giống Level/JLPT */}
+      {/* Mobile/Tablet Backdrop - Giống Level/JLPT */}
       {isMobileMenuOpen && (
         <div
           id="mobile-backdrop"
@@ -70,7 +70,7 @@ function EditorLayout() {
       <div className="w-full pr-0 md:pr-4 flex flex-col md:flex-row">
         <div className="flex flex-col md:flex-row items-start gap-0 md:gap-6 mt-4 w-full">
           
-          {/* 📌 SIDEBAR - STICKY ON DESKTOP, FIXED OVERLAY ON MOBILE - Giống Level/JLPT */}
+          {/* SIDEBAR - STICKY ON DESKTOP, FIXED OVERLAY ON MOBILE - Giống Level/JLPT */}
           <div className={`
             ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
             fixed md:sticky 

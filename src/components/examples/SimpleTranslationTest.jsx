@@ -1,5 +1,5 @@
 // src/components/examples/SimpleTranslationTest.jsx
-// 🧪 Simple test to verify translations are loaded
+// Simple test to verify translations are loaded
 
 import React, { useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext.jsx';

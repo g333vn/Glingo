@@ -1,5 +1,5 @@
 // src/components/analytics/StudyInsights.jsx
-// 📊 Study Insights Component - Display study analytics
+// Study Insights Component - Display study analytics
 
 import React from 'react';
 import { getWeakLessons, getRecentStudyActivity } from '../../utils/lessonProgressTracker.js';

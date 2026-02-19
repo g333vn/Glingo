@@ -1,6 +1,6 @@
 // src/pages/admin/UsersManagementPage.jsx
 // Trang quản lý users - Xem, thêm, sửa, xóa users và thay đổi mật khẩu
-// ✅ FIXED: Layout mobile theo chuẩn Quiz Editor
+// FIXED: Layout mobile theo chuẩn Quiz Editor
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext.jsx';
@@ -9,10 +9,10 @@ import { users as initialUsers, roles, saveUserPassword, getUsers as getUsersFro
 import { isValidEmail, getEmailErrorMessage } from '../../utils/emailValidator.js';
 import { resetToFactoryDefaults } from '../../utils/seedManager.js';
 import * as authService from '../../services/authService.js';
-// 🔒 SECURITY: Import secure storage utilities
+// SECURITY: Import secure storage utilities
 import { saveAdminUsers } from '../../utils/secureUserStorage.js';
 
-// ✅ Helper: Lock/unlock body scroll
+// Helper: Lock/unlock body scroll
 const useBodyScrollLock = (isLocked) => {
   useEffect(() => {
     if (isLocked) {
@@ -37,7 +37,7 @@ function UsersManagementPage() {
 
   const [users, setUsers] = useState(initialUsers);
   const [currentPage, setCurrentPage] = useState(1);
-  const USERS_PER_PAGE = 3; // ✅ Hiển thị 3 user mỗi trang
+  const USERS_PER_PAGE = 3; // Hiển thị 3 user mỗi trang
   const [editingUser, setEditingUser] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -59,12 +59,12 @@ function UsersManagementPage() {
     confirmPassword: ''
   });
 
-  // ✅ NEW: State for viewing user details
+  // NEW: State for viewing user details
   const [viewingUser, setViewingUser] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-  // ✅ NEW: State for Supabase sync
+  // NEW: State for Supabase sync
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Load users from Supabase - KHÔNG dùng localStorage (để loại bỏ users đã xóa)
@@ -148,17 +148,17 @@ function UsersManagementPage() {
     })();
   }, []);
 
-  // 🔒 SECURITY: Save users to secure storage (passwords hashed + obfuscated)
+  // SECURITY: Save users to secure storage (passwords hashed + obfuscated)
   const saveUsers = (updatedUsers) => {
     setUsers(updatedUsers);
     
-    // 🔒 Lưu metadata vào adminUsers (tự động xoá password)
+    // Lưu metadata vào adminUsers (tự động xoá password)
     const usersWithoutPassword = updatedUsers.map(({ password, ...user }) => user);
     
     // Sử dụng saveAdminUsers từ secureUserStorage (tự động redact)
     saveAdminUsers(usersWithoutPassword);
     
-    // 🔒 Lưu passwords vào secure storage (hashed + obfuscated)
+    // Lưu passwords vào secure storage (hashed + obfuscated)
     updatedUsers.forEach(user => {
       if (user.password) {
         // saveUserPassword sẽ tự động hash và obfuscate
@@ -187,7 +187,7 @@ function UsersManagementPage() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
-    // ✅ Clear confirmPassword if password is cleared in edit mode
+    // Clear confirmPassword if password is cleared in edit mode
     if (name === 'password' && editingUser && (!value || value.trim() === '')) {
       setFormData({
         ...formData,
@@ -261,10 +261,10 @@ function UsersManagementPage() {
     // ... (code y hệt như trong document)
   };
 
-  // ✅ Lock body scroll when password modal is open (but NOT for view modal)
+  // Lock body scroll when password modal is open (but NOT for view modal)
   useBodyScrollLock(showChangePasswordModal);
 
-  // ✅ DEBUG: Log component render
+  // DEBUG: Log component render
   console.log('[USERS_MGMT] Component rendering, users count:', users.length);
 
   return (
@@ -281,7 +281,7 @@ function UsersManagementPage() {
           </p>
         </div>
 
-        {/* Advanced Actions - ✅ Di chuyển xuống dưới header */}
+        {/* Advanced Actions - Di chuyển xuống dưới header */}
         <div className="mb-4 sm:mb-6 flex gap-2">
           <button
             onClick={() => {
@@ -318,7 +318,7 @@ function UsersManagementPage() {
           </button>
         </div>
 
-        {/* Info Notes - ✅ Cards với border giống Quiz Editor */}
+        {/* Info Notes - Cards với border giống Quiz Editor */}
         <div className="space-y-4 mb-4 sm:mb-6">
           <div className="bg-white border-[3px] border-blue-500 rounded-lg shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] p-3 sm:p-4">
             <div className="flex items-start gap-2">

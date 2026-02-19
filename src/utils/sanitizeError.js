@@ -1,5 +1,5 @@
 // src/utils/sanitizeError.js
-// 🔒 Sanitize error messages: production chỉ trả về message user-friendly,
+// Sanitize error messages: production chỉ trả về message user-friendly,
 // chi tiết kỹ thuật chỉ log ở server / dev console.
 
 import { logger } from './logger.js';

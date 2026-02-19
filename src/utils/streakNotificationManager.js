@@ -1,5 +1,5 @@
 // src/utils/streakNotificationManager.js
-// 🔥 STREAK NOTIFICATION MANAGER
+// STREAK NOTIFICATION MANAGER
 // Quản lý thông báo tự động cho study streak
 
 import { createNotification } from './notificationManager.js';

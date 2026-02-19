@@ -1,5 +1,5 @@
 // src/pages/StatisticsDashboard.jsx
-// 📈 Statistics Dashboard - Comprehensive learning statistics
+// Statistics Dashboard - Comprehensive learning statistics
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -47,7 +47,7 @@ function StatisticsDashboard() {
 
       const db = await openDB('elearning-db', 3);
 
-      // ✅ FIXED: Scan all lesson groups to find the lesson (same fix as FlashcardReviewPage)
+      // FIXED: Scan all lesson groups to find the lesson (same fix as FlashcardReviewPage)
       let lesson = null;
       
       console.log('  - Scanning all lesson groups in IndexedDB...');

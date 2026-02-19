@@ -10,17 +10,17 @@ import storageManager from '../../utils/localStorageManager.js';
 import * as contentService from '../../services/contentService.js';
 import { n1BooksMetadata } from '../../data/level/n1/books-metadata.js';
 import { n1Books } from '../../data/level/n1/books.js';
-// ✅ NEW: Import components
+// NEW: Import components
 import AllLevelsOverview from '../../components/admin/content/AllLevelsOverview.jsx';
 import HierarchyView from '../../components/admin/content/HierarchyView.jsx';
-// ✅ SRS INTEGRATION: Import Enhanced Lesson Modal
+// SRS INTEGRATION: Import Enhanced Lesson Modal
 import EnhancedLessonModal from '../../components/admin/lessons/EnhancedLessonModal.jsx';
 import { migrateLegacyLesson } from '../../types/lessonTypes.js';
 import { cleanupInvalidQuizzes } from '../../utils/quizCleanup.js';
-// 🔒 SECURITY: Import error handler
+// SECURITY: Import error handler
 import { getErrorMessage } from '../../utils/uiErrorHandler.js';
 
-// ✅ NEW: Import placeholder preview images
+// NEW: Import placeholder preview images
 import ver1Preview from '../../features/books/components/ver1.png';
 import ver2Preview from '../../features/books/components/ver2.png';
 import ver3Preview from '../../features/books/components/ver3.png';
@@ -70,13 +70,13 @@ function ContentManagementPage() {
   const navigate = useNavigate();
   const [selectedLevel, setSelectedLevel] = useState('n1');
   
-  // ✅ NEW: View mode - 'overview' (all levels) or 'level-detail' (single level)
+  // NEW: View mode - 'overview' (all levels) or 'level-detail' (single level)
   const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'level-detail'
   
-  // ✅ NEW: Refresh trigger for AllLevelsOverview
+  // NEW: Refresh trigger for AllLevelsOverview
   const [overviewRefreshTrigger, setOverviewRefreshTrigger] = useState(0);
   
-  // ✅ Hierarchy navigation state - Track current selection path
+  // Hierarchy navigation state - Track current selection path
   const [hierarchyPath, setHierarchyPath] = useState({
     level: 'n1',
     series: null,
@@ -85,7 +85,7 @@ function ContentManagementPage() {
     lesson: null
   });
   
-  // ✅ NEW: Level Detail View states
+  // NEW: Level Detail View states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'published' | 'draft' | 'empty'
   const [sortBy, setSortBy] = useState('name'); // 'name' | 'newest' | 'most-books' | 'most-students' | 'highest-rated'
@@ -103,7 +103,7 @@ function ContentManagementPage() {
   const [editingChapter, setEditingChapter] = useState(null);
   
   
-  // ✅ NEW: Series/Category management states
+  // NEW: Series/Category management states
   const [series, setSeries] = useState([]);
   const [showSeriesForm, setShowSeriesForm] = useState(false);
   const [editingSeries, setEditingSeries] = useState(null);
@@ -119,7 +119,7 @@ function ContentManagementPage() {
     title: '',
     imageUrl: '',
     category: '',
-    placeholderVersion: 1 // ✅ NEW: Placeholder design version (1-10, default 1)
+    placeholderVersion: 1 // NEW: Placeholder design version (1-10, default 1)
   });
 
   // Chapter form state
@@ -128,20 +128,20 @@ function ContentManagementPage() {
     title: ''
   });
 
-  // ✅ NEW: Lesson management states
+  // NEW: Lesson management states
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [showLessonForm, setShowLessonForm] = useState(false);
   const [editingLesson, setEditingLesson] = useState(null);
   const [lessonForm, setLessonForm] = useState({
     id: '',
     title: '',
-    pdfUrl: '',           // ✅ NEW: PDF URL for theory
-    content: '',          // ✅ NEW: HTML content for theory
-    description: ''       // ✅ NEW: Short description
+    pdfUrl: '',           // NEW: PDF URL for theory
+    content: '',          // NEW: HTML content for theory
+    description: ''       // NEW: Short description
   });
   const [lessonsData, setLessonsData] = useState({}); // { [bookId_chapterId]: lessons[] }
 
-  // ✅ NEW: Questions/Quiz management states
+  // NEW: Questions/Quiz management states
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [showQuizForm, setShowQuizForm] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState(null);
@@ -151,7 +151,7 @@ function ContentManagementPage() {
       {
         id: 1,
         text: '',
-        audioUrl: '', // ✅ NEW: Audio support cho listening questions
+        audioUrl: '', // NEW: Audio support cho listening questions
         options: [
           { label: 'A', text: '' },
           { label: 'B', text: '' },
@@ -211,7 +211,7 @@ function ContentManagementPage() {
   }, [selectedLevel]);
 
   const saveBooks = async (updatedBooks) => {
-    // ✅ Sắp xếp books theo category, sau đó theo title
+    // Sắp xếp books theo category, sau đó theo title
     const sortedBooks = [...updatedBooks].sort((a, b) => {
       const categoryA = a.category || '';
       const categoryB = b.category || '';
@@ -222,17 +222,17 @@ function ContentManagementPage() {
     });
     setBooks(sortedBooks);
     
-    // ✅ Save to Supabase if user is admin and has UUID
+    // Save to Supabase if user is admin and has UUID
     const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
-    console.log('[SAVE_BOOKS] userId:', userId, 'user:', user); // 🔍 DEBUG
-    console.log('[SAVE_BOOKS] Saving', sortedBooks.length, 'books to level:', selectedLevel); // 🔍 DEBUG
+    console.log('[SAVE_BOOKS] userId:', userId, 'user:', user); // DEBUG
+    console.log('[SAVE_BOOKS] Saving', sortedBooks.length, 'books to level:', selectedLevel); // DEBUG
     await storageManager.saveBooks(selectedLevel, sortedBooks, userId);
-    console.log('[SAVE_BOOKS] ✅ Save completed'); // 🔍 DEBUG
+    console.log('[SAVE_BOOKS] ✅ Save completed'); // DEBUG
   };
 
-  // ✅ UPDATED: Save series (async) - Sắp xếp theo tên và thêm metadata, đồng bộ Supabase
+  // UPDATED: Save series (async) - Sắp xếp theo tên và thêm metadata, đồng bộ Supabase
   const saveSeries = async (updatedSeries) => {
-    // ✅ Thêm metadata cho series mới
+    // Thêm metadata cho series mới
     const enrichedSeries = updatedSeries.map(s => {
       // Nếu là series mới (chưa có createdAt), thêm metadata
       if (!s.createdAt) {
@@ -253,7 +253,7 @@ function ContentManagementPage() {
       };
     });
     
-    // ✅ Sắp xếp series theo tên
+    // Sắp xếp series theo tên
     const sortedSeries = [...enrichedSeries].sort((a, b) => {
       return (a.name || '').localeCompare(b.name || '');
     });
@@ -286,7 +286,7 @@ function ContentManagementPage() {
     }
   }, [books, selectedLevel]);
 
-  // ✅ NEW: Load lessons for all chapters
+  // NEW: Load lessons for all chapters
   useEffect(() => {
     const loadLessons = async () => {
       const newLessonsData = {};
@@ -307,7 +307,7 @@ function ContentManagementPage() {
     }
   }, [books, chaptersData, selectedLevel]);
 
-  // ✅ UPDATED: Load quizzes for all lessons (with lessonId) - Verify against Supabase
+  // UPDATED: Load quizzes for all lessons (with lessonId) - Verify against Supabase
   useEffect(() => {
     const loadQuizzes = async () => {
       const newQuizzesData = {};
@@ -318,14 +318,14 @@ function ContentManagementPage() {
           for (const lesson of lessons) {
             const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id, selectedLevel);
             if (quiz) {
-              // ✅ Verify quiz exists in Supabase (if level is provided)
+              // Verify quiz exists in Supabase (if level is provided)
               let isValidQuiz = true;
               if (selectedLevel) {
                 try {
                   const { contentService } = await import('../../services/contentService.js');
                   const { success, data } = await contentService.getQuiz(book.id, chapter.id, lesson.id, selectedLevel);
                   
-                  // ✅ FIXED: If quiz exists in local storage but NOT in Supabase, check if it's valid
+                  // FIXED: If quiz exists in local storage but NOT in Supabase, check if it's valid
                   // Only delete if it's truly invalid (no valid content) AND not found in Supabase
                   // Don't delete if it's just a network error or sync issue
                   if (!success || !data) {
@@ -337,7 +337,7 @@ function ContentManagementPage() {
                         return text.length > 0 && hasOptions;
                       });
                     
-                    // ✅ FIXED: Only delete if quiz has NO valid content AND Supabase confirmed it doesn't exist
+                    // FIXED: Only delete if quiz has NO valid content AND Supabase confirmed it doesn't exist
                     // If success=true but data=null, it means Supabase confirmed quiz doesn't exist
                     // If success=false, it might be a network error, so don't delete
                     if (!hasValidContent && success && !data) {
@@ -402,7 +402,7 @@ function ContentManagementPage() {
       };
     });
     
-    // ✅ Sắp xếp theo category (series), sau đó theo title
+    // Sắp xếp theo category (series), sau đó theo title
     return booksWithData.sort((a, b) => {
       // Sắp xếp theo category trước
       const categoryA = a.category || '';
@@ -415,7 +415,7 @@ function ContentManagementPage() {
     });
   }, [books, getBookData]);
 
-  // ✅ Helper: Generate auto ID for books (with category suffix)
+  // Helper: Generate auto ID for books (with category suffix)
   const generateBookId = (category = '') => {
     if (books.length === 0) return 'book-001';
     
@@ -437,7 +437,7 @@ function ContentManagementPage() {
     return `book-${nextNum}${categorySuffix}`;
   };
 
-  // ✅ NEW: State for book form validation
+  // NEW: State for book form validation
   const [bookFormValidation, setBookFormValidation] = useState({
     idExists: false,
     titleExists: false,
@@ -455,7 +455,7 @@ function ContentManagementPage() {
     setEditingBook(null);
     const autoId = generateBookId(seriesName);
     
-    // ✅ Find the series ID if adding book to a specific series
+    // Find the series ID if adding book to a specific series
     let seriesId = null;
     if (seriesName) {
       const matchingSeries = series.find(s => s.name === seriesName);
@@ -463,12 +463,12 @@ function ContentManagementPage() {
     }
     
     setBookForm({ 
-      id: autoId, // ✅ Auto-generate ID with category suffix
+      id: autoId, // Auto-generate ID with category suffix
       title: '', 
       imageUrl: '', 
-      category: seriesName || '', // ✅ Auto-fill series name
-      seriesId: seriesId, // ✅ NEW: Store series ID for filtering
-      placeholderVersion: 1 // ✅ NEW: Default placeholder version
+      category: seriesName || '', // Auto-fill series name
+      seriesId: seriesId, // NEW: Store series ID for filtering
+      placeholderVersion: 1 // NEW: Default placeholder version
     });
     setBookFormValidation({ idExists: false, titleExists: false, isValidating: false });
     setShowBookForm(true);
@@ -481,14 +481,14 @@ function ContentManagementPage() {
       title: book.title,
       imageUrl: book.imageUrl,
       category: book.category || '',
-      seriesId: book.seriesId || null, // ✅ NEW: Preserve series ID when editing
-      placeholderVersion: book.placeholderVersion || 1 // ✅ NEW: Preserve placeholder version when editing
+      seriesId: book.seriesId || null, // NEW: Preserve series ID when editing
+      placeholderVersion: book.placeholderVersion || 1 // NEW: Preserve placeholder version when editing
     });
     setBookFormValidation({ idExists: false, titleExists: false, isValidating: false });
     setShowBookForm(true);
   };
 
-  // ✅ NEW: Real-time title validation
+  // NEW: Real-time title validation
   const validateBookTitle = (title) => {
     if (!title) {
       setBookFormValidation(prev => ({ ...prev, titleExists: false }));
@@ -503,7 +503,7 @@ function ContentManagementPage() {
     setBookFormValidation(prev => ({ ...prev, titleExists: exists }));
   };
 
-  // ✅ NEW: ID stepper handlers
+  // NEW: ID stepper handlers
   const handleBookIdIncrement = () => {
     const match = bookForm.id.match(/book-(\d+)(-.*)?/);
     if (match) {
@@ -526,7 +526,7 @@ function ContentManagementPage() {
     }
   };
 
-  // ✅ NEW: Audio upload handler (for quiz questions) - Updated to use Supabase Storage
+  // NEW: Audio upload handler (for quiz questions) - Updated to use Supabase Storage
   const handleAudioUpload = async (file, questionIndex) => {
     if (!file) return;
     
@@ -548,9 +548,9 @@ function ContentManagementPage() {
     setUploadingAudioIndex(questionIndex);
     
     try {
-      // ✅ Upload to Supabase Storage
+      // Upload to Supabase Storage
       const { uploadAudio, generateFilePath } = await import('@services/fileUploadService');
-      // 📁 Đường dẫn có ngữ nghĩa: level / book / chapter / lesson / question
+      // Đường dẫn có ngữ nghĩa: level / book / chapter / lesson / question
       const safeLevel = selectedLevel || 'unknown-level';
       const safeBook = selectedBook?.id || 'unknown-book';
       const safeChapter = selectedChapter?.id || 'unknown-chapter';
@@ -581,7 +581,7 @@ function ContentManagementPage() {
     }
   };
 
-  // ✅ NEW: Check duplicate questions
+  // NEW: Check duplicate questions
   const checkDuplicateQuestion = (questionText, currentIndex) => {
     if (!questionText || !quizForm.questions) return false;
     
@@ -593,7 +593,7 @@ function ContentManagementPage() {
     );
   };
 
-  // ✅ NEW: Image upload handler
+  // NEW: Image upload handler
   const handleImageUpload = async (file) => {
     if (!file) return;
     
@@ -615,9 +615,9 @@ function ContentManagementPage() {
     setUploadProgress(0);
     
     try {
-      // ✅ Upload to Supabase Storage
+      // Upload to Supabase Storage
       const { uploadImage, generateFilePath } = await import('@services/fileUploadService');
-      // 📁 Đường dẫn có ngữ nghĩa: level / book
+      // Đường dẫn có ngữ nghĩa: level / book
       const safeLevel = selectedLevel || 'unknown-level';
       const safeBookId = bookForm.id || editingBook?.id || 'unknown-book';
       const prefix = `level-${safeLevel}/book-${safeBookId}`;
@@ -652,7 +652,7 @@ function ContentManagementPage() {
   const handleSaveBook = async (e) => {
     e.preventDefault();
     
-    // ✅ Enhanced validation
+    // Enhanced validation
     if (!bookForm.id || !bookForm.title) {
       alert('⚠️ Vui lòng điền đầy đủ ID và Tên sách!');
       return;
@@ -730,7 +730,7 @@ function ContentManagementPage() {
     alert(t('contentManagement.messages.bookDeleted'));
   };
 
-  // ✅ Helper: Generate auto ID for chapters
+  // Helper: Generate auto ID for chapters
   const generateChapterId = (existingChapters) => {
     if (!existingChapters || existingChapters.length === 0) return 'chapter-1';
     const numbers = existingChapters
@@ -749,7 +749,7 @@ function ContentManagementPage() {
     setSelectedBook(book);
     setEditingChapter(null);
     
-    // ✅ FIXED: Load existing chapters from storage (prioritize storage over static data)
+    // FIXED: Load existing chapters from storage (prioritize storage over static data)
     // This ensures chapters created by admin are visible when adding new chapters
     let existingChapters = await storageManager.getChapters(book.id, selectedLevel);
     
@@ -759,11 +759,11 @@ function ContentManagementPage() {
       existingChapters = bookData?.contents || [];
     }
     
-    // ✅ Auto-generate chapter ID
+    // Auto-generate chapter ID
     const autoId = generateChapterId(existingChapters);
     setChapterForm({ id: autoId, title: '' });
     
-    // ✅ Also update chaptersData state to ensure consistency
+    // Also update chaptersData state to ensure consistency
     setChaptersData(prev => ({
       ...prev,
       [book.id]: existingChapters
@@ -782,7 +782,7 @@ function ContentManagementPage() {
       title: chapter.title || chapter.id
     });
     
-    // ✅ FIXED: Load existing chapters from storage (prioritize storage over static data)
+    // FIXED: Load existing chapters from storage (prioritize storage over static data)
     // This ensures chapters created by admin are visible when editing with other accounts
     let existingChapters = await storageManager.getChapters(book.id, selectedLevel);
     
@@ -792,7 +792,7 @@ function ContentManagementPage() {
       existingChapters = bookData?.contents || [];
     }
     
-    // ✅ Also update chaptersData state to ensure consistency
+    // Also update chaptersData state to ensure consistency
     setChaptersData(prev => ({
       ...prev,
       [book.id]: existingChapters
@@ -833,7 +833,7 @@ function ContentManagementPage() {
       chapters = [...chapters, { ...chapterForm }];
     }
 
-    // ✅ Sắp xếp chapters theo ID (để đồng nhất với thứ tự)
+    // Sắp xếp chapters theo ID (để đồng nhất với thứ tự)
     chapters.sort((a, b) => {
       // Extract numbers from IDs (e.g., "bai-1" -> 1, "unit-2" -> 2)
       const getNumber = (id) => {
@@ -903,7 +903,7 @@ function ContentManagementPage() {
         [book.id]: chapters
       }));
       
-      // ✅ NEW: Also delete lessons and quizzes for this chapter
+      // NEW: Also delete lessons and quizzes for this chapter
       const lessonsKey = `${book.id}_${chapter.id}`;
       await storageManager.deleteLessons(book.id, chapter.id);
       setLessonsData(prev => {
@@ -919,7 +919,7 @@ function ContentManagementPage() {
     }
   };
 
-  // ✅ Helper: Generate auto ID for lessons
+  // Helper: Generate auto ID for lessons
   const generateLessonId = (existingLessons) => {
     if (!existingLessons || existingLessons.length === 0) return 'lesson-1';
     const numbers = existingLessons
@@ -932,7 +932,7 @@ function ContentManagementPage() {
     return `lesson-${maxNum + 1}`;
   };
 
-  // ✅ NEW: Lesson CRUD operations
+  // NEW: Lesson CRUD operations
   const handleAddLesson = async (book, chapter) => {
     setSelectedBook(book);
     setEditingLesson(null);
@@ -941,7 +941,7 @@ function ContentManagementPage() {
     let existingLessons = await storageManager.getLessons(book.id, chapter.id, selectedLevel);
     if (!existingLessons) existingLessons = [];
     
-    // ✅ Auto-generate lesson ID
+    // Auto-generate lesson ID
     const autoId = generateLessonId(existingLessons);
     setLessonForm({ 
       id: autoId, 
@@ -955,12 +955,12 @@ function ContentManagementPage() {
     setShowLessonForm(true);
   };
 
-  // ✅ SRS INTEGRATION: Enhanced edit handler (auto-migrate old lessons)
+  // SRS INTEGRATION: Enhanced edit handler (auto-migrate old lessons)
   const handleEditLesson = async (book, chapter, lesson) => {
     setSelectedBook(book);
     setSelectedChapter(chapter);
     
-    // ✅ NEW: Auto-migrate old lessons to new format
+    // NEW: Auto-migrate old lessons to new format
     const isNewFormat = lesson.contentType !== undefined;
     const migratedLesson = isNewFormat ? lesson : migrateLegacyLesson(lesson);
     
@@ -996,8 +996,11 @@ function ContentManagementPage() {
     }
   };
 
-  // ✅ SRS INTEGRATION: Enhanced save handler (backward compatible)
-  const handleSaveLesson = async (lessonData) => {
+  // SRS INTEGRATION: Enhanced save handler (backward compatible)
+  // Ho tro option { silent: true } de luu tu dong ma khong hien alert va khong dong modal
+  const handleSaveLesson = async (lessonData, options = {}) => {
+    const { silent = false } = options;
+    
     // Support both old form (event) and new modal (lessonData object)
     const isEventObject = lessonData?.preventDefault;
     
@@ -1009,32 +1012,43 @@ function ContentManagementPage() {
     
     // Validate
     if (!lessonData.id || !lessonData.title || !selectedBook || !selectedChapter) {
-      alert(t('contentManagement.errors.fillAllInfo'));
+      if (!silent) alert(t('contentManagement.errors.fillAllInfo'));
       return;
     }
 
     try {
-      // ✅ NEW: Auto-detect format and migrate if needed
+      // NEW: Auto-detect format and migrate if needed
       const isNewFormat = lessonData.contentType !== undefined;
       const finalLessonData = isNewFormat ? lessonData : migrateLegacyLesson(lessonData);
       
-      console.log('💾 Saving lesson:', {
+      // Log chi tiet de debug luong upload -> save -> display
+      console.log(`${silent ? '[Auto-save]' : '[Manual-save]'} Saving lesson:`, {
         format: isNewFormat ? 'NEW (SRS-enabled)' : 'OLD (migrated)',
         id: finalLessonData.id,
         contentType: finalLessonData.contentType,
-        hasSRS: finalLessonData.srs?.enabled
+        hasSRS: finalLessonData.srs?.enabled,
+        'theory.pdfUrl': finalLessonData.theory?.pdfUrl || '(khong co)',
+        'theory.type': finalLessonData.theory?.type || '(khong co)',
+        'theory.htmlContent': finalLessonData.theory?.htmlContent ? `(co, ${finalLessonData.theory.htmlContent.length} ky tu)` : '(khong co)'
       });
 
       let lessons = await storageManager.getLessons(selectedBook.id, selectedChapter.id, selectedLevel);
       if (!lessons) lessons = [];
 
-      if (editingLesson) {
-        // Edit existing
-        lessons = lessons.map(l => 
-          l.id === finalLessonData.id ? finalLessonData : l
-        );
+      if (editingLesson || silent) {
+        // Che do chinh sua hoac auto-save: cap nhat bai hoc neu da ton tai, them moi neu chua co
+        const existsInList = lessons.some(l => l.id === finalLessonData.id);
+        if (existsInList) {
+          // Cap nhat bai hoc da ton tai (upsert)
+          lessons = lessons.map(l => 
+            l.id === finalLessonData.id ? finalLessonData : l
+          );
+        } else {
+          // Them bai hoc moi vao danh sach
+          lessons = [...lessons, finalLessonData];
+        }
       } else {
-        // Create new
+        // Tao bai hoc moi (che do thuong, khong phai auto-save)
         if (lessons.find(l => l.id === finalLessonData.id)) {
           alert(t('contentManagement.errors.lessonIdExists'));
           return;
@@ -1042,7 +1056,7 @@ function ContentManagementPage() {
         lessons = [...lessons, finalLessonData];
       }
 
-      // ✅ FIXED: Preserve existing order (from orderIndex or order) instead of sorting by ID
+      // FIXED: Preserve existing order (from orderIndex or order) instead of sorting by ID
       // Only sort if no lessons have orderIndex/order set (new chapter)
       const hasOrderInfo = lessons.some(l => l.orderIndex !== undefined || l.order !== undefined);
       
@@ -1062,7 +1076,7 @@ function ContentManagementPage() {
         });
       }
       
-      // ✅ FIXED: Update orderIndex for all lessons to match current array order
+      // FIXED: Update orderIndex for all lessons to match current array order
       // This ensures the order is preserved when saving
       const lessonsWithOrder = lessons.map((lesson, index) => ({
         ...lesson,
@@ -1071,36 +1085,56 @@ function ContentManagementPage() {
       }));
 
       const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
-      const success = await storageManager.saveLessons(selectedBook.id, selectedChapter.id, lessonsWithOrder, selectedLevel, userId);
+      const saveResult = await storageManager.saveLessons(selectedBook.id, selectedChapter.id, lessonsWithOrder, selectedLevel, userId);
+      
+      // Kiem tra ket qua luu - bao gom ca loi Supabase
+      const success = saveResult === true || saveResult?.localSuccess;
+      const supabaseError = saveResult?.supabaseError;
       
       if (success) {
         const key = `${selectedBook.id}_${selectedChapter.id}`;
         setLessonsData(prev => ({
           ...prev,
-          [key]: lessonsWithOrder  // ✅ Use lessonsWithOrder to preserve orderIndex
+          [key]: lessonsWithOrder  // Use lessonsWithOrder to preserve orderIndex
         }));
         
-        setShowLessonForm(false);
-        setEditingLesson(null);
-        setLessonForm({ id: '', title: '', pdfUrl: '', content: '', description: '' });
+        // Chi dong modal va reset form khi KHONG o che do silent (auto-save)
+        if (!silent) {
+          setShowLessonForm(false);
+          setEditingLesson(null);
+          setLessonForm({ id: '', title: '', pdfUrl: '', content: '', description: '' });
+        }
         
         // Refresh overview
         setOverviewRefreshTrigger(prev => prev + 1);
         
-        alert(getSaveSuccessMessage(
-          t('contentManagement.success.lessonDetails', {
-            action: editingLesson ? t('contentManagement.messages.lessonUpdated') : t('contentManagement.messages.lessonAdded'),
-            id: finalLessonData.id,
-            title: finalLessonData.title,
-            type: finalLessonData.contentType || 'grammar'
-          }) + `\n   - SRS: ${finalLessonData.srs?.enabled ? 'BẬT ✅' : 'TẮT'}\n   - Sách: ${selectedBook.title}\n   - Chapter: ${selectedChapter.title}`
-        ));
+        // Hien thi alert chi khi khong o che do silent
+        if (!silent) {
+          // Canh bao neu Supabase that bai nhung local thanh cong
+          // Hien thi chi tiet loi de ho tro debug
+          let supabaseWarning = '';
+          if (supabaseError) {
+            const errorMsg = typeof supabaseError === 'string' 
+              ? supabaseError 
+              : (supabaseError?.message || supabaseError?.code || JSON.stringify(supabaseError)).substring(0, 300);
+            supabaseWarning = `\n\nLOI SUPABASE: ${errorMsg}\n\nDu lieu chi duoc luu cuc bo. Khi tai lai trang, du lieu co the bi mat!`;
+          }
+          
+          alert(getSaveSuccessMessage(
+            t('contentManagement.success.lessonDetails', {
+              action: editingLesson ? t('contentManagement.messages.lessonUpdated') : t('contentManagement.messages.lessonAdded'),
+              id: finalLessonData.id,
+              title: finalLessonData.title,
+              type: finalLessonData.contentType || 'grammar'
+            }) + `\n   - SRS: ${finalLessonData.srs?.enabled ? 'BAT' : 'TAT'}\n   - Sach: ${selectedBook.title}\n   - Chapter: ${selectedChapter.title}${supabaseWarning}`
+          ));
+        }
       } else {
-        alert(t('contentManagement.messages.saveError', { item: 'lesson' }));
+        if (!silent) alert(t('contentManagement.messages.saveError', { item: 'lesson' }));
       }
     } catch (error) {
       console.error('Error saving lesson:', error);
-      alert(t('contentManagement.errors.general', { message: getErrorMessage(error, 'Save Lesson') }));
+      if (!silent) alert(t('contentManagement.errors.general', { message: getErrorMessage(error, 'Save Lesson') }));
     }
   };
 
@@ -1115,7 +1149,7 @@ function ContentManagementPage() {
     // Filter out deleted lesson
     lessons = lessons.filter(l => l.id !== lesson.id);
     
-    // ✅ FIXED: Update orderIndex for remaining lessons to maintain sequential order
+    // FIXED: Update orderIndex for remaining lessons to maintain sequential order
     const lessonsWithUpdatedOrder = lessons.map((l, index) => ({
       ...l,
       orderIndex: index + 1,
@@ -1129,7 +1163,7 @@ function ContentManagementPage() {
       const key = `${book.id}_${chapter.id}`;
       setLessonsData(prev => ({
         ...prev,
-        [key]: lessonsWithUpdatedOrder  // ✅ Use lessonsWithUpdatedOrder to preserve orderIndex
+        [key]: lessonsWithUpdatedOrder  // Use lessonsWithUpdatedOrder to preserve orderIndex
       }));
       
       // Also delete quiz for this lesson (từ Supabase và local storage)
@@ -1147,7 +1181,7 @@ function ContentManagementPage() {
     }
   };
 
-  // ✅ NEW: Quiz/Questions CRUD operations
+  // NEW: Quiz/Questions CRUD operations
   const handleAddQuiz = async (book, chapter, lesson) => {
     setSelectedBook(book);
     setSelectedChapter(chapter);
@@ -1159,7 +1193,7 @@ function ContentManagementPage() {
         {
           id: 1,
           text: '',
-          audioUrl: '', // ✅ NEW: Audio support
+          audioUrl: '', // NEW: Audio support
           options: [
             { label: 'A', text: '' },
             { label: 'B', text: '' },
@@ -1182,7 +1216,7 @@ function ContentManagementPage() {
     const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id, selectedLevel);
     if (quiz) {
       setEditingQuiz(quiz);
-      // ✅ Ensure all questions have audioUrl field
+      // Ensure all questions have audioUrl field
       const questionsWithAudio = (quiz.questions || []).map(q => ({
         ...q,
         audioUrl: q.audioUrl || ''
@@ -1200,7 +1234,7 @@ function ContentManagementPage() {
           {
             id: 1,
             text: '',
-            audioUrl: '', // ✅ NEW: Audio support
+            audioUrl: '', // NEW: Audio support
             options: [
               { label: 'A', text: '' },
               { label: 'B', text: '' },
@@ -1260,7 +1294,7 @@ function ContentManagementPage() {
 
     const userId = user && typeof user.id === 'string' && user.id.length > 20 ? user.id : null;
     
-    // ✅ NEW: Validate before save
+    // NEW: Validate before save
     if (!selectedLevel) {
       alert('⚠️ Vui lòng chọn Level trước khi lưu quiz!');
       return;
@@ -1289,7 +1323,7 @@ function ContentManagementPage() {
     );
     
     if (success) {
-      // ✅ NEW: Verify quiz was saved to Supabase
+      // NEW: Verify quiz was saved to Supabase
       let savedToSupabase = false;
       if (selectedLevel && userId) {
         try {
@@ -1320,7 +1354,7 @@ function ContentManagementPage() {
       setShowQuizForm(false);
       setEditingQuiz(null);
       
-      // ✅ NEW: Show detailed success message
+      // NEW: Show detailed success message
       if (savedToSupabase) {
         alert(
           `✅ Quiz đã được lưu thành công!\n\n` +
@@ -1370,7 +1404,7 @@ function ContentManagementPage() {
     console.log(`🗑️ [Delete Quiz] Starting deletion: ${book.id}/${chapter.id}/${lesson.id}`);
     
     try {
-      // ✅ Step 1: Xóa từ Supabase trước (nếu có)
+      // Step 1: Xóa từ Supabase trước (nếu có)
       if (selectedLevel) {
         try {
           const { supabase } = await import('../../services/supabaseClient.js');
@@ -1392,7 +1426,7 @@ function ContentManagementPage() {
         }
       }
       
-      // ✅ Step 2: Xóa từ storage (IndexedDB + localStorage)
+      // Step 2: Xóa từ storage (IndexedDB + localStorage)
       const success = await storageManager.deleteQuiz(book.id, chapter.id, lesson.id, selectedLevel);
       
       if (success) {
@@ -1422,7 +1456,7 @@ function ContentManagementPage() {
     }
   };
 
-  // ✅ NEW: Cleanup invalid quizzes
+  // NEW: Cleanup invalid quizzes
   const handleCleanupQuizzes = async () => {
     if (!confirm(t('contentManagement.confirm.cleanupQuizzes') || '⚠️ Bạn có chắc muốn dọn dẹp tất cả quiz không hợp lệ?\n\nQuiz không hợp lệ sẽ bị xóa khỏi storage.')) {
       return;
@@ -1447,7 +1481,7 @@ function ContentManagementPage() {
             for (const lesson of lessons) {
               const quiz = await storageManager.getQuiz(book.id, chapter.id, lesson.id, selectedLevel);
               if (quiz) {
-                // ✅ Verify quiz exists in Supabase before adding
+                // Verify quiz exists in Supabase before adding
                 let isValidQuiz = true;
                 if (selectedLevel) {
                   try {
@@ -1491,7 +1525,7 @@ function ContentManagementPage() {
     }
   };
 
-  // ✅ NEW: Export data to JSON file (by level or all)
+  // NEW: Export data to JSON file (by level or all)
 
   return (
     <div className="flex-1 flex justify-center px-3 sm:px-5 md:px-6">
@@ -1518,7 +1552,7 @@ function ContentManagementPage() {
           </div>
         </div>
 
-        {/* ✅ Breadcrumb Navigation */}
+        {/* Breadcrumb Navigation */}
         {(hierarchyPath.series || hierarchyPath.book || hierarchyPath.chapter || hierarchyPath.lesson) && (
           <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-[3px] border-blue-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-3 sm:p-4">
             <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -1588,13 +1622,13 @@ function ContentManagementPage() {
           </div>
         )}
 
-        {/* ✅ NEW: View Mode Toggle */}
+        {/* NEW: View Mode Toggle */}
         <div className="mb-4 bg-white rounded-lg border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-2 flex gap-2">
           <button
             onClick={() => {
               setViewMode('overview');
               setHierarchyPath({ level: null, series: null, book: null, chapter: null, lesson: null });
-              // ✅ Trigger refresh khi quay lại overview để cập nhật stats mới nhất
+              // Trigger refresh khi quay lại overview để cập nhật stats mới nhất
               setOverviewRefreshTrigger(prev => prev + 1);
             }}
             className={`flex-1 px-4 py-2 rounded-lg font-black transition-all uppercase text-sm ${
@@ -1620,7 +1654,7 @@ function ContentManagementPage() {
           </button>
         </div>
 
-        {/* ✅ NEW: All Levels Overview */}
+        {/* NEW: All Levels Overview */}
         {viewMode === 'overview' ? (
           <AllLevelsOverview
             onLevelClick={(level) => {
@@ -1666,7 +1700,7 @@ function ContentManagementPage() {
             </div>
           </div>
 
-          {/* ✅ NEW: Search and Filter Bar */}
+          {/* NEW: Search and Filter Bar */}
           <div className="bg-white rounded-lg shadow-lg p-3 sm:p-4">
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               {/* Search */}
@@ -1766,7 +1800,7 @@ function ContentManagementPage() {
             expandedSeries={expandedSeries}
             setExpandedSeries={setExpandedSeries}
             onAddSeries={() => {
-              // ✅ Auto-generate series ID
+              // Auto-generate series ID
               const seriesNumbers = series
                 .map(s => {
                   const match = s.id.match(/series-(\d+)/i);
@@ -1840,12 +1874,12 @@ function ContentManagementPage() {
                   const bookChapters = chaptersData[bookId] || [];
                   for (const chapter of bookChapters) {
                     await storageManager.deleteLessons(bookId, chapter.id);
-                    // ✅ FIXED: Truyền level để xóa quiz từ Supabase
+                    // FIXED: Truyền level để xóa quiz từ Supabase
                     await storageManager.deleteQuiz(bookId, chapter.id, null, selectedLevel);
                   }
                 }
 
-                // ✅ Trigger refresh AllLevelsOverview stats
+                // Trigger refresh AllLevelsOverview stats
                 setOverviewRefreshTrigger(prev => prev + 1);
                 
                 alert(t('contentManagement.messages.seriesDeleted', { 
@@ -1863,11 +1897,11 @@ function ContentManagementPage() {
               const [movedLesson] = reorderedLessons.splice(fromIndex, 1);
               reorderedLessons.splice(toIndex, 0, movedLesson);
               
-              // ✅ FIXED: Update both 'order' (legacy) and 'orderIndex' (Supabase) for all lessons
+              // FIXED: Update both 'order' (legacy) and 'orderIndex' (Supabase) for all lessons
               const updatedLessons = reorderedLessons.map((lesson, index) => ({
                 ...lesson,
                 order: index + 1,        // Legacy field
-                orderIndex: index + 1    // ✅ Supabase field - ensures order is saved to database
+                orderIndex: index + 1    // Supabase field - ensures order is saved to database
               }));
               
               console.log(`[ContentManagement] 🔄 Reordering lessons: ${fromIndex} → ${toIndex}`, {
@@ -1905,7 +1939,7 @@ function ContentManagementPage() {
       >
         <form onSubmit={handleSaveBook} className="space-y-3 sm:space-y-4 min-w-0 overflow-x-hidden">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            {/* ✅ ENHANCED: ID Field with Stepper */}
+            {/* ENHANCED: ID Field with Stepper */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('contentManagement.forms.bookId')}
@@ -1949,13 +1983,13 @@ function ContentManagementPage() {
                 </p>
               )}
             </div>
-            {/* ✅ ENHANCED: Category Dropdown with Auto-ID Trigger */}
+            {/* ENHANCED: Category Dropdown with Auto-ID Trigger */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {t('contentManagement.forms.bookCategory')}
               </label>
               {bookForm.category && !editingBook ? (
-                // ✅ Nếu đã có category (chỉ khi thêm mới), hiển thị readonly
+                // Nếu đã có category (chỉ khi thêm mới), hiển thị readonly
                 <div className="space-y-2">
                   <div className="px-3 sm:px-4 py-2.5 sm:py-2 border-2 border-blue-300 bg-blue-50 rounded-lg text-sm sm:text-base font-semibold text-blue-800">
                     📦 {bookForm.category}
@@ -1976,14 +2010,14 @@ function ContentManagementPage() {
                   </p>
                 </div>
               ) : (
-                // ✅ Nếu chưa có category, hiển thị dropdown
+                // Nếu chưa có category, hiển thị dropdown
                 <div className="space-y-2">
                   <div className="flex flex-col sm:flex-row gap-2">
                     <select
                       value={bookForm.category}
                       onChange={(e) => {
                         const newCategory = e.target.value;
-                        // ✅ Trigger auto-ID update khi change category (chỉ khi thêm mới)
+                        // Trigger auto-ID update khi change category (chỉ khi thêm mới)
                         if (!editingBook && newCategory) {
                           const newId = generateBookId(newCategory);
                           setBookForm({ ...bookForm, id: newId, category: newCategory });
@@ -2020,7 +2054,7 @@ function ContentManagementPage() {
                 </div>
               )}
                 </div>
-                {/* ✅ ENHANCED: Title Field with Realtime Duplicate Check */}
+                {/* ENHANCED: Title Field with Realtime Duplicate Check */}
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {t('contentManagement.forms.bookName')}
@@ -2030,7 +2064,7 @@ function ContentManagementPage() {
                     value={bookForm.title}
                     onChange={(e) => {
                       setBookForm({ ...bookForm, title: e.target.value });
-                      // ✅ Realtime validation
+                      // Realtime validation
                       validateBookTitle(e.target.value);
                     }}
                     required
@@ -2055,7 +2089,7 @@ function ContentManagementPage() {
                   )}
                 </div>
                 
-                {/* ✅ ENHANCED: Preview existing books with Search & Copy */}
+                {/* ENHANCED: Preview existing books with Search & Copy */}
                 <div className="sm:col-span-2">
                   <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 sm:p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -2068,7 +2102,7 @@ function ContentManagementPage() {
                       </span>
                     </div>
                     
-                    {/* ✅ Search Bar */}
+                    {/* Search Bar */}
                     <div className="mb-3">
                       <input
                         type="text"
@@ -2082,7 +2116,7 @@ function ContentManagementPage() {
                     {books.length > 0 ? (
                       <div className="max-h-60 overflow-y-auto space-y-2 pr-2" id="booksList">
                         {(() => {
-                          // ✅ Filter books theo search query và category
+                          // Filter books theo search query và category
                           const filteredBooks = books.filter(b => {
                             const matchesSearch = !bookSearchQuery || 
                               b.id.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
@@ -2091,7 +2125,7 @@ function ContentManagementPage() {
                             return matchesSearch && matchesCategory;
                           });
                           
-                          // ✅ Nhóm books theo category
+                          // Nhóm books theo category
                           const groupedBooks = filteredBooks.reduce((acc, book) => {
                             const category = book.category || t('contentManagement.forms.noCategory');
                             if (!acc[category]) {
@@ -2131,7 +2165,7 @@ function ContentManagementPage() {
                                     <span className="font-mono font-semibold">{book.id}</span>
                                     {book.title && <span className="ml-2">- {book.title}</span>}
                                   </span>
-                                  {/* ✅ Copy Buttons */}
+                                  {/* Copy Buttons */}
                                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
                                       type="button"
@@ -2167,7 +2201,7 @@ function ContentManagementPage() {
                     )}
                   </div>
                 </div>
-                {/* ✅ ENHANCED: Image Upload with Device Support */}
+                {/* ENHANCED: Image Upload with Device Support */}
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     🖼️ {t('contentManagement.forms.coverImage')}
@@ -2253,7 +2287,7 @@ function ContentManagementPage() {
                 </div>
               </div>
 
-              {/* ✅ NEW: Placeholder Design Selection */}
+              {/* NEW: Placeholder Design Selection */}
               <div className="space-y-2">
                 <label className="block text-sm font-bold text-gray-800 mb-2">
                   🎨 Thiết kế bìa mặc định / Default Cover Design
@@ -2304,7 +2338,7 @@ function ContentManagementPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
-                {/* ✅ ENHANCED: Submit Button with Loading State */}
+                {/* ENHANCED: Submit Button with Loading State */}
                 <button
                   type="submit"
                   disabled={isSavingBook || bookFormValidation.titleExists}
@@ -2389,7 +2423,7 @@ function ContentManagementPage() {
                 />
               </div>
 
-              {/* ✅ NEW: Preview existing chapters and quizzes */}
+              {/* NEW: Preview existing chapters and quizzes */}
               {selectedBook && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mt-4">
                   <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
@@ -2405,7 +2439,7 @@ function ContentManagementPage() {
                     {selectedBook.existingChapters && selectedBook.existingChapters.length > 0 ? (
                       <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
                         {(() => {
-                          // ✅ Sắp xếp chapters theo ID trước khi hiển thị
+                          // Sắp xếp chapters theo ID trước khi hiển thị
                           const sortedChapters = [...selectedBook.existingChapters].sort((a, b) => {
                             const getNumber = (id) => {
                               const match = id.match(/(\d+)/);
@@ -2498,7 +2532,7 @@ function ContentManagementPage() {
             </form>
       </Modal>
 
-      {/* ✅ NEW: Series Form Modal - Responsive */}
+      {/* NEW: Series Form Modal - Responsive */}
       <Modal 
         isOpen={showSeriesForm} 
         onClose={() => setShowSeriesForm(false)} 
@@ -2520,7 +2554,7 @@ function ContentManagementPage() {
                   s.id === editingSeries.id ? { 
                     ...s, // Giữ nguyên tất cả properties cũ
                     ...seriesForm, // Update với form data
-                    name: oldName // ✅ FORCE giữ nguyên tên cũ
+                    name: oldName // FORCE giữ nguyên tên cũ
                   } : s
                 );
                 // Update books: change category name if series name changed
@@ -2547,10 +2581,10 @@ function ContentManagementPage() {
               details: `${editingSeries ? t('contentManagement.messages.seriesUpdated') : t('contentManagement.messages.seriesAdded')}\n   - ID: ${editingSeries ? editingSeries.id : 'series-' + Date.now()}\n   - Tên: ${seriesForm.name}\n   - Mô tả: ${seriesForm.description || 'Chưa có'}`
             }));
             
-            // ✅ Trigger refresh AllLevelsOverview stats
+            // Trigger refresh AllLevelsOverview stats
             setOverviewRefreshTrigger(prev => prev + 1);
               
-            // ✅ Auto-select new series in book form if it was opened from book form
+            // Auto-select new series in book form if it was opened from book form
             if (!editingSeries && showBookForm && !bookForm.category) {
               setBookForm({ ...bookForm, category: seriesForm.name });
             }
@@ -2597,7 +2631,7 @@ function ContentManagementPage() {
                 />
               </div>
               
-              {/* ✅ NEW: Preview existing series - Show ALL series with scroll */}
+              {/* NEW: Preview existing series - Show ALL series with scroll */}
               <div>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                   <h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
@@ -2647,7 +2681,7 @@ function ContentManagementPage() {
             </form>
       </Modal>
 
-      {/* ✅ SRS INTEGRATION: Enhanced Lesson Modal */}
+      {/* SRS INTEGRATION: Enhanced Lesson Modal */}
       <EnhancedLessonModal
         isOpen={showLessonForm && !!selectedBook && !!selectedChapter}
         onClose={() => {
@@ -2666,7 +2700,7 @@ function ContentManagementPage() {
         }}
       />
 
-      {/* ✅ NEW: Quiz Form Modal */}
+      {/* NEW: Quiz Form Modal */}
       <Modal 
         isOpen={showQuizForm && !!selectedBook && !!selectedChapter && !!selectedLesson} 
         onClose={() => setShowQuizForm(false)} 
@@ -2688,7 +2722,7 @@ function ContentManagementPage() {
             />
           </div>
 
-          {/* ✅ NEW: Existing Questions Display */}
+          {/* NEW: Existing Questions Display */}
           {quizForm.questions && quizForm.questions.length > 0 && (
             <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
               <h4 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
@@ -2756,7 +2790,7 @@ function ContentManagementPage() {
                       {
                         id: newId,
                         text: '',
-                        audioUrl: '', // ✅ NEW: Audio support
+                        audioUrl: '', // NEW: Audio support
                         options: [
                           { label: 'A', text: '' },
                           { label: 'B', text: '' },
@@ -2817,7 +2851,7 @@ function ContentManagementPage() {
                         }`}
                         placeholder={t('contentManagement.forms.questionPlaceholder')}
                       />
-                      {/* ✅ Duplicate Warning */}
+                      {/* Duplicate Warning */}
                       {checkDuplicateQuestion(question.text, qIdx) && (
                         <p className="text-xs text-red-600 mt-1 flex items-center gap-1 animate-pulse">
                           <span>⚠️</span>
@@ -2826,7 +2860,7 @@ function ContentManagementPage() {
                       )}
                     </div>
 
-                    {/* ✅ NEW: Audio Upload for Listening Questions */}
+                    {/* NEW: Audio Upload for Listening Questions */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         🎧 {t('contentManagement.forms.audioFile')}
@@ -2939,7 +2973,7 @@ function ContentManagementPage() {
             </div>
           </div>
 
-          {/* ✅ NEW: Smart Suggestion - Switch to Quiz Editor */}
+          {/* NEW: Smart Suggestion - Switch to Quiz Editor */}
           {quizForm.questions && quizForm.questions.length >= 3 && (
             <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-purple-300 rounded-lg">
               <div className="flex items-start gap-3">
@@ -2998,7 +3032,7 @@ function ContentManagementPage() {
             </div>
           )}
 
-          {/* ✅ NEW: Link to Quiz Editor (Always available) */}
+          {/* NEW: Link to Quiz Editor (Always available) */}
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center justify-between gap-3">
               <div className="flex-1">
@@ -3053,7 +3087,7 @@ function ContentManagementPage() {
   );
 }
 
-// ✅ REMOVED: AllLevelsOverview và HierarchyView đã được tách ra thành components riêng
+// REMOVED: AllLevelsOverview và HierarchyView đã được tách ra thành components riêng
 // Xem: src/components/admin/content/AllLevelsOverview.jsx
 // Xem: src/components/admin/content/HierarchyView.jsx
 

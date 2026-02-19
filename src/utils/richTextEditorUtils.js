@@ -3,27 +3,27 @@
 
 /**
  * Process pasted HTML - clean up, convert formatting, support furigana
- * ✅ IMPROVED: Better handling of Word/Google Docs formats
+ * IMPROVED: Better handling of Word/Google Docs formats
  * @param {string} html - HTML string from clipboard
  * @returns {string} - Cleaned HTML string
  */
 export const processPastedHTML = (html, plainText = null) => {
   if (!html || !html.trim()) {
-    // ✅ NEW: If no HTML, try to process plain text with newlines
+    // NEW: If no HTML, try to process plain text with newlines
     if (plainText) {
       return processPlainTextWithNewlines(plainText);
     }
     return '';
   }
   
-  // ✅ DEBUG: Log original HTML to understand format (can remove in production)
+  // DEBUG: Log original HTML to understand format (can remove in production)
   // console.log('[processPastedHTML] Original HTML:', html.substring(0, 500));
   
   // Create temporary div to parse HTML
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
   
-  // ✅ IMPROVED: Remove all inline styles (Word/Google Docs add many)
+  // IMPROVED: Remove all inline styles (Word/Google Docs add many)
   // But preserve structure - don't remove style attribute until after processing
   tempDiv.querySelectorAll('*').forEach(el => {
     // Store original style for processing if needed
@@ -51,7 +51,7 @@ export const processPastedHTML = (html, plainText = null) => {
     el.replaceWith(em);
   });
   
-  // ✅ IMPROVED: Handle <span> with font-weight:bold → <strong>
+  // IMPROVED: Handle <span> with font-weight:bold → <strong>
   tempDiv.querySelectorAll('span').forEach(el => {
     const style = el.getAttribute('style') || '';
     if (style.includes('font-weight') && (style.includes('bold') || style.includes('700'))) {
@@ -72,7 +72,7 @@ export const processPastedHTML = (html, plainText = null) => {
     }
   });
   
-  // ✅ IMPROVED: Convert <p> to preserve line breaks (handle empty paragraphs)
+  // IMPROVED: Convert <p> to preserve line breaks (handle empty paragraphs)
   // Process in reverse order to avoid issues with live NodeList
   const paragraphs = Array.from(tempDiv.querySelectorAll('p'));
   paragraphs.reverse().forEach((el) => {
@@ -98,7 +98,7 @@ export const processPastedHTML = (html, plainText = null) => {
     }
   });
   
-  // ✅ IMPROVED: Convert <div> to <br/> if it's a line break (better detection)
+  // IMPROVED: Convert <div> to <br/> if it's a line break (better detection)
   // Process in reverse order to avoid issues with live NodeList
   const divs = Array.from(tempDiv.querySelectorAll('div'));
   divs.reverse().forEach((el) => {
@@ -123,7 +123,7 @@ export const processPastedHTML = (html, plainText = null) => {
     }
   });
   
-  // ✅ IMPROVED: Handle line breaks from Word (often uses <o:p></o:p> or <br style="...">)
+  // IMPROVED: Handle line breaks from Word (often uses <o:p></o:p> or <br style="...">)
   tempDiv.querySelectorAll('br').forEach(br => {
     br.removeAttribute('style');
     br.removeAttribute('class');
@@ -145,10 +145,10 @@ export const processPastedHTML = (html, plainText = null) => {
     }
   });
   
-  // ✅ IMPROVED: Normalize whitespace (Word adds many &nbsp;)
+  // IMPROVED: Normalize whitespace (Word adds many &nbsp;)
   let processed = tempDiv.innerHTML;
   
-  // ✅ FIX: Preserve line breaks - convert newlines between tags to spaces, but keep <br/> tags
+  // FIX: Preserve line breaks - convert newlines between tags to spaces, but keep <br/> tags
   // First, protect <br/> tags by temporarily replacing them
   processed = processed.replace(/<br\s*\/?>/gi, '___BR_TAG___');
   
@@ -170,7 +170,7 @@ export const processPastedHTML = (html, plainText = null) => {
   const furiganaPattern = /([\u4E00-\u9FAF]+)\(([\u3040-\u309F\u30A0-\u30FF]+)\)/g;
   processed = processed.replace(furiganaPattern, '<ruby>$1<rt>$2</rt></ruby>');
   
-  // ✅ FIX: Don't remove all whitespace - only clean up excessive spaces between text
+  // FIX: Don't remove all whitespace - only clean up excessive spaces between text
   // But preserve structure around tags
   processed = processed.replace(/>\s+</g, '><'); // Remove whitespace between tags
   processed = processed.replace(/>\s+/g, '>'); // Remove whitespace after opening tag
@@ -339,12 +339,12 @@ export const normalizeImportedQuestion = (q, idx = 0) => {
   const options = normalizeOptions(q?.options || q?.answers || []);
   const defaultCorrect = 0; // Default to index 0 (A)
   
-  // ✅ FIX: Handle correctAnswer in multiple formats - FIXED ORDER
+  // FIX: Handle correctAnswer in multiple formats - FIXED ORDER
   let correctAnswer = defaultCorrect;
   
   // Case 1: Already a number - CHECK FIRST
   // Support both 0-based (0, 1, 2, 3) and 1-based (1, 2, 3, 4)
-  // ✅ FIX: Check 1-based FIRST (most common in JSON), then 0-based
+  // FIX: Check 1-based FIRST (most common in JSON), then 0-based
   if (typeof q?.correctAnswer === 'number') {
     if (q.correctAnswer >= 1 && q.correctAnswer <= 4) {
       // 1-based index (1, 2, 3, 4) - convert to 0-based (0, 1, 2, 3)
@@ -355,7 +355,7 @@ export const normalizeImportedQuestion = (q, idx = 0) => {
     }
   }
   // Case 2: Number as string - Support both 0-based and 1-based
-  // ✅ FIX: Check 1-based FIRST (most common in JSON), then 0-based
+  // FIX: Check 1-based FIRST (most common in JSON), then 0-based
   else if (typeof q?.correctAnswer === 'string') {
     const numValue = parseInt(q.correctAnswer, 10);
     if (!isNaN(numValue)) {
@@ -384,7 +384,7 @@ export const normalizeImportedQuestion = (q, idx = 0) => {
     }
   }
   
-  // ✅ DEBUG: Log normalization for troubleshooting
+  // DEBUG: Log normalization for troubleshooting
   if (idx < 3) {
     console.log(`🔍 [Normalize Q${idx + 1}] Original:`, q?.correctAnswer, `Type:`, typeof q?.correctAnswer, `→ Normalized:`, correctAnswer);
   }
@@ -396,16 +396,16 @@ export const normalizeImportedQuestion = (q, idx = 0) => {
     explanation = explanation.replace(/\\n/g, '<br/>');
   }
 
-  // ❌ REMOVED: Timing fields - audio chạy liên tục, thí sinh tự nghe và trả lời theo thứ tự
+  // REMOVED: Timing fields - audio chạy liên tục, thí sinh tự nghe và trả lời theo thứ tự
 
   return {
     id: q?.id || String(idx + 1),
     question: q?.text || q?.question || '',
     options: options.map(opt => opt.text || ''),
-    correctAnswer: correctAnswer, // ✅ Now properly normalized to index (0-3)
+    correctAnswer: correctAnswer, // Now properly normalized to index (0-3)
     explanation: explanation,
-    // ❌ REMOVED: Timing fields - audio chạy liên tục, thí sinh tự nghe và trả lời theo thứ tự
-    // ✅ Keep audio fields for backward compatibility (will be migrated to section in ExamManagementPage)
+    // REMOVED: Timing fields - audio chạy liên tục, thí sinh tự nghe và trả lời theo thứ tự
+    // Keep audio fields for backward compatibility (will be migrated to section in ExamManagementPage)
     audioUrl: q?.audioUrl || '',
     audioPath: q?.audioPath || '',
     audioName: q?.audioName || ''

@@ -1,5 +1,5 @@
 // src/components/StreakCounter.jsx
-// 🔥 Streak Counter Component - Display study streak in header
+// Streak Counter Component - Display study streak in header
 
 import React, { useState, useEffect } from 'react';
 import { getStudyStreak } from '../utils/lessonProgressTracker.js';

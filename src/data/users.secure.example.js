@@ -1,5 +1,5 @@
 // src/data/users.secure.example.js
-// 🔒 EXAMPLE: Secure version của users.js với password hashing và obfuscation
+// EXAMPLE: Secure version của users.js với password hashing và obfuscation
 // Đây là file ví dụ, không thay thế users.js hiện tại
 // Sử dụng làm reference để migrate sang secure storage
 
@@ -7,7 +7,7 @@ import { secureStorage, hashPassword, verifyPassword } from '@/utils/storageEncr
 import { logger } from '../utils/logger.js';
 
 /**
- * 🔒 SECURE VERSION: Save user password với hashing
+ * SECURE VERSION: Save user password với hashing
  * Passwords được hash (SHA-256) trước khi lưu vào secure storage
  */
 export async function saveUserPasswordSecure(userId, username, password) {
@@ -22,7 +22,7 @@ export async function saveUserPasswordSecure(userId, username, password) {
     // Lấy passwords đã lưu (nếu có)
     const savedPasswords = secureStorage.getItem('userPasswords') || {};
     
-    // ✅ CRITICAL: Lưu bằng cả id (number và string) và username để dễ tìm
+    // CRITICAL: Lưu bằng cả id (number và string) và username để dễ tìm
     // Đảm bảo tương thích với cả number và string ID
     savedPasswords[userId] = hashedPassword;
     savedPasswords[String(userId)] = hashedPassword; // Lưu cả string ID
@@ -50,7 +50,7 @@ export async function saveUserPasswordSecure(userId, username, password) {
 }
 
 /**
- * 🔒 SECURE VERSION: Login với password verification
+ * SECURE VERSION: Login với password verification
  * So sánh password input với hash đã lưu
  */
 export async function loginSecure(username, password) {
@@ -123,7 +123,7 @@ export async function loginSecure(username, password) {
 }
 
 /**
- * 🔄 MIGRATION: Migrate passwords từ plaintext sang hashed
+ * MIGRATION: Migrate passwords từ plaintext sang hashed
  * Chạy một lần để convert dữ liệu cũ
  */
 export async function migratePasswordsToSecure() {
@@ -192,7 +192,7 @@ export async function migratePasswordsToSecure() {
 }
 
 /**
- * 📝 USAGE EXAMPLE:
+ * USAGE EXAMPLE:
  * 
  * // 1. Migrate passwords (chạy một lần)
  * await migratePasswordsToSecure();

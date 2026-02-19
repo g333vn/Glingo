@@ -1,5 +1,5 @@
 // src/utils/duplicateHelper.js
-// 📋 Duplicate Helper - Clone lessons, chapters, etc.
+// Duplicate Helper - Clone lessons, chapters, etc.
 
 import storageManager from './localStorageManager.js';
 

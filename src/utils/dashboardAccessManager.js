@@ -1,5 +1,5 @@
 // src/utils/dashboardAccessManager.js
-// 🔒 DASHBOARD ACCESS CONTROL MANAGEMENT SYSTEM
+// DASHBOARD ACCESS CONTROL MANAGEMENT SYSTEM
 // Quản lý quyền truy cập dashboard cho người dùng
 
 const STORAGE_KEY = 'dashboardAccessControl';

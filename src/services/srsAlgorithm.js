@@ -1,5 +1,5 @@
 // src/services/srsAlgorithm.js
-// 🧠 SRS Algorithm Engine - SuperMemo SM-2 Implementation
+// SRS Algorithm Engine - SuperMemo SM-2 Implementation
 
 /**
  * SRS Algorithm Engine

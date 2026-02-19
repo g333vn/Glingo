@@ -19,7 +19,7 @@ function ModuleAccessGuard({ children, module }) {
       return;
     }
 
-    // ✅ Merge user and profile to get role
+    // Merge user and profile to get role
     const userWithRole = user ? {
       ...user,
       role: profile?.role || user.role || null

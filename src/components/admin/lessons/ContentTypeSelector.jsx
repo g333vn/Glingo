@@ -1,5 +1,5 @@
 // src/components/admin/lessons/ContentTypeSelector.jsx
-// 📚 Content Type Selector - Dropdown để chọn loại nội dung bài học
+// Content Type Selector - Dropdown để chọn loại nội dung bài học
 
 import React from 'react';
 import { useLanguage } from '../../../contexts/LanguageContext.jsx';

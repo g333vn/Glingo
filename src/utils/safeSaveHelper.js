@@ -53,7 +53,7 @@ export async function safeSaveCollection({
     const existingItemsList = existingItems || [];
     console.log(`[SafeSave] 📊 Loaded ${existingItemsList.length} existing ${tableName} from Supabase`);
     
-    // ✅ DEBUG: Log để kiểm tra format
+    // DEBUG: Log để kiểm tra format
     if (existingItemsList.length > 0) {
       console.log(`[SafeSave] 🔍 Sample existing item:`, JSON.stringify(existingItemsList[0], null, 2));
     }
@@ -167,14 +167,14 @@ export async function safeSaveCollection({
     // Upsert (insert + update) - batch operation
     const toUpsert = [...toInsert, ...toUpdate];
     if (toUpsert.length > 0) {
-      // ✅ FIXED: Supabase tự động detect composite primary key
+      // FIXED: Supabase tự động detect composite primary key
       // Không cần onConflict cho composite keys - Supabase sẽ tự handle
       // Chỉ dùng onConflict nếu có unique constraint đơn lẻ
       let upsertQuery = supabase
         .from(tableName)
         .upsert(toUpsert);
       
-      // ✅ FIXED: Chỉ dùng onConflict nếu có và là single column
+      // FIXED: Chỉ dùng onConflict nếu có và là single column
       // Với composite primary key, Supabase tự detect nên không cần onConflict
       if (onConflict && onConflict.length === 1) {
         // Chỉ dùng cho single column unique constraint
@@ -189,14 +189,14 @@ export async function safeSaveCollection({
         console.error(`[SafeSave] ❌ Error details:`, JSON.stringify(error, null, 2));
         results.errors.push({ type: 'upsert', error, count: toUpsert.length });
       } else {
-        // ✅ FIXED: Đếm chính xác inserted vs updated dựa trên data trả về
+        // FIXED: Đếm chính xác inserted vs updated dựa trên data trả về
         // Nếu data.length > 0 nghĩa là có records được upsert thành công
         const actualUpserted = data?.length || 0;
         results.inserted = toInsert.length;
         results.updated = toUpdate.length;
         console.log(`[SafeSave] ✅ Upserted ${actualUpserted} ${tableName} (${toInsert.length} inserted, ${toUpdate.length} updated)`);
         
-        // ✅ DEBUG: Log chi tiết để kiểm tra
+        // DEBUG: Log chi tiết để kiểm tra
         if (actualUpserted !== toUpsert.length) {
           console.warn(`[SafeSave] ⚠️ Warning: Expected to upsert ${toUpsert.length} but got ${actualUpserted} records`);
         }

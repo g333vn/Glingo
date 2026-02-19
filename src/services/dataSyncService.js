@@ -45,7 +45,7 @@ export async function scanLocalStorageForSync(userId) {
         const knowledgeBreakdown = data.knowledge;
         const listeningBreakdown = data.listening;
 
-        // ✅ PHƯƠNG ÁN 3 (HYBRID): Tính điểm theo công thức (correct/total) × maxScore
+        // PHƯƠNG ÁN 3 (HYBRID): Tính điểm theo công thức (correct/total) × maxScore
         // Xem chi tiết: archive/data/JLPT_SCORING_LOGIC_VI.md
         const SCORING_CONFIG = {
           knowledge: { max: 60 },

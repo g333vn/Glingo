@@ -1,5 +1,5 @@
 // src/pages/FlashcardReviewPage.jsx
-// 📱 Flashcard Review Page - Student review interface with SRS
+// Flashcard Review Page - Student review interface with SRS
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -42,7 +42,7 @@ function FlashcardReviewPage() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [startTime, setStartTime] = useState(null);
-  const [currentTime, setCurrentTime] = useState(Date.now()); // ✅ Add current time state
+  const [currentTime, setCurrentTime] = useState(Date.now()); // Add current time state
   const [sessionStats, setSessionStats] = useState({
     totalCards: 0,
     reviewedCards: 0,
@@ -64,7 +64,7 @@ function FlashcardReviewPage() {
 
       const db = await openDB('elearning-db', 3);
 
-      // ✅ FIXED: Scan all lessons to find the one with matching ID
+      // FIXED: Scan all lessons to find the one with matching ID
       // (IndexedDB uses composite key [bookId, chapterId], not lessonId)
       let lesson = null;
       
@@ -148,7 +148,7 @@ function FlashcardReviewPage() {
       ].filter(item => item.card); // Filter out any nulls
 
       if (reviewQueue.length === 0) {
-        // ✅ FIXED: Don't alert, show friendly "all caught up" screen
+        // FIXED: Don't alert, show friendly "all caught up" screen
         setSession({
           deckId,
           deckName: lesson.title || 'Flashcard Deck',
@@ -269,7 +269,7 @@ function FlashcardReviewPage() {
       endTime: new Date()
     }));
     
-    // ✅ Update study streak when finishing flashcard session
+    // Update study streak when finishing flashcard session
     updateStudyStreak(user);
     console.log('✅ Study streak updated after flashcard session');
   };
@@ -332,7 +332,7 @@ function FlashcardReviewPage() {
     return <SessionSummary stats={sessionStats} session={session} />;
   }
 
-  // ✅ NEW: All Caught Up Screen - Friendly UX
+  // NEW: All Caught Up Screen - Friendly UX
   if (!session) {
     return (
       <div className="w-full pr-0 md:pr-4">
@@ -386,7 +386,7 @@ function FlashcardReviewPage() {
   const currentItem = session.reviewQueue[currentCardIndex];
   const { card, progress } = currentItem;
   const progressPercent = ((currentCardIndex + 1) / session.reviewQueue.length) * 100;
-  // ✅ Calculate time elapsed using currentTime state (updates every second)
+  // Calculate time elapsed using currentTime state (updates every second)
   const timeElapsed = startTime ? Math.floor((currentTime - startTime.getTime()) / 1000) : 0;
 
   return (

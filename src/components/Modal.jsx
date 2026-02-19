@@ -1,5 +1,5 @@
 // src/components/Modal.jsx
-// ✨ NEO BRUTALISM + JAPANESE AESTHETIC MODAL
+// NEO BRUTALISM + JAPANESE AESTHETIC MODAL
 
 import React, { useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
@@ -27,7 +27,7 @@ function Modal({
   className = ''
 }) {
   
-  // ✅ 1. BODY SCROLL LOCK
+  // 1. BODY SCROLL LOCK
   useEffect(() => {
     if (isOpen) {
       const originalOverflow = document.body.style.overflow;
@@ -44,7 +44,7 @@ function Modal({
     }
   }, [isOpen]);
 
-  // ✅ 2. ESC KEY HANDLER
+  // 2. ESC KEY HANDLER
   const handleEscapeKey = useCallback((event) => {
     if (event.key === 'Escape' && closeOnEscape) {
       onClose();
@@ -58,7 +58,7 @@ function Modal({
     }
   }, [isOpen, handleEscapeKey]);
 
-  // ✅ 3. CLICK OUTSIDE HANDLER
+  // 3. CLICK OUTSIDE HANDLER
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget && closeOnClickOutside) {
       onClose();
@@ -77,12 +77,12 @@ function Modal({
         right: 0,
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        zIndex: 99999, // ✅ Increased to match admin pages and ensure modal is always on top
+        zIndex: 99999, // Increased to match admin pages and ensure modal is always on top
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
-        overflow: 'hidden', // ✅ Removed overflowY: 'auto' - overlay should not scroll
+        overflow: 'hidden', // Removed overflowY: 'auto' - overlay should not scroll
         overflowX: 'hidden',
       }}
       onClick={handleBackdropClick}
@@ -99,8 +99,8 @@ function Modal({
           boxShadow: '8px 8px 0px 0px rgba(0,0,0,1)',
           maxWidth,
           width: '100%',
-          maxHeight: '90vh', // ✅ Changed from calc(100vh - 2rem) to 90vh for better viewport fit
-          margin: 'auto', // ✅ Removed '2rem auto' - let flexbox center handle it
+          maxHeight: '90vh', // Changed from calc(100vh - 2rem) to 90vh for better viewport fit
+          margin: 'auto', // Removed '2rem auto' - let flexbox center handle it
           position: 'relative',
           display: 'flex',
           flexDirection: 'column',
@@ -109,7 +109,7 @@ function Modal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ✅ 4. HEADER với Close Button - NEO BRUTALISM */}
+        {/* 4. HEADER với Close Button - NEO BRUTALISM */}
         {(title || showCloseButton) && (
           <div
             style={{
@@ -177,7 +177,7 @@ function Modal({
           </div>
         )}
 
-        {/* ✅ 5. CONTENT với Internal Scroll */}
+        {/* 5. CONTENT với Internal Scroll */}
         <div
           style={{
             padding: '1.5rem',
