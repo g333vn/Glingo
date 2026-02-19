@@ -633,16 +633,19 @@ function QuizEditorPage() {
     setQuestions([...questions, newQuestion]);
   };
 
-  // NEW: Audio upload handler (Supabase Storage)
+  // Audio upload handler (Supabase Storage)
+  // Su dung functional state updater de tranh loi stale closure khi cap nhat questions
   const handleAudioUpload = async (file, questionIndex) => {
     if (!file) return;
     
+    // Kiem tra dinh dang file audio hop le
     const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/mp4'];
     if (!validTypes.includes(file.type)) {
       alert('❌ Chỉ hỗ trợ audio: MP3, WAV, OGG, M4A');
       return;
     }
     
+    // Kiem tra kich thuoc file (toi da 10MB)
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       alert(`❌ File quá lớn!\n\nKích thước: ${(file.size / 1024 / 1024).toFixed(2)}MB\nGiới hạn: 10MB`);
@@ -655,7 +658,7 @@ function QuizEditorPage() {
     try {
       const { uploadAudio, generateFilePath } = await import('@services/fileUploadService');
       
-      // Đường dẫn có ngữ nghĩa: level / book / chapter / lesson / question
+      // Duong dan co ngu nghia: level / book / chapter / lesson / question
       const safeLevel = selectedLevel || 'unknown-level';
       const safeBook = selectedBook || 'unknown-book';
       const safeChapter = selectedChapter || 'unknown-chapter';
@@ -664,25 +667,34 @@ function QuizEditorPage() {
       const prefix = `level-${safeLevel}/book-${safeBook}/chapter-${safeChapter}/lesson-${safeLesson}/${safeQuestion}`;
       const path = generateFilePath(prefix, file.name);
       
+      console.log('[QuizEditor] Dang upload audio len Supabase...', { path, fileName: file.name, size: file.size });
       const result = await uploadAudio(file, path);
       
       if (!result.success) {
-        console.error('[QuizEditor] ❌ Error uploading audio to Supabase:', result.error);
-        alert(t('quizEditor.validation.audioUploadError'));
+        console.error('[QuizEditor] Loi upload audio len Supabase:', result.error);
+        alert(`❌ Lỗi upload audio!\n\n${result.error?.message || 'Kiểm tra bucket audio-files trên Supabase Dashboard.'}`);
       } else {
-        console.log('[QuizEditor] ✅ Audio uploaded to Supabase:', result.url);
+        console.log('[QuizEditor] Upload audio thanh cong:', result.url);
         
-        const newQuestions = [...questions];
-        newQuestions[questionIndex].audioUrl = result.url;   // URL public trên Supabase
-        newQuestions[questionIndex].audioPath = path;        // Đường dẫn trong bucket
-        newQuestions[questionIndex].audioName = file.name;   // Tên file gốc
-        setQuestions(newQuestions);
+        // FIXED: Dung functional updater de luon lay state moi nhat, tranh stale closure
+        setQuestions(prevQuestions => prevQuestions.map((q, idx) => {
+          if (idx === questionIndex) {
+            // Tao object moi (deep copy) de React nhan dien thay doi
+            return {
+              ...q,
+              audioUrl: result.url,    // URL public tren Supabase
+              audioPath: path,         // Duong dan trong bucket
+              audioName: file.name     // Ten file goc
+            };
+          }
+          return q;
+        }));
         
         alert(`✅ Upload audio thành công!\n\nFile: ${file.name}`);
       }
     } catch (error) {
-      console.error('[QuizEditor] ❌ Unexpected error during audio upload:', error);
-      alert(t('quizEditor.validation.audioUploadError'));
+      console.error('[QuizEditor] Loi khong mong doi khi upload audio:', error);
+      alert(`❌ Lỗi upload audio!\n\n${error?.message || 'Vui lòng kiểm tra Console (F12) để xem chi tiết.'}`);
     } finally {
       setIsUploadingAudio(false);
       setUploadingAudioIndex(-1);
@@ -3147,15 +3159,20 @@ ${q.explanation ? `\n${t('quizEditor.preview.copy.explanation')}\n${q.explanatio
                     <button
                       type="button"
                       onClick={() => {
+                        // Tao input file moi moi lan click de tranh stale closure
+                        // va dam bao onchange luon tro den handleAudioUpload moi nhat
                         if (!audioInputRefs.current[qIndex]) {
                           audioInputRefs.current[qIndex] = document.createElement('input');
                           audioInputRefs.current[qIndex].type = 'file';
                           audioInputRefs.current[qIndex].accept = 'audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/mp4';
-                          audioInputRefs.current[qIndex].onchange = (e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleAudioUpload(file, qIndex);
-                          };
                         }
+                        // FIXED: Luon gan lai onchange handler de tranh stale closure
+                        // va reset value de co the chon lai cung file
+                        audioInputRefs.current[qIndex].value = '';
+                        audioInputRefs.current[qIndex].onchange = (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleAudioUpload(file, qIndex);
+                        };
                         audioInputRefs.current[qIndex].click();
                       }}
                       disabled={isUploadingAudio && uploadingAudioIndex === qIndex}

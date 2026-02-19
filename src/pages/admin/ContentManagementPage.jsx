@@ -526,18 +526,19 @@ function ContentManagementPage() {
     }
   };
 
-  // NEW: Audio upload handler (for quiz questions) - Updated to use Supabase Storage
+  // Audio upload handler (cho quiz questions) - Upload len Supabase Storage
+  // FIXED: Dung functional state updater de tranh stale closure
   const handleAudioUpload = async (file, questionIndex) => {
     if (!file) return;
     
-    // Validate file type
+    // Kiem tra dinh dang file audio
     const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/mp4'];
     if (!validTypes.includes(file.type)) {
       alert(t('contentManagement.upload.audioOnly'));
       return;
     }
     
-    // Validate file size (max 10MB)
+    // Kiem tra kich thuoc file (toi da 10MB)
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       alert(t('contentManagement.upload.fileTooLarge', { size: (file.size / 1024 / 1024).toFixed(2), limit: '10' }));
@@ -548,9 +549,9 @@ function ContentManagementPage() {
     setUploadingAudioIndex(questionIndex);
     
     try {
-      // Upload to Supabase Storage
+      // Upload len Supabase Storage
       const { uploadAudio, generateFilePath } = await import('@services/fileUploadService');
-      // Đường dẫn có ngữ nghĩa: level / book / chapter / lesson / question
+      // Duong dan co ngu nghia: level / book / chapter / lesson / question
       const safeLevel = selectedLevel || 'unknown-level';
       const safeBook = selectedBook?.id || 'unknown-book';
       const safeChapter = selectedChapter?.id || 'unknown-chapter';
@@ -559,13 +560,20 @@ function ContentManagementPage() {
       const prefix = `level-${safeLevel}/book-${safeBook}/chapter-${safeChapter}/lesson-${safeLesson}/${safeQuestion}`;
       const path = generateFilePath(prefix, file.name);
       
+      console.log('[ContentMgmt] Dang upload audio len Supabase...', { path, fileName: file.name });
       const result = await uploadAudio(file, path);
       
       if (result.success) {
-        // Update question audioUrl with Supabase URL
-        const newQuestions = [...quizForm.questions];
-        newQuestions[questionIndex].audioUrl = result.url;
-        setQuizForm({ ...quizForm, questions: newQuestions });
+        // FIXED: Dung functional updater de cap nhat audioUrl voi state moi nhat
+        setQuizForm(prevForm => ({
+          ...prevForm,
+          questions: prevForm.questions.map((q, idx) => {
+            if (idx === questionIndex) {
+              return { ...q, audioUrl: result.url };
+            }
+            return q;
+          })
+        }));
         
         setIsUploadingAudio(false);
         setUploadingAudioIndex(-1);
@@ -574,7 +582,7 @@ function ContentManagementPage() {
         throw new Error(result.error?.message || 'Upload failed');
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('[ContentMgmt] Loi upload audio:', error);
       alert(t('contentManagement.upload.audioUploadError') + ': ' + getErrorMessage(error, 'Audio Upload'));
       setIsUploadingAudio(false);
       setUploadingAudioIndex(-1);
@@ -2880,15 +2888,19 @@ function ContentManagementPage() {
                         <button
                           type="button"
                           onClick={() => {
+                            // Tao input file neu chua co
                             if (!audioInputRefs.current[qIdx]) {
                               audioInputRefs.current[qIdx] = document.createElement('input');
                               audioInputRefs.current[qIdx].type = 'file';
                               audioInputRefs.current[qIdx].accept = 'audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/mp4';
-                              audioInputRefs.current[qIdx].onchange = (e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleAudioUpload(file, qIdx);
-                              };
                             }
+                            // FIXED: Luon gan lai onchange de tranh stale closure
+                            // va reset value de co the chon lai cung file
+                            audioInputRefs.current[qIdx].value = '';
+                            audioInputRefs.current[qIdx].onchange = (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleAudioUpload(file, qIdx);
+                            };
                             audioInputRefs.current[qIdx].click();
                           }}
                           disabled={isUploadingAudio && uploadingAudioIndex === qIdx}
