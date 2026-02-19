@@ -12,7 +12,8 @@ import { calculateRetention, CARD_STATES } from './srsAlgorithm.js';
 // ========== CONSTANTS ==========
 
 const DB_NAME = 'elearning-db';
-const DB_VERSION = 3;
+// Dong bo version voi indexedDBManager (da nang cap len version 4)
+const DB_VERSION = 4;
 
 // ========== DAILY STATS ==========
 

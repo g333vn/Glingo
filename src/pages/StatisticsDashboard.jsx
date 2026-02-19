@@ -2,8 +2,9 @@
 // Statistics Dashboard - Comprehensive learning statistics
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { openDB } from 'idb';
+import { supabase } from '../services/supabaseClient.js';
 import {
   calculateOverallStats,
   getTodayProgress,
@@ -22,6 +23,7 @@ import LoadingSpinner from '../components/LoadingSpinner.jsx';
 function StatisticsDashboard() {
   const { deckId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
 
   // ========== STATE ==========
@@ -39,42 +41,74 @@ function StatisticsDashboard() {
     loadStatistics();
   }, [deckId]);
 
-  const loadStatistics = async () => {
+  // Tim bai hoc tu nhieu nguon: route state > IndexedDB > Supabase
+  const findLesson = async () => {
+    // Nguon 1: Route state (truyen tu SRSWidget)
+    const stateLesson = location.state?.lesson;
+    if (stateLesson && stateLesson.id === deckId) {
+      console.log('  - Tim thay lesson tu route state');
+      return stateLesson;
+    }
+
+    // Nguon 2: IndexedDB cache
     try {
-      setIsLoading(true);
-
-      console.log('📊 Loading statistics for deckId:', deckId);
-
-      const db = await openDB('elearning-db', 3);
-
-      // FIXED: Scan all lesson groups to find the lesson (same fix as FlashcardReviewPage)
-      let lesson = null;
-      
-      console.log('  - Scanning all lesson groups in IndexedDB...');
+      const db = await openDB('elearning-db', 4);
       const allLessonGroups = await db.getAll('lessons');
-      console.log('  - Total lesson groups:', allLessonGroups.length);
-      
-      // Each group contains { bookId, chapterId, lessons: [...] }
       for (const group of allLessonGroups) {
         if (group.lessons && Array.isArray(group.lessons)) {
           const found = group.lessons.find(l => l.id === deckId);
           if (found) {
-            lesson = found;
-            console.log(`  - ✅ Found lesson in group [${group.bookId}, ${group.chapterId}]`);
-            break;
+            console.log(`  - Tim thay lesson trong IndexedDB [${group.bookId}, ${group.chapterId}]`);
+            return found;
           }
         }
       }
+    } catch (err) {
+      console.warn('  - Khong the doc IndexedDB:', err.message);
+    }
+
+    // Nguon 3: Truy van Supabase truc tiep
+    try {
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('id', deckId)
+        .maybeSingle();
+
+      if (!error && data) {
+        console.log('  - Tim thay lesson tu Supabase');
+        return {
+          id: data.id,
+          title: data.title,
+          srs: data.srs,
+          orderIndex: data.order_index
+        };
+      }
+    } catch (err) {
+      console.warn('  - Khong the truy van Supabase:', err.message);
+    }
+
+    return null;
+  };
+
+  const loadStatistics = async () => {
+    try {
+      setIsLoading(true);
+
+      console.log('Loading statistics cho deckId:', deckId);
+
+      // Tim bai hoc tu nhieu nguon du lieu
+      const lesson = await findLesson();
       
       if (!lesson) {
-        alert('❌ Không tìm thấy deck!\n\n' +
+        alert('Khong tim thay deck!\n\n' +
               `Deck ID: ${deckId}\n\n` +
-              'Vui lòng quay lại trang bài học và thử lại.');
+              'Vui long quay lai trang bai hoc va thu lai.');
         navigate(-1);
         return;
       }
 
-      console.log('✅ Deck found:', lesson.title || lesson.id);
+      console.log('Deck found:', lesson.title || lesson.id);
 
       setDeckInfo({
         id: deckId,

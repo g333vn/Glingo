@@ -2,7 +2,7 @@
 // Flashcard Review Page - Student review interface with SRS
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   calculateNextReview, 
   initializeCardProgress,
@@ -14,6 +14,7 @@ import {
   CARD_STATES
 } from '../services/srsAlgorithm.js';
 import { openDB } from 'idb';
+import { supabase } from '../services/supabaseClient.js';
 import { updateStudyStreak } from '../utils/lessonProgressTracker.js';
 import { useLanguage } from '../contexts/LanguageContext.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -33,6 +34,7 @@ import LoadingSpinner from '../components/LoadingSpinner.jsx';
 function FlashcardReviewPage() {
   const { deckId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
   const { user } = useAuth();
 
@@ -56,61 +58,105 @@ function FlashcardReviewPage() {
     loadReviewSession();
   }, [deckId]);
 
-  const loadReviewSession = async () => {
+  // Tim bai hoc tu nhieu nguon: route state > IndexedDB > Supabase
+  const findLesson = async (db) => {
+    // Nguon 1: Route state (truyen tu SRSWidget, du lieu chinh xac nhat)
+    const stateLesson = location.state?.lesson;
+    if (stateLesson && stateLesson.id === deckId) {
+      console.log('  - Tim thay lesson tu route state');
+      return stateLesson;
+    }
+
+    // Nguon 2: IndexedDB cache (ho tro offline)
     try {
-      setIsLoading(true);
-
-      console.log('🔍 Loading review session for deckId:', deckId);
-
-      const db = await openDB('elearning-db', 3);
-
-      // FIXED: Scan all lessons to find the one with matching ID
-      // (IndexedDB uses composite key [bookId, chapterId], not lessonId)
-      let lesson = null;
-      
-      console.log('  - Scanning all lesson groups in IndexedDB...');
       const allLessonGroups = await db.getAll('lessons');
-      console.log('  - Total lesson groups:', allLessonGroups.length);
-      
-      // Each group contains { bookId, chapterId, lessons: [...] }
       for (const group of allLessonGroups) {
         if (group.lessons && Array.isArray(group.lessons)) {
           const found = group.lessons.find(l => l.id === deckId);
           if (found) {
-            lesson = found;
-            console.log(`  - ✅ Found lesson in group [${group.bookId}, ${group.chapterId}]`);
-            break;
+            console.log(`  - Tim thay lesson trong IndexedDB [${group.bookId}, ${group.chapterId}]`);
+            return found;
           }
         }
       }
+    } catch (err) {
+      console.warn('  - Khong the doc IndexedDB:', err.message);
+    }
+
+    // Nguon 3: Truy van truc tiep Supabase (fallback khi cache thieu hoac cu)
+    try {
+      console.log('  - Thu truy van Supabase theo lesson ID...');
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('id', deckId)
+        .maybeSingle();
+
+      if (!error && data) {
+        // Chuyen doi tu dinh dang Supabase sang dinh dang app
+        const lesson = {
+          id: data.id,
+          bookId: data.book_id,
+          chapterId: data.chapter_id,
+          level: data.level,
+          title: data.title,
+          description: data.description,
+          contentType: data.content_type,
+          pdfUrl: data.pdf_url,
+          htmlContent: data.html_content,
+          theory: data.theory,
+          srs: data.srs,
+          orderIndex: data.order_index
+        };
+        console.log('  - Tim thay lesson tu Supabase');
+        return lesson;
+      }
+    } catch (err) {
+      console.warn('  - Khong the truy van Supabase:', err.message);
+    }
+
+    return null;
+  };
+
+  const loadReviewSession = async () => {
+    try {
+      setIsLoading(true);
+
+      console.log('Loading review session cho deckId:', deckId);
+
+      // Su dung version 4 dong bo voi indexedDBManager
+      const db = await openDB('elearning-db', 4);
+
+      // Tim bai hoc tu nhieu nguon du lieu
+      const lesson = await findLesson(db);
       
-      console.log('📦 Final lesson object:', lesson);
+      console.log('Ket qua tim bai hoc:', lesson ? (lesson.title || lesson.id) : 'KHONG TIM THAY');
       
       if (!lesson) {
-        alert('❌ Không tìm thấy bài học!\n\n' +
+        alert('Khong tim thay bai hoc!\n\n' +
               `Deck ID: ${deckId}\n\n` +
-              'Có thể do:\n' +
-              '• Bài học chưa được lưu trong hệ thống\n' +
-              '• Flashcard chưa được thêm vào bài học\n' +
-              '• Dữ liệu đã bị xóa\n\n' +
-              'Vui lòng quay lại trang quản lý bài học và kiểm tra lại.');
+              'Co the do:\n' +
+              'Bai hoc chua duoc luu trong he thong\n' +
+              'Flashcard chua duoc them vao bai hoc\n' +
+              'Du lieu da bi xoa\n\n' +
+              'Vui long quay lai trang quan ly bai hoc va kiem tra lai.');
         navigate(-1);
         return;
       }
       
       if (!lesson.srs?.enabled) {
-        alert('❌ Flashcard chưa được bật!\n\n' +
-              `Bài học: ${lesson.title || deckId}\n\n` +
-              'Vui lòng:\n' +
-              '1. Vào trang Quản lý Bài học\n' +
-              '2. Chỉnh sửa bài học này\n' +
-              '3. Bật tính năng Flashcard SRS\n' +
-              '4. Thêm flashcard vào bài học');
+        alert('Flashcard chua duoc bat!\n\n' +
+              `Bai hoc: ${lesson.title || deckId}\n\n` +
+              'Vui long:\n' +
+              '1. Vao trang Quan ly Bai hoc\n' +
+              '2. Chinh sua bai hoc nay\n' +
+              '3. Bat tinh nang Flashcard SRS\n' +
+              '4. Them flashcard vao bai hoc');
         navigate(-1);
         return;
       }
       
-      console.log('✅ Lesson found:', lesson.title || lesson.id);
+      console.log('Lesson found:', lesson.title || lesson.id);
       console.log('  - SRS enabled:', lesson.srs.enabled);
       console.log('  - Card count:', lesson.srs.cardCount || lesson.srs.cards?.length || 0);
 
@@ -148,16 +194,36 @@ function FlashcardReviewPage() {
       ].filter(item => item.card); // Filter out any nulls
 
       if (reviewQueue.length === 0) {
-        // FIXED: Don't alert, show friendly "all caught up" screen
+        // Khong con the due/new -> load tat ca the de nguoi dung xem lai
+        const browseQueue = allCards.map(card => {
+          const existingProgress = allProgress.find(p => p.cardId === card.id);
+          return {
+            card,
+            progress: existingProgress || initializeCardProgress(card.id, deckId, userId)
+          };
+        });
+
+        const now = new Date();
         setSession({
           deckId,
           deckName: lesson.title || 'Flashcard Deck',
           userId,
-          reviewQueue: [],
+          reviewQueue: browseQueue,
           settings: lesson.srs,
           allCardsCount: allCards.length,
-          masteredCount: allProgress.filter(p => p.state === 'mastered').length
+          masteredCount: allProgress.filter(p => p.state === 'mastered').length,
+          isBrowseMode: true
         });
+
+        setSessionStats({
+          totalCards: browseQueue.length,
+          reviewedCards: 0,
+          correctCards: 0,
+          startTime: now,
+          endTime: null
+        });
+
+        setStartTime(now);
         setIsLoading(false);
         return;
       }
@@ -217,8 +283,8 @@ function FlashcardReviewPage() {
       // Calculate next review with SRS algorithm
       const updatedProgress = calculateNextReview(progress, grade);
 
-      // Save to IndexedDB
-      const db = await openDB('elearning-db', 3);
+      // Luu vao IndexedDB (version 4 dong bo voi indexedDBManager)
+      const db = await openDB('elearning-db', 4);
       await db.put('srsProgress', updatedProgress);
 
       // Save review history

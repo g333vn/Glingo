@@ -39,7 +39,8 @@ function SRSWidget({ lesson }) {
       ]);
 
       // Get detailed card states
-      const db = await openDB('elearning-db', 3);
+      // Su dung version 4 dong bo voi indexedDBManager
+      const db = await openDB('elearning-db', 4);
       const allProgress = await db.getAllFromIndex('srsProgress', 'by-deck', deckId);
       
       const now = new Date();
@@ -75,8 +76,9 @@ function SRSWidget({ lesson }) {
     }
   };
 
+  // Truyen lesson data qua route state de FlashcardReviewPage khong phu thuoc IndexedDB cache
   const handleStartReview = () => {
-    navigate(`/review/${deckId}`);
+    navigate(`/review/${deckId}`, { state: { lesson } });
   };
 
   if (!lesson.srs?.enabled) {
@@ -205,50 +207,49 @@ function SRSWidget({ lesson }) {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            {/* Main Study Button - Neo Brutalism Style */}
+            {/* Nut hoc chinh - luon cho phep bam, khong disable */}
             <button
               onClick={handleStartReview}
-              disabled={newCount === 0 && dueCount === 0}
               className={`
                 w-full px-6 py-5 rounded-lg border-[4px] border-black font-black text-xl
                 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]
                 hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-2px] hover:translate-y-[-2px]
-                transition-all duration-200
+                transition-all duration-200 cursor-pointer
                 ${newCount > 0 || dueCount > 0
-                  ? 'bg-yellow-400 text-gray-900 cursor-pointer'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? 'bg-yellow-400 text-gray-900'
+                  : 'bg-green-400 text-gray-900'
                 }
               `}
             >
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-3xl">
-                  {newCount > 0 || dueCount > 0 ? '🚀' : '✅'}
-                </span>
-                  <div>
-                    <div>
-                      {newCount > 0 && dueCount === 0 && (t('srs.studyNewCards') || 'STUDY NEW CARDS')}
-                      {dueCount > 0 && newCount === 0 && (t('srs.reviewNow') || 'REVIEW NOW')}
-                      {dueCount > 0 && newCount > 0 && (t('srs.startStudying') || 'START STUDYING')}
-                      {newCount === 0 && dueCount === 0 && (t('srs.completed') || 'COMPLETED')}
-                    </div>
-                    {(newCount > 0 || dueCount > 0) && (
-                      <div className="text-sm font-medium opacity-90">
-                        {newCount + dueCount} {t('srs.cardsWaitingForYou') || 'cards waiting'}
-                      </div>
-                    )}
+              <div className="flex flex-col items-center justify-center">
+                <div>
+                  {newCount > 0 && dueCount === 0 && (t('srs.studyNewCards') || 'STUDY NEW CARDS')}
+                  {dueCount > 0 && newCount === 0 && (t('srs.reviewNow') || 'REVIEW NOW')}
+                  {dueCount > 0 && newCount > 0 && (t('srs.startStudying') || 'START STUDYING')}
+                  {newCount === 0 && dueCount === 0 && (t('srs.browseAllCards') || 'XEM LẠI TẤT CẢ THẺ')}
+                </div>
+                {(newCount > 0 || dueCount > 0) ? (
+                  <div className="text-sm font-medium opacity-90">
+                    {newCount + dueCount} {t('srs.cardsWaitingForYou') || 'cards waiting'}
                   </div>
+                ) : (
+                  <div className="text-sm font-medium opacity-90">
+                    {totalCards} {t('srs.totalCards') || 'thẻ'}
+                  </div>
+                )}
               </div>
             </button>
             
             {/* Secondary Button - Neo Brutalism Style */}
             <Link
               to={`/statistics/${deckId}`}
+              state={{ lesson }}
               className="block w-full px-6 py-3 bg-blue-500 text-white rounded-lg border-[3px] border-black
                        font-black text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
                        hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-2px] hover:translate-y-[-2px]
                        transition-all"
             >
-              📊 {t('srs.viewDetailedStats') || 'View Detailed Statistics'}
+              {t('srs.viewDetailedStats') || 'View Detailed Statistics'}
             </Link>
           </div>
 

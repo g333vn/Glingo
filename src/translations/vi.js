@@ -1080,6 +1080,10 @@ const vi = {
         startStudying: 'BẮT ĐẦU HỌC',
         completed: 'ĐÃ HOÀN THÀNH',
         cardsWaitingForYou: 'thẻ đang chờ bạn',
+        // Text khi đã hết thẻ mới và thẻ cần ôn - nút chuyển sang chế độ xem lại tất cả thẻ
+        browseAllCards: 'XEM LẠI TẤT CẢ THẺ',
+        // Đơn vị chung cho tổng số thẻ (hiển thị sau số lượng)
+        totalCards: 'thẻ',
         viewDetailedStats: 'Xem Thống Kê Chi Tiết',
         studyTip: 'Mẹo học hiệu quả',
         tipMessage: 'Học mỗi ngày {count} thẻ mới và ôn tập đều đặn. Hệ thống sẽ tự động nhắc bạn ôn đúng lúc để nhớ lâu nhất!',

@@ -1056,6 +1056,10 @@ srs: {
                                                     startStudying: '学習を開始',
                                                       completed: '完了',
                                                         cardsWaitingForYou: 'カードが待っています',
+                                                        // 新しいカード・復習カードがないときのテキスト（全カードを閲覧）
+                                                        browseAllCards: 'すべてのカードを見る',
+                                                        // 合計カード数の単位（数字の後に表示）
+                                                        totalCards: '枚のカード',
                                                           viewDetailedStats: '詳細統計を見る',
                                                             studyTip: '学習のコツ',
                                                               tipMessage: '毎日{count}枚の新しいカードを学習し、定期的に復習しましょう。システムが最適なタイミングでリマインドします！',

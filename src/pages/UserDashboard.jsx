@@ -63,7 +63,8 @@ function UserDashboard() {
       setIsLoading(true);
       console.log('📊 Loading user dashboard...');
 
-      const db = await openDB('elearning-db', 3);
+      // Su dung version 4 dong bo voi indexedDBManager
+      const db = await openDB('elearning-db', 4);
 
       // Load all lesson groups
       const allLessonGroups = await db.getAll('lessons');

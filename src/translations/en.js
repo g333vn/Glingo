@@ -1061,6 +1061,10 @@ srs: {
                                                   startStudying: 'START STUDYING',
                                                     completed: 'COMPLETED',
                                                       cardsWaitingForYou: 'cards waiting',
+                                                      // Text when there are no new / due cards - switch to browse mode
+                                                      browseAllCards: 'Browse all cards',
+                                                      // Generic unit label for total number of cards
+                                                      totalCards: 'cards',
                                                         viewDetailedStats: 'View Detailed Statistics',
                                                           studyTip: 'Study Tip',
                                                             tipMessage: 'Study {count} new cards daily and review regularly. The system will remind you at the right time!',
